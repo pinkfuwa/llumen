@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { ArrowLeft, Search, ChevronsUp, Plus, ArrowRight, Bot } from 'lucide-svelte';
+	import { ArrowLeft, Settings, Plus, ArrowRight, Bot } from 'lucide-svelte';
 	import { slide } from 'svelte/transition';
+	import { toggle } from './Setting/SettingState.svelte';
 
 	let collapsed = $state(false);
 </script>
@@ -62,7 +63,7 @@
 				class="flex w-full items-center justify-between rounded-lg border border-outline bg-white px-3 py-2 hover:bg-hover"
 			>
 				<span class="font-medium text-gray-800">Admin</span>
-				<ChevronsUp class="hover:text-dark" />
+				<Settings class="hover:text-dark" onclick={toggle} />
 			</button>
 		</div>
 	</div>
