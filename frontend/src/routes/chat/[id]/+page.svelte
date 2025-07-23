@@ -1,7 +1,4 @@
 <script lang="ts">
-	// import { page } from '$app/state';
-	import type { RouteParams } from './$types';
-
 	let { params } = $props();
 </script>
 

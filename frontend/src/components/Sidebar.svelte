@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { ArrowLeft, Settings, Plus, ArrowRight, Bot } from 'lucide-svelte';
 	import { slide } from 'svelte/transition';
-	import { toggle } from './Setting/SettingState.svelte';
 
 	let collapsed = $state(false);
 </script>
@@ -32,11 +31,14 @@
 			</div>
 
 			<ul class="nobar max-h-[calc(100vh-185px)] overflow-y-scroll text-sm">
-				<li
-					class="mb-2 flex w-full items-center justify-center rounded-md border border-outline bg-light p-1.5 font-semibold hover:bg-hover"
-				>
-					<Plus class="mr-2 h-5 w-5" />
-					New
+				<li>
+					<a
+						href="/chat/new"
+						class="mb-2 flex w-full items-center justify-center rounded-md border border-outline bg-light p-1.5 font-semibold hover:bg-hover"
+					>
+						<Plus class="mr-2 h-5 w-5" />
+						New
+					</a>
 				</li>
 				<li class="truncate rounded-sm p-1.5 hover:bg-hover">
 					Recent breakthrough in LLM and Machine Learning
@@ -48,12 +50,13 @@
 		</div>
 
 		<div class="mt-4 border-t border-outline pt-4">
-			<button
+			<a
 				class="flex w-full items-center justify-between rounded-lg border border-outline bg-white px-3 py-2 hover:bg-hover"
+				href="/setting/openrouter"
 			>
 				<span class="font-medium text-gray-800">Admin</span>
-				<Settings class="hover:text-dark" onclick={toggle} />
-			</button>
+				<Settings class="hover:text-dark" />
+			</a>
 		</div>
 	</div>
 {/if}

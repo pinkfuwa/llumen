@@ -1,6 +1,5 @@
 <script>
-	import Sidebar from '../../../components/Sidebar.svelte';
-	import Setting from '../../../components/Setting/Setting.svelte';
+	import Sidebar from '../../components/Sidebar.svelte';
 
 	let { children } = $props();
 </script>
@@ -11,4 +10,3 @@
 		{@render children()}
 	</div>
 </div>
-<Setting />
