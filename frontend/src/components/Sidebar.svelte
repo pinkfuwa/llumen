@@ -31,29 +31,18 @@
 				</button>
 			</div>
 
-			<ul class="text-sm">
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">help me generate a business...</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">What's the best approach to...</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">What is the meaning of life?</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">What strategies can help manag...</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">
-					Create a recipe for a fusion dish...
-				</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">
-					What specific metrics should I us...
-				</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">Latest AI Updates</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">any oss</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">how to use vercel ai sdk</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">How does AI work?</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">latest news</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">Recent breakthrough in LLM and...</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">Recent AI Models and it's...</li>
+			<ul class="nobar max-h-[calc(100vh-200px)] overflow-y-scroll text-sm">
 				<li
-					class="mt-4 flex w-full items-center justify-center rounded-md border border-outline bg-light p-1.5 font-semibold hover:bg-hover"
+					class="mb-2 flex w-full items-center justify-center rounded-md border border-outline bg-light p-1.5 font-semibold hover:bg-hover"
 				>
 					<Plus class="mr-2 h-5 w-5" />
 					New
+				</li>
+				<li class="truncate rounded-sm p-1.5 hover:bg-hover">
+					Recent breakthrough in LLM and Machine Learning
+				</li>
+				<li class="truncate rounded-sm p-1.5 hover:bg-hover">
+					Recent breakthrough in LLM and Machine Learning
 				</li>
 			</ul>
 		</div>
