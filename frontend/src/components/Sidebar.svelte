@@ -31,7 +31,7 @@
 				</button>
 			</div>
 
-			<ul class="nobar max-h-[calc(100vh-200px)] overflow-y-scroll text-sm">
+			<ul class="nobar max-h-[calc(100vh-185px)] overflow-y-scroll text-sm">
 				<li
 					class="mb-2 flex w-full items-center justify-center rounded-md border border-outline bg-light p-1.5 font-semibold hover:bg-hover"
 				>
