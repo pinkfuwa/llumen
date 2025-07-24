@@ -23,6 +23,9 @@ importers:
       '@tanstack/svelte-query':
         specifier: ^5.83.0
         version: 5.83.0(svelte@5.36.13)
+      dompurify:
+        specifier: ^3.2.6
+        version: 3.2.6
       isomorphic-dompurify:
         specifier: ^2.26.0
         version: 2.26.0

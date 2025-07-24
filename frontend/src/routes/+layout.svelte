@@ -7,9 +7,11 @@
 		language: 'en' | 'zh-tw';
 	}
 
-	import { storable } from '$lib/LocalStorage.svelte';
+	import { storable } from '$lib/LocalStorage';
 	import { setLocale } from '$lib/paraglide/runtime';
-	let preference = storable({ theme: 'light', language: 'en' } as Preference);
+	import { defaultPreference } from '$lib/perference';
+
+	let preference = storable(defaultPreference);
 
 	setLocale($preference.language);
 </script>

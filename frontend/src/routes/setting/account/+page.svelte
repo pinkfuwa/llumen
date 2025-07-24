@@ -2,14 +2,10 @@
 	import { fade } from 'svelte/transition';
 	import { CheckLine, X } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { defaultPreference } from '$lib/perference';
 
-	interface Preference {
-		theme: 'light' | 'dark';
-		language: 'en' | 'zh-tw';
-	}
-
-	import { storable } from '$lib/LocalStorage.svelte';
-	let preference = storable({ theme: 'light', language: 'en' } as Preference);
+	import { storable } from '$lib/LocalStorage';
+	let preference = storable(defaultPreference);
 
 	let passwordBuffer = $state('');
 	let checkPassword: undefined | string = $state(undefined);

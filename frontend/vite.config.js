@@ -11,5 +11,9 @@ export default defineConfig({
 			project: './project.inlang',
 			outdir: './src/lib/paraglide'
 		})
-	]
+	],
+	build: { sourcemap: true },
+	worker: {
+		format: 'es'
+	}
 });

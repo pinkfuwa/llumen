@@ -1,8 +1,7 @@
-import { render } from './render';
+import { renderPlainMarkdown } from './plain';
 console.log(`markdown web worker started`);
 
-self.onmessage = (event) => {
-	const task = event.data as string;
-	const data = render(task);
+self.onmessage = async (event) => {
+	const data = await renderPlainMarkdown(event.data.data as string);
 	self.postMessage({ data });
 };
