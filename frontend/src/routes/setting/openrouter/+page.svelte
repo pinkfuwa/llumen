@@ -7,7 +7,9 @@
 		{m.config_override_warning()}
 	</div>
 </div>
-<textarea class="min-h-[200px] w-full resize-none rounded-md bg-hover p-3">text config</textarea>
+<div contenteditable="plaintext-only" class="min-h-[200px] rounded-md bg-hover p-3">
+	text config
+</div>
 <button
 	class="mt-3 rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
 	>{m.check_syntax()}</button

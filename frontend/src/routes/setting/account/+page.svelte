@@ -46,6 +46,7 @@
 				onclick={() => {
 					if (passwordBuffer.length > 0) {
 						checkPassword = passwordBuffer;
+						passwordBuffer = '';
 					}
 				}}><CheckLine /></button
 			>
@@ -54,17 +55,25 @@
 {:else}
 	<div in:fade={{ duration: 180 }} class="flex flex-col space-y-2 text-lg">
 		<label for="password">Type Password Again: </label>
-		<input type="password" id="password" class="w-full rounded-md border border-outline p-1" />
+		<div class="flex">
+			<input
+				type="password"
+				id="password"
+				class="grow rounded-md border border-outline p-1"
+				bind:value={passwordBuffer}
+			/>
 
-		<div class="">
-			<button
-				class="mx-1 rounded-md p-1 hover:bg-hover"
-				onclick={() => {
-					checkPassword = '';
-					passwordBuffer = '';
-				}}><X /></button
-			>
-			<button class="mx-1 rounded-md p-1 hover:bg-hover"><CheckLine /></button>
+			{#if checkPassword == passwordBuffer}
+				<button class="mx-1 rounded-md p-1 hover:bg-hover"><CheckLine /></button>
+			{:else}
+				<button
+					class="mx-1 rounded-md p-1 hover:bg-hover"
+					onclick={() => {
+						checkPassword = '';
+						passwordBuffer = '';
+					}}><X /></button
+				>
+			{/if}
 		</div>
 	</div>
 {/if}
