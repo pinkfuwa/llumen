@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { CornerDownLeft, Book, BookA, ArrowUpDown } from '@lucide/svelte';
-	import { render } from '$lib/markdown/markdown';
+	import { render } from '$lib/markdown';
 
 	let content = $state('');
 	let enableMarkdown = $state(false);
