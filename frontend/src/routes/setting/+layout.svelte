@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { fade } from 'svelte/transition';
-	import { X } from 'lucide-svelte';
-	import { CircleUser, EthernetPort, LogOut, ShieldUser } from 'lucide-svelte';
+	import { X } from '@lucide/svelte';
+	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 
 	let { children } = $props();
 </script>

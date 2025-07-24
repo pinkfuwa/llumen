@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { CheckLine, X } from 'lucide-svelte';
+	import { CheckLine, X } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Preference {

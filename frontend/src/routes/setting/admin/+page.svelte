@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { GetUsers, CreateUser, type User } from '$lib/user';
-	import { Trash, CheckLine } from 'lucide-svelte';
+	import { Trash, CheckLine } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	let nameBuffer = $state('');

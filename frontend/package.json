@@ -27,11 +27,11 @@
 	},
 	"dependencies": {
 		"@inlang/paraglide-js": "^2.0.0",
+		"@lucide/svelte": "^0.525.0",
 		"@octokit/rest": "^22.0.0",
 		"@sv-use/core": "^1.15.1",
 		"@tanstack/svelte-query": "^5.83.0",
 		"isomorphic-dompurify": "^2.26.0",
-		"lucide-svelte": "^0.525.0",
 		"marked": "^16.1.1",
 		"marked-emoji": "^2.0.1",
 		"marked-shiki": "^1.2.0",

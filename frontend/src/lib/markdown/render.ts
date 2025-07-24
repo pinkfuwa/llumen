@@ -6,23 +6,27 @@ import markedShiki from 'marked-shiki';
 import { codeToHtml } from 'shiki';
 
 const octokit = new Octokit();
-const emojis = await octokit.rest.emojis.get();
+try {
+	const emojis = await octokit.rest.emojis.get();
 
-marked
-	.use(
+	marked.use(
 		markedEmoji({
 			emojis: emojis.data,
 			renderer: (token) =>
 				`<img alt="${token.name}" src="${token.emoji}" style="display: inline-block; height: 1em; width: 1em;">`
 		})
-	)
-	.use(
-		markedShiki({
-			async highlight(code, lang) {
-				return await codeToHtml(code, { lang, theme: 'min-light' });
-			}
-		})
 	);
+} catch (error) {
+	console.warn(`error loading emojis: ${error}`);
+}
+
+marked.use(
+	markedShiki({
+		async highlight(code, lang) {
+			return await codeToHtml(code, { lang, theme: 'min-light' });
+		}
+	})
+);
 
 function applyStyle(htmlString: string): string {
 	const parser = new DOMParser();

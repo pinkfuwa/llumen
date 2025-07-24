@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CornerDownLeft, Book, BookA, ArrowUpDown } from 'lucide-svelte';
+	import { CornerDownLeft, Book, BookA, ArrowUpDown } from '@lucide/svelte';
 	import { render } from '$lib/markdown/markdown';
 
 	let content = $state('');

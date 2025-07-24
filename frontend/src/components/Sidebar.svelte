@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowLeft, Settings, Plus, ArrowRight, Bot } from 'lucide-svelte';
+	import { ArrowLeft, Settings, Plus, ArrowRight, Bot } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
 
 	let collapsed = $state(false);
