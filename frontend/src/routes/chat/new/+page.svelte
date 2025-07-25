@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { CornerDownLeft, Book, BookA, ArrowUpDown } from '@lucide/svelte';
-	import { render } from '$lib/markdown';
+	import { renderMarkdown } from '$lib';
 
 	let content = $state('');
 	let enableMarkdown = $state(false);
@@ -13,7 +13,7 @@
 			<div
 				class="new-message markdown max-h-[60vh] max-w-[65vw] flex-grow space-y-2 overflow-scroll"
 			>
-				{#await render(content) then md}
+				{#await renderMarkdown(content) then md}
 					{@html md}
 				{:catch someError}
 					<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
