@@ -2,12 +2,6 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { token } from '$lib/store';
-	token.subscribe((value) => {
-		const logined = value != '';
-		if (logined) {
-			goto('/chat/new');
-		}
-	});
 
 	const messages: Record<string, string> = {
 		'404': 'Page not found',
@@ -17,6 +11,12 @@
 		'400': 'Bad request',
 		'405': 'Method not allowed'
 	};
+
+	$effect(() => {
+		if (token().current == '') {
+			goto('/login');
+		}
+	});
 </script>
 
 <div class="flex h-screen flex-col items-center justify-center">

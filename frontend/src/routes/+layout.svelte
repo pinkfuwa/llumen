@@ -1,18 +1,29 @@
 <script lang="ts">
 	import '../app.css';
+	import { QueryClientProvider, QueryClient } from '@tanstack/svelte-query';
+	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
+	import { setLocale } from '$lib/paraglide/runtime';
+	import { language } from '$lib/store';
+	import { dev } from '$app/environment';
+
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				staleTime: Infinity
+			}
+		}
+	});
 
 	let { children } = $props();
 
-	import { setLocale } from '$lib/paraglide/runtime';
-	import { language, token } from '$lib/store';
-	import { goto } from '$app/navigation';
-
-	language.subscribe((value) => setLocale(value));
-	token.subscribe((value) => {
-		if (value == '') {
-			goto('/login');
-		}
+	$effect(() => {
+		setLocale(language().current);
 	});
 </script>
 
-{@render children()}
+<QueryClientProvider client={queryClient}>
+	{@render children()}
+	{#if dev}
+		<SvelteQueryDevtools />
+	{/if}
+</QueryClientProvider>

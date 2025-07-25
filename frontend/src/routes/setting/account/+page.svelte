@@ -4,6 +4,9 @@
 	import { m } from '$lib/paraglide/messages';
 	import { theme, language } from '$lib/store';
 
+	let _theme = $state(theme());
+	let _language = $state(language());
+
 	let passwordBuffer = $state('');
 	let checkPassword: undefined | string = $state(undefined);
 </script>
@@ -11,7 +14,7 @@
 {#if checkPassword == undefined || (checkPassword as string).length == 0}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="theme">{m.theme()}: </label>
-		<select id="theme" bind:value={$theme} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<select id="theme" bind:value={_theme} class="mx-1 rounded-md p-1 hover:bg-hover">
 			<option value="light">Modern Light</option>
 			<option value="dark">Eye-caring Dark</option>
 		</select>
@@ -19,7 +22,7 @@
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="lang">{m.language()}: </label>
-		<select id="lang" bind:value={$language} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<select id="lang" bind:value={_language} class="mx-1 rounded-md p-1 hover:bg-hover">
 			<option value="en">English</option>
 			<option value="zh-tw">繁體中文</option>
 		</select>

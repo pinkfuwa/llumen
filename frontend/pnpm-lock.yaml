@@ -20,6 +20,9 @@ importers:
       '@sv-use/core':
         specifier: ^1.15.1
         version: 1.15.1(svelte@5.36.13)
+      '@svelte-plugins/tooltips':
+        specifier: 4.0.0-beta.1
+        version: 4.0.0-beta.1(svelte@5.36.13)
       '@sveltejs/adapter-auto':
         specifier: ^6.0.0
         version: 6.0.1(@sveltejs/kit@2.25.1(@sveltejs/vite-plugin-svelte@6.1.0(svelte@5.36.13)(vite@7.0.5(jiti@2.4.2)(lightningcss@1.30.1)))(svelte@5.36.13)(vite@7.0.5(jiti@2.4.2)(lightningcss@1.30.1)))
@@ -38,6 +41,9 @@ importers:
       '@tanstack/svelte-query':
         specifier: ^5.83.0
         version: 5.83.0(svelte@5.36.13)
+      '@tanstack/svelte-query-devtools':
+        specifier: ^5.83.0
+        version: 5.83.0(@tanstack/svelte-query@5.83.0(svelte@5.36.13))(svelte@5.36.13)
       isomorphic-dompurify:
         specifier: ^2.26.0
         version: 2.26.0
@@ -499,6 +505,11 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
+  '@svelte-plugins/tooltips@4.0.0-beta.1':
+    resolution: {integrity: sha512-MM32DeA6z8Wty9sQfWkCRSQm/t7kbD51gzsYrKuw06YeGsGTgKSyalwe/RQyjoM1Vro7Bpsrd6kPJ0ftIe3Zcg==}
+    peerDependencies:
+      svelte: ^5.0.0
+
   '@sveltejs/acorn-typescript@1.0.5':
     resolution: {integrity: sha512-IwQk4yfwLdibDlrXVE04jTZYlLnwsTT2PIOQQGNLWfjavGifnk1JD1LcZjZaBTRcxZu2FfPfNLOE04DSu9lqtQ==}
     peerDependencies:
@@ -630,6 +641,15 @@ packages:
 
   '@tanstack/query-core@5.83.0':
     resolution: {integrity: sha512-0M8dA+amXUkyz5cVUm/B+zSk3xkQAcuXuz5/Q/LveT4ots2rBpPTZOzd7yJa2Utsf8D2Upl5KyjhHRY+9lB/XA==}
+
+  '@tanstack/query-devtools@5.81.2':
+    resolution: {integrity: sha512-jCeJcDCwKfoyyBXjXe9+Lo8aTkavygHHsUHAlxQKKaDeyT0qyQNLKl7+UyqYH2dDF6UN/14873IPBHchcsU+Zg==}
+
+  '@tanstack/svelte-query-devtools@5.83.0':
+    resolution: {integrity: sha512-RLt78HpQxyqbuovjQ0uClv7pP/kFlzdiy0NKVXsw8x+JSOi0CGM1/0TGiNgwMKOU7PhsT3NQ3KGIwQai1FghSw==}
+    peerDependencies:
+      '@tanstack/svelte-query': ^5.83.0
+      svelte: ^3.54.0 || ^4.0.0 || ^5.0.0
 
   '@tanstack/svelte-query@5.83.0':
     resolution: {integrity: sha512-8tNXhuoizntZXnAzo4yqUWgZZnklQkXGUNpb3YreW68DyCBhhrGbErnrODQs3fVc2ABcMvAHIki5uErbdzXH1A==}
@@ -1718,6 +1738,10 @@ snapshots:
     dependencies:
       svelte: 5.36.13
 
+  '@svelte-plugins/tooltips@4.0.0-beta.1(svelte@5.36.13)':
+    dependencies:
+      svelte: 5.36.13
+
   '@sveltejs/acorn-typescript@1.0.5(acorn@8.15.0)':
     dependencies:
       acorn: 8.15.0
@@ -1842,6 +1866,15 @@ snapshots:
       vite: 7.0.5(jiti@2.4.2)(lightningcss@1.30.1)
 
   '@tanstack/query-core@5.83.0': {}
+
+  '@tanstack/query-devtools@5.81.2': {}
+
+  '@tanstack/svelte-query-devtools@5.83.0(@tanstack/svelte-query@5.83.0(svelte@5.36.13))(svelte@5.36.13)':
+    dependencies:
+      '@tanstack/query-devtools': 5.81.2
+      '@tanstack/svelte-query': 5.83.0(svelte@5.36.13)
+      esm-env: 1.2.2
+      svelte: 5.36.13
 
   '@tanstack/svelte-query@5.83.0(svelte@5.36.13)':
     dependencies:

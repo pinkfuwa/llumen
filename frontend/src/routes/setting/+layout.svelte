@@ -4,6 +4,7 @@
 	import { X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 	import { token } from '$lib/store';
+	import { goto } from '$app/navigation';
 
 	let { children } = $props();
 </script>
@@ -48,7 +49,8 @@
 					<button
 						class="flex items-center"
 						onclick={() => {
-							token.set('');
+							token().current = '';
+							goto('/');
 						}}
 					>
 						<LogOut class="mr-2 inline-block h-5 w-5" /> {m.logout()}</button

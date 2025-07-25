@@ -1,28 +1,34 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { token } from '$lib/store';
 	import { Login } from '$lib/api/user';
+	import { goto } from '$app/navigation';
+
+	let usernameBuf = $state('');
+	let passwordBuf = $state('');
 
 	let username = $state('');
 	let password = $state('');
 
-	let disable = $state(false);
+	let rawToken = Login(
+		() => username,
+		() => password
+	);
 
-	async function handleSubmit(event: Event) {
+	let disable = $derived($rawToken.isPending);
+
+	const newToken = $derived($rawToken.data || '');
+	$effect(() => {
+		token().current = newToken;
+	});
+
+	function handleSubmit(event: Event) {
 		event.preventDefault();
-		disable = true;
-
-		const newToken: string | undefined = await Login(username, password);
-
-		token.set(newToken == undefined ? '' : newToken);
-
-		disable = false;
+		username = usernameBuf;
+		password = passwordBuf;
 	}
 
-	token.subscribe((value) => {
-		if (value) {
-			goto('/chat/new');
-		}
+	$effect(() => {
+		if (token().current != '') goto('/chat/new');
 	});
 </script>
 
@@ -43,7 +49,7 @@
 					type="text"
 					placeholder="admin"
 					class="login mb-2 grow border-b border-outline pb-2"
-					bind:value={username}
+					bind:value={usernameBuf}
 					required
 				/>
 			</div>
@@ -53,7 +59,7 @@
 					type="password"
 					placeholder="P@88w0rd"
 					class="login mb-2 grow border-b border-outline pb-2"
-					bind:value={password}
+					bind:value={passwordBuf}
 					required
 				/>
 			</div>

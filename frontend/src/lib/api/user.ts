@@ -1,3 +1,8 @@
+import type { CreateQueryResult } from '@tanstack/svelte-query';
+import { createQuery } from '@tanstack/svelte-query';
+import { options } from 'prettier-plugin-tailwindcss';
+import { derived, toStore, writable, type Readable } from 'svelte/store';
+
 export interface User {
 	username: string;
 }
@@ -30,9 +35,26 @@ export async function CreateUser(username: string, password: string): Promise<Us
 	return { username };
 }
 
-export async function Login(username: string, password: string): Promise<string | undefined> {
-	await sleep(1000);
-	if (username === 'admin' && password === 'P@88w0rd') {
-		return '<not-a-token>';
-	}
+export function Login(username: () => string, password: () => string): CreateQueryResult<string> {
+	const fetcher = async (username: string, password: string) => {
+		console.log('triggered', { username, password });
+		await sleep(1000);
+		if (username === 'admin' && password === 'P@88w0rd') {
+			return '<not-a-token>';
+		}
+		return '';
+	};
+	const state = toStore(() => ({
+		username: username(),
+		password: password()
+	}));
+
+	return createQuery(
+		derived(state, (state) => ({
+			queryKey: ['users', state.username, state.password],
+			queryFn: () => {
+				return fetcher(state.username, state.password);
+			}
+		}))
+	);
 }
