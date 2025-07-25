@@ -3,6 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import { X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
+	import { token } from '$lib/store';
 
 	let { children } = $props();
 </script>
@@ -44,7 +45,12 @@
 					>
 				</li>
 				<li class="rounded-md px-5 py-1 hover:bg-hover">
-					<button class="flex items-center">
+					<button
+						class="flex items-center"
+						onclick={() => {
+							token.set('');
+						}}
+					>
 						<LogOut class="mr-2 inline-block h-5 w-5" /> {m.logout()}</button
 					>
 				</li>

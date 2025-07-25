@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { GetUsers, CreateUser, type User } from '$lib/user';
+	import { GetUsers, CreateUser, type User } from '$lib/api/user';
 	import { Trash, CheckLine } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
 

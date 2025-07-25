@@ -4,9 +4,15 @@
 	let { children } = $props();
 
 	import { setLocale } from '$lib/paraglide/runtime';
-	import { language } from '$lib/localStorage';
+	import { language, token } from '$lib/store';
+	import { goto } from '$app/navigation';
 
-	setLocale(language().current);
+	language.subscribe((value) => setLocale(value));
+	token.subscribe((value) => {
+		if (value == '') {
+			goto('/login');
+		}
+	});
 </script>
 
 {@render children()}

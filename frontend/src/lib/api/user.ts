@@ -29,3 +29,10 @@ export async function CreateUser(username: string, password: string): Promise<Us
 	await sleep(1000);
 	return { username };
 }
+
+export async function Login(username: string, password: string): Promise<string | undefined> {
+	await sleep(1000);
+	if (username === 'admin' && password === 'P@88w0rd') {
+		return '<not-a-token>';
+	}
+}

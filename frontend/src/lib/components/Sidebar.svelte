@@ -58,20 +58,9 @@
 					<Trash2 class="hidden p-[2px] group-hover:block" />
 				</li>
 				<li class="group flex items-center justify-between rounded-sm p-1.5 hover:bg-hover">
-					<form
-						class="grow"
-						onsubmit={(e) => {
-							e.preventDefault();
-							console.log('Submitted');
-						}}
-					>
-						<input
-							class="editor h-6 w-full truncate"
-							value="Recent breakthrough in LLM and Machine Learning"
-							contenteditable="plaintext-only"
-						/>
-					</form>
-
+					<div class="h-6 w-full grow truncate select-none">
+						Recent breakthrough in LLM and Machine Learning
+					</div>
 					<Trash2 class="hidden p-[2px] group-hover:block" />
 				</li>
 			</ul>
