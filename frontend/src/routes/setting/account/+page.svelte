@@ -2,19 +2,19 @@
 	import { fade } from 'svelte/transition';
 	import { CheckLine, X } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { defaultPreference } from '$lib/perference';
-
-	import { storable } from '$lib/LocalStorage';
-	let preference = storable(defaultPreference);
+	import { theme, language } from '$lib/localStorage';
 
 	let passwordBuffer = $state('');
 	let checkPassword: undefined | string = $state(undefined);
+
+	let _theme = theme();
+	let _language = language();
 </script>
 
 {#if checkPassword == undefined || (checkPassword as string).length == 0}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="theme">{m.theme()}: </label>
-		<select id="theme" bind:value={$preference.theme} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<select id="theme" bind:value={_theme.current} class="mx-1 rounded-md p-1 hover:bg-hover">
 			<option value="light">Modern Light</option>
 			<option value="dark">Eye-caring Dark</option>
 		</select>
@@ -22,7 +22,7 @@
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="lang">{m.language()}: </label>
-		<select id="lang" bind:value={$preference.language} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<select id="lang" bind:value={_language.current} class="mx-1 rounded-md p-1 hover:bg-hover">
 			<option value="en">English</option>
 			<option value="zh-tw">繁體中文</option>
 		</select>

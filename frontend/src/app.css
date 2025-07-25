@@ -14,3 +14,10 @@
 .nobar::-webkit-scrollbar {
 	display: none; /* Older Safari and Chromium */
 }
+
+.editor:focus-visible {
+	outline: none;
+}
+.editor::-webkit-scrollbar {
+	display: none;
+}

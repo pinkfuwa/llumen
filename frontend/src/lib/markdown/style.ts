@@ -6,7 +6,6 @@ function applyStyle(htmlString: string): string {
 		['h1', 'text-2xl font-bold'],
 		['h2', 'text-xl font-bold'],
 		['h3', 'text-lg font-bold'],
-		['pre', 'rounded-md border border-outline p-2 border-radius-md overflow-x-auto'],
 		['p', 'items-center'],
 		['ul', 'list-disc ml-6'],
 		['hr', 'border-outline'],

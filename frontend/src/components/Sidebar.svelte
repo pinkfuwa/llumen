@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowLeft, Settings, Plus, ArrowRight, Bot } from '@lucide/svelte';
+	import { ArrowLeft, Settings, Plus, ArrowRight, Bot, Trash2 } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
 
 	let collapsed = $state(false);
@@ -40,11 +40,39 @@
 						New
 					</a>
 				</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">
-					Recent breakthrough in LLM and Machine Learning
+				<li class="group flex items-center justify-between rounded-sm p-1.5 hover:bg-hover">
+					<form
+						class="grow"
+						onsubmit={(e) => {
+							e.preventDefault();
+							console.log('Submitted');
+						}}
+					>
+						<input
+							class="editor h-6 w-full truncate"
+							value="Recent breakthrough in LLM and Machine Learning"
+							contenteditable="plaintext-only"
+						/>
+					</form>
+
+					<Trash2 class="hidden p-[2px] group-hover:block" />
 				</li>
-				<li class="truncate rounded-sm p-1.5 hover:bg-hover">
-					Recent breakthrough in LLM and Machine Learning
+				<li class="group flex items-center justify-between rounded-sm p-1.5 hover:bg-hover">
+					<form
+						class="grow"
+						onsubmit={(e) => {
+							e.preventDefault();
+							console.log('Submitted');
+						}}
+					>
+						<input
+							class="editor h-6 w-full truncate"
+							value="Recent breakthrough in LLM and Machine Learning"
+							contenteditable="plaintext-only"
+						/>
+					</form>
+
+					<Trash2 class="hidden p-[2px] group-hover:block" />
 				</li>
 			</ul>
 		</div>

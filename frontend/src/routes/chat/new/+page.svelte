@@ -22,12 +22,11 @@
 				{/await}
 			</div>
 		{:else}
-			<div
-				class="new-message editor max-h-[60vh] max-w-[65vw] flex-grow overflow-scroll"
-				contenteditable="plaintext-only"
+			<textarea
+				class="editor max-h-[60vh] max-w-[65vw] flex-grow resize-none overflow-scroll"
 				placeholder="Type your question here..."
-				bind:innerText={content}
-			></div>
+				bind:value={content}
+			></textarea>
 		{/if}
 
 		<CornerDownLeft class="ml-2" />
@@ -50,12 +49,6 @@
 </div>
 
 <style>
-	.new-message:focus-visible {
-		outline: none;
-	}
-	.editor::-webkit-scrollbar {
-		display: none;
-	}
 	.markdown::-webkit-scrollbar {
 		display: none;
 	}
