@@ -4,8 +4,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import { useTheme, useLanguage } from '$lib/store';
 
-	let theme = useTheme();
-	let language = useLanguage();
+	let theme = $state(useTheme());
+	let language = $state(useLanguage());
 
 	let passwordBuffer = $state('');
 	let checkPassword: undefined | string = $state(undefined);
