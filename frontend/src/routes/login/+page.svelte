@@ -1,35 +1,27 @@
 <script lang="ts">
-	import { token } from '$lib/store';
-	import { Login } from '$lib/api/user';
 	import { goto } from '$app/navigation';
-
-	let usernameBuf = $state('');
-	let passwordBuf = $state('');
-
+	import { Login } from '$lib/api/user';
+	import { useToken } from '$lib/store';
 	let username = $state('');
 	let password = $state('');
 
-	let rawToken = Login(
+	let loginMutation = Login(
 		() => username,
 		() => password
 	);
 
-	let disable = $derived($rawToken.isPending);
-
-	const newToken = $derived($rawToken.data || '');
-	$effect(() => {
-		token().current = newToken;
-	});
+	let token = useToken();
 
 	function handleSubmit(event: Event) {
 		event.preventDefault();
-		username = usernameBuf;
-		password = passwordBuf;
+		$loginMutation.mutate(undefined, {
+			onSuccess: (data) => {
+				console.log('Login successful');
+				goto('/chat/new');
+				token.current = data.token;
+			}
+		});
 	}
-
-	$effect(() => {
-		if (token().current != '') goto('/chat/new');
-	});
 </script>
 
 <div class="flex h-screen flex-col items-center justify-center">
@@ -41,7 +33,7 @@
 		<form
 			class="flex flex-col items-center justify-center text-xl"
 			onsubmit={handleSubmit}
-			inert={disable}
+			inert={$loginMutation.isPending}
 		>
 			<div class="mb-2 flex w-full justify-between">
 				<label for="username" class="mr-3 min-w-[120px] text-center">Username</label>
@@ -49,7 +41,7 @@
 					type="text"
 					placeholder="admin"
 					class="login mb-2 grow border-b border-outline pb-2"
-					bind:value={usernameBuf}
+					bind:value={username}
 					required
 				/>
 			</div>
@@ -59,7 +51,7 @@
 					type="password"
 					placeholder="P@88w0rd"
 					class="login mb-2 grow border-b border-outline pb-2"
-					bind:value={passwordBuf}
+					bind:value={password!}
 					required
 				/>
 			</div>
@@ -67,9 +59,15 @@
 			<button
 				type="submit"
 				class="rounded-full border border-outline px-12 py-2 hover:bg-hover disabled:bg-hover"
-				disabled={disable}
+				disabled={$loginMutation.isPending}
 			>
-				{disable ? 'Loading...' : 'Sign in'}
+				{#if $loginMutation.failureCount > 0}
+					Try again
+				{:else if $loginMutation.isPending}
+					Loading...
+				{:else}
+					Sign in
+				{/if}
 			</button>
 		</form>
 	</div>

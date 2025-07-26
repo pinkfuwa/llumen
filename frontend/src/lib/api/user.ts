@@ -1,7 +1,6 @@
-import type { CreateQueryResult } from '@tanstack/svelte-query';
-import { createQuery } from '@tanstack/svelte-query';
-import { options } from 'prettier-plugin-tailwindcss';
-import { derived, toStore, writable, type Readable } from 'svelte/store';
+import type { CreateQueryResult, CreateMutationResult } from '@tanstack/svelte-query';
+import { createQuery, createMutation } from '@tanstack/svelte-query';
+import { derived, toStore } from 'svelte/store';
 
 export interface User {
 	username: string;
@@ -35,24 +34,27 @@ export async function CreateUser(username: string, password: string): Promise<Us
 	return { username };
 }
 
-export function Login(username: () => string, password: () => string): CreateQueryResult<string> {
+export function Login(
+	username: () => string,
+	password: () => string
+): CreateMutationResult<{ token: string }, Error, void, unknown> {
 	const fetcher = async (username: string, password: string) => {
 		console.log('triggered', { username, password });
 		await sleep(1000);
 		if (username === 'admin' && password === 'P@88w0rd') {
-			return '<not-a-token>';
+			return { token: '<not-a-token>' };
 		}
-		return '';
+		throw new Error('Invalid credentials');
 	};
 	const state = toStore(() => ({
 		username: username(),
 		password: password()
 	}));
 
-	return createQuery(
+	return createMutation(
 		derived(state, (state) => ({
-			queryKey: ['users', state.username, state.password],
-			queryFn: () => {
+			mutationKey: ['users', state.username, state.password],
+			mutationFn: (_: void) => {
 				return fetcher(state.username, state.password);
 			}
 		}))

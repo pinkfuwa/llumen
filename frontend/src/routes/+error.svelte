@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
-	import { token } from '$lib/store';
+	import { page } from '$app/state';
 
 	const messages: Record<string, string> = {
 		'404': 'Page not found',
@@ -11,16 +9,11 @@
 		'400': 'Bad request',
 		'405': 'Method not allowed'
 	};
-
-	$effect(() => {
-		if (token().current == '') {
-			goto('/login');
-		}
-	});
 </script>
 
 <div class="flex h-screen flex-col items-center justify-center">
-	<h1 class="text-4xl font-light">
-		{$page.status}: {messages[String($page.status)] || 'Unknown error'}
+	<h1 class="mb-4 text-4xl font-light">
+		{page.status}: {messages[String(page.status)] || 'Unknown error'}
 	</h1>
+	<a href="/chat/new" class="text-2xl">Back to home</a>
 </div>

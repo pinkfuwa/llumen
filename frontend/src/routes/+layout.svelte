@@ -3,21 +3,16 @@
 	import { QueryClientProvider, QueryClient } from '@tanstack/svelte-query';
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
 	import { setLocale } from '$lib/paraglide/runtime';
-	import { language } from '$lib/store';
+	import { useLanguage } from '$lib/store';
 	import { dev } from '$app/environment';
 
-	const queryClient = new QueryClient({
-		defaultOptions: {
-			queries: {
-				staleTime: Infinity
-			}
-		}
-	});
+	const queryClient = new QueryClient();
 
 	let { children } = $props();
 
+	let language = useLanguage();
 	$effect(() => {
-		setLocale(language().current);
+		setLocale(language.current);
 	});
 </script>
 

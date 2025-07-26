@@ -3,9 +3,10 @@
 	import { fade } from 'svelte/transition';
 	import { X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
-	import { token } from '$lib/store';
+	import { useToken } from '$lib/store';
 	import { goto } from '$app/navigation';
 
+	let token = useToken();
 	let { children } = $props();
 </script>
 
@@ -49,7 +50,7 @@
 					<button
 						class="flex items-center"
 						onclick={() => {
-							token().current = '';
+							token.current = '';
 							goto('/');
 						}}
 					>
