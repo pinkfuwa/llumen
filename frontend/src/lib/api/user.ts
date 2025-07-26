@@ -10,28 +10,54 @@ async function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Retrieves a list of users.
- *
- * @returns {Promise<User[]>} A promise that resolves to an array of User objects.
- */
-export async function GetUsers(): Promise<User[]> {
-	// TODO: Implement user retrieval logic
-	await sleep(1000);
-	return [{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }];
+export function GetUsers(token: () => string): CreateQueryResult<{ users: User[] }> {
+	const fetcher = async (token: string): Promise<{}> => {
+		console.log('mocking get users', { token });
+		await sleep(1000);
+		if (token != '<not-a-token>') throw new Error('Invalid credentials');
+		return { users: [{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }] };
+	};
+
+	const state = toStore(() => ({
+		token: token()
+	}));
+
+	return createQuery(
+		derived(state, (state) => ({
+			queryKey: ['users'],
+			queryFn: () => {
+				return fetcher(state.token);
+			}
+		}))
+	);
 }
 
-/**
- * Creates a new user with the specified username and password.
- *
- * @param {string} username - The username for the new user.
- * @param {string} password - The password for the new user.
- * @returns {Promise<User>} A promise that resolves to the created User object.
- */
-export async function CreateUser(username: string, password: string): Promise<User> {
-	// TODO: Implement user creation logic
-	await sleep(1000);
-	return { username };
+export function CreateUser(
+	username: () => string,
+	password: () => string,
+	token: () => string
+): CreateMutationResult<{}, Error, void, unknown> {
+	const fetcher = async (username: string, password: string, token: string): Promise<{}> => {
+		console.log('mocking create user', { username, password, token });
+		await sleep(1000);
+		if (token != '<not-a-token>') throw new Error('Invalid credentials');
+		throw new Error('User already exists');
+	};
+
+	const state = toStore(() => ({
+		username: username(),
+		password: password(),
+		token: token()
+	}));
+
+	return createMutation(
+		derived(state, (state) => ({
+			mutationKey: ['user', 'create', state.username, state.password],
+			mutationFn: (_: void) => {
+				return fetcher(state.username, state.password, state.token);
+			}
+		}))
+	);
 }
 
 export function Login(
@@ -39,7 +65,7 @@ export function Login(
 	password: () => string
 ): CreateMutationResult<{ token: string }, Error, void, unknown> {
 	const fetcher = async (username: string, password: string) => {
-		console.log('triggered', { username, password });
+		console.log('mocking login', { username, password });
 		await sleep(1000);
 		if (username === 'admin' && password === 'P@88w0rd') {
 			return { token: '<not-a-token>' };
@@ -53,7 +79,7 @@ export function Login(
 
 	return createMutation(
 		derived(state, (state) => ({
-			mutationKey: ['users', state.username, state.password],
+			mutationKey: ['user', 'login', state.username, state.password],
 			mutationFn: (_: void) => {
 				return fetcher(state.username, state.password);
 			}

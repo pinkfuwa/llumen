@@ -1,92 +1,60 @@
 <script lang="ts">
-	import { GetUsers, CreateUser, type User } from '$lib/api/user';
+	import { GetUsers, CreateUser } from '$lib/api/user';
 	import { Trash, CheckLine } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { goto } from '$app/navigation';
+	import { useToken } from '$lib/store';
 
-	let nameBuffer = $state('');
-	let username: undefined | string = $state(undefined);
-	let passwordBuffer = $state('');
+	let token = useToken();
+	let username = $state('');
+	let password = $state('');
 
-	const userlistPromise = GetUsers();
+	let createdUser = $state('');
 
-	let createUserPromise: undefined | Promise<User> = $state(undefined);
+	const usersQuery = GetUsers(() => token.current || '');
 </script>
 
-{#if createUserPromise != undefined}
-	{#await createUserPromise then user}
-		<div class="mb-2 rounded-lg bg-red-700 hover:bg-red-500">
-			<div class="ml-2 bg-background p-3 font-semibold hover:bg-hover">
-				user <span class="rounded-md bg-hover p-2">{user.username}</span> created
-			</div>
+{#if createdUser.length != 0}
+	<div class="mb-2 rounded-lg bg-red-700 hover:bg-red-500">
+		<div class="ml-2 p-3 font-semibold hover:bg-hover">
+			user <span class="rounded-md bg-hover p-2">{createdUser}</span> created
 		</div>
-	{:catch someError}
-		<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
-			System error: {someError.message}.
-		</div>
-	{/await}
+	</div>
 {/if}
-{#if username == undefined || (username as string).length == 0}
-	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="name">{m.create_user()}: </label>
-		<div class="flex items-center justify-between">
-			<input
-				type="text"
-				id="name"
-				class="rounded-md border border-outline p-1"
-				bind:value={nameBuffer}
-				placeholder={m.username()}
-			/>
-			<button
-				class="mx-1 rounded-md p-1 hover:bg-hover"
-				onclick={() => {
-					if (nameBuffer.length > 0) {
-						username = nameBuffer;
-					}
-				}}><CheckLine /></button
-			>
-		</div>
-	</div>
 
-	{#await userlistPromise}
-		<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
-			Loading users...
-		</div>
-	{:then users}
-		<ul
-			class="grid grid-cols-1 gap-2 border-b border-outline pb-2 text-lg lg:grid-cols-2 2xl:grid-cols-3"
+<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
+	<label for="name">{m.create_user()}: </label>
+	<div class="flex items-center justify-between">
+		<input
+			type="text"
+			id="name"
+			class="rounded-md border border-outline p-1"
+			bind:value={username}
+			placeholder={m.username()}
+		/>
+		<button
+			class="mx-1 rounded-md p-1 hover:bg-hover"
+			onclick={() => {
+				if (username.length != 0) goto('/setting/admin/create/' + encodeURIComponent(username));
+			}}><CheckLine /></button
 		>
-			{#each users as user}
-				<li
-					class="flex items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
-				>
-					{user.username}
-					<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
-				</li>
-			{/each}
-		</ul>
-	{:catch someError}
-		<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
-			System error: {someError.message}.
-		</div>
-	{/await}
-{:else}
-	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<div>Type password for <span class="rounded-md bg-hover p-2">{username}</span></div>
-		<div class="flex items-center justify-between">
-			<input
-				type="text"
-				id="password"
-				class="rounded-md border border-outline p-1"
-				bind:value={passwordBuffer}
-			/>
-			<button
-				class="mx-1 rounded-md p-1 hover:bg-hover"
-				onclick={() => {
-					if (passwordBuffer.length > 0) {
-						createUserPromise = CreateUser(username!, passwordBuffer);
-					}
-				}}><CheckLine /></button
-			>
-		</div>
 	</div>
+</div>
+
+{#if $usersQuery.isPending}
+	<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
+		Loading users...
+	</div>
+{/if}
+{#if $usersQuery.isSuccess}
+	<ul
+		class="grid grid-cols-1 gap-2 border-b border-outline pb-2 text-lg lg:grid-cols-2 2xl:grid-cols-3"
+	>
+		{#each $usersQuery.data.users as user}
+			<li class="flex items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4">
+				{user.username}
+				<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
+			</li>
+		{/each}
+	</ul>
 {/if}

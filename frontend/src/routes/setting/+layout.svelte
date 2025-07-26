@@ -28,7 +28,7 @@
 			</a>
 		</div>
 		<div class="flex py-3 font-light">
-			<ul class="mr-3 flex min-w-[190px] flex-col space-y-1 border-outline text-lg">
+			<ul class="mr-3 flex min-w-[210px] flex-col space-y-1 border-outline text-lg">
 				<li class="rounded-md px-5 py-1 hover:bg-hover">
 					<a href="/setting/account" class="flex items-center">
 						<CircleUser class="mr-2 inline-block h-5 w-5" />

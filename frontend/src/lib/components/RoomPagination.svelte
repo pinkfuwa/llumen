@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Plus, Trash2 } from '@lucide/svelte';
+	import { Plus } from '@lucide/svelte';
 	import ChatroomBtn from './buttons/ChatroomBtn.svelte';
 </script>
 
