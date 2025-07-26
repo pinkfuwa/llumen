@@ -29,13 +29,13 @@ marked.use(
 		async highlight(code, lang) {
 			return await codeToHtml(code, { lang, theme: 'min-light' });
 		},
-		container: `<div class="relative group codeblock-copy" onclick="console.log('copy')">${copySVG('absolute top-0 right-0 z-10 p-2 m-1 rounded-md h-10 w-10 hidden group-hover:block bg-light hover:bg-hover bg-background')}<div class="rounded-md border border-outline p-3 border-radius-md overflow-x-auto">%s</div></div>`
+		container: `<div class="relative group ll-codeblock-copy">${copySVG('absolute top-0 right-0 z-10 p-2 m-1 rounded-md h-10 w-10 hidden group-hover:block bg-light hover:bg-hover bg-background ll-codeblock-svg')}<div class="rounded-md border border-outline p-3 border-radius-md overflow-x-auto ll-codeblock-code">%s</div></div>`
 	})
 );
 
-marked.use({ hooks: { postprocess: (html) => DOMPurify.sanitize(html) } });
-
 marked.use(style);
+
+marked.use({ hooks: { postprocess: (html) => DOMPurify.sanitize(html) } });
 
 /**
  * Direct render of markdown content

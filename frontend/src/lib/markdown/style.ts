@@ -21,6 +21,16 @@ function applyStyle(htmlString: string): string {
 		});
 	});
 
+	doc.querySelectorAll('div.ll-codeblock-copy').forEach((element) => {
+		let svg = element.querySelector('svg.ll-codeblock-svg')!;
+		let code = element.querySelector('div.ll-codeblock-code')!;
+		code.setAttribute('id', `codeblock-source-${crypto.randomUUID()}`);
+		svg.setAttribute(
+			'onclick',
+			`{let code = document.getElementById('${code.id}'); navigator.clipboard.writeText(code.textContent);}`
+		);
+	});
+
 	return doc.documentElement.outerHTML;
 }
 
