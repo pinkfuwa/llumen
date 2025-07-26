@@ -1,0 +1,22 @@
+FROM node:22-slim AS builder
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable
+COPY ./frontend /app
+WORKDIR /app
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
+RUN pnpm run build
+
+FROM alpine
+RUN apk add brotli nginx nginx-mod-http-brotli
+
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+
+COPY --from=builder /app/build /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

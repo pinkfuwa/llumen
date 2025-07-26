@@ -1,1 +1,23 @@
 @import 'tailwindcss';
+@theme {
+	--color-light: white;
+	--color-dark: black;
+	--color-background: #f8f8f8;
+	--color-outline: #ccc;
+	--color-hover: #eee;
+}
+
+.nobar {
+	-ms-overflow-style: none; /* Internet Explorer 10+ */
+	scrollbar-width: none; /* Firefox, Safari 18.2+, Chromium 121+ */
+}
+.nobar::-webkit-scrollbar {
+	display: none; /* Older Safari and Chromium */
+}
+
+.editor:focus-visible {
+	outline: none;
+}
+.editor::-webkit-scrollbar {
+	display: none;
+}
