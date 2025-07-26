@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { editable, value = $bindable(''), placeholder } = $props();
+	let { editable = false, value = $bindable(''), placeholder = '' } = $props();
 
 	import { renderMarkdown } from '$lib';
 
@@ -10,7 +10,7 @@
 	<textarea
 		class="editor field-sizing-content max-h-[60vh] max-w-[65vw] flex-grow resize-none overflow-scroll"
 		bind:value
-		placeholder={placeholder || 'Enter your question here'}
+		{placeholder}
 		rows={rows()}
 	></textarea>
 {:else}

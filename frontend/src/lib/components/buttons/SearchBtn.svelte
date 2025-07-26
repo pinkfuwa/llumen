@@ -1,15 +1,11 @@
 <script lang="ts">
-	let { value } = $props();
+	type Stage = 0 | 1 | 2;
+	let { value = $bindable(0) as Stage } = $props();
 	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { Atom, SearchCode, ZapOff } from '@lucide/svelte';
 
-	// stage 0: normal
-	// stage 1: search
-	// stage 2: deep
-	const maxStage = 2;
-
 	function nextStage() {
-		value = value == maxStage ? 0 : value + 1;
+		value = (value + 1) % 3;
 	}
 </script>
 
