@@ -1,13 +1,10 @@
 import type { CreateQueryResult, CreateMutationResult } from '@tanstack/svelte-query';
 import { createQuery, createMutation } from '@tanstack/svelte-query';
 import { derived, toStore } from 'svelte/store';
+import { sleep } from './api';
 
 export interface User {
 	username: string;
-}
-
-async function sleep(ms: number) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function GetUsers(token: () => string): CreateQueryResult<{ users: User[] }> {
@@ -32,11 +29,13 @@ export function GetUsers(token: () => string): CreateQueryResult<{ users: User[]
 	);
 }
 
-export function CreateUser(
-	username: () => string,
-	password: () => string,
-	token: () => string
-): CreateMutationResult<{}, Error, void, unknown> {
+interface CreateUserRequest {
+	username: string;
+	password: string;
+	token: string;
+}
+
+export function CreateUser(): CreateMutationResult<{}, Error, CreateUserRequest, unknown> {
 	const fetcher = async (username: string, password: string, token: string): Promise<{}> => {
 		console.log('mocking create user', { username, password, token });
 		await sleep(1000);
@@ -44,26 +43,18 @@ export function CreateUser(
 		throw new Error('User already exists');
 	};
 
-	const state = toStore(() => ({
-		username: username(),
-		password: password(),
-		token: token()
-	}));
-
-	return createMutation(
-		derived(state, (state) => ({
-			mutationKey: ['user', 'create', state.username, state.password],
-			mutationFn: (_: void) => {
-				return fetcher(state.username, state.password, state.token);
-			}
-		}))
-	);
+	return createMutation({
+		mutationFn: ({ username, password, token }: CreateUserRequest) => {
+			return fetcher(username, password, token);
+		}
+	});
 }
 
-export function Login(
-	username: () => string,
-	password: () => string
-): CreateMutationResult<{ token: string }, Error, void, unknown> {
+interface LoginRequest {
+	username: string;
+	password: string;
+}
+export function Login(): CreateMutationResult<{ token: string }, Error, LoginRequest, unknown> {
 	const fetcher = async (username: string, password: string) => {
 		console.log('mocking login', { username, password });
 		await sleep(1000);
@@ -72,17 +63,10 @@ export function Login(
 		}
 		throw new Error('Invalid credentials');
 	};
-	const state = toStore(() => ({
-		username: username(),
-		password: password()
-	}));
 
-	return createMutation(
-		derived(state, (state) => ({
-			mutationKey: ['user', 'login', state.username, state.password],
-			mutationFn: (_: void) => {
-				return fetcher(state.username, state.password);
-			}
-		}))
-	);
+	return createMutation({
+		mutationFn: ({ username, password }: LoginRequest) => {
+			return fetcher(username, password);
+		}
+	});
 }

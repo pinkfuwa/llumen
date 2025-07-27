@@ -1,7 +1,19 @@
 <script>
 	let { children } = $props();
+	import { goto } from '$app/navigation';
+	import Sidebar from '$lib/components/Sidebar.svelte';
+	import { useToken } from '$lib/store';
+
+	let token = useToken();
+
+	$effect(() => {
+		if (token.current == null) goto('/login');
+	});
 </script>
 
-<div class="flex h-screen flex-col justify-center">
-	{@render children()}
+<div class="flex h-screen flex-row">
+	<Sidebar />
+	<div class="flex h-screen grow flex-col justify-center">
+		{@render children()}
+	</div>
 </div>

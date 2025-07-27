@@ -5,22 +5,25 @@
 	let username = $state('');
 	let password = $state('');
 
-	let loginMutation = Login(
-		() => username,
-		() => password
-	);
+	let loginMutation = Login();
 
 	let token = useToken();
 
 	function handleSubmit(event: Event) {
 		event.preventDefault();
-		$loginMutation.mutate(undefined, {
-			onSuccess: (data) => {
-				console.log('Login successful');
-				goto('/chat/new');
-				token.current = data.token;
+		$loginMutation.mutate(
+			{
+				username: username,
+				password: password
+			},
+			{
+				onSuccess: (data) => {
+					console.log('Login successful');
+					goto('/chat/new');
+					token.current = data.token;
+				}
 			}
-		});
+		);
 	}
 </script>
 

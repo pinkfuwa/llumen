@@ -1,4 +1,6 @@
 <script lang="ts">
+	let { addition = false } = $props();
+
 	import { slide } from 'svelte/transition';
 	import SettingBtn from './buttons/SettingBtn.svelte';
 	import CollapseBtn from './buttons/CollapseBtn.svelte';
@@ -21,7 +23,7 @@
 				<CollapseHeader onclick={() => (collapsed = true)} />
 			</div>
 
-			<RoomPagination />
+			<RoomPagination {addition} />
 		</div>
 		<div class="mt-4 border-t border-outline pt-4">
 			<SettingBtn />

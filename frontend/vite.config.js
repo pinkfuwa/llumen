@@ -12,7 +12,7 @@ export default defineConfig({
 			outdir: './src/lib/paraglide'
 		})
 	],
-	build: { sourcemap: true },
+	build: { sourcemap: process.env.NOMAP != 'T' },
 	worker: {
 		format: 'es'
 	}

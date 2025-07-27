@@ -13,7 +13,7 @@
 </script>
 
 <div class="flex h-screen flex-row">
-	<Sidebar />
+	<Sidebar addition />
 	<div class="grow">
 		{@render children()}
 	</div>

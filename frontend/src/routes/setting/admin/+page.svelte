@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { GetUsers, CreateUser } from '$lib/api/user';
+	import { GetUsers } from '$lib/api/user';
 	import { Trash, CheckLine } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
@@ -7,7 +7,6 @@
 
 	let token = useToken();
 	let username = $state('');
-	let password = $state('');
 
 	let createdUser = $state('');
 
@@ -45,8 +44,7 @@
 	<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
 		Loading users...
 	</div>
-{/if}
-{#if $usersQuery.isSuccess}
+{:else if $usersQuery.isSuccess}
 	<ul
 		class="grid grid-cols-1 gap-2 border-b border-outline pb-2 text-lg lg:grid-cols-2 2xl:grid-cols-3"
 	>

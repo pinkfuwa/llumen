@@ -10,19 +10,22 @@
 	let username = params.username;
 	let password = $state('');
 
-	const createUserMutation = CreateUser(
-		() => username,
-		() => password,
-		() => token.current || ''
-	);
+	const createUserMutation = CreateUser();
 
 	function handleSubmit(event: Event) {
 		event.preventDefault();
-		$createUserMutation.mutate(undefined, {
-			onSuccess: () => {
-				goto('/setting/admin');
+		$createUserMutation.mutate(
+			{
+				username: username,
+				password: password,
+				token: token.current!
+			},
+			{
+				onSuccess: () => {
+					goto('/setting/admin');
+				}
 			}
-		});
+		);
 	}
 </script>
 
