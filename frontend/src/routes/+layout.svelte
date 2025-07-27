@@ -12,7 +12,7 @@
 
 	let language = useLanguage();
 	$effect(() => {
-		setLocale(language.current);
+		setLocale($language);
 	});
 </script>
 
