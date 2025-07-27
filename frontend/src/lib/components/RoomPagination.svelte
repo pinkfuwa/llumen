@@ -4,11 +4,9 @@
 	import { observeIntersection } from '@sv-use/core';
 	import { Plus, Ellipsis } from '@lucide/svelte';
 	import ChatroomBtn from './buttons/ChatroomBtn.svelte';
-	import { listRoom } from '$lib/api/chatroom';
-	import { useToken } from '$lib/store';
+	import { useRooms } from '$lib/api/chatroom';
 
-	let token = useToken();
-	let roomlist = listRoom(() => token.current || '');
+	let roomlist = useRooms();
 
 	let divNode = $state();
 

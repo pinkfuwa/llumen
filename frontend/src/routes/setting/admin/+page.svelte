@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { GetUsers } from '$lib/api/user';
+	import { useUsers } from '$lib/api/user';
 	import { Trash, CheckLine } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
@@ -10,7 +10,7 @@
 
 	let createdUser = $state('');
 
-	const usersQuery = GetUsers(() => token.current || '');
+	const usersQuery = useUsers(() => token.current || '');
 </script>
 
 {#if createdUser.length != 0}

@@ -1,12 +1,9 @@
-import type {
-	CreateQueryResult,
-	CreateMutationResult,
-	CreateInfiniteQueryResult
-} from '@tanstack/svelte-query';
+import type { CreateMutationResult, CreateInfiniteQueryResult } from '@tanstack/svelte-query';
 import { useQueryClient } from '@tanstack/svelte-query';
-import { createQuery, createMutation, createInfiniteQuery } from '@tanstack/svelte-query';
+import { createMutation, createInfiniteQuery } from '@tanstack/svelte-query';
 import { derived, toStore } from 'svelte/store';
 import { sleep } from './api';
+import { useToken } from '$lib/store';
 
 export interface Rooms {
 	list: Room[];
@@ -20,9 +17,9 @@ export interface Room {
 
 const pageSize = 12;
 
-export function listRoom(
-	token: () => string
-): CreateInfiniteQueryResult<{ pages: Rooms[] }, Error> {
+export function useRooms(): CreateInfiniteQueryResult<{ pages: Rooms[] }, Error> {
+	const token = useToken();
+
 	const fetcher = async (tokenValue: string, page: number) => {
 		console.log('mocking list room', { tokenValue, page });
 		await sleep(1000);
@@ -38,7 +35,7 @@ export function listRoom(
 		};
 	};
 
-	const state = toStore(token);
+	const state = toStore(() => token.current || '');
 
 	return createInfiniteQuery(
 		derived(state, (tokenValue) => ({
@@ -58,7 +55,6 @@ export function listRoom(
 
 export interface CreateRoomRequest {
 	firstMessage: string;
-	token: string;
 }
 
 export function createRoom(): CreateMutationResult<
@@ -67,23 +63,28 @@ export function createRoom(): CreateMutationResult<
 	CreateRoomRequest,
 	unknown
 > {
+	const token = useToken();
+	const state = toStore(() => token.current || '');
+
 	const queryClient = useQueryClient();
 
-	const fetcher = async (payload: CreateRoomRequest) => {
+	const fetcher = async (payload: CreateRoomRequest, token: string) => {
 		console.log('mocking create room', payload);
-		if (payload.token !== '<not-a-token>') throw new Error('Invalid token');
+		if (token !== '<not-a-token>') throw new Error('Invalid token');
 
 		return { title: 'New Room' };
 	};
 
-	return createMutation({
-		mutationFn: (payload: CreateRoomRequest) => fetcher(payload),
-		// TODO: Optimistic update of infiniteQuery
-		onSuccess: (data, payload) => {
-			queryClient.setQueryData(['rooms', payload.token], (old: Rooms) => {
-				let list = [{ id: 'new', title: 'New Room' }, ...old.list];
-				return { list, next: old.next };
-			});
-		}
-	});
+	return createMutation(
+		derived(state, (state) => ({
+			mutationFn: (payload: CreateRoomRequest) => fetcher(payload, state),
+			// TODO: Optimistic update of infiniteQuery
+			onSuccess: (data: { title: string }, payload: CreateRoomRequest) => {
+				queryClient.setQueryData(['rooms', state], (old: Rooms) => {
+					let list = [{ id: 'new', title: 'New Room' }, ...old.list];
+					return { list, next: old.next };
+				});
+			}
+		}))
+	);
 }

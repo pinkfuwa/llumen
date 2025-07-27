@@ -2,12 +2,14 @@ import type { CreateQueryResult, CreateMutationResult } from '@tanstack/svelte-q
 import { createQuery, createMutation } from '@tanstack/svelte-query';
 import { derived, toStore } from 'svelte/store';
 import { sleep } from './api';
+import { useToken } from '$lib/store';
 
 export interface User {
 	username: string;
 }
 
-export function GetUsers(token: () => string): CreateQueryResult<{ users: User[] }> {
+export function useUsers(): CreateQueryResult<{ users: User[] }> {
+	const token = useToken();
 	const fetcher = async (token: string): Promise<{}> => {
 		console.log('mocking get users', { token });
 		await sleep(1000);
@@ -15,15 +17,13 @@ export function GetUsers(token: () => string): CreateQueryResult<{ users: User[]
 		return { users: [{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }] };
 	};
 
-	const state = toStore(() => ({
-		token: token()
-	}));
+	const state = toStore(() => token.current || '');
 
 	return createQuery(
 		derived(state, (state) => ({
 			queryKey: ['users'],
 			queryFn: () => {
-				return fetcher(state.token);
+				return fetcher(state);
 			}
 		}))
 	);
