@@ -50,7 +50,7 @@
 					<button
 						class="flex items-center"
 						onclick={() => {
-							token.current = '';
+							token.set('');
 							goto('/');
 						}}
 					>

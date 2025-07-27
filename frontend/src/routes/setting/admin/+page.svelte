@@ -3,14 +3,12 @@
 	import { Trash, CheckLine } from '@lucide/svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
-	import { useToken } from '$lib/store';
 
-	let token = useToken();
 	let username = $state('');
 
 	let createdUser = $state('');
 
-	const usersQuery = useUsers(() => token.current || '');
+	const usersQuery = useUsers();
 </script>
 
 {#if createdUser.length != 0}

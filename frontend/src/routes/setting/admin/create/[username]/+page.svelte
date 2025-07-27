@@ -18,7 +18,7 @@
 			{
 				username: username,
 				password: password,
-				token: token.current!
+				token: $token
 			},
 			{
 				onSuccess: () => {

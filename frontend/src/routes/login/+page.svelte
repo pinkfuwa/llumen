@@ -18,9 +18,9 @@
 			},
 			{
 				onSuccess: (data) => {
-					console.log('Login successful');
+					console.log('Login successful', data);
 					goto('/chat/new');
-					token.current = data.token;
+					token.set(data.token);
 				}
 			}
 		);

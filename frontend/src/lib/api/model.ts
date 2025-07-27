@@ -51,10 +51,9 @@ export function useModels(): CreateQueryResult<Model[]> {
 			}
 		];
 	};
-	let state = toStore(() => token.current || '');
 
 	return createQuery(
-		derived(state, (stateValue) => ({
+		derived(token, (stateValue) => ({
 			queryKey: ['models', stateValue],
 			queryFn: async () => fetcher(stateValue)
 		}))

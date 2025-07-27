@@ -31,15 +31,11 @@
 			</a>
 		</li>
 	{/if}
-	{#if $roomlist.isSuccess}
-		{#each $roomlist.data!.pages as list}
-			{#each list as room}
-				<a href="/chat/{encodeURIComponent(room.id)}">
-					<ChatroomBtn name={room.title} />
-				</a>
-			{/each}
-		{/each}
-	{/if}
+	{#each $roomlist.data as room}
+		<a href="/chat/{encodeURIComponent(room.id)}">
+			<ChatroomBtn name={room.title} />
+		</a>
+	{/each}
 
 	{#if $roomlist.hasNextPage}
 		<li bind:this={divNode}>

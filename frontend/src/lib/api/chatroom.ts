@@ -1,9 +1,10 @@
 import type { CreateMutationResult, CreateInfiniteQueryResult } from '@tanstack/svelte-query';
 import { createMutation, createInfiniteQuery } from '@tanstack/svelte-query';
-import { derived, toStore } from 'svelte/store';
+import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { sleep } from './api';
-import { useRoomPaginateSession, useToken } from '$lib/store';
+import { useToken } from '$lib/store';
 import type { Mode } from './model';
+import { goto } from '$app/navigation';
 
 export interface Room {
 	id: number;
@@ -11,7 +12,18 @@ export interface Room {
 	createdAt: number;
 }
 
-export function useRooms(): CreateInfiniteQueryResult<{ pages: Room[][] }, Error> {
+const mockDB = Array.from({ length: 40 }, (_, i) => ({
+	id: i + 1,
+	title: `Room ${i + 1}`,
+	createdAt: Date.now() - (i + 1) * 10000
+}));
+
+const roomPaginateSession = writable({ createdAt: Date.now(), id: -1 });
+const useRoomPaginateSession = () => roomPaginateSession;
+const recentRoom = writable([]);
+const useRecentRoom: () => Writable<Room[]> = () => recentRoom;
+
+function useRoomsQuery(): CreateInfiniteQueryResult<{ pages: Room[][] }, Error> {
 	const token = useToken();
 	const session = useRoomPaginateSession();
 
@@ -19,11 +31,7 @@ export function useRooms(): CreateInfiniteQueryResult<{ pages: Room[][] }, Error
 		console.log('mocking list room', { token, last });
 		await sleep(1000);
 		if (token !== '<not-a-token>') throw new Error('Invalid token');
-		const mockDB = Array.from({ length: 40 }, (_, i) => ({
-			id: i + 1,
-			title: `Room ${i + 1}`,
-			createdAt: Date.now() - (i + 1) * 10000
-		}));
+
 		const result = mockDB
 			.filter((x) => x.createdAt < last.createdAt)
 			.slice(0, 12)
@@ -32,10 +40,8 @@ export function useRooms(): CreateInfiniteQueryResult<{ pages: Room[][] }, Error
 		return result.sort((a, b) => b.createdAt - a.createdAt);
 	};
 
-	const tokenStore = toStore(() => token.current || '');
-
 	return createInfiniteQuery(
-		derived([session, tokenStore], ([$session, $token]) => ({
+		derived([session, token], ([$session, $token]) => ({
 			queryKey: ['rooms', 'paged', $token, $session],
 			queryFn: ({ pageParam }: { pageParam: { createdAt: number; id: number } }) =>
 				fetcher($token, pageParam),
@@ -53,6 +59,29 @@ export function useRooms(): CreateInfiniteQueryResult<{ pages: Room[][] }, Error
 	);
 }
 
+export function useRooms(): Readable<{
+	data: Room[];
+	fetchNextPage: () => void;
+	hasNextPage: boolean;
+	isFetching: boolean;
+	isSuccess: boolean;
+}> {
+	const roomQuery = useRoomsQuery();
+	const recentRoom = useRecentRoom();
+
+	return derived([recentRoom, roomQuery], ([$recentRoom, $roomQuery]) => {
+		const pages = $roomQuery.data?.pages ?? [];
+		const rooms = [...$recentRoom, ...pages.flat()];
+		return {
+			data: rooms,
+			fetchNextPage: () => $roomQuery.fetchNextPage(),
+			hasNextPage: $roomQuery.hasNextPage,
+			isFetching: $roomQuery.isFetched,
+			isSuccess: $roomQuery.isSuccess
+		};
+	});
+}
+
 export interface CreateRoomRequest {
 	firstMessage: string;
 	modelId: string;
@@ -62,7 +91,7 @@ export interface CreateRoomRequest {
 
 export function createRoom(): CreateMutationResult<Room, Error, CreateRoomRequest, unknown> {
 	const token = useToken();
-	const state = toStore(() => token.current || '');
+	const recentRoom = useRecentRoom();
 
 	const fetcher = async (payload: CreateRoomRequest, token: string): Promise<Room> => {
 		console.log('mocking create room', { payload, token });
@@ -72,8 +101,12 @@ export function createRoom(): CreateMutationResult<Room, Error, CreateRoomReques
 	};
 
 	return createMutation(
-		derived(state, (state) => ({
-			mutationFn: (payload: CreateRoomRequest) => fetcher(payload, state)
+		derived([token, recentRoom], ([$token, $recentRoom]) => ({
+			mutationFn: (payload: CreateRoomRequest) => fetcher(payload, $token),
+			onSuccess: (data: Room) => {
+				recentRoom.set([data, ...$recentRoom]);
+				goto('/chat/' + encodeURIComponent(data.id));
+			}
 		}))
 	);
 }

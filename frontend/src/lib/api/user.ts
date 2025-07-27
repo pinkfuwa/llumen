@@ -10,6 +10,7 @@ export interface User {
 
 export function useUsers(): CreateQueryResult<{ users: User[] }> {
 	const token = useToken();
+
 	const fetcher = async (token: string): Promise<{}> => {
 		console.log('mocking get users', { token });
 		await sleep(1000);
@@ -17,13 +18,11 @@ export function useUsers(): CreateQueryResult<{ users: User[] }> {
 		return { users: [{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }] };
 	};
 
-	const state = toStore(() => token.current || '');
-
 	return createQuery(
-		derived(state, (state) => ({
+		derived(token, (token) => ({
 			queryKey: ['users'],
 			queryFn: () => {
-				return fetcher(state);
+				return fetcher(token);
 			}
 		}))
 	);
