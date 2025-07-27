@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useModels } from '$lib/api/model';
-	let { model: value = $bindable('0') } = $props();
+	let { value = $bindable('0') } = $props();
 
 	let models = useModels();
 

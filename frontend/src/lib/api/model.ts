@@ -4,15 +4,22 @@ import { derived, toStore } from 'svelte/store';
 import { sleep } from './api';
 import { useToken } from '$lib/store';
 
+export enum Mode {
+	DEEP = 2,
+	SEARCH = 1,
+	NORMAL = 0
+}
+
+export interface Capabilty {
+	image: boolean;
+	audio: boolean;
+	document: boolean;
+	video: boolean;
+}
 interface Model {
 	displayName: string;
 	modelId: string;
-	capacity: {
-		image: boolean;
-		audio: boolean;
-		document: boolean;
-		video: boolean;
-	};
+	capacity: Capabilty;
 }
 
 export function useModels(): CreateQueryResult<Model[]> {

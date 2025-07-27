@@ -4,6 +4,7 @@ import { createMutation, createInfiniteQuery } from '@tanstack/svelte-query';
 import { derived, toStore } from 'svelte/store';
 import { sleep } from './api';
 import { useToken } from '$lib/store';
+import type { Mode } from './model';
 
 export interface Rooms {
 	list: Room[];
@@ -55,36 +56,38 @@ export function useRooms(): CreateInfiniteQueryResult<{ pages: Rooms[] }, Error>
 
 export interface CreateRoomRequest {
 	firstMessage: string;
+	modelId: string;
+	files: File[];
+	mode: Mode;
 }
 
-export function createRoom(): CreateMutationResult<
-	{ title: string },
-	Error,
-	CreateRoomRequest,
-	unknown
-> {
+export function createRoom(): CreateMutationResult<Room, Error, CreateRoomRequest, unknown> {
 	const token = useToken();
 	const state = toStore(() => token.current || '');
 
 	const queryClient = useQueryClient();
 
 	const fetcher = async (payload: CreateRoomRequest, token: string) => {
-		console.log('mocking create room', payload);
+		console.log('mocking create room', payload, token);
 		if (token !== '<not-a-token>') throw new Error('Invalid token');
 
-		return { title: 'New Room' };
+		return { id: 'new-chat-room-id', title: 'New Room' };
 	};
 
 	return createMutation(
 		derived(state, (state) => ({
-			mutationFn: (payload: CreateRoomRequest) => fetcher(payload, state),
+			mutationFn: (payload: CreateRoomRequest) => fetcher(payload, state)
 			// TODO: Optimistic update of infiniteQuery
-			onSuccess: (data: { title: string }, payload: CreateRoomRequest) => {
-				queryClient.setQueryData(['rooms', state], (old: Rooms) => {
-					let list = [{ id: 'new', title: 'New Room' }, ...old.list];
-					return { list, next: old.next };
-				});
-			}
+			//
+			// This will override default onSuccess callback
+			// Also, setQueryData didn't work for some reason
+			//
+			// onSuccess: (data: Room, _: CreateRoomRequest) => {
+			// 	queryClient.setQueryData(['rooms', state], (old: Rooms) => {
+			// 		let list = [data, ...old.list];
+			// 		return { list, next: old.next };
+			// 	});
+			// }
 		}))
 	);
 }
