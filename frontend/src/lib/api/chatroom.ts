@@ -1,54 +1,53 @@
 import type { CreateMutationResult, CreateInfiniteQueryResult } from '@tanstack/svelte-query';
-import { useQueryClient } from '@tanstack/svelte-query';
 import { createMutation, createInfiniteQuery } from '@tanstack/svelte-query';
 import { derived, toStore } from 'svelte/store';
 import { sleep } from './api';
-import { useToken } from '$lib/store';
+import { useRoomPaginateSession, useToken } from '$lib/store';
 import type { Mode } from './model';
 
-export interface Rooms {
-	list: Room[];
-	next: boolean;
-}
-
 export interface Room {
-	id: string;
+	id: number;
 	title: string;
+	createdAt: number;
 }
 
-const pageSize = 12;
-
-export function useRooms(): CreateInfiniteQueryResult<{ pages: Rooms[] }, Error> {
+export function useRooms(): CreateInfiniteQueryResult<{ pages: Room[][] }, Error> {
 	const token = useToken();
+	const session = useRoomPaginateSession();
 
-	const fetcher = async (tokenValue: string, page: number) => {
-		console.log('mocking list room', { tokenValue, page });
+	const fetcher = async (token: string, last: { createdAt: number; id: number }) => {
+		console.log('mocking list room', { token, last });
 		await sleep(1000);
-		if (tokenValue !== '<not-a-token>') throw new Error('Invalid token');
-		if (page > 7) return { list: [], next: false };
-		const list = Array.from({ length: pageSize }, (_, i) => ({
-			id: `${page}-${i}`,
-			title: `Room ${page}-${i}`
+		if (token !== '<not-a-token>') throw new Error('Invalid token');
+		const mockDB = Array.from({ length: 40 }, (_, i) => ({
+			id: i + 1,
+			title: `Room ${i + 1}`,
+			createdAt: Date.now() - (i + 1) * 10000
 		}));
-		return {
-			list,
-			next: page < 7
-		};
+		const result = mockDB
+			.filter((x) => x.createdAt < last.createdAt)
+			.slice(0, 12)
+			.sort((a, b) => b.createdAt - a.createdAt);
+		console.log('result', result);
+		return result.sort((a, b) => b.createdAt - a.createdAt);
 	};
 
-	const state = toStore(() => token.current || '');
+	const tokenStore = toStore(() => token.current || '');
 
 	return createInfiniteQuery(
-		derived(state, (tokenValue) => ({
-			queryKey: ['rooms', tokenValue],
-			queryFn: ({ pageParam }: { pageParam: number }) => fetcher(tokenValue, pageParam),
-			initialPageParam: 0,
-			getNextPageParam: (lastPage: Rooms, allPages: Rooms[]) => {
-				console.log(lastPage);
-				if (lastPage.next) {
-					return allPages.length;
-				}
-				return undefined;
+		derived([session, tokenStore], ([$session, $token]) => ({
+			queryKey: ['rooms', 'paged', $token, $session],
+			queryFn: ({ pageParam }: { pageParam: { createdAt: number; id: number } }) =>
+				fetcher($token, pageParam),
+			initialPageParam: $session,
+			getNextPageParam: (lastPage: Room[]) => {
+				const last = lastPage.at(-1);
+				return last
+					? {
+							createdAt: last.createdAt,
+							id: last.id
+						}
+					: undefined;
 			}
 		}))
 	);
@@ -65,29 +64,16 @@ export function createRoom(): CreateMutationResult<Room, Error, CreateRoomReques
 	const token = useToken();
 	const state = toStore(() => token.current || '');
 
-	const queryClient = useQueryClient();
-
-	const fetcher = async (payload: CreateRoomRequest, token: string) => {
-		console.log('mocking create room', payload, token);
+	const fetcher = async (payload: CreateRoomRequest, token: string): Promise<Room> => {
+		console.log('mocking create room', { payload, token });
 		if (token !== '<not-a-token>') throw new Error('Invalid token');
 
-		return { id: 'new-chat-room-id', title: 'New Room' };
+		return { id: Date.now(), title: 'New Room', createdAt: Date.now() };
 	};
 
 	return createMutation(
 		derived(state, (state) => ({
 			mutationFn: (payload: CreateRoomRequest) => fetcher(payload, state)
-			// TODO: Optimistic update of infiniteQuery
-			//
-			// This will override default onSuccess callback
-			// Also, setQueryData didn't work for some reason
-			//
-			// onSuccess: (data: Room, _: CreateRoomRequest) => {
-			// 	queryClient.setQueryData(['rooms', state], (old: Rooms) => {
-			// 		let list = [data, ...old.list];
-			// 		return { list, next: old.next };
-			// 	});
-			// }
 		}))
 	);
 }

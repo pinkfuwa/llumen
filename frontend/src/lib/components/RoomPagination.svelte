@@ -32,7 +32,7 @@
 		</li>
 	{/if}
 	{#if $roomlist.isSuccess}
-		{#each $roomlist.data!.pages as { list }}
+		{#each $roomlist.data!.pages as list}
 			{#each list as room}
 				<a href="/chat/{encodeURIComponent(room.id)}">
 					<ChatroomBtn name={room.title} />

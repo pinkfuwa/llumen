@@ -40,7 +40,6 @@
 					},
 					{
 						onSuccess: (data) => {
-							console.log('!', { data });
 							goto('/chat/' + encodeURIComponent(data.id));
 						}
 					}
