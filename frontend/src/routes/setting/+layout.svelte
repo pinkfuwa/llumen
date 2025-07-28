@@ -17,7 +17,7 @@
 ></div>
 <div class="fixed top-0 left-0 z-5 flex h-screen w-screen items-center justify-center">
 	<div
-		class="h-[calc(70vh-2rem)] w-[calc(80%-2rem)] overflow-y-scroll rounded-lg bg-background p-4 shadow-lg backdrop-opacity-100"
+		class="h-[calc(70vh-2rem)] max-w-[750px] grow overflow-y-scroll rounded-lg bg-background p-4 shadow-lg backdrop-opacity-100 lg:max-w-[870px]"
 		in:fade={{ duration: 180 }}
 		out:fade={{ duration: 180 }}
 	>

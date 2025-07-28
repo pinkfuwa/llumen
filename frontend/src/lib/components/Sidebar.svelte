@@ -16,7 +16,7 @@
 	<div
 		in:slide={{ duration: 180, axis: 'x' }}
 		out:slide={{ duration: 180, axis: 'x' }}
-		class="flex h-screen w-80 flex-col justify-between border-r border-outline bg-background p-5"
+		class="flex h-screen w-64 flex-col justify-between border-r border-outline bg-background p-5 lg:w-80"
 	>
 		<div>
 			<div class="mb-4 border-b border-outline pb-1">

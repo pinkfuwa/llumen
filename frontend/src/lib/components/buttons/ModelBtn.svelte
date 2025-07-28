@@ -19,7 +19,7 @@
 		{value}
 		required
 	>
-		{#each $models.data! as model, i}
+		{#each $models.data! as model}
 			<option value={model.modelId}>{model.displayName}</option>
 		{/each}
 	</select>
