@@ -10,7 +10,8 @@ function applyStyle(htmlString: string): string {
 		['ul', 'list-disc ml-6'],
 		['hr', 'border-outline'],
 		['ol', 'list-decimal ml-6'],
-		['p > code', 'bg-background p-1 rounded-md']
+		['p > code', 'bg-background p-1 rounded-md'],
+		['pre', 'p-3 overflow-x-auto']
 	]);
 
 	styleMap.forEach((classValue, cssQuery) => {

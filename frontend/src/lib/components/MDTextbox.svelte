@@ -15,7 +15,7 @@
 	></textarea>
 {:else}
 	<div
-		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-scroll"
+		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-scroll wrap-break-word"
 	>
 		{#await renderMarkdown(value)}
 			<div class="relative">
