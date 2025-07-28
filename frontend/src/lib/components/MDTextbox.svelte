@@ -17,7 +17,7 @@
 	<div
 		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-scroll wrap-break-word"
 	>
-		{#await renderMarkdown(value)}
+		{#await Promise.resolve(renderMarkdown(value))}
 			<div class="relative">
 				<div class="mb-4 flex items-center justify-center p-6 text-lg">rendering markdown</div>
 				<textarea class="h-full w-full resize-none opacity-0" disabled rows={rows()}></textarea>

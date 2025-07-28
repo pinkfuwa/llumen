@@ -12,7 +12,7 @@ export interface Room {
 	createdAt: number;
 }
 
-const mockDB = Array.from({ length: 40 }, (_, i) => ({
+const mockDB = Array.from({ length: 307 }, (_, i) => ({
 	id: i + 1,
 	title: `Room ${i + 1}`,
 	createdAt: Date.now() - (i + 1) * 10000
@@ -34,9 +34,8 @@ function useRoomsQuery(): CreateInfiniteQueryResult<{ pages: Room[][] }, Error> 
 
 		const result = mockDB
 			.filter((x) => x.createdAt < last.createdAt)
-			.slice(0, 12)
+			.slice(0, 30)
 			.sort((a, b) => b.createdAt - a.createdAt);
-		console.log('result', result);
 		return result.sort((a, b) => b.createdAt - a.createdAt);
 	};
 

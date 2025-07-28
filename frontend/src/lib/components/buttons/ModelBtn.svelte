@@ -7,7 +7,6 @@
 	$effect(() => {
 		if ($models.isFetched) {
 			let lastModel = $models.data?.at(-1);
-			console.log('set to', lastModel);
 			if (lastModel) value = lastModel.modelId;
 		}
 	});

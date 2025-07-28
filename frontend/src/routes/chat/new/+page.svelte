@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { createDropZone } from '@sv-use/core';
 	import MdTextbox from '$lib/components/MDTextbox.svelte';
 	import SearchBtn from '$lib/components/buttons/SearchBtn.svelte';
 	import UploadBtn from '$lib/components/buttons/UploadBtn.svelte';
@@ -16,12 +17,32 @@
 	let content = $state('');
 
 	let createRoomMutation = createRoom();
+
+	let container = $state<HTMLElement | null>();
+
+	const dropZone = createDropZone(() => container, {
+		allowedDataTypes: '*',
+		multiple: false,
+		onDrop(files: File[] | null) {
+			if (files != null) {
+				files.forEach((f) => files.push(f));
+			}
+		}
+	});
 </script>
 
 <h1 class="mx-auto mb-8 text-4xl font-light lg:text-5xl">Ask anything</h1>
 <div
-	class="min-h-sm item mx-auto rounded-md border border-outline p-2 md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
+	class="min-h-sm item relative mx-auto rounded-md border border-outline p-2 md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
+	bind:this={container}
 >
+	{#if dropZone.isOver && editable}
+		<div
+			class="absolute top-0 -left-0 flex h-full w-full items-center justify-center rounded-lg bg-light text-2xl"
+		>
+			Upload File
+		</div>
+	{/if}
 	{#if files.length != 0}
 		<div class="mb-2 overflow-scroll border-b border-outline pb-2">
 			<FileGroup {files} />

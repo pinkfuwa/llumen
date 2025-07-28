@@ -6,8 +6,8 @@ import getShikiExt from './shiki';
 import { useTheme } from '$lib/store';
 import { get } from 'svelte/store';
 
-function themedMark(theme: 'light' | string): Marked {
-	let marked = new Marked();
+export function themedMark(theme: 'light' | string): Marked {
+	let marked = new Marked({ async: false });
 
 	marked.use(emojiExt);
 	marked.use(getShikiExt(theme == 'light' ? 'github-light' : 'github-dark'));
@@ -22,12 +22,9 @@ function themedMark(theme: 'light' | string): Marked {
  * @param content
  * @returns
  */
-export async function render(content: string): Promise<string> {
+export function render(content: string): string {
 	let theme = useTheme();
 	let marked = themedMark(get(theme));
-	const html = marked.parse(content);
 
-	return html instanceof Promise ? await html : html;
+	return marked.parse(content) as string;
 }
-
-render(['# test code block', '```javascript', "console.log('hello world');", '```'].join('\n'));
