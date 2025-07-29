@@ -1,10 +1,11 @@
 import type { CreateMutationResult, CreateInfiniteQueryResult } from '@tanstack/svelte-query';
 import { createMutation, createInfiniteQuery } from '@tanstack/svelte-query';
-import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import { sleep } from './api';
 import { useToken } from '$lib/store';
 import type { Mode } from './model';
 import { goto } from '$app/navigation';
+import { useSWR } from 'sswr';
 
 export interface Room {
 	id: number;
@@ -12,7 +13,7 @@ export interface Room {
 	createdAt: number;
 }
 
-const mockDB = Array.from({ length: 307 }, (_, i) => ({
+export const mockDB = Array.from({ length: 307 }, (_, i) => ({
 	id: i + 1,
 	title: `Room ${i + 1}`,
 	createdAt: Date.now() - (i + 1) * 10000
@@ -78,6 +79,111 @@ export function useRooms(): Readable<{
 			isFetching: $roomQuery.isFetched,
 			isSuccess: $roomQuery.isSuccess
 		};
+	});
+}
+
+const pageSize = 10;
+
+export interface SwrResult<T> {
+	data: Writable<T | undefined>;
+	revalidate: () => Promise<T>;
+	isLoading: Readable<boolean>;
+	isValid: Readable<boolean>;
+}
+
+export class RoomSession {
+	page = 0;
+	id?: number;
+	isNormalDirection: boolean;
+	constructor();
+	constructor(id: number, isNormalDirection: boolean);
+	constructor(id?: number, isNormalDirection: boolean = true) {
+		this.id = id;
+		this.isNormalDirection = isNormalDirection;
+	}
+	next(id: number): RoomSession {
+		const session = new RoomSession(id, true);
+		session.page = this.page + 1;
+		return session;
+	}
+	previous(id: number): RoomSession {
+		const session = new RoomSession(id, false);
+		session.page = this.page - 1;
+		return session;
+	}
+}
+
+export function usePagedRoom(session: RoomSession): SwrResult<{
+	nextSession?: RoomSession;
+	previousSession?: RoomSession;
+	list: Room[];
+}> {
+	const token = useToken();
+
+	class Fetcher {
+		idRange?: [number, number];
+		session: RoomSession;
+		constructor(session: RoomSession) {
+			this.session = session;
+		}
+		get key() {
+			return String(this.session.page);
+		}
+		async fetchHttp(token: string, session: RoomSession) {
+			await sleep(1000);
+			console.log('mocking list room', { token, session });
+			if (token !== '<not-a-token>') throw new Error('Invalid token');
+			if (session.isNormalDirection) {
+				if (session.id == undefined) return mockDB.sort((a, b) => b.id - a.id).slice(0, pageSize);
+				return mockDB
+					.sort((a, b) => b.id - a.id)
+					.filter((x) => x.id <= (session.id || -Infinity))
+					.slice(0, pageSize);
+			}
+			if (session.id == undefined) throw new Error('reverse paginator must start with id');
+			return mockDB
+				.sort((a, b) => a.id - b.id)
+				.filter((x) => x.id > (session.id || -Infinity))
+				.slice(0, pageSize);
+		}
+		async fetch(token: string) {
+			const list = await this.fetchHttp(token, this.session);
+
+			if (this.idRange) {
+				const max = Math.max(...this.idRange);
+				const min = Math.min(...this.idRange);
+				return list.filter((x) => max >= x.id && x.id >= min);
+			}
+			if (list.length != 0) this.session.id = list[0].id;
+
+			this.idRange = [list[list.length - 1].id, list[0].id];
+
+			return list;
+		}
+		async fetchPage(token: string): Promise<{
+			nextSession?: RoomSession;
+			previousSession?: RoomSession;
+			list: Room[];
+		}> {
+			const list = await this.fetch(token);
+			let nextSession: RoomSession | undefined;
+			let previousSession: RoomSession | undefined;
+			if (list.length >= pageSize) {
+				if (this.session.isNormalDirection) {
+					nextSession = this.session.next(list.at(-1)?.id! - 1);
+				} else {
+					previousSession = this.session.previous(list.at(0)?.id!);
+				}
+			}
+			console.log({ list, nextSession, previousSession });
+			return { list, nextSession, previousSession };
+		}
+	}
+
+	const fetcher = new Fetcher(session);
+
+	return useSWR(() => JSON.stringify([get(token), fetcher.key]), {
+		fetcher: (encoded: string) => fetcher.fetchPage(JSON.parse(encoded)[0])
 	});
 }
 
