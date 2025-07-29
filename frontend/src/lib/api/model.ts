@@ -1,8 +1,5 @@
-import type { CreateQueryResult } from '@tanstack/svelte-query';
-import { createQuery } from '@tanstack/svelte-query';
-import { derived, toStore } from 'svelte/store';
 import { sleep } from './api';
-import { useToken } from '$lib/store';
+import { useQuery, type QueryResult } from './state/query.svelte';
 
 export enum Mode {
 	DEEP = 2,
@@ -22,10 +19,8 @@ interface Model {
 	capacity: Capabilty;
 }
 
-export function useModels(): CreateQueryResult<Model[]> {
-	const token = useToken();
-
-	const fetcher = async (token: string) => {
+export function useModels(): QueryResult<Model[]> {
+	const fetcher = async (token: string): Promise<Model[]> => {
 		console.log('mocking list models', { token });
 		await sleep(1000);
 		return [
@@ -52,10 +47,11 @@ export function useModels(): CreateQueryResult<Model[]> {
 		];
 	};
 
-	return createQuery(
-		derived(token, (stateValue) => ({
-			queryKey: ['models', stateValue],
-			queryFn: async () => fetcher(stateValue)
-		}))
-	);
+	return useQuery({
+		param: () => {},
+		fetcher: function (_params: void, token?: string): Promise<Model[]> {
+			if (!token) throw new Error('Token is required');
+			return fetcher(token);
+		}
+	});
 }

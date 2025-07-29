@@ -1,11 +1,8 @@
 <script lang="ts">
 	let { addition = false } = $props();
-	import { usePagedRoom, RoomSession } from '$lib/api/chatroom';
 
-	import { observeIntersection } from '@sv-use/core';
-	import { Plus, Ellipsis } from '@lucide/svelte';
-	import { useRooms } from '$lib/api/chatroom';
-	import DoublePage from './room/DoublePage.svelte';
+	import { Plus } from '@lucide/svelte';
+	import ForwardPage from './room/ForwardPage.svelte';
 </script>
 
 <ul class="nobar max-h-[calc(100vh-185px)] overflow-y-scroll text-sm">
@@ -25,5 +22,5 @@
 			<ChatroomBtn name={room.title} />
 		</a>
 	{/each} -->
-	<DoublePage />
+	<ForwardPage />
 </ul>

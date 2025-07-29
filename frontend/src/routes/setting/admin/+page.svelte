@@ -8,7 +8,7 @@
 
 	let createdUser = $state('');
 
-	const usersQuery = useUsers();
+	const { isLoading, data } = useUsers();
 </script>
 
 {#if createdUser.length != 0}
@@ -38,15 +38,15 @@
 	</div>
 </div>
 
-{#if $usersQuery.isPending}
+{#if $isLoading}
 	<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
 		Loading users...
 	</div>
-{:else if $usersQuery.isSuccess}
+{:else if $data != undefined}
 	<ul
 		class="grid grid-cols-1 gap-2 border-b border-outline pb-2 text-lg lg:grid-cols-2 2xl:grid-cols-3"
 	>
-		{#each $usersQuery.data.users as user}
+		{#each $data as user}
 			<li class="flex items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4">
 				{user.username}
 				<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />

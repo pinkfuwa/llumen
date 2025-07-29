@@ -1,50 +1,46 @@
-import type { CreateQueryResult, CreateMutationResult } from '@tanstack/svelte-query';
-import { createQuery, createMutation } from '@tanstack/svelte-query';
-import { derived, toStore } from 'svelte/store';
 import { sleep } from './api';
 import { useToken } from '$lib/store';
+import { useMutate, type mutationResult } from './state/mutate';
+import { useQuery, type QueryResult } from './state/query.svelte';
 
 export interface User {
 	username: string;
 }
 
-export function useUsers(): CreateQueryResult<{ users: User[] }> {
-	const token = useToken();
-
-	const fetcher = async (token: string): Promise<{}> => {
+export function useUsers(): QueryResult<User[]> {
+	const fetcher = async (token: string): Promise<User[]> => {
 		console.log('mocking get users', { token });
 		await sleep(1000);
 		if (token != '<not-a-token>') throw new Error('Invalid credentials');
-		return { users: [{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }] };
+		return [{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }];
 	};
 
-	return createQuery(
-		derived(token, (token) => ({
-			queryKey: ['users'],
-			queryFn: () => {
-				return fetcher(token);
-			}
-		}))
-	);
+	return useQuery<void, User[]>({
+		param: () => {},
+		fetcher: function (_: void, token?: string): Promise<User[]> {
+			if (!token) throw new Error('Token is required');
+			return fetcher(token);
+		},
+		key: ['users']
+	});
 }
 
 interface CreateUserRequest {
 	username: string;
 	password: string;
-	token: string;
 }
 
-export function CreateUser(): CreateMutationResult<{}, Error, CreateUserRequest, unknown> {
-	const fetcher = async (username: string, password: string, token: string): Promise<{}> => {
+export function CreateUser(): mutationResult<CreateUserRequest, User> {
+	const fetcher = async (username: string, password: string, token: string): Promise<User> => {
 		console.log('mocking create user', { username, password, token });
 		await sleep(1000);
 		if (token != '<not-a-token>') throw new Error('Invalid credentials');
 		throw new Error('User already exists');
 	};
 
-	return createMutation({
-		mutationFn: ({ username, password, token }: CreateUserRequest) => {
-			return fetcher(username, password, token);
+	return useMutate({
+		mutator: ({ username, password }: CreateUserRequest, token?: string) => {
+			return fetcher(username, password, token!);
 		}
 	});
 }
@@ -53,7 +49,8 @@ interface LoginRequest {
 	username: string;
 	password: string;
 }
-export function Login(): CreateMutationResult<{ token: string }, Error, LoginRequest, unknown> {
+export function Login(): mutationResult<{ username: string; password: string }, { token: string }> {
+	const token = useToken();
 	const fetcher = async (username: string, password: string) => {
 		console.log('mocking login', { username, password });
 		await sleep(1000);
@@ -63,9 +60,8 @@ export function Login(): CreateMutationResult<{ token: string }, Error, LoginReq
 		throw new Error('Invalid credentials');
 	};
 
-	return createMutation({
-		mutationFn: ({ username, password }: LoginRequest) => {
-			return fetcher(username, password);
-		}
+	return useMutate({
+		mutator: ({ username, password }: LoginRequest, _) => fetcher(username, password),
+		onSuccess: (data) => token.set(data.token)
 	});
 }

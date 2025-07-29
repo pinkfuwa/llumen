@@ -1,28 +1,20 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Login } from '$lib/api/user';
-	import { useToken } from '$lib/store';
+
 	let username = $state('');
 	let password = $state('');
 
-	let loginMutation = Login();
-
-	let token = useToken();
+	let { mutate, isPending, isError } = Login();
 
 	function handleSubmit(event: Event) {
 		event.preventDefault();
-		$loginMutation.mutate(
+		mutate(
 			{
 				username: username,
 				password: password
 			},
-			{
-				onSuccess: (data) => {
-					console.log('Login successful', data);
-					goto('/chat/new');
-					token.set(data.token);
-				}
-			}
+			(data) => goto('/chat/new')
 		);
 	}
 </script>
@@ -36,7 +28,7 @@
 		<form
 			class="flex flex-col items-center justify-center text-xl"
 			onsubmit={handleSubmit}
-			inert={$loginMutation.isPending}
+			inert={$isPending}
 		>
 			<div class="mb-2 flex w-full justify-between">
 				<label for="username" class="mr-3 min-w-[120px] text-center">Username</label>
@@ -62,11 +54,11 @@
 			<button
 				type="submit"
 				class="rounded-full border border-outline px-12 py-2 hover:bg-hover disabled:bg-hover"
-				disabled={$loginMutation.isPending}
+				disabled={$isPending}
 			>
-				{#if $loginMutation.failureCount > 0}
+				{#if $isError}
 					Try again
-				{:else if $loginMutation.isPending}
+				{:else if $isPending}
 					Loading...
 				{:else}
 					Sign in

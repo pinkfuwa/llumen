@@ -16,7 +16,7 @@
 	let modelId = $state('');
 	let content = $state('');
 
-	let createRoomMutation = createRoom();
+	let { mutate } = createRoom();
 
 	let container = $state<HTMLElement | null>();
 
@@ -52,17 +52,15 @@
 		<MdTextbox {editable} placeholder="Enter your question here" bind:value={content} />
 		<SendBtn
 			onclick={() => {
-				$createRoomMutation.mutate(
+				mutate(
 					{
 						firstMessage: content,
 						modelId,
 						files,
 						mode
 					},
-					{
-						onSuccess: (data) => {
-							goto('/chat/' + encodeURIComponent(data.id));
-						}
+					(data) => {
+						goto('/chat/' + encodeURIComponent(data.id));
 					}
 				);
 			}}
