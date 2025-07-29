@@ -139,7 +139,7 @@ export function useInfiniteQuery<D, IS, S = IS>(
 		revalidateOnFocus
 	});
 
-	let canFetchNext = writable(true);
+	let canFetchNext = writable(target == undefined);
 
 	if (target) {
 		observeIntersection(
