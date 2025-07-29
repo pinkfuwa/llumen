@@ -12,7 +12,7 @@
 	});
 </script>
 
-{#if $isLoading}
+{#if $data == undefined}
 	<select
 		class="min-w-[170px] items-center rounded-md bg-background px-3 py-1 hover:bg-hover"
 		disabled

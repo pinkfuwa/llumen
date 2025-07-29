@@ -81,7 +81,8 @@ export function useForwardRoom(target: () => HTMLElement | null | undefined, id?
 
 			return result;
 		},
-		target
+		target,
+		key: ['list', 'chatroom']
 	}) as InfiniteQueryResult<Room[], number>;
 }
 

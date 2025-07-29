@@ -123,7 +123,8 @@ export function useInfiniteQuery<D, IS, S = IS>(
 		target,
 		genParam,
 		nextParam: genNextParam,
-		revalidateOnFocus
+		revalidateOnFocus,
+		key
 	} = option;
 
 	let currentParam: S | undefined;
@@ -136,7 +137,8 @@ export function useInfiniteQuery<D, IS, S = IS>(
 		},
 		staleTime,
 		target,
-		revalidateOnFocus
+		revalidateOnFocus,
+		key
 	});
 
 	let canFetchNext = writable(target == undefined);

@@ -49,9 +49,7 @@ export function useModels(): QueryResult<Model[]> {
 
 	return useQuery({
 		param: () => {},
-		fetcher: function (_params: void, token?: string): Promise<Model[]> {
-			if (!token) throw new Error('Token is required');
-			return fetcher(token);
-		}
+		fetcher: (_: void, token?: string) => fetcher(token!) as Promise<Model[]>,
+		key: ['list', 'models']
 	});
 }
