@@ -1,5 +1,5 @@
 import { sleep } from './api';
-import { useQuery, type QueryResult } from './state/query.svelte';
+import { CreateQuery, type QueryResult } from './state/query.svelte';
 
 export enum Mode {
 	DEEP = 2,
@@ -47,7 +47,7 @@ export function useModels(): QueryResult<Model[]> {
 		];
 	};
 
-	return useQuery({
+	return CreateQuery({
 		param: () => {},
 		fetcher: (_: void, token?: string) => fetcher(token!) as Promise<Model[]>,
 		key: ['list', 'models']

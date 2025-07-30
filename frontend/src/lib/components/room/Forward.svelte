@@ -1,11 +1,11 @@
 <script lang="ts">
-	import Self from './ForwardPage.svelte';
+	import Self from './Forward.svelte';
 	let { session = undefined, page = 0 } = $props();
 	import ChatroomBtn from './ChatroomBtn.svelte';
-	import { useForwardRoom } from '$lib/api/chatroom';
+	import { useRoom } from '$lib/api/chatroom';
 
 	let div: HTMLElement | null = $state(null);
-	let { data, nextParam } = useForwardRoom(() => div, session);
+	let { data, nextParam } = useRoom(() => div, session);
 </script>
 
 <div bind:this={div}>

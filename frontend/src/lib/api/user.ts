@@ -1,7 +1,7 @@
 import { sleep } from './api';
 import { useToken } from '$lib/store';
 import { useMutate, type mutationResult } from './state/mutate';
-import { useQuery, type QueryResult } from './state/query.svelte';
+import { CreateQuery, type QueryResult } from './state/query.svelte';
 
 export interface User {
 	username: string;
@@ -15,7 +15,7 @@ export function useUsers(): QueryResult<User[]> {
 		return [{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }];
 	};
 
-	return useQuery<void, User[]>({
+	return CreateQuery<void, User[]>({
 		param: () => {},
 		fetcher: function (_: void, token?: string): Promise<User[]> {
 			if (!token) throw new Error('Token is required');
