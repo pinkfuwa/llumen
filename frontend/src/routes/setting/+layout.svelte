@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { _ } from 'svelte-i18n';
 	import { fade } from 'svelte/transition';
 	import { X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
@@ -22,7 +22,7 @@
 		out:fade={{ duration: 180 }}
 	>
 		<div class="mb-2 flex items-center justify-between border-b border-outline px-2 text-xl">
-			{m.setting()}
+			{$_('setting.setting')}
 			<a class="left-0 p-3" href="/chat/new">
 				<X />
 			</a>
@@ -32,13 +32,13 @@
 				<li class="rounded-md px-5 py-1 hover:bg-hover">
 					<a href="/setting/account" class="flex items-center">
 						<CircleUser class="mr-2 inline-block h-5 w-5" />
-						{m.account_settings()}
+						{$_('setting.account_settings')}
 					</a>
 				</li>
 				<li class="rounded-md px-5 py-1 hover:bg-hover">
 					<a href="/setting/admin" class="flex items-center">
 						<ShieldUser class="mr-2 inline-block h-5 w-5" />
-						{m.admin_settings()}
+						{$_('setting.admin_settings')}
 					</a>
 				</li>
 				<li class="rounded-md px-5 py-1 hover:bg-hover">
@@ -54,7 +54,7 @@
 							goto('/');
 						}}
 					>
-						<LogOut class="mr-2 inline-block h-5 w-5" /> {m.logout()}</button
+						<LogOut class="mr-2 inline-block h-5 w-5" /> {$_('setting.logout')}</button
 					>
 				</li>
 			</ul>

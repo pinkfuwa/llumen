@@ -1,0 +1,17 @@
+{
+	"setting": {
+		"hello_world": "Hello, {name} from en!",
+		"setting": "Setting",
+		"theme": "Theme",
+		"language": "Language",
+		"change_password": "Change Password",
+		"account_settings": "Account Settings",
+		"admin_settings": "Admin Settings",
+		"logout": "Logout",
+		"create_user": "Create User",
+		"username": "Username",
+		"config_override_warning": "This action will override other's model configuration.",
+		"check_syntax": "Check Syntax",
+		"save_settings": "Save Settings"
+	}
+}

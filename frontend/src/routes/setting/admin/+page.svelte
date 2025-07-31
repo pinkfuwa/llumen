@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { useUsers } from '$lib/api/user';
 	import { Trash, CheckLine } from '@lucide/svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
 
 	let username = $state('');
@@ -20,14 +20,14 @@
 {/if}
 
 <div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-	<label for="name">{m.create_user()}: </label>
+	<label for="name">{$_('setting.create_user')}: </label>
 	<div class="flex items-center justify-between">
 		<input
 			type="text"
 			id="name"
 			class="rounded-md border border-outline p-1"
 			bind:value={username}
-			placeholder={m.username()}
+			placeholder={$_('setting.username')}
 		/>
 		<button
 			class="mx-1 rounded-md p-1 hover:bg-hover"

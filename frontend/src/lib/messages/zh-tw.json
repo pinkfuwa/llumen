@@ -1,0 +1,17 @@
+{
+	"setting": {
+		"hello_world": "Hello, {name} from zh-tw!",
+		"setting": "設置",
+		"theme": "主題",
+		"language": "語言",
+		"change_password": "更改密碼",
+		"account_settings": "帳號設定",
+		"admin_settings": "管理員設定",
+		"logout": "登出",
+		"create_user": "新增帳號",
+		"username": "帳號名稱",
+		"config_override_warning": "此動作會複寫所有人的 openrouter 模型設置",
+		"check_syntax": "檢查語法",
+		"save_settings": "儲存設定"
+	}
+}

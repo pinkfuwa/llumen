@@ -9,7 +9,6 @@
 
 	$effect(() => {
 		if ($token == '') goto('/login');
-		// if (token.current == '') goto('/login');
 	});
 </script>
 

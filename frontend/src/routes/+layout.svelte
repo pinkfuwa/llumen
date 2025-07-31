@@ -1,19 +1,20 @@
 <script lang="ts">
 	import '../app.css';
-	import { setLocale } from '$lib/paraglide/runtime';
 	import { useLanguage, useTheme } from '$lib/store';
-	import { getThemeStyle } from '$lib/theme';
+	import { setTheme } from '$lib/theme';
+	import { setLocale } from '$lib/i18n';
 
 	let { children } = $props();
 
 	let language = useLanguage();
+	let theme = useTheme();
+
 	$effect(() => {
 		setLocale($language);
+		setTheme($theme);
 	});
-
-	let theme = useTheme();
 </script>
 
-<div class="h-full w-full bg-light text-dark" style={getThemeStyle($theme)}>
+<div class="h-full w-full bg-light text-dark">
 	{@render children()}
 </div>

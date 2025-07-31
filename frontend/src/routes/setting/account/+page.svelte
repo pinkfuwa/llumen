@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
+
 	import { fade } from 'svelte/transition';
 	import { CheckLine, X } from '@lucide/svelte';
-	import { m } from '$lib/paraglide/messages';
 	import { useTheme, useLanguage } from '$lib/store';
-	import { setLocale } from '$lib/paraglide/runtime';
+	import { setLocale } from '$lib/i18n';
+	import { setTheme } from '$lib/theme';
 
 	let theme = useTheme();
 	let language = useLanguage();
@@ -14,8 +16,13 @@
 
 {#if checkPassword == undefined || (checkPassword as string).length == 0}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="theme">{m.theme()}: </label>
-		<select id="theme" bind:value={$theme} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<label for="theme">{$_('setting.theme')}: </label>
+		<select
+			id="theme"
+			bind:value={$theme}
+			class="mx-1 rounded-md p-1 hover:bg-hover"
+			onchange={() => setTheme($theme)}
+		>
 			<option value="light">Modern Light</option>
 			<option value="dark">Eye-caring Dark</option>
 		</select>
@@ -25,7 +32,7 @@
 		class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg"
 		onchange={() => setLocale($language)}
 	>
-		<label for="lang">{m.language()}: </label>
+		<label for="lang">{$_('setting.language')}: </label>
 		<select id="lang" bind:value={$language} class="mx-1 rounded-md p-1 hover:bg-hover">
 			<option value="en">English</option>
 			<option value="zh-tw">繁體中文</option>
@@ -33,7 +40,7 @@
 	</div>
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="password">{m.change_password()}: </label>
+		<label for="password">{$_('setting.change_password')}: </label>
 		<div class="flex items-center justify-between">
 			<input
 				type="password"

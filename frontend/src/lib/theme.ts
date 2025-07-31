@@ -1,4 +1,4 @@
-export function getThemeStyle(theme: 'light' | 'dark'): string {
+export function setTheme(theme: 'light' | 'dark') {
 	const themeMap: Record<'light' | 'dark', {}> = {
 		light: {},
 		dark: {
@@ -11,7 +11,9 @@ export function getThemeStyle(theme: 'light' | 'dark'): string {
 		}
 	};
 
-	return Object.entries(themeMap[theme])
+	const style = Object.entries(themeMap[theme])
 		.map(([name, val]) => `--color-${name}: ${val};`)
 		.join('');
+
+	window.document.body.style.cssText = style;
 }

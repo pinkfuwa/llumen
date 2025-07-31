@@ -1,4 +1,4 @@
-import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 
 function localState<T>(
 	key: string,
@@ -38,5 +38,8 @@ function localState<T>(
 }
 
 export const useToken = localState('token', '');
-export const useLanguage = localState<'en' | 'zh-tw'>('language', 'en');
+export const useLanguage = localState<'en' | 'zh-tw'>(
+	'language',
+	navigator.language.includes('zh') ? 'zh-tw' : 'en'
+);
 export const useTheme = localState<'light' | 'dark'>('theme', 'light');
