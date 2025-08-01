@@ -1,5 +1,5 @@
 import { type Readable, get, readable, writable } from 'svelte/store';
-import { useToken } from '$lib/store';
+import { token } from '$lib/store';
 
 export interface mutationResult<P, D> {
 	mutate: (param: P, callback?: (data: D) => void) => Promise<D | undefined>;
@@ -13,8 +13,6 @@ export interface useMutateOption<P, D> {
 }
 
 export function useMutate<P, D>(option: useMutateOption<P, D>): mutationResult<P, D> {
-	let token = useToken();
-
 	const { mutator, onSuccess } = option;
 
 	const isPendingWritable = writable(false);

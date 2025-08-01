@@ -3,10 +3,7 @@
 
 	import { fade } from 'svelte/transition';
 	import { CheckLine, X } from '@lucide/svelte';
-	import { useTheme, useLanguage } from '$lib/store';
-
-	let theme = useTheme();
-	let language = useLanguage();
+	import { theme, locale } from '$lib/store';
 
 	let passwordBuffer = $state('');
 	let checkPassword: undefined | string = $state(undefined);
@@ -23,7 +20,7 @@
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="lang">{$_('setting.language')}: </label>
-		<select id="lang" bind:value={$language} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<select id="lang" bind:value={$locale} class="mx-1 rounded-md p-1 hover:bg-hover">
 			<option value="en">English</option>
 			<option value="zh-tw">繁體中文</option>
 		</select>

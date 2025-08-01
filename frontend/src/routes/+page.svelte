@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { useToken } from '$lib/store';
-
-	let token = useToken();
+	import { token } from '$lib/store';
 
 	$effect(() => {
 		if ($token) goto('/chat/new');

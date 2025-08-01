@@ -3,11 +3,11 @@
 */
 
 export enum ErrorKind {
-	Unauthorized = "unauthorized",
-	MalformedToken = "malformed_token",
-	MalformedRequest = "malformed_request",
-	Internal = "internal",
-	UnknownUser = "unknown_user",
+	Unauthorized = 'unauthorized',
+	MalformedToken = 'malformed_token',
+	MalformedRequest = 'malformed_request',
+	Internal = 'internal',
+	UnknownUser = 'unknown_user'
 }
 
 export interface Error {
@@ -32,4 +32,3 @@ export interface RenewReq {
 export interface RenewResp {
 	token: string;
 }
-

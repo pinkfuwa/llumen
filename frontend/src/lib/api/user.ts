@@ -1,5 +1,5 @@
 import { sleep } from './api';
-import { useToken } from '$lib/store';
+import { token } from '$lib/store';
 import { useMutate, type mutationResult } from './state/mutate';
 import { CreateQuery, type QueryResult } from './state/query.svelte';
 
@@ -53,7 +53,6 @@ export function Login(): mutationResult<
 	{ username: string; password: string },
 	{ value: string; expireAt: number; duration: number }
 > {
-	const token = useToken();
 	const fetcher = async (username: string, password: string) => {
 		console.log('mocking login', { username, password });
 		await sleep(1000);
@@ -74,7 +73,6 @@ export function HeaderLogin(): mutationResult<
 	void,
 	{ value: string; expireAt: number; duration: number }
 > {
-	const token = useToken();
 	const fetcher = async () => {
 		console.log('mocking header auth');
 

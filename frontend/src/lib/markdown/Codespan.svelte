@@ -1,6 +1,4 @@
 <script>
-	import { useTheme } from '$lib/store';
-
 	let { raw } = $props();
 
 	let text = raw.replace(/`/g, '');

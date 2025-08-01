@@ -1,10 +1,7 @@
 <script>
 	import { ClipboardCopy } from '@lucide/svelte';
-
-	import { useTheme } from '$lib/store';
+	import { theme } from '$lib/store';
 	import { codeToHtml } from 'shiki/bundle/web';
-
-	let theme = useTheme();
 
 	let { lang, text } = $props();
 

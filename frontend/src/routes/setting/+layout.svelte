@@ -3,10 +3,9 @@
 	import { fade } from 'svelte/transition';
 	import { X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
-	import { useToken } from '$lib/store';
+	import { token } from '$lib/store';
 	import { goto } from '$app/navigation';
 
-	let token = useToken();
 	let { children } = $props();
 </script>
 

@@ -1,5 +1,5 @@
 <script>
-  let { text } = $props();
+	let { text } = $props();
 </script>
 
 {@html text}

@@ -2,9 +2,7 @@
 	let { children } = $props();
 	import { goto } from '$app/navigation';
 	import Sidebar from '$lib/components/Sidebar.svelte';
-	import { useToken } from '$lib/store';
-
-	let token = useToken();
+	import { token } from '$lib/store';
 
 	$effect(() => {
 		if (!$token) goto('/login');

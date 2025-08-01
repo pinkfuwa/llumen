@@ -1,7 +1,7 @@
 import { type Readable, type Writable, get, derived, writable, readable } from 'svelte/store';
 import { useSWR } from 'sswr';
 import { observeIntersection } from '@sv-use/core';
-import { useToken } from '$lib/store';
+import { token } from '$lib/store';
 
 const defaultStaleTime = 30000;
 
@@ -25,7 +25,6 @@ export interface QueryOption<P, D> {
 }
 
 export function CreateQuery<P, D>(option: QueryOption<P, D>): QueryResult<D> {
-	let token = useToken();
 	let { target, key, param, fetcher, staleTime, revalidateOnFocus } = option;
 
 	const { data, revalidate, isLoading } = useSWR(
