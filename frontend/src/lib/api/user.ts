@@ -65,3 +65,19 @@ export function Login(): mutationResult<{ username: string; password: string }, 
 		onSuccess: (data) => token.set(data.token)
 	});
 }
+
+export function HeaderLogin(): mutationResult<void, { token: string }> {
+	const token = useToken();
+	const fetcher = async () => {
+		console.log('mocking header auth');
+
+		throw new Error('Header auth disabled from backend');
+
+		return { token: '<not-a-token>' };
+	};
+
+	return useMutate({
+		mutator: () => fetcher(),
+		onSuccess: (data) => token.set(data.token)
+	});
+}
