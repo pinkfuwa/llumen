@@ -33,7 +33,7 @@ export function CreateQuery<P, D>(option: QueryOption<P, D>): QueryResult<D> {
 			JSON.stringify({
 				key,
 				param: param(),
-				token: get(token)
+				token: get(token)?.value
 			}),
 		{
 			fetcher: async (encoded: string) => {

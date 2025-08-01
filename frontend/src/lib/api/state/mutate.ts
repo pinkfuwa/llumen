@@ -32,7 +32,7 @@ export function useMutate<P, D>(option: useMutateOption<P, D>): mutationResult<P
 		isErrorWritable.set(false);
 
 		try {
-			const result = await mutator(param, get(token));
+			const result = await mutator(param, get(token)?.value);
 
 			if (callback) callback(result);
 			if (onSuccess) onSuccess(result);

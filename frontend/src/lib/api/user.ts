@@ -49,35 +49,40 @@ interface LoginRequest {
 	username: string;
 	password: string;
 }
-export function Login(): mutationResult<{ username: string; password: string }, { token: string }> {
+export function Login(): mutationResult<
+	{ username: string; password: string },
+	{ value: string; expireAt: number; duration: number }
+> {
 	const token = useToken();
 	const fetcher = async (username: string, password: string) => {
 		console.log('mocking login', { username, password });
 		await sleep(1000);
 		if (username === 'admin' && password === 'P@88w0rd') {
-			return { token: '<not-a-token>' };
+			const expireAt = Date.now() + 24 * 3600 * 7 * 1000;
+			return { value: '<not-a-token>', expireAt, duration: 24 * 3600 * 7 };
 		}
 		throw new Error('Invalid credentials');
 	};
 
 	return useMutate({
 		mutator: ({ username, password }: LoginRequest, _) => fetcher(username, password),
-		onSuccess: (data) => token.set(data.token)
+		onSuccess: (data) => token.set(data)
 	});
 }
 
-export function HeaderLogin(): mutationResult<void, { token: string }> {
+export function HeaderLogin(): mutationResult<
+	void,
+	{ value: string; expireAt: number; duration: number }
+> {
 	const token = useToken();
 	const fetcher = async () => {
 		console.log('mocking header auth');
 
 		throw new Error('Header auth disabled from backend');
-
-		return { token: '<not-a-token>' };
 	};
 
 	return useMutate({
 		mutator: () => fetcher(),
-		onSuccess: (data) => token.set(data.token)
+		onSuccess: (data) => token.set(data)
 	});
 }

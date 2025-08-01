@@ -37,7 +37,9 @@ function localState<T>(
 	};
 }
 
-export const useToken = localState('token', '');
+export const useToken = localState<
+	undefined | { value: string; expireAt: number; duration: number }
+>('token', undefined);
 export const useLanguage = localState<'en' | 'zh-tw'>(
 	'language',
 	navigator.language.includes('zh') ? 'zh-tw' : 'en'

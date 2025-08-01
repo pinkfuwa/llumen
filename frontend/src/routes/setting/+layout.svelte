@@ -53,7 +53,7 @@
 					<button
 						class="flex items-center"
 						onclick={() => {
-							token.set('');
+							token.set(undefined);
 							goto('/login');
 						}}
 					>

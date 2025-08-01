@@ -8,7 +8,7 @@
 	let token = useToken();
 
 	$effect(() => {
-		if ($token == '') goto('/login');
+		if (!$token) goto('/login');
 	});
 </script>
 
