@@ -1,5 +1,6 @@
 {
 	"setting": {
+		"title": "settings",
 		"hello_world": "Hello, {name} from en!",
 		"setting": "Setting",
 		"theme": "Theme",
@@ -13,5 +14,30 @@
 		"config_override_warning": "This action will override other's model configuration.",
 		"check_syntax": "Check Syntax",
 		"save_settings": "Save Settings"
+	},
+	"login": {
+		"title": "Sign in to llumen",
+		"welcome": "Welcome to llumen",
+		"description": "Simple LLM chat frontend with great out-of-box experience.",
+		"username": "Username",
+		"password": "Password",
+		"submit": "Sign in",
+		"retry": "Try again",
+		"loading": "Loading"
+	},
+	"chat": {
+		"title": "Llumen Chat",
+		"welcome": "Ask anything!",
+		"question": "Send your question here",
+		"model_mode": {
+			"normal": "Normal Chat",
+			"search": "Web search enabled chat",
+			"deep": "In depth research on complex topic"
+		},
+		"markdown_mode": {
+			"enable": "Markdown rendering",
+			"disable": "Normal text editing"
+		},
+		"file": "upload file"
 	}
 }

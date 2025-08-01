@@ -10,6 +10,9 @@
 	let { children } = $props();
 </script>
 
+<svelte:head>
+	<title>{$_('setting.title')}</title>
+</svelte:head>
 <div
 	class="fixed top-0 left-0 z-4 flex h-screen w-screen items-center justify-center bg-black opacity-65"
 	in:fade={{ duration: 180 }}
@@ -23,7 +26,7 @@
 	>
 		<div class="mb-2 flex items-center justify-between border-b border-outline px-2 text-xl">
 			{$_('setting.setting')}
-			<a class="left-0 p-3" href="/chat/new">
+			<a class="left-0 p-3" href="/">
 				<X />
 			</a>
 		</div>

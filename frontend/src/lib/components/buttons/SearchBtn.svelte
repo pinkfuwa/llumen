@@ -1,8 +1,10 @@
 <script lang="ts">
 	type Stage = 0 | 1 | 2;
+
 	let { value = $bindable(0) as Stage } = $props();
 	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { Atom, SearchCode, ZapOff } from '@lucide/svelte';
+	import { _ } from 'svelte-i18n';
 
 	function nextStage() {
 		value = (value + 1) % 3;
@@ -11,15 +13,15 @@
 
 <button onclick={nextStage} class="rounded-md bg-background p-1 hover:bg-hover">
 	{#if value == 2}
-		<Tooltip content="In depth research on complex topic">
+		<Tooltip content={$_('chat.model_mode.deep')}>
 			<Atom class="inline-block" />
 		</Tooltip>
 	{:else if value == 1}
-		<Tooltip content="Web enabled Chat">
+		<Tooltip content={$_('chat.model_mode.search')}>
 			<SearchCode class="inline-block" />
 		</Tooltip>
 	{:else}
-		<Tooltip content="Normal Chat">
+		<Tooltip content={$_('chat.model_mode.normal')}>
 			<ZapOff class="inline-block" />
 		</Tooltip>
 	{/if}

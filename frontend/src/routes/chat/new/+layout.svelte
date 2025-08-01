@@ -12,6 +12,9 @@
 	});
 </script>
 
+<svelte:head>
+	<title></title>
+</svelte:head>
 <div class="flex h-screen flex-row">
 	<Sidebar />
 	<div class="flex h-screen grow flex-col justify-center">

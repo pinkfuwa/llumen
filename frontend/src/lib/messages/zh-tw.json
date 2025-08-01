@@ -1,5 +1,6 @@
 {
 	"setting": {
+		"title": "設置",
 		"hello_world": "Hello, {name} from zh-tw!",
 		"setting": "設置",
 		"theme": "主題",
@@ -13,5 +14,30 @@
 		"config_override_warning": "此動作會複寫所有人的 openrouter 模型設置",
 		"check_syntax": "檢查語法",
 		"save_settings": "儲存設定"
+	},
+	"login": {
+		"title": "登入流明",
+		"welcome": "歡迎使用流明 Llumen",
+		"description": "簡易、開箱即用的 LLM 聊天界面",
+		"username": "帳號名稱",
+		"password": "密碼",
+		"submit": "登入",
+		"retry": "重試",
+		"loading": "登入中"
+	},
+	"chat": {
+		"title": "流明 Llumen",
+		"welcome": "Ask anything!",
+		"question": "在此輸入問題",
+		"model_mode": {
+			"normal": "正常聊天",
+			"search": "網頁搜尋",
+			"deep": "深度搜尋"
+		},
+		"markdown_mode": {
+			"enable": "已啟用 markdown 渲染",
+			"disable": "正常編輯文字"
+		},
+		"file": "上傳等案"
 	}
 }

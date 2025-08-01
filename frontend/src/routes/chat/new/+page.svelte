@@ -9,6 +9,7 @@
 	import MarkdownBtn from '$lib/components/buttons/MarkdownBtn.svelte';
 	import { createRoom } from '$lib/api/chatroom';
 	import { goto } from '$app/navigation';
+	import { _ } from 'svelte-i18n';
 
 	let mode = $state(0) as 0 | 1 | 2;
 	let editable = $state(true);
@@ -31,7 +32,11 @@
 	});
 </script>
 
-<h1 class="mx-auto mb-8 text-4xl font-light lg:text-5xl">Ask anything</h1>
+<svelte:head>
+	<title>{$_('chat.title')}</title>
+</svelte:head>
+
+<h1 class="mx-auto mb-8 text-4xl font-light lg:text-5xl">{$_('chat.welcome')}</h1>
 <div
 	class="min-h-sm item relative mx-auto rounded-md border border-outline p-2 md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
 	bind:this={container}
@@ -49,7 +54,7 @@
 		</div>
 	{/if}
 	<div class="mb-2 flex items-center justify-between space-x-2 border-b border-outline p-2 pb-4">
-		<MdTextbox {editable} placeholder="Enter your question here" bind:value={content} />
+		<MdTextbox {editable} placeholder={$_('chat.question')} bind:value={content} />
 		<SendBtn
 			onclick={() => {
 				mutate(
@@ -72,6 +77,8 @@
 			<SearchBtn bind:value={mode} />
 			<UploadBtn bind:files />
 		</div>
-		<MarkdownBtn bind:editable />
+		{#if content.length != 0}
+			<MarkdownBtn bind:editable />
+		{/if}
 	</div>
 </div>

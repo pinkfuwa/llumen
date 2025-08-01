@@ -1,8 +1,9 @@
 <script lang="ts">
+	let { files = $bindable([] as File[]) } = $props();
 	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { Upload } from '@lucide/svelte';
 	import { createFileDialog } from '@sv-use/core';
-	let { files = $bindable([] as File[]) } = $props();
+	import { _ } from 'svelte-i18n';
 
 	const dialog = createFileDialog({
 		multiple: false,
@@ -16,7 +17,7 @@
 </script>
 
 <button class="rounded-md bg-background p-1 hover:bg-hover" onclick={dialog.open}>
-	<Tooltip content="Upload file">
+	<Tooltip content={$_('chat.file')}>
 		<Upload class="inline-block" />
 	</Tooltip>
 </button>
