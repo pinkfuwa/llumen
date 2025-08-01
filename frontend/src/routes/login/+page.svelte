@@ -14,7 +14,7 @@
 				username: username,
 				password: password
 			},
-			(data) => goto('/chat/new')
+			(_) => goto('/chat/new')
 		);
 	}
 </script>

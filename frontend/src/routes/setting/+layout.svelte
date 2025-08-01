@@ -51,7 +51,7 @@
 						class="flex items-center"
 						onclick={() => {
 							token.set('');
-							goto('/');
+							goto('/login');
 						}}
 					>
 						<LogOut class="mr-2 inline-block h-5 w-5" /> {$_('setting.logout')}</button
