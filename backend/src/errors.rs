@@ -17,7 +17,8 @@ pub enum ErrorKind {
     MalformedToken,
     MalformedRequest,
     Internal,
-    UnknownUser,
+    LoginFail,
+    ResourceNotFound,
 }
 
 pub type JsonResult<T> = Result<Json<T>, Json<Error>>;
@@ -37,5 +38,21 @@ where
                 reason: e.to_string(),
             })
         })
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(untagged)]
+pub enum UResult<T, E> {
+    Ok(T),
+    Err(E),
+}
+
+impl<T, E> From<Result<T, E>> for UResult<T, E> {
+    fn from(value: Result<T, E>) -> Self {
+        match value {
+            Ok(v) => Self::Ok(v),
+            Err(e) => Self::Err(e),
+        }
     }
 }
