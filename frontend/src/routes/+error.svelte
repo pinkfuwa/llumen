@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
 	import { page } from '$app/state';
 
 	const messages: Record<string, string> = {
@@ -15,5 +16,5 @@
 	<h1 class="mb-4 text-4xl font-light">
 		{page.status}: {messages[String(page.status)] || 'Unknown error'}
 	</h1>
-	<a href="/chat/new" class="text-2xl">Back to home</a>
+	<a href="/" class="text-2xl">Back to home</a>
 </div>

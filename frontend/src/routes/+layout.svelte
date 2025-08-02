@@ -1,24 +1,18 @@
 <script lang="ts">
 	import '../app.css';
-	import { QueryClientProvider, QueryClient } from '@tanstack/svelte-query';
-	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
-	import { setLocale } from '$lib/paraglide/runtime';
-	import { useLanguage } from '$lib/store';
-	import { dev } from '$app/environment';
-
-	const queryClient = new QueryClient();
+	import { theme, locale } from '$lib/store';
+	import { isLoading } from 'svelte-i18n';
+	import { setLocale } from '$lib/i18n';
+	import { setTheme } from '$lib/theme';
 
 	let { children } = $props();
 
-	let language = useLanguage();
-	$effect(() => {
-		setLocale(language.current);
-	});
+	$effect(() => theme.subscribe(setTheme));
+	$effect(() => locale.subscribe(setLocale));
 </script>
 
-<QueryClientProvider client={queryClient}>
-	{@render children()}
-	{#if dev}
-		<SvelteQueryDevtools />
-	{/if}
-</QueryClientProvider>
+{#if !$isLoading}
+	<div class="h-full w-full bg-light text-dark">
+		{@render children()}
+	</div>
+{/if}

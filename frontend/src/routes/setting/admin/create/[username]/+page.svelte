@@ -3,34 +3,30 @@
 	import { CheckLine } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { fade } from 'svelte/transition';
-	import { useToken } from '$lib/store';
 	let { params } = $props();
 
-	let token = useToken();
 	let username = params.username;
 	let password = $state('');
 
-	const createUserMutation = CreateUser(
-		() => username,
-		() => password,
-		() => token.current || ''
-	);
+	const { mutate, isError } = CreateUser();
 
 	function handleSubmit(event: Event) {
 		event.preventDefault();
-		$createUserMutation.mutate(undefined, {
-			onSuccess: () => {
+		mutate(
+			{
+				username: username,
+				password: password
+			},
+			() => {
 				goto('/setting/admin');
 			}
-		});
+		);
 	}
 </script>
 
-{#if $createUserMutation.failureCount > 0}
+{#if $isError}
 	<div class="mb-2 rounded-lg bg-red-700 hover:bg-red-500" in:fade={{ duration: 180 }}>
-		<div class="ml-2 bg-background p-3 font-semibold hover:bg-hover">
-			User creation failed: {$createUserMutation.failureReason}
-		</div>
+		<div class="ml-2 bg-background p-3 font-semibold hover:bg-hover">User creation failed</div>
 	</div>
 {/if}
 

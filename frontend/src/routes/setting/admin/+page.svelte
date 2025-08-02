@@ -1,17 +1,14 @@
 <script lang="ts">
-	import { GetUsers, CreateUser } from '$lib/api/user';
+	import { useUsers } from '$lib/api/user';
 	import { Trash, CheckLine } from '@lucide/svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
-	import { useToken } from '$lib/store';
 
-	let token = useToken();
 	let username = $state('');
-	let password = $state('');
 
 	let createdUser = $state('');
 
-	const usersQuery = GetUsers(() => token.current || '');
+	const { isLoading, data } = useUsers();
 </script>
 
 {#if createdUser.length != 0}
@@ -23,14 +20,14 @@
 {/if}
 
 <div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-	<label for="name">{m.create_user()}: </label>
+	<label for="name">{$_('setting.create_user')}: </label>
 	<div class="flex items-center justify-between">
 		<input
 			type="text"
 			id="name"
 			class="rounded-md border border-outline p-1"
 			bind:value={username}
-			placeholder={m.username()}
+			placeholder={$_('setting.username')}
 		/>
 		<button
 			class="mx-1 rounded-md p-1 hover:bg-hover"
@@ -41,16 +38,15 @@
 	</div>
 </div>
 
-{#if $usersQuery.isPending}
+{#if $isLoading}
 	<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
 		Loading users...
 	</div>
-{/if}
-{#if $usersQuery.isSuccess}
+{:else if $data != undefined}
 	<ul
 		class="grid grid-cols-1 gap-2 border-b border-outline pb-2 text-lg lg:grid-cols-2 2xl:grid-cols-3"
 	>
-		{#each $usersQuery.data.users as user}
+		{#each $data as user}
 			<li class="flex items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4">
 				{user.username}
 				<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />

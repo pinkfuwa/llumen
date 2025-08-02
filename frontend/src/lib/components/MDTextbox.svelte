@@ -1,7 +1,7 @@
 <script lang="ts">
 	let { editable = false, value = $bindable(''), placeholder = '' } = $props();
 
-	import { renderMarkdown } from '$lib';
+	import { default as Markdown } from '../markdown/Root.svelte';
 
 	let rows = () => Math.max(2, value.split('\n').length);
 </script>
@@ -15,19 +15,8 @@
 	></textarea>
 {:else}
 	<div
-		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-scroll"
+		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-scroll wrap-break-word"
 	>
-		{#await renderMarkdown(value)}
-			<div class="relative">
-				<div class="mb-4 flex items-center justify-center p-6 text-lg">rendering markdown</div>
-				<textarea class="h-full w-full resize-none opacity-0" disabled rows={rows()}></textarea>
-			</div>
-		{:then md}
-			{@html md}
-		{:catch someError}
-			<div class="mb-4 flex items-center justify-center p-6 text-lg">
-				System error: {someError.message}.
-			</div>
-		{/await}
+		<Markdown source={value} />
 	</div>
 {/if}
