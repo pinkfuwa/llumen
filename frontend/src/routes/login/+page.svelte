@@ -30,8 +30,10 @@
 	<title>{$_('login.title')}</title>
 </svelte:head>
 <div class="flex h-screen flex-col items-center justify-center">
-	<div class="mb-3 text-4xl">{$_('login.welcome')}</div>
-	<div class="text-md mb-3 font-light">
+	<div class="mb-3 bg-gradient-to-r from-dark to-blue-600 bg-clip-text text-4xl text-transparent">
+		{$_('login.welcome')}
+	</div>
+	<div class="text-md mb-3 font-serif">
 		{$_('login.description')}
 	</div>
 	<div class="min-w-lg items-center rounded-lg p-6">

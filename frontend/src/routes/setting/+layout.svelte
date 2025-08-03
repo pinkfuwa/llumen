@@ -8,6 +8,10 @@
 	import { clear as clearCache } from 'sswr';
 
 	let { children } = $props();
+
+	$effect(() => {
+		if ($token == undefined) goto('/login');
+	});
 </script>
 
 <svelte:head>

@@ -15,7 +15,7 @@
 	></textarea>
 {:else}
 	<div
-		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-scroll wrap-break-word"
+		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-y-scroll pr-2 wrap-break-word"
 	>
 		<Markdown source={value} />
 	</div>

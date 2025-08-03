@@ -57,22 +57,24 @@ export function useRoom(target: () => HTMLElement | null | undefined, id?: numbe
 		if (id == undefined) return mockDB.sort((a, b) => b.id - a.id).slice(0, pageSize);
 		return mockDB
 			.sort((a, b) => b.id - a.id)
-			.filter((x) => x.id <= (id || -Infinity))
+			.filter((x) => id == undefined || x.id <= id)
 			.slice(0, pageSize);
 	};
 
 	return CreateRecursiveQuery<Room[], number | undefined, [number, number | undefined]>({
-		initialParam: () => id,
-		nextParam: (list) => list.at(-1)?.id,
+		initialParam: id,
+		nextParam: (list) => {
+			if (list.length != pageSize) return;
+			return list.at(-1)?.id! - 1;
+		},
 		genParam: (id, list) => {
-			if (list.length == 0) return [id!, undefined];
+			if (list.length == 0) return undefined;
 			if (list.length == pageSize) return [list.at(0)!.id, list.at(-1)!.id];
 			return [list.at(0)!.id, undefined];
 		},
 		fetcher: async (param, token) => {
 			const id = Array.isArray(param) ? param[0] : param;
 			let result = await fetcher(token!, id);
-			if (id) result = result.filter((x) => x.id <= id);
 			if (Array.isArray(param) && param[1] != undefined)
 				result = result.filter((x) => x.id >= param[1]!);
 

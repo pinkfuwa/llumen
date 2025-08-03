@@ -98,9 +98,9 @@ export interface RecursiveQueryResult<D, IS> {
 }
 
 export interface RecursiveQueryOption<D, IS, S = IS> {
-	initialParam: () => IS;
+	initialParam: IS;
 	nextParam: (lastPage: D) => IS;
-	genParam: (param: IS, page: D) => S;
+	genParam: (param: IS, page: D) => S | undefined;
 	fetcher: (param: IS | S, token?: string) => Promise<D>;
 	key?: string[];
 	staleTime?: number;
@@ -128,7 +128,7 @@ export function CreateRecursiveQuery<D, IS, S = IS>(
 
 	let currentParam: S | undefined;
 	const queryResult = CreateQuery({
-		param: () => (currentParam == undefined ? initialParam() : currentParam),
+		param: () => (currentParam == undefined ? initialParam : currentParam),
 		fetcher: async (param, token) => {
 			let result = await fetcher(param, token);
 			if (currentParam == undefined) currentParam = genParam(param as IS, result);
@@ -171,7 +171,7 @@ export function CreateRecursiveQuery<D, IS, S = IS>(
 }
 
 export interface InfiniteQueryOption<D, IS, S = IS> {
-	initialParam: () => IS;
+	initialParam: IS;
 	nextParam: (lastPage: D) => IS;
 	genParam: (param: IS, page: D) => S;
 	fetcher: (param: IS | S, token?: string) => Promise<D>;
@@ -191,9 +191,7 @@ export function CreateInfiniteQuery<D, IS, S = IS>(
 
 		const buildSubscription = (current: RecursiveQueryResult<D, IS>[]) => {
 			const nextData = derived(current[current.length - 1].nextParam, (param) =>
-				param == undefined
-					? undefined
-					: CreateRecursiveQuery({ ...option, initialParam: () => param })
+				param == undefined ? undefined : CreateRecursiveQuery({ ...option, initialParam: param })
 			);
 			const unsubscribe = nextData.subscribe((next) => {
 				if (next) {
