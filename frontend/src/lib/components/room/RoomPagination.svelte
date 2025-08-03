@@ -1,7 +1,7 @@
 <script lang="ts">
 	let { session = undefined, page = 0, addition = false } = $props();
-	import ForwardPage from './room/Forward.svelte';
-	import ChatroomBtn from './room/ChatroomBtn.svelte';
+	import ForwardPage from './Forward.svelte';
+	import ChatroomBtn from './ChatroomBtn.svelte';
 	import { useRecentRoom, useRoom } from '$lib/api/chatroom';
 	import { Plus } from '@lucide/svelte';
 	import { derived } from 'svelte/store';
@@ -45,5 +45,4 @@
 			<ForwardPage session={$nextParam} page={page + 1} />
 		{/key}
 	{/if}
-	<ForwardPage />
 </ul>

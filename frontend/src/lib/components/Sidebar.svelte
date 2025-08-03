@@ -5,7 +5,7 @@
 	import SettingBtn from './buttons/SettingBtn.svelte';
 	import CollapseBtn from './buttons/CollapseBtn.svelte';
 	import CollapseHeader from './CollapseHeader.svelte';
-	import RoomPagination from './RoomPagination.svelte';
+	import RoomPagination from './room/RoomPagination.svelte';
 
 	let collapsed = $state(false);
 </script>

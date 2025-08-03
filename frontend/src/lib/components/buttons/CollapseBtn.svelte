@@ -7,7 +7,7 @@
 
 <div class="fixed top-5 left-5">
 	<button
-		class="rounded-lg border border-outline bg-white p-2 text-dark shadow hover:bg-hover"
+		class="rounded-lg border border-outline bg-background p-2 text-dark shadow-md hover:bg-hover"
 		{onclick}
 	>
 		<ArrowRight />

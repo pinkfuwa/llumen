@@ -5,8 +5,13 @@
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 	import { token } from '$lib/store';
 	import { goto } from '$app/navigation';
+	import { clear as clearCache } from 'sswr';
 
 	let { children } = $props();
+
+	$effect(() => {
+		if ($token == undefined) goto('/login');
+	});
 </script>
 
 <svelte:head>
@@ -53,6 +58,7 @@
 						class="flex items-center"
 						onclick={() => {
 							token.set(undefined);
+							clearCache();
 							goto('/login');
 						}}
 					>
