@@ -31,13 +31,13 @@ export function CreateQuery<P, D>(option: QueryOption<P, D>): QueryResult<D> {
 		() =>
 			JSON.stringify({
 				key,
-				param: param(),
-				token: get(token)?.value
+				param: param()
 			}),
 		{
 			fetcher: async (encoded: string) => {
-				const { token, param } = JSON.parse(encoded);
-				const execute = () => (token == '' ? fetcher(param) : fetcher(param, token));
+				const { param } = JSON.parse(encoded);
+				let tokenVal = get(token)?.value;
+				const execute = () => (tokenVal == '' ? fetcher(param) : fetcher(param, tokenVal));
 				try {
 					return await execute();
 				} catch {
