@@ -10,6 +10,7 @@
 	import { createRoom } from '$lib/api/chatroom';
 	import { goto } from '$app/navigation';
 	import { _ } from 'svelte-i18n';
+	import { fade } from 'svelte/transition';
 
 	let mode = $state(0) as 0 | 1 | 2;
 	let editable = $state(true);
@@ -36,9 +37,14 @@
 	<title>{$_('chat.title')}</title>
 </svelte:head>
 
-<h1 class="mx-auto mb-8 text-4xl font-light lg:text-5xl">{$_('chat.welcome')}</h1>
+<h1
+	class="mx-auto mb-4 bg-gradient-to-r from-dark to-blue-600 bg-clip-text pb-4 text-4xl font-semibold text-transparent lg:text-5xl"
+	in:fade={{ duration: 150 }}
+>
+	{$_('chat.welcome')}
+</h1>
 <div
-	class="min-h-sm item relative mx-auto rounded-md border border-outline p-2 md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
+	class="min-h-sm item relative mx-auto rounded-md border border-outline p-2 shadow-xl shadow-hover md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
 	bind:this={container}
 >
 	{#if dropZone.isOver && editable}
