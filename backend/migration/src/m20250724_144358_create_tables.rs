@@ -1,4 +1,4 @@
-use sea_orm_migration::{manager, prelude::*, schema::*};
+use sea_orm_migration::{prelude::*, schema::*};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -41,7 +41,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Chat::Table)
                     .if_not_exists()
-                    .col(integer(Chat::RoomId).primary_key())
+                    .col(pk_auto(Chat::Id))
                     .col(integer(Chat::OwnerId))
                     .foreign_key(
                         ForeignKey::create()
@@ -51,8 +51,16 @@ impl MigrationTrait for Migration {
                             .on_update(ForeignKeyAction::Cascade)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
-                    .col(timestamp(Chat::CreatedAt))
-                    .col(string(Chat::Text))
+                    .col(integer(Chat::ModelId))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-chat-model_id-model")
+                            .from(Chat::Table, Chat::ModelId)
+                            .to(Model::Table, Model::Id)
+                            .on_update(ForeignKeyAction::Cascade)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .col(string(Chat::Title))
                     .to_owned(),
             )
             .await?;
@@ -60,9 +68,81 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
+                    .table(Message::Table)
+                    .col(pk_auto(Message::Id))
+                    .col(integer(Message::ChatId))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-message-chat_id-chat")
+                            .from(Message::Table, Message::ChatId)
+                            .to(Chat::Table, Chat::Id)
+                            .on_update(ForeignKeyAction::Cascade)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .col(string(Message::Text))
+                    .col(integer(Message::Kind))
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx-message-room_id")
+                    .table(Message::Table)
+                    .col(Message::ChatId)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .if_not_exists()
                     .table(Model::Table)
                     .col(pk_auto(Model::Id))
                     .col(string(Model::Config))
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .if_not_exists()
+                    .table(File::Table)
+                    .col(pk_auto(File::Id))
+                    .col(integer(File::MessageId))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-file-message_id-message")
+                            .from(File::Table, File::MessageId)
+                            .to(Message::Table, Message::Id)
+                            .on_update(ForeignKeyAction::Cascade)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .col(string(File::Name))
+                    .col(binary(File::Bytes))
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx-file-message_id")
+                    .table(File::Table)
+                    .col(File::MessageId)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(Config::Table)
+                    .col(string(Config::Key).primary_key())
+                    .col(string(Config::Value))
                     .to_owned(),
             )
             .await?;
@@ -78,7 +158,16 @@ impl MigrationTrait for Migration {
             .drop_table(Table::drop().table(Chat::Table).to_owned())
             .await?;
         manager
+            .drop_table(Table::drop().table(Message::Table).to_owned())
+            .await?;
+        manager
             .drop_table(Table::drop().table(Model::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(File::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Config::Table).to_owned())
             .await?;
 
         Ok(())
@@ -96,10 +185,20 @@ enum User {
 #[derive(DeriveIden)]
 enum Chat {
     Table,
-    RoomId,
+    Id,
+    ModelId,
     OwnerId,
-    CreatedAt,
+    Title,
+}
+
+#[derive(DeriveIden)]
+enum Message {
+    Table,
+    Id,
+    ChatId,
     Text,
+
+    Kind,
 }
 
 #[derive(DeriveIden)]
@@ -107,4 +206,20 @@ enum Model {
     Table,
     Id,
     Config,
+}
+
+#[derive(DeriveIden)]
+enum File {
+    Table,
+    Id,
+    MessageId,
+    Name,
+    Bytes,
+}
+
+#[derive(DeriveIden)]
+enum Config {
+    Table,
+    Key,
+    Value,
 }

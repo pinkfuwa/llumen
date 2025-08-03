@@ -46,7 +46,8 @@ async fn main() {
             Router::new()
                 .nest("/chat", routes::chat::routes())
                 .nest("/user", routes::user::routes())
-                // .nest("/message",routes::message)
+                .nest("/message", routes::message::routes())
+                .nest("/model", routes::model::routes())
                 .layer(middleware::from_fn_with_state(
                     state.clone(),
                     middlewares::auth::middleware,

@@ -33,11 +33,11 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?
         .ok_or("")
-        .kind(ErrorKind::UnknownUser)?;
+        .kind(ErrorKind::LoginFail)?;
 
     if model.password != req.password {
         return Err(Json(Error {
-            error: ErrorKind::UnknownUser,
+            error: ErrorKind::LoginFail,
             reason: "".to_owned(),
         }));
     }

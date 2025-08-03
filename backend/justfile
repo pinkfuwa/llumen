@@ -4,10 +4,10 @@ export DATABASE_URL := "sqlite://../db.sqlite?mode=rwc"
 
 
 
-up:
-    cd migration; cargo run
-down:
-    cd migration; cargo run -- down
+fresh:
+    cd migration; cargo run -- fresh
+refresh:
+    cd migration; cargo run -- refresh
 
 gen-ts:
     typeshare . --lang=typescript --output-file={{TS_OUTPUT}}

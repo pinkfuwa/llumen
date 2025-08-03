@@ -5,15 +5,25 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "chat")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
-    pub room_id: i32,
+    #[sea_orm(primary_key)]
+    pub id: i32,
     pub owner_id: i32,
-    pub created_at: DateTimeUtc,
-    pub text: String,
+    pub model_id: i32,
+    pub title: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(has_many = "super::message::Entity")]
+    Message,
+    #[sea_orm(
+        belongs_to = "super::model::Entity",
+        from = "Column::ModelId",
+        to = "super::model::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
+    Model,
     #[sea_orm(
         belongs_to = "super::user::Entity",
         from = "Column::OwnerId",
@@ -22,6 +32,18 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     User,
+}
+
+impl Related<super::message::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Message.def()
+    }
+}
+
+impl Related<super::model::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Model.def()
+    }
 }
 
 impl Related<super::user::Entity> for Entity {

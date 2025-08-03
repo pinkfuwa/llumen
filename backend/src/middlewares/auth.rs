@@ -5,7 +5,7 @@ use axum::{
     extract::{Request, State},
     http::header,
     middleware::Next,
-    response::{IntoResponse, Response},
+    response::Response,
 };
 use pasetors::{
     Local,
@@ -16,7 +16,7 @@ use pasetors::{
 use crate::{AppState, errors::*};
 
 #[derive(Debug, Clone, Copy)]
-pub struct UserId(pub u64);
+pub struct UserId(pub i32);
 
 pub async fn middleware(
     State(state): State<Arc<AppState>>,
@@ -36,13 +36,13 @@ pub async fn middleware(
 
     let claim = token
         .payload_claims()
-        .map(|x| x.get_claim("uid").map(|x| x.as_u64()))
+        .map(|x| x.get_claim("uid").map(|x| x.as_i64()))
         .flatten()
         .flatten();
 
     let user_id = claim
         .ok_or("Missing claim")
-        .kind(ErrorKind::MalformedToken)?;
+        .kind(ErrorKind::MalformedToken)? as i32;
     request.extensions_mut().insert(UserId(user_id));
     let response = next.run(request).await;
 
