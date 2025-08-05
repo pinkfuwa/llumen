@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { session = undefined, page = 0, addition = false } = $props();
+	let { addition = false } = $props();
 	import ForwardPage from './Forward.svelte';
 	import ChatroomBtn from './ChatroomBtn.svelte';
 	import { useRecentRoom, useRoom } from '$lib/api/chatroom';
@@ -7,7 +7,9 @@
 	import { derived } from 'svelte/store';
 
 	let div: HTMLElement | null = $state(null);
-	const { data, nextParam } = useRoom(() => div, session);
+	const { data, nextParam } = useRoom(() => div);
+
+	const page = 0;
 
 	const recentData = useRecentRoom(() => $data?.[0].id);
 

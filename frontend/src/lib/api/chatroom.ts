@@ -88,44 +88,6 @@ export function useRoom(target: () => HTMLElement | null | undefined, id?: numbe
 const recentRoom = writable<Room[]>([]);
 
 export function useRecentRoom(getId: () => number | undefined): Readable<Room[]> {
-	// const fetcher = async (token: string, id: number) => {
-	// 	console.log('mocking list room(backward)', { token, id });
-	// 	await sleep(1000);
-	// 	if (token !== '<not-a-token>') throw new Error('Invalid token');
-	// 	return mockDB
-	// 		.sort((a, b) => a.id - b.id)
-	// 		.filter((x) => x.id >= id)
-	// 		.slice(0, pageSize);
-	// };
-
-	// const result = CreateInfiniteQuery<Room[], number | undefined, number | undefined>({
-	// 	initialParam: getId,
-	// 	nextParam: (list: Room[]) => list.at(-1)?.id,
-	// 	genParam: (x) => x,
-	// 	fetcher: async (param, token) => {
-	// 		if (param == undefined) return [];
-	// 		const id = Array.isArray(param) ? param[0] : param;
-	// 		let result = await fetcher(token!, id);
-	// 		if (id) result = result.filter((x) => x.id <= id);
-	// 		if (Array.isArray(param) && param[1] != undefined)
-	// 			result = result.filter((x) => x.id >= param[1]!);
-
-	// 		return result;
-	// 	}
-	// });
-
-	// return derived([result, recentRoom], ([$result, $recentRoom]) => {
-	// 	if ($result.length == 0) return readable($recentRoom);
-	// 	if ($recentRoom.length != 0) {
-	// 		const appendData = $recentRoom;
-	// 		recentRoom.set([]);
-	// 		$result.at(-1)!.data.update((x) => [...(x ?? []), ...appendData]);
-	// 	}
-	// 	return derived(
-	// 		$result.map((x) => x.data),
-	// 		(resultArray) => resultArray.flat().filter((x) => x != undefined)
-	// 	);
-	// });
 	return recentRoom;
 }
 
