@@ -1,9 +1,21 @@
 import { type Readable, type Writable, get, derived, writable, readable } from 'svelte/store';
-import { useSWR } from 'sswr';
+import { useSWR, mutate as setData } from 'sswr';
 import { observeIntersection } from '@sv-use/core';
 import { token } from '$lib/store';
 
 const defaultStaleTime = 30000;
+
+export interface SetQueryOption<P, D> {
+	data: D;
+	param: P;
+	key?: string[];
+}
+
+export function SetQueryData<P, D>(options: SetQueryOption<P, D>) {
+	const { data, param, key } = options;
+	const keyStr = JSON.stringify({ key, param });
+	setData(keyStr, data);
+}
 
 export interface QueryResult<T> {
 	data: Writable<T | undefined>;

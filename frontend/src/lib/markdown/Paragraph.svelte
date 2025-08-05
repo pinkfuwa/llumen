@@ -8,4 +8,4 @@
 	let { children } = $props();
 </script>
 
-<p class="items-center">{@render children?.()}</p>
+<p class="items-center space-y-2">{@render children?.()}</p>

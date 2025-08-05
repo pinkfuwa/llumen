@@ -1,8 +1,8 @@
 <script>
-	import { ClipboardCopy, CircleCheck } from '@lucide/svelte';
+	import { ClipboardCopy } from '@lucide/svelte';
 	import { theme } from '$lib/store';
 	import { codeToHtml } from 'shiki/bundle/web';
-	import { fade } from 'svelte/transition';
+	import CopyHint from './CopyHint.svelte';
 
 	let { lang, text } = $props();
 
@@ -28,7 +28,7 @@
 		<ClipboardCopy class="h-10 w-10 rounded-md bg-background p-2 hover:bg-hover" />
 	</button>
 	<div
-		class="border-radius-md overflow-x-scroll rounded-md border border-outline p-2"
+		class="border-radius-md overflow-x-auto rounded-md border border-outline p-2"
 		style={themeStyle}
 	>
 		{#await codeToHtml(text, { lang, theme: $theme == 'light' ? 'github-light' : 'github-dark' })}
@@ -46,12 +46,5 @@
 </div>
 
 {#if copied}
-	<div
-		class="fixed top-0 right-0 z-6 m-3 flex items-center rounded-md border border-outline bg-background px-3 py-2"
-		in:fade={{ duration: 150 }}
-		out:fade={{ duration: 150 }}
-	>
-		<CircleCheck class="mr-2 inline-block" />
-		Copied to clipboard
-	</div>
+	<CopyHint />
 {/if}

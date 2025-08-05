@@ -8,7 +8,7 @@
 	{#each files as file, i}
 		<div class="group relative rounded-md border border-outline bg-background p-2 hover:bg-hover">
 			<Paperclip class="absolute top-2 left-14 h-10 w-10 opacity-20" />
-			<div class="nobar flex h-10 w-34 items-center justify-center overflow-x-scroll break-all">
+			<div class="nobar flex h-10 w-34 items-center justify-center overflow-x-auto break-all">
 				{file.name}
 			</div>
 			<X
