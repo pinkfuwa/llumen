@@ -9,8 +9,10 @@
 </svelte:head>
 
 <div class="flex h-screen flex-row">
-	<Sidebar />
-	<div class="flex h-screen grow flex-col justify-center">
+	<div class="relative w-64 overflow-hidden lg:w-80 xl:w-108">
+		<Sidebar />
+	</div>
+	<div class="relative flex h-full w-full flex-col justify-center">
 		{@render children()}
 	</div>
 </div>

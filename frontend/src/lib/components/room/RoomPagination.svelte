@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { session = undefined, page = 0, addition = false } = $props();
+	let { addition = false, currentRoom = undefined as undefined | string } = $props();
 	import ForwardPage from './Forward.svelte';
 	import ChatroomBtn from './ChatroomBtn.svelte';
 	import { useRecentRoom, useRoom } from '$lib/api/chatroom';
@@ -7,7 +7,9 @@
 	import { derived } from 'svelte/store';
 
 	let div: HTMLElement | null = $state(null);
-	const { data, nextParam } = useRoom(() => div, session);
+	const { data, nextParam } = useRoom(() => div);
+
+	const page = 0;
 
 	const recentData = useRecentRoom(() => $data?.[0].id);
 
@@ -16,7 +18,7 @@
 	);
 </script>
 
-<ul class="nobar max-h-[calc(100vh-185px)] overflow-y-scroll text-sm">
+<ul class="nobar max-h-[calc(100vh-185px)] overflow-y-auto text-sm">
 	{#if addition}
 		<li>
 			<a
@@ -29,20 +31,16 @@
 		</li>
 	{/if}
 	{#each $recentData.reverse() as room}
-		<a href="/chat/{encodeURIComponent(room.id)}">
-			<ChatroomBtn name={room.title} />
-		</a>
+		<ChatroomBtn name={room.title} id={room.id} selected={room.id.toString() == currentRoom} />
 	{/each}
 	<div bind:this={div}>
 		{#each $firstPage as room}
-			<a href="/chat/{encodeURIComponent(room.id)}">
-				<ChatroomBtn name={room.title} />
-			</a>
+			<ChatroomBtn name={room.title} id={room.id} selected={room.id.toString() == currentRoom} />
 		{/each}
 	</div>
 	{#if $nextParam}
 		{#key page}
-			<ForwardPage session={$nextParam} page={page + 1} />
+			<ForwardPage session={$nextParam} page={page + 1} {currentRoom} />
 		{/key}
 	{/if}
 </ul>

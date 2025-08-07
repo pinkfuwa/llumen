@@ -1,4 +1,5 @@
 <script lang="ts">
+	import TiltBtn from '$lib/components/buttons/TiltBtn.svelte';
 	import { _ } from 'svelte-i18n';
 </script>
 
@@ -10,11 +11,11 @@
 <div contenteditable="plaintext-only" class="min-h-[200px] rounded-md bg-hover p-3">
 	text config
 </div>
-<button
+<TiltBtn
 	class="mt-3 rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
-	>{$_('setting.check_syntax')}</button
+	>{$_('setting.check_syntax')}</TiltBtn
 >
-<button
+<TiltBtn
 	class="mt-3 ml-2 rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
-	>{$_('setting.save_settings')}</button
+	>{$_('setting.save_settings')}</TiltBtn
 >

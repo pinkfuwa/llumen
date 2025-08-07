@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Login, HeaderLogin } from '$lib/api/user';
+	import TiltBtn from '$lib/components/buttons/TiltBtn.svelte';
 	import { _ } from 'svelte-i18n';
 
 	let username = $state('');
@@ -67,10 +68,10 @@
 				/>
 			</div>
 
-			<button
+			<TiltBtn
 				type="submit"
-				class="rounded-full border border-outline px-12 py-2 hover:bg-hover disabled:bg-hover"
 				disabled={$isPending}
+				class="rounded-full border border-outline px-12 py-2 hover:bg-hover disabled:bg-hover"
 			>
 				{#if $isError}
 					{$_('login.retry')}
@@ -79,7 +80,7 @@
 				{:else}
 					{$_('login.submit')}
 				{/if}
-			</button>
+			</TiltBtn>
 		</form>
 	</div>
 </div>

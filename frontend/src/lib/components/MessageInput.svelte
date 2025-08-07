@@ -35,7 +35,7 @@
 </script>
 
 <div
-	class="min-h-sm item relative mx-auto rounded-md border border-outline p-2 shadow-xl shadow-hover md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
+	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-light p-2 shadow-xl shadow-hover md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
 	bind:this={container}
 >
 	{#if dropZone.isOver && editable}
@@ -51,7 +51,7 @@
 		</div>
 	{/if}
 	<div class="mb-2 flex items-center justify-between space-x-2 border-b border-outline p-2 pb-4">
-		<MdTextbox {editable} placeholder={$_('chat.question')} bind:value={content} />
+		<MdTextbox bind:editable placeholder={$_('chat.question')} bind:value={content} />
 		<SendBtn {onclick} />
 	</div>
 	<div class="flex flex-row items-center justify-between">
