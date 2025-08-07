@@ -20,11 +20,13 @@ pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
     pub sse: SseContext,
+    pub api_key: String,
 }
 
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
+    tracing_subscriber::fmt::init();
 
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
@@ -38,6 +40,7 @@ async fn main() {
         conn,
         key: SymmetricKey::generate().expect("Cannot generate key"),
         sse,
+        api_key,
     });
 
     let app = Router::new()
@@ -48,10 +51,10 @@ async fn main() {
                 .nest("/user", routes::user::routes())
                 .nest("/message", routes::message::routes())
                 .nest("/model", routes::model::routes())
-                .layer(middleware::from_fn_with_state(
-                    state.clone(),
-                    middlewares::auth::middleware,
-                ))
+                .layer(middleware::from_extractor_with_state::<
+                    middlewares::auth::Middleware,
+                    _,
+                >(state.clone()))
                 .nest("/auth", routes::auth::routes()),
         )
         .with_state(state);

@@ -1,13 +1,15 @@
 TS_OUTPUT := "../frontend/src/lib/api/types.ts"
 
-export DATABASE_URL := "sqlite://../db.sqlite?mode=rwc"
+DATABASE_URL := "sqlite://../db.sqlite?mode=rwc"
 
 
+run:
+    RUST_BACKTRACE=1 RUST_LOG=info cargo run
 
 fresh:
-    cd migration; cargo run -- fresh
+    cd migration; DATABASE_URL={{DATABASE_URL}} cargo run -- fresh
 refresh:
-    cd migration; cargo run -- refresh
+    cd migration; DATABASE_URL={{DATABASE_URL}} cargo run -- refresh
 
 gen-ts:
     typeshare . --lang=typescript --output-file={{TS_OUTPUT}}

@@ -17,6 +17,9 @@ migration = { path = "migration" }
 anyhow = "1.0.98"
 futures-util = "0.3.31"
 reqwest-eventsource = "0.6.0"
+toml = "0.9.4"
+tracing = "0.1"
+tracing-subscriber = "0.3"
 
 [dependencies.reqwest]
 version = "0.12.22"
