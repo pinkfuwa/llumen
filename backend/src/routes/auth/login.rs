@@ -35,7 +35,7 @@ pub async fn route(
         .ok_or("")
         .kind(ErrorKind::LoginFail)?;
 
-    if model.password != req.password {
+    if !app.hasher.verify_password(&model.password, &req.password) {
         return Err(Json(Error {
             error: ErrorKind::LoginFail,
             reason: "".to_owned(),

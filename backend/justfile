@@ -8,6 +8,7 @@ run:
 
 fresh:
     cd migration; DATABASE_URL={{DATABASE_URL}} cargo run -- fresh
+
 refresh:
     cd migration; DATABASE_URL={{DATABASE_URL}} cargo run -- refresh
 

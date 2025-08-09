@@ -26,9 +26,10 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<UserCreateReq>,
 ) -> JsonResult<UserCreateResp> {
+    let password_hash = app.hasher.hash_password(&req.password);
     let new_user = user::ActiveModel {
         name: ActiveValue::Set(req.username),
-        password: ActiveValue::Set(req.password),
+        password: ActiveValue::Set(password_hash),
         ..Default::default()
     };
 

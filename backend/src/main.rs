@@ -14,6 +14,7 @@ use pasetors::{
 };
 use sea_orm::{Database, DbConn};
 use tokio::net::TcpListener;
+use utils::password_hash::Hasher;
 use utils::sse::{SseContext, spawn_sse};
 
 pub struct AppState {
@@ -21,6 +22,7 @@ pub struct AppState {
     pub key: SymmetricKey<V4>,
     pub sse: SseContext,
     pub api_key: String,
+    pub hasher: Hasher,
 }
 
 #[tokio::main]
@@ -41,6 +43,7 @@ async fn main() {
         key: SymmetricKey::generate().expect("Cannot generate key"),
         sse,
         api_key,
+        hasher: Hasher::default(),
     });
 
     let app = Router::new()
