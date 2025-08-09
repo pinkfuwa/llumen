@@ -7,8 +7,8 @@
 
 	let { children } = $props();
 
-	$effect(() => theme.subscribe(setTheme));
-	$effect(() => locale.subscribe(setLocale));
+	theme.subscribe(setTheme);
+	locale.subscribe(setLocale);
 </script>
 
 {#if !$isLoading}
