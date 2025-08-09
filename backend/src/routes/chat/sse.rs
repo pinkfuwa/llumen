@@ -15,12 +15,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use typeshare::typeshare;
 
-use crate::{
-    AppState,
-    errors::*,
-    middlewares::auth::UserId,
-    utils::sse::{SubscribeMessage, SubscribeToken},
-};
+use crate::{AppState, errors::*, middlewares::auth::UserId, utils::sse::SubscribeToken};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -34,24 +29,43 @@ pub struct SseReq {
 pub enum SseResp {
     /// If no streaming message
     /// use this to get old message
-    Last(i32),
+    Last(SseRespLast),
 
     /// start a streaming
-    Start(SseRespStart),
+    AssistantStart,
 
     /// token
-    Token(String),
+    Token(SseRespToken),
 
     /// End of the streaming message
     /// next token will be `Start`
-    End,
+    End(SseRespEnd),
+
+    UserMessage(SseRespUserMessage),
+}
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespLast {
+    pub id: i32,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespStart {
-    /// Chat room id
+pub struct SseRespEnd {
     pub id: i32,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespToken {
+    pub text: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespUserMessage {
+    pub id: i32,
+    pub text: String,
 }
 
 pub async fn route(
@@ -85,34 +99,31 @@ pub async fn route(
                 .recv()
                 .await
                 .map(|v| match v {
-                    SubscribeToken::Start(id) => SseResp::Start(SseRespStart { id }),
-                    SubscribeToken::Token(s) => SseResp::Token(s),
-                    SubscribeToken::End => SseResp::End,
+                    SubscribeToken::UserText(id, text) => {
+                        Ok(SseResp::UserMessage(SseRespUserMessage { id, text }))
+                    }
+                    SubscribeToken::AssistantStart => Ok(SseResp::AssistantStart),
+                    SubscribeToken::Token(text) => Ok(SseResp::Token(SseRespToken { text })),
+                    SubscribeToken::Error(error) => Err(error),
+                    SubscribeToken::End(id) => Ok(SseResp::End(SseRespEnd { id })),
                 })
                 .map_err(|e| Error {
                     error: ErrorKind::Internal,
                     reason: e.to_string(),
-                }),
+                })
+                .and_then(|x| x),
             channel,
         ))
     };
     let remain = stream::unfold(sub.channel, remain);
 
+    let last = Ok(SseResp::Last(SseRespLast { id: sub.last }));
     let sse = match sub.message {
-        SubscribeMessage::Cache(cache) => {
-            let start: Result<_, Error> = Ok(SseResp::Start(SseRespStart {
-                id: cache.message_id,
-            }));
-            let token: Result<_, Error> = Ok(SseResp::Token(cache.message));
-
-            stream::iter([start, token]).chain(remain).left_stream()
-        }
-        SubscribeMessage::Last(id) => {
-            let last: Result<_, Error> = Ok(SseResp::Last(id));
-            stream::iter([last]).chain(remain).right_stream()
-        }
+        Some(text) => stream::iter([last, Ok(SseResp::Token(SseRespToken { text }))]).left_stream(),
+        None => stream::iter([last]).right_stream(),
     }
-    .map(|x| Event::default().json_data(UResult::from(x)));
+    .chain(remain)
+    .map(|x| Event::default().json_data(JsonUnion::from(x)));
 
     Ok(Sse::new(sse).keep_alive(KeepAlive::new()))
 }

@@ -1,4 +1,6 @@
+mod create;
 mod delete;
+mod halt;
 mod paginate;
 mod read;
 mod sse;
@@ -15,4 +17,5 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/delete", post(delete::route))
         .route("/paginate", post(paginate::route))
         .route("/read", post(read::route))
+        .route("/create", post(create::route))
 }

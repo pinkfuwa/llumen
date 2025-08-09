@@ -1,3 +1,3 @@
 mod entities;
-mod patch;
+pub mod patch;
 pub use entities::*;

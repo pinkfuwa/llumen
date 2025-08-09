@@ -19,6 +19,7 @@ pub enum ErrorKind {
     Internal,
     LoginFail,
     ResourceNotFound,
+    ApiFail,
 }
 
 pub type JsonResult<T> = Result<Json<T>, Json<Error>>;
@@ -43,12 +44,12 @@ where
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
-pub enum UResult<T, E> {
+pub enum JsonUnion<T, E> {
     Ok(T),
     Err(E),
 }
 
-impl<T, E> From<Result<T, E>> for UResult<T, E> {
+impl<T, E> From<Result<T, E>> for JsonUnion<T, E> {
     fn from(value: Result<T, E>) -> Self {
         match value {
             Ok(v) => Self::Ok(v),
