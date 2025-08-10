@@ -26,13 +26,12 @@ pub struct SseReq {
 #[derive(Debug, Serialize)]
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
+/// When connect, the respond will be `Last -> [[Token] -> Enc -> UserMessage]`
+/// When update the message, the respond will be `Last -> UserMessage(updated) -> [[Token] -> Enc -> UserMessage]`
 pub enum SseResp {
-    /// If no streaming message
-    /// use this to get old message
+    /// When connect to SSE, the first respond will be this
+    /// Use this to get old message
     Last(SseRespLast),
-
-    /// start a streaming
-    AssistantStart,
 
     /// token
     Token(SseRespToken),
@@ -41,6 +40,7 @@ pub enum SseResp {
     /// next token will be `Start`
     End(SseRespEnd),
 
+    /// The message sent by user
     UserMessage(SseRespUserMessage),
 }
 #[derive(Debug, Serialize)]
@@ -102,7 +102,6 @@ pub async fn route(
                     SubscribeToken::UserText(id, text) => {
                         Ok(SseResp::UserMessage(SseRespUserMessage { id, text }))
                     }
-                    SubscribeToken::AssistantStart => Ok(SseResp::AssistantStart),
                     SubscribeToken::Token(text) => Ok(SseResp::Token(SseRespToken { text })),
                     SubscribeToken::Error(error) => Err(error),
                     SubscribeToken::End(id) => Ok(SseResp::End(SseRespEnd { id })),
