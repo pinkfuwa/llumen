@@ -5,7 +5,7 @@
 	let { onclick = (() => {}) as MouseEventHandler<HTMLButtonElement> } = $props();
 </script>
 
-<div class="fixed top-5 left-5">
+<div class="fixed top-5 left-5 z-100">
 	<button
 		class="rounded-lg border border-outline bg-background p-2 text-dark shadow-md hover:bg-hover"
 		{onclick}

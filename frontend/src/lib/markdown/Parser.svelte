@@ -10,8 +10,6 @@
 		ordered = false,
 		...rest
 	} = $props();
-
-	console.log({ type, tokens, header, rows, ordered, ...rest });
 </script>
 
 {#if !type}

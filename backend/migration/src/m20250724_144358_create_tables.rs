@@ -22,7 +22,10 @@ impl MigrationTrait for Migration {
         let default_admin = Query::insert()
             .into_table(User::Table)
             .columns([User::Name, User::Password])
-            .values_panic(["admin".into(), "admin".into()])
+            .values_panic([
+                "admin".into(),
+                "$argon2id$v=19$m=16,t=2,p=1$aTg5eTNyMmRzLTA$FM4qzh9B/+DdCVOiQQruGw".into(),
+            ])
             .to_owned();
         manager.exec_stmt(default_admin).await?;
 
