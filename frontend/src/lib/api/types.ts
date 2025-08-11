@@ -22,12 +22,11 @@ export interface ChatHaltReq {
 	id: number;
 }
 
-export interface ChatHaltResp {
-}
+export interface ChatHaltResp {}
 
 export enum ChatPaginateReqOrder {
-	Asc = "asc",
-	Desc = "desc",
+	Asc = 'asc',
+	Desc = 'desc'
 }
 
 export interface ChatPaginateReq {
@@ -60,13 +59,13 @@ export interface ChatReadResp {
 }
 
 export enum ErrorKind {
-	Unauthorized = "unauthorized",
-	MalformedToken = "malformed_token",
-	MalformedRequest = "malformed_request",
-	Internal = "internal",
-	LoginFail = "login_fail",
-	ResourceNotFound = "resource_not_found",
-	ApiFail = "api_fail",
+	Unauthorized = 'unauthorized',
+	MalformedToken = 'malformed_token',
+	MalformedRequest = 'malformed_request',
+	Internal = 'internal',
+	LoginFail = 'login_fail',
+	ResourceNotFound = 'resource_not_found',
+	ApiFail = 'api_fail'
 }
 
 export interface Error {
@@ -95,9 +94,9 @@ export interface MessageCreateResp {
 
 export enum MessagePaginateReqOrder {
 	/** greater than */
-	GT = "gt",
+	GT = 'gt',
 	/** less than */
-	LT = "lt",
+	LT = 'lt'
 }
 
 export interface MessagePaginateReqLimit {
@@ -119,9 +118,9 @@ export interface MessagePaginateReqRange {
 }
 
 export enum MessagePaginateRespRole {
-	User = "user",
-	Assistant = "assistant",
-	Think = "think",
+	User = 'user',
+	Assistant = 'assistant',
+	Think = 'think'
 }
 
 export interface MessagePaginateRespList {
@@ -177,8 +176,7 @@ export interface ModelWriteReq {
 	config: string;
 }
 
-export interface ModelWriteResp {
-}
+export interface ModelWriteResp {}
 
 export interface RenewReq {
 	token: string;
@@ -188,8 +186,7 @@ export interface RenewResp {
 	token: string;
 }
 
-export interface Resp {
-}
+export interface Resp {}
 
 export interface SseReq {
 	id: number;
@@ -239,27 +236,26 @@ export interface UserInfoResp {
 	username: string;
 }
 
-export type MessagePaginateReq = 
-	| { t: "limit", c: MessagePaginateReqLimit }
-	| { t: "range", c: MessagePaginateReqRange };
+export type MessagePaginateReq =
+	| { t: 'limit'; c: MessagePaginateReqLimit }
+	| { t: 'range'; c: MessagePaginateReqRange };
 
 /**
  * When connect, the respond will be `Last -> [[Token] -> Enc -> UserMessage]`
  * When update the message, the respond will be `Last -> UserMessage(updated) -> [[Token] -> Enc -> UserMessage]`
  */
-export type SseResp = 
+export type SseResp =
 	/**
 	 * When connect to SSE, the first respond will be this
 	 * Use this to get old message
 	 */
-	| { t: "last", c: SseRespLast }
+	| { t: 'last'; c: SseRespLast }
 	/** token */
-	| { t: "token", c: SseRespToken }
+	| { t: 'token'; c: SseRespToken }
 	/**
 	 * End of the streaming message
 	 * next token will be `Start`
 	 */
-	| { t: "end", c: SseRespEnd }
+	| { t: 'end'; c: SseRespEnd }
 	/** The message sent by user */
-	| { t: "user_message", c: SseRespUserMessage };
-
+	| { t: 'user_message'; c: SseRespUserMessage };
