@@ -47,7 +47,7 @@
 	{/if}
 	{#if files.length != 0}
 		<div class="mb-2 overflow-scroll border-b border-outline pb-2">
-			<FileGroup {files} />
+			<FileGroup {files} deletable />
 		</div>
 	{/if}
 	<div class="mb-2 flex items-center justify-between space-x-2 border-b border-outline p-2 pb-4">

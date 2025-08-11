@@ -8,7 +8,7 @@
 	<title>Chatroom {params.id}</title>
 </svelte:head>
 <div class="flex h-screen flex-row">
-	<div class="shrink-0 grow overflow-hidden">
+	<div class="shrink-0 overflow-hidden">
 		<Sidebar addition currentRoom={params.id} />
 	</div>
 	<div class="nobar flex h-full grow flex-col overflow-y-auto">

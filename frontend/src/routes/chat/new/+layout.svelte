@@ -9,7 +9,7 @@
 </svelte:head>
 
 <div class="flex h-screen flex-row">
-	<div class="shrink-0 grow overflow-hidden">
+	<div class="shrink-0 overflow-hidden">
 		<Sidebar />
 	</div>
 	<div class="flex h-full w-full grow flex-col justify-center">
