@@ -10,11 +10,9 @@ use tokio::{
     spawn,
     sync::{Notify, broadcast, mpsc, oneshot},
 };
-use tracing::{info, instrument, warn};
+use tracing::{instrument, warn};
 
-use crate::errors::Error;
-
-const MAX_CAP: usize = 100;
+use crate::{config, errors::Error};
 
 #[derive(Debug)]
 pub enum Event {
@@ -33,7 +31,6 @@ pub struct Subscribe {
 
 #[derive(Debug, Clone)]
 pub enum SubscribeToken {
-    AssistantStart,
     Token(String),
     UserText(i32, String),
     Error(Error),
@@ -165,7 +162,7 @@ async fn on_subscribe(
                 .map(|x| x.id + 1)
                 .unwrap_or(0);
 
-            let (sen, rev) = broadcast::channel(MAX_CAP);
+            let (sen, rev) = broadcast::channel(config::MAX_SSE_BUF);
             entry.insert(ChannelMap {
                 channel: sen,
                 message: None,
@@ -209,7 +206,7 @@ async fn on_publish(
                 .unwrap_or(0);
 
             let entry = entry.insert(ChannelMap {
-                channel: broadcast::channel(MAX_CAP).0,
+                channel: broadcast::channel(config::MAX_SSE_BUF).0,
                 message: None,
                 halt: Arc::new(Notify::new()),
                 last,

@@ -1,3 +1,4 @@
+mod config;
 mod errors;
 mod middlewares;
 mod openrouter;
