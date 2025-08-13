@@ -35,7 +35,7 @@ function localState<T>(
 	return tokenStore;
 }
 
-export const token = localState<undefined | { value: string; expireAt: number; duration: number }>(
+export const token = localState<undefined | { value: string; expireAt: string; renewAt: string }>(
 	'token',
 	undefined
 );

@@ -1,7 +1,8 @@
-import { sleep } from './api';
+import { apiBase, sleep } from './api';
 import { token } from '$lib/store';
 import { useMutate, type mutationResult } from './state/mutate';
 import { CreateQuery, type QueryResult } from './state/query.svelte';
+import type { LoginReq, LoginResp, RenewResp, RenewReq } from './types';
 
 export interface User {
 	username: string;
@@ -49,24 +50,38 @@ interface LoginRequest {
 	username: string;
 	password: string;
 }
-export function Login(): mutationResult<
-	{ username: string; password: string },
-	{ value: string; expireAt: number; duration: number }
-> {
-	const fetcher = async (username: string, password: string) => {
-		console.log('mocking login', { username, password });
-		await sleep(1000);
-		if (username === 'admin' && password === 'P@88w0rd') {
-			const expireAt = Date.now() + 24 * 3600 * 7 * 1000;
-			return { value: '<not-a-token>', expireAt, duration: 24 * 3600 * 7 };
-		}
-		throw new Error('Invalid credentials');
-	};
-
+export function Login(): mutationResult<LoginReq, LoginResp> {
 	return useMutate({
-		mutator: ({ username, password }: LoginRequest, _) => fetcher(username, password),
-		onSuccess: (data) => token.set(data)
+		mutator: (body: LoginRequest, _) =>
+			fetch(apiBase + 'auth/login', { body: JSON.stringify(body), method: 'POST' }).then(
+				(res) => res.json() as Promise<LoginResp>
+			),
+		onSuccess: (data) => {
+			const now = new Date();
+			const expireAt = new Date(data.exp);
+			const renewAt = new Date(expireAt.getTime() / 2 + now.getTime());
+
+			token.set({
+				value: data.token,
+				expireAt: expireAt.toString(),
+				renewAt: renewAt.toString()
+			});
+		}
 	});
+}
+
+export async function RenewToken(originalToken: string) {
+	const body: RenewResp = { token: originalToken };
+
+	const response = await fetch(apiBase + 'auth/renew', {
+		body: JSON.stringify(body),
+		method: 'POST'
+	});
+	const data = (await response.json()) as RenewResp;
+
+	throw new Error('unable to get expireAt');
+
+	// TODO: set token
 }
 
 export function HeaderLogin(): mutationResult<
