@@ -2,7 +2,7 @@ import { derived, writable, type Readable, type Writable, readable } from 'svelt
 import { sleep } from './api';
 import type { Mode } from './model';
 import { goto } from '$app/navigation';
-import { CreateRecursiveQuery, CreateInfiniteQuery, useMutate } from './state';
+import { CreateRecursiveQuery, useMutate } from './state';
 import type { mutationResult, RecursiveQueryResult } from './state';
 
 export interface Room {

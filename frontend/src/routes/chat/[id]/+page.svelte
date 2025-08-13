@@ -15,7 +15,15 @@
 <div class="w-full grow space-y-2 pb-4">
 	{#each MockMessage as msg, i}
 		{#if i % 2 == 0}
-			<UserMessage content={msg} />
+			<UserMessage
+				content={msg}
+				files={[
+					{ name: 'manualA.pdf' },
+					{ name: 'manualB.pdf' },
+					{ name: 'manualC.pdf' },
+					{ name: 'manualD.pdf' }
+				]}
+			/>
 		{:else}
 			<AssistantMessage content={msg} />
 		{/if}
