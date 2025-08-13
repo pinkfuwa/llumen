@@ -26,8 +26,8 @@ pub struct SseReq {
 #[derive(Debug, Serialize)]
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
-/// When connect, the respond will be `Last -> [[Token] -> Enc -> UserMessage]`
-/// When update the message, the respond will be `Last -> UserMessage(updated) -> [[Token] -> Enc -> UserMessage]`
+/// When connect, the respond will be `Last -> [[Token] -> End -> UserMessage]`
+/// When update the message, the respond will be `Last -> UserMessage(updated) -> [[Token] -> End -> UserMessage]`
 pub enum SseResp {
     /// When connect to SSE, the first respond will be this
     /// Use this to get old message
