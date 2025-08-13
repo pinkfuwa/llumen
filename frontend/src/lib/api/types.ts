@@ -184,6 +184,7 @@ export interface RenewReq {
 
 export interface RenewResp {
 	token: string;
+	exp: string;
 }
 
 export interface Resp {}

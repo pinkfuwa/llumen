@@ -23,6 +23,7 @@ pub struct RenewReq {
 #[typeshare]
 pub struct RenewResp {
     pub token: String,
+    pub exp: String,
 }
 
 pub async fn route(
@@ -48,7 +49,11 @@ pub async fn route(
     // "uid" is not reserve
     claim.add_additional("uid", user_id).unwrap();
 
+    // safety:
+    // "exp" must exists
+    let exp = claim.get_claim("exp").unwrap().as_str().unwrap().to_owned();
+
     let token = local::encrypt(&app.key, &claim, None, None).kind(ErrorKind::Internal)?;
 
-    Ok(Json(RenewResp { token }))
+    Ok(Json(RenewResp { token, exp }))
 }
