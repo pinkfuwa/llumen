@@ -91,7 +91,11 @@ pub async fn route(
 
             let q = Message::find()
                 .filter(message::Column::ChatId.eq(limit.chat_id))
+<<<<<<< HEAD
                 .limit(limit.limit.unwrap_or(MAX_PAGINATE_LIMIT) as u64);
+=======
+                .limit(Some(limit.limit.unwrap_or(MAX_PAGINATE_LIMIT as u32) as u64));
+>>>>>>> main
             let q = match (limit.order, limit.id) {
                 (MessagePaginateReqOrder::GT, None) => q.order_by_asc(message::Column::Id),
                 (MessagePaginateReqOrder::GT, Some(id)) => q
@@ -118,7 +122,11 @@ pub async fn route(
 
             let q = Message::find()
                 .filter(message::Column::ChatId.eq(range.chat_id))
+<<<<<<< HEAD
                 .limit(MAX_PAGINATE_LIMIT as u64)
+=======
+                .limit(MAX_PAGINATE_LIMIT)
+>>>>>>> main
                 .filter(message::Column::Id.gt(range.lower).lt(range.upper));
             q
         }
