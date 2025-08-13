@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::{message, patch, prelude::*};
-use migration::ExprTrait;
 use sea_orm::{QueryOrder, QuerySelect, prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -22,7 +21,9 @@ pub enum MessagePaginateReq {
 pub struct MessagePaginateReqLimit {
     pub chat_id: i32,
 
-    /// default to i32::MAX
+    /// Default to the beginning
+    /// For Gt => minimum id
+    /// For Le => maximum id
     pub id: Option<i32>,
     pub order: MessagePaginateReqOrder,
     pub limit: Option<u32>,
@@ -91,7 +92,12 @@ pub async fn route(
 
             let q = Message::find()
                 .filter(message::Column::ChatId.eq(limit.chat_id))
-                .limit(limit.limit.unwrap_or(MAX_PAGINATE_LIMIT) as u64);
+                .limit(
+                    limit
+                        .limit
+                        .map(|x| x.min(MAX_PAGINATE_LIMIT))
+                        .unwrap_or(MAX_PAGINATE_LIMIT) as u64,
+                );
             let q = match (limit.order, limit.id) {
                 (MessagePaginateReqOrder::GT, None) => q.order_by_asc(message::Column::Id),
                 (MessagePaginateReqOrder::GT, Some(id)) => q
@@ -119,7 +125,8 @@ pub async fn route(
             let q = Message::find()
                 .filter(message::Column::ChatId.eq(range.chat_id))
                 .limit(MAX_PAGINATE_LIMIT as u64)
-                .filter(message::Column::Id.gt(range.lower).lt(range.upper));
+                .filter(message::Column::Id.gt(range.lower))
+                .filter(message::Column::Id.lt(range.upper));
             q
         }
     };
