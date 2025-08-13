@@ -29,7 +29,8 @@ impl LFSR {
 
 impl Default for LFSR {
     fn default() -> Self {
-        LFSR::new(0, vec![1, 4, 3], 64)
+        let taps = (0..4).map(|_| unsafe { libc::rand() % 64 } as u8).collect();
+        LFSR::new(0, taps, 64)
     }
 }
 

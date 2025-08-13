@@ -374,6 +374,7 @@ dependencies = [
  "dotenv",
  "entity",
  "futures-util",
+ "libc",
  "migration",
  "pasetors",
  "reqwest",
