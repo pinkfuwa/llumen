@@ -1,3 +1,4 @@
+use pasetors::keys::Generate;
 use sea_orm_migration::{prelude::*, schema::*};
 
 #[derive(DeriveMigrationName)]
@@ -24,6 +25,7 @@ impl MigrationTrait for Migration {
             .columns([User::Name, User::Password])
             .values_panic([
                 "admin".into(),
+                // admin
                 "$argon2id$v=19$m=16,t=2,p=1$aTg5eTNyMmRzLTA$FM4qzh9B/+DdCVOiQQruGw".into(),
             ])
             .to_owned();
@@ -145,10 +147,18 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Config::Table)
                     .col(string(Config::Key).primary_key())
-                    .col(string(Config::Value))
+                    .col(binary(Config::Value))
                     .to_owned(),
             )
             .await?;
+
+        let key = pasetors::keys::SymmetricKey::generate().expect("Cannot generate");
+        let insert_key = Query::insert()
+            .into_table(Config::Table)
+            .columns([Config::Key, Config::Value])
+            .values_panic(["paseto_key".into(), key.as_bytes().into()])
+            .to_owned();
+        manager.exec_stmt(insert_key).await?;
 
         Ok(())
     }

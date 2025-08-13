@@ -7,13 +7,12 @@ mod utils;
 
 use std::sync::Arc;
 
+use anyhow::Context;
 use axum::{Router, middleware};
 use dotenv::var;
-use pasetors::{
-    keys::{Generate, SymmetricKey},
-    version4::V4,
-};
-use sea_orm::{Database, DbConn};
+use entity::prelude::*;
+use pasetors::{keys::SymmetricKey, version4::V4};
+use sea_orm::{Database, DbConn, EntityTrait};
 use tokio::net::TcpListener;
 use utils::password_hash::Hasher;
 use utils::sse::{SseContext, spawn_sse};
@@ -38,10 +37,22 @@ async fn main() {
     let conn = Database::connect(database_url)
         .await
         .expect("Cannot connect to database");
+
+    let key = SymmetricKey::from(
+        &Config::find_by_id("paseto_key")
+            .one(&conn)
+            .await
+            .unwrap()
+            .context("Cannot find paseto key")
+            .unwrap()
+            .value,
+    )
+    .expect("Cannot parse paseto key");
+
     let sse = spawn_sse(conn.clone());
     let state = Arc::new(AppState {
         conn,
-        key: SymmetricKey::generate().expect("Cannot generate key"),
+        key,
         sse,
         api_key,
         hasher: Hasher::default(),
