@@ -13,6 +13,7 @@ export interface Capabilty {
 	document: boolean;
 	video: boolean;
 }
+
 interface Model {
 	displayName: string;
 	modelId: string;

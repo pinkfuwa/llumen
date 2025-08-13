@@ -92,7 +92,7 @@ export function useRecentRoom(getId: () => number | undefined): Readable<Room[]>
 }
 
 export interface CreateRoomRequest {
-	firstMessage: string;
+	message: string;
 	modelId: string;
 	files: File[];
 	mode: Mode;

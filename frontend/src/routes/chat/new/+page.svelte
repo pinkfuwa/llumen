@@ -27,7 +27,7 @@
 	onclick={() => {
 		mutate(
 			{
-				firstMessage: content,
+				message: content,
 				modelId,
 				files,
 				mode

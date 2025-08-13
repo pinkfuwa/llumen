@@ -71,6 +71,8 @@ export function Login(): mutationResult<LoginReq, LoginResp> {
 }
 
 export async function RenewToken(originalToken: string) {
+	throw new Error('unable to get expireAt');
+
 	const body: RenewResp = { token: originalToken };
 
 	const response = await fetch(apiBase + 'auth/renew', {
@@ -78,10 +80,6 @@ export async function RenewToken(originalToken: string) {
 		method: 'POST'
 	});
 	const data = (await response.json()) as RenewResp;
-
-	throw new Error('unable to get expireAt');
-
-	// TODO: set token
 }
 
 export function HeaderLogin(): mutationResult<
