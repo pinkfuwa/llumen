@@ -17,6 +17,9 @@ use tokio::net::TcpListener;
 use utils::password_hash::Hasher;
 use utils::sse::{SseContext, spawn_sse};
 
+#[cfg(feature = "dev")]
+use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
+
 pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
@@ -73,6 +76,14 @@ async fn main() {
                 .nest("/auth", routes::auth::routes()),
         )
         .with_state(state);
+
+    #[cfg(feature = "dev")]
+    let app = app.layer(
+        CorsLayer::new()
+            .allow_methods(AllowMethods::any())
+            .allow_origin(AllowOrigin::any())
+            .allow_headers(AllowHeaders::any()),
+    );
 
     let tcp = TcpListener::bind(bind_addr).await.unwrap();
     axum::serve(tcp, app).await.unwrap();

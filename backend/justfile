@@ -4,7 +4,7 @@ DATABASE_URL := "sqlite://../db.sqlite?mode=rwc"
 
 
 run:
-    RUST_BACKTRACE=1 RUST_LOG=info cargo run
+    RUST_BACKTRACE=1 RUST_LOG=info cargo run --features dev
 
 fresh:
     cd migration; DATABASE_URL={{DATABASE_URL}} cargo run -- fresh
