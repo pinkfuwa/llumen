@@ -371,7 +371,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
- "base64",
  "dotenv",
  "entity",
  "futures-util",
@@ -1700,7 +1699,6 @@ name = "migration"
 version = "0.1.0"
 dependencies = [
  "async-std",
- "base64",
  "pasetors",
  "sea-orm-migration",
 ]
