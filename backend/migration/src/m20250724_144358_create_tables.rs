@@ -6,7 +6,7 @@ pub struct Migration;
 
 // password hash of P@88w0rd
 static PASSWORD_HASH_ENCODE: &str =
-    "argon2id$v=19$m=16,t=2,p=1$aTg5eTNyMmRzLTA$FM4qzh9B/+DdCVOiQQruGw";
+    "$argon2id$v=19$m=16,t=2,p=1$aTg5eTNyMmRzLTA$FM4qzh9B/+DdCVOiQQruGw";
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
