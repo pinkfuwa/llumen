@@ -3,6 +3,10 @@ use sea_orm_migration::{prelude::*, schema::*};
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
+// password hash of P@88w0rd
+static PASSWORD_HASH_ENCODE: &str =
+    "argon2id$v=19$m=16,t=2,p=1$aTg5eTNyMmRzLTA$FM4qzh9B/+DdCVOiQQruGw";
+
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
@@ -22,10 +26,7 @@ impl MigrationTrait for Migration {
         let default_admin = Query::insert()
             .into_table(User::Table)
             .columns([User::Name, User::Password])
-            .values_panic([
-                "admin".into(),
-                "$argon2id$v=19$m=16,t=2,p=1$aTg5eTNyMmRzLTA$FM4qzh9B/+DdCVOiQQruGw".into(),
-            ])
+            .values_panic(["admin".into(), PASSWORD_HASH_ENCODE.into()])
             .to_owned();
         manager.exec_stmt(default_admin).await?;
 

@@ -15,8 +15,8 @@ use pasetors::{
 };
 use sea_orm::{Database, DbConn};
 use tokio::net::TcpListener;
-use utils::password_hash::Hasher;
 use utils::sse::{SseContext, spawn_sse};
+use utils::{config::load_key, password_hash::Hasher};
 
 pub struct AppState {
     pub conn: DbConn,
@@ -39,9 +39,11 @@ async fn main() {
         .await
         .expect("Cannot connect to database");
     let sse = spawn_sse(conn.clone());
+
+    let key = load_key(&conn).await.expect("Cannot load auth_key");
     let state = Arc::new(AppState {
         conn,
-        key: SymmetricKey::generate().expect("Cannot generate key"),
+        key,
         sse,
         api_key,
         hasher: Hasher::default(),
