@@ -1,8 +1,5 @@
 export { useMutate, type mutationResult } from './mutate';
-export { CreateRecursiveQuery, CreateInfiniteQuery, CreateQuery } from './query.svelte';
-export type {
-	RecursiveQueryResult,
-	RecursiveQueryOption,
-	QueryOption as useQueryOption,
-	QueryResult
-} from './query.svelte';
+export { CreateQuery } from './query';
+export type { QueryOption, QueryResult } from './query';
+export { CreateInfiniteQuery, PushFrontInfiniteQueryData } from './infinite';
+export type { InfiniteQueryEntry, InfiniteQueryResult, InfiniteQueryOption } from './infinite';
