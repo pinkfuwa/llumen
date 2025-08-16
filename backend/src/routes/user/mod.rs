@@ -6,11 +6,11 @@ use crate::AppState;
 
 mod create;
 mod delete;
-mod info;
+mod read;
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/create", post(create::route))
         .route("/delete", post(delete::route))
-        .route("/info", post(info::route))
+        .route("/read", post(read::route))
 }

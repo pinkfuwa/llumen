@@ -227,12 +227,12 @@ export interface UserDeleteResp {
 	deleted: boolean;
 }
 
-export interface UserInfoReq {
+export interface UserReadReq {
 	/** If omit will use the current user instead */
 	user_id?: number;
 }
 
-export interface UserInfoResp {
+export interface UserReadResp {
 	user_id: number;
 	username: string;
 }
