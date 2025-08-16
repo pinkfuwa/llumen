@@ -95,6 +95,7 @@ export function PushFrontInfiniteQueryData<D>(key: string[], newData: D) {
 		return x;
 	});
 }
+
 // export interface RecursiveQueryResult<D, IS> {
 // 	data: Writable<D | undefined>;
 // 	revalidate: () => Promise<D>;

@@ -1,18 +1,20 @@
 import { type Readable, get, readable, writable } from 'svelte/store';
-import { token } from '$lib/store';
+import { apiFetch } from './errorHandle';
 
-export interface mutationResult<P, D> {
+export interface RawMutationResult<P, D> {
 	mutate: (param: P, callback?: (data: D) => void) => Promise<D | undefined>;
 	isPending: Readable<boolean>;
 	isError: Readable<boolean>;
 }
 
-export interface useMutateOption<P, D> {
-	mutator: (param: P, token?: string) => Promise<D>;
+export interface CreateRawMutateOption<P, D> {
+	mutator: (param: P) => Promise<D | undefined>;
 	onSuccess?: (data: D) => void;
 }
 
-export function useMutate<P, D>(option: useMutateOption<P, D>): mutationResult<P, D> {
+export function CreateRawMutation<P, D>(
+	option: CreateRawMutateOption<P, D>
+): RawMutationResult<P, D> {
 	const { mutator, onSuccess } = option;
 
 	const isPendingWritable = writable(false);
@@ -27,21 +29,24 @@ export function useMutate<P, D>(option: useMutateOption<P, D>): mutationResult<P
 
 	async function mutate(param: P, callback?: (data: D) => void) {
 		isPendingWritable.set(true);
-		isErrorWritable.set(false);
 
 		try {
-			const result = await mutator(param, get(token)?.value);
+			const result = await mutator(param);
 
-			if (callback) callback(result);
-			if (onSuccess) onSuccess(result);
+			if (result) {
+				if (callback) callback(result);
+				if (onSuccess) onSuccess(result);
 
-			return result;
+				isErrorWritable.set(false);
+
+				return result;
+			} else {
+				isErrorWritable.set(true);
+			}
 		} catch (err) {
 			isErrorWritable.set(true);
-			isPendingWritable.set(false);
 
 			console.warn('error running mutation', err);
-			return undefined;
 		} finally {
 			isPendingWritable.set(false);
 		}
@@ -52,4 +57,29 @@ export function useMutate<P, D>(option: useMutateOption<P, D>): mutationResult<P
 		isPending,
 		isError
 	};
+}
+
+export interface MutationResult<P, D> {
+	mutate: (param: P, callback?: (data: D) => void) => Promise<D | undefined>;
+	isPending: Readable<boolean>;
+	isError: Readable<boolean>;
+}
+
+export interface CreateMutateOption<D> {
+	onSuccess?: (data: D) => void;
+	path: string | (() => string);
+	method: 'POST' | 'GET' | 'PUT' | 'UPDATE';
+}
+
+export function CreateMutation<P, D>(option: CreateMutateOption<D>): MutationResult<P, D> {
+	const { path, method, onSuccess } = option;
+
+	const getPath = typeof path === 'function' ? path : () => path;
+
+	const mutator = (param: P) => apiFetch<D>(getPath(), param, method);
+
+	return CreateRawMutation({
+		mutator,
+		onSuccess
+	});
 }
