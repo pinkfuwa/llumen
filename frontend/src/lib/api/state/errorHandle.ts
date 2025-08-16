@@ -6,11 +6,11 @@ import { dev } from '$app/environment';
 
 export const apiBase = dev ? 'http://localhost:8001/' : '/api/';
 
-export async function apiFetch<T>(
+export async function apiFetch<D, P = any>(
 	path: string,
-	body: any = null,
+	body: P | null = null,
 	method: 'POST' | 'GET' | 'PUT' | 'UPDATE' = 'POST'
-): Promise<T | undefined> {
+): Promise<D | undefined> {
 	let tokenVal = get(token)?.value;
 
 	if (path.startsWith('/')) throw new Error('Invalid path');
@@ -25,11 +25,11 @@ export async function apiFetch<T>(
 		body: body ? JSON.stringify(body) : undefined
 	});
 
-	const resJson: T | APIError = await res.json();
+	const resJson: D | APIError = await res.json();
 
 	if (typeof resJson === 'object' && resJson !== null && 'error' in resJson) {
 		dispatchError(resJson.error, resJson.reason);
 	} else {
-		return resJson as T;
+		return resJson as D;
 	}
 }

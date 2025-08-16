@@ -9,7 +9,7 @@
 </svelte:head>
 <div class="flex h-screen flex-row">
 	<div class="shrink-0 overflow-hidden">
-		<Sidebar addition currentRoom={params.id} />
+		<Sidebar addition currentRoom={Number(params.id)} />
 	</div>
 	<div class="nobar flex h-full grow flex-col overflow-y-auto">
 		{@render children()}

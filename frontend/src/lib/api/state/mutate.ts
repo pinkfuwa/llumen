@@ -68,7 +68,7 @@ export interface MutationResult<P, D> {
 export interface CreateMutateOption<D> {
 	onSuccess?: (data: D) => void;
 	path: string | (() => string);
-	method: 'POST' | 'GET' | 'PUT' | 'UPDATE';
+	method?: 'POST' | 'GET' | 'PUT' | 'UPDATE';
 }
 
 export function CreateMutation<P, D>(option: CreateMutateOption<D>): MutationResult<P, D> {
