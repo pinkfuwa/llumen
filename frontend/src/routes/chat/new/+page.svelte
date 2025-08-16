@@ -8,7 +8,7 @@
 	let { mutate } = createRoom();
 
 	let content = $state('');
-	let modelId = $state('');
+	let modelId = $state<number | null>(null);
 	let files = $state([]);
 	let mode = $state(0 as 0);
 </script>
@@ -25,6 +25,7 @@
 	bind:mode
 	bind:files
 	onclick={() => {
+		if (modelId == null) return;
 		mutate(
 			{
 				message: content,

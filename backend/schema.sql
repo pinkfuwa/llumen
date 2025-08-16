@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS "seaql_migrations" ( "version" varchar NOT NULL PRIMARY KEY, "applied_at" bigint NOT NULL );
+CREATE TABLE IF NOT EXISTS "user" ( "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "name" varchar NOT NULL, "password" varchar NOT NULL );
+CREATE TABLE sqlite_sequence(name,seq);
+CREATE INDEX "idx-user-name" ON "user" ("name");
+CREATE TABLE IF NOT EXISTS "chat" ( "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "owner_id" integer NOT NULL, "model_id" integer NOT NULL, "title" varchar NOT NULL, FOREIGN KEY ("owner_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY ("model_id") REFERENCES "model" ("id") ON DELETE CASCADE ON UPDATE CASCADE );
+CREATE TABLE IF NOT EXISTS "message" ( "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "chat_id" integer NOT NULL, "text" varchar NOT NULL, "kind" integer NOT NULL, FOREIGN KEY ("chat_id") REFERENCES "chat" ("id") ON DELETE CASCADE ON UPDATE CASCADE );
+CREATE INDEX "idx-message-room_id" ON "message" ("chat_id");
+CREATE TABLE IF NOT EXISTS "model" ( "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "config" varchar NOT NULL );
+CREATE TABLE IF NOT EXISTS "file" ( "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "message_id" integer NOT NULL, "name" varchar NOT NULL, "bytes" blob(1) NOT NULL, FOREIGN KEY ("message_id") REFERENCES "message" ("id") ON DELETE CASCADE ON UPDATE CASCADE );
+CREATE INDEX "idx-file-message_id" ON "file" ("message_id");
+CREATE TABLE IF NOT EXISTS "config" ( "key" varchar NOT NULL PRIMARY KEY, "value" blob(1) NOT NULL );

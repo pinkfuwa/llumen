@@ -4,7 +4,7 @@ import type { Error as APIError } from '../types';
 import { token } from '$lib/store';
 import { dev } from '$app/environment';
 
-export const apiBase = dev ? 'http://localhost:8001/' : '/api/';
+export const apiBase = dev ? 'http://localhost:8001/api/' : '/api/';
 
 export async function apiFetch<D, P = any>(
 	path: string,

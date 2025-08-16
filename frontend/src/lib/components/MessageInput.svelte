@@ -13,7 +13,7 @@
 	let {
 		mode = $bindable(0 as 0 | 1 | 2),
 		files = $bindable([] as Array<File>),
-		modelId = $bindable(''),
+		modelId = $bindable<number | null>(null),
 		content = $bindable(''),
 		onclick = $bindable(undefined as MouseEventHandler<HTMLButtonElement> | undefined),
 		above = false

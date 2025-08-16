@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ChevronDown, LoaderCircle } from '@lucide/svelte';
 	import { useModels } from '$lib/api/model';
-	let { value = $bindable('0'), above = false } = $props();
+	let { value = $bindable<number | null>(null), above = false } = $props();
 
 	let { data } = useModels();
 
