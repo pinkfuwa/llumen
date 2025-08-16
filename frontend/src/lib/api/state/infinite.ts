@@ -3,7 +3,7 @@ import { globalCache } from './cache';
 import { CreateInternalQuery } from './internal';
 
 export interface Page<D> {
-	fetch(): Promise<D[]>;
+	fetch(): Promise<D[] | undefined>;
 	nextPage(): Page<D> | undefined;
 	/**
 	 * insert at front, return new page(previous page) if overflow.
@@ -16,6 +16,7 @@ export interface InfiniteQueryEntry<D> {
 	page: Page<D>;
 	data: Writable<D[]>;
 	target: Writable<HTMLElement | null>;
+	revalidate: () => Promise<void>;
 }
 
 export interface InfiniteQueryOption<D> {
@@ -33,7 +34,7 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 
 	function addPage(page: Page<D>) {
 		let stablizedNext = false;
-		const target = writable(null);
+		const target = writable<HTMLElement | null>(null);
 		const query = CreateInternalQuery<D[]>({
 			fetcher: () => page.fetch(),
 			key,
@@ -46,7 +47,12 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 					addPage(nextPage);
 				}
 			},
-			initialData: []
+			initialData: [],
+			staleTime: 30000
+		});
+
+		target.subscribe((x) => {
+			if (x != null) query.revalidate();
 		});
 
 		query.data.subscribe((data) => {});
@@ -55,7 +61,8 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 			x.push({
 				page: page,
 				data: query.data as Writable<D[]>,
-				target
+				target,
+				revalidate: query.revalidate
 			});
 			return x;
 		});
@@ -72,7 +79,7 @@ export function PushFrontInfiniteQueryData<D>(key: string[], newData: D) {
 	data.update((x) => {
 		let first = x[0];
 		let newPage = first.page.insertFront(newData);
-		const target = writable(null);
+		const target = writable<HTMLElement | null>(null);
 		if (newPage) {
 			const query = CreateInternalQuery<D[]>({
 				fetcher: () => newPage.fetch(),
@@ -83,7 +90,11 @@ export function PushFrontInfiniteQueryData<D>(key: string[], newData: D) {
 			x.unshift({
 				page: newPage,
 				data: query.data as Writable<D[]>,
-				target
+				target,
+				revalidate: query.revalidate
+			});
+			target.subscribe((x) => {
+				if (x != null) query.revalidate();
 			});
 		} else {
 			first.data.update((data) => {

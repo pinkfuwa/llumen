@@ -64,6 +64,8 @@ export function CreateInternalQuery<D>(option: InternalQueryOption<D>): Internal
 		onDestroy(() => window.removeEventListener('focus', revalidateFnFocus));
 	}
 
+	revalidateIfVisible();
+
 	return {
 		data,
 		revalidate,
