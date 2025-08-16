@@ -16,10 +16,9 @@
 			</a>
 		</li>
 	{/if}
-	<ChatroomBtn name="test" id={1} />
-	<ChatroomBtn name="test" id={2} />
-	<li>
-		class="mt-1 flex justify-center">
+	<ChatroomBtn name="⭕ hello world" id={1} selected={1 == currentRoom} />
+	<ChatroomBtn name="⭕ test title" id={2} selected={2 == currentRoom} />
+	<li class="mt-1 flex justify-center">
 		<LoaderCircle class="animate-spin" />
 	</li>
 </ul>

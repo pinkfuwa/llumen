@@ -50,6 +50,20 @@ export class WritableCache {
 		}
 	}
 
+	// clear the entire cache and reset stores so consumers see the cleared state
+	clear(): void {
+		for (const [, entry] of this.map) {
+			try {
+				entry.store.set(undefined);
+			} catch {
+				// ignore if store is already dead
+			}
+			// drop any pending promises so callers can retry
+			entry.pending = undefined;
+		}
+		this.map.clear();
+	}
+
 	// Public API
 
 	get<T>(key: string[]): Writable<T | undefined> {

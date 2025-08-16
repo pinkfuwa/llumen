@@ -1,3 +1,5 @@
+import { globalCache } from './cache';
+
 export { CreateMutation, CreateRawMutation } from './mutate';
 export type {
 	MutationResult as CreateMutationResult,
@@ -9,3 +11,7 @@ export type { QueryOption, QueryResult } from './query';
 export { CreateInfiniteQuery, PushFrontInfiniteQueryData } from './infinite';
 export type { InfiniteQueryEntry, InfiniteQueryResult, InfiniteQueryOption } from './infinite';
 export { CreateMockMutation, CreateMockQuery } from './mock';
+
+export function clearCache() {
+	globalCache.clear();
+}
