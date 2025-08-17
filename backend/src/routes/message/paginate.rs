@@ -43,9 +43,9 @@ pub struct MessagePaginateReqRange {
 #[serde(rename_all = "snake_case")]
 pub enum MessagePaginateReqOrder {
     /// greater than
-    GT,
+    Gt,
     /// less than
-    LT,
+    Lt,
 }
 
 #[derive(Debug, Serialize)]
@@ -93,12 +93,12 @@ pub async fn route(
                 .filter(message::Column::ChatId.eq(limit.chat_id))
                 .limit(limit.limit.unwrap_or(MAX_PAGINATE_LIMIT) as u64);
             let q = match (limit.order, limit.id) {
-                (MessagePaginateReqOrder::GT, None) => q.order_by_asc(message::Column::Id),
-                (MessagePaginateReqOrder::GT, Some(id)) => q
+                (MessagePaginateReqOrder::Gt, None) => q.order_by_asc(message::Column::Id),
+                (MessagePaginateReqOrder::Gt, Some(id)) => q
                     .filter(message::Column::Id.gt(id))
                     .order_by_asc(message::Column::Id),
-                (MessagePaginateReqOrder::LT, None) => q.order_by_desc(message::Column::Id),
-                (MessagePaginateReqOrder::LT, Some(id)) => q
+                (MessagePaginateReqOrder::Lt, None) => q.order_by_desc(message::Column::Id),
+                (MessagePaginateReqOrder::Lt, Some(id)) => q
                     .filter(message::Column::Id.lt(id))
                     .order_by_desc(message::Column::Id),
             };
