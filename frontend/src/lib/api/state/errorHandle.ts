@@ -17,7 +17,7 @@ export async function apiFetch<D, P = any>(
 
 	const headers: Record<string, string> = {};
 	headers['Content-Type'] = 'application/json';
-	if (tokenVal) headers['Authorization'] = `Bearer ${tokenVal}`;
+	if (tokenVal) headers['Authorization'] = tokenVal;
 
 	const res = await fetch(apiBase + path, {
 		method,
@@ -25,11 +25,14 @@ export async function apiFetch<D, P = any>(
 		body: body ? JSON.stringify(body) : undefined
 	});
 
-	const resJson: D | APIError = await res.json();
-
-	if (typeof resJson === 'object' && resJson !== null && 'error' in resJson) {
-		dispatchError(resJson.error, resJson.reason);
-	} else {
-		return resJson as D;
+	try {
+		const resJson: D | APIError = await res.json();
+		if (typeof resJson === 'object' && resJson !== null && 'error' in resJson) {
+			dispatchError(resJson.error, resJson.reason);
+		} else {
+			return resJson as D;
+		}
+	} catch (_) {
+		dispatchError('API(typeshare)');
 	}
 }

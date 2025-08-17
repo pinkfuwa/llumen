@@ -11,7 +11,7 @@ export interface CreateRoomRequest {
 	mode: Mode;
 }
 
-export function createRoom(): RawMutationResult<CreateRoomRequest, MessageCreateResp> {
+export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateResp> {
 	return CreateRawMutation({
 		mutator: async (param) => {
 			let chatRes = await apiFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
@@ -21,13 +21,15 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, MessageCreate
 
 			await goto('/chat/' + encodeURIComponent(chatRes.id));
 
-			return await apiFetch<MessageCreateResp, MessageCreateReq>('message/create', {
+			await apiFetch<MessageCreateResp, MessageCreateReq>('message/create', {
 				chat_id: chatRes.id,
 				text: param.message
 			});
+			return chatRes;
 		},
 		onSuccess: (data) => {
 			// TODO: push front the rooms pagination
+			// TODO: push front the chat pagination(first message)
 		}
 	});
 }

@@ -1,6 +1,8 @@
 import { type Readable, type Writable, derived, get, writable } from 'svelte/store';
 import { globalCache } from './cache';
 import { CreateInternalQuery } from './internal';
+import { onDestroy } from 'svelte';
+import { Cleanups, nextCount } from './helper';
 
 export interface Page<D> {
 	fetch(): Promise<D[] | undefined>;
@@ -32,27 +34,29 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 	const { key, firstPage } = option;
 	const data = globalCache.getOrExecute<Array<InfiniteQueryEntry<D>>>(['inf', ...key], () => []);
 
+	const cleanup = new Cleanups();
+
 	function addPage(page: Page<D>) {
-		let stablizedNext = false;
 		const target = writable<HTMLElement | null>(null);
+
+		let stablizedNext = false;
+		function applyNext(data: D[] | undefined) {
+			if (stablizedNext || data == undefined) return;
+			const nextPage = page.nextPage();
+			if (nextPage) {
+				stablizedNext = true;
+				addPage(nextPage);
+			}
+		}
+
 		const query = CreateInternalQuery<D[]>({
 			fetcher: () => page.fetch(),
-			key,
+			key: [...key, nextCount().toString()],
 			target,
-			onSuccess(data) {
-				if (stablizedNext || data == undefined) return;
-				const nextPage = page.nextPage();
-				if (nextPage) {
-					stablizedNext = true;
-					addPage(nextPage);
-				}
-			},
+			onSuccess: applyNext,
 			initialData: [],
-			staleTime: 30000
-		});
-
-		target.subscribe((x) => {
-			if (x != null) query.revalidate();
+			staleTime: 30000,
+			cleanupCallback: (callback) => cleanup.add(callback)
 		});
 
 		query.data.subscribe((data) => {});
@@ -76,6 +80,8 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 export function PushFrontInfiniteQueryData<D>(key: string[], newData: D) {
 	const data = globalCache.getOrExecute<Array<InfiniteQueryEntry<D>>>(['inf', ...key], () => []);
 
+	const cleanup = new Cleanups();
+
 	data.update((x) => {
 		let first = x[0];
 		let newPage = first.page.insertFront(newData);
@@ -85,16 +91,14 @@ export function PushFrontInfiniteQueryData<D>(key: string[], newData: D) {
 				fetcher: () => newPage.fetch(),
 				key,
 				target,
-				initialData: []
+				initialData: [],
+				cleanupCallback: (callback) => cleanup.add(callback)
 			});
 			x.unshift({
 				page: newPage,
 				data: query.data as Writable<D[]>,
 				target,
 				revalidate: query.revalidate
-			});
-			target.subscribe((x) => {
-				if (x != null) query.revalidate();
 			});
 		} else {
 			first.data.update((data) => {
@@ -106,83 +110,3 @@ export function PushFrontInfiniteQueryData<D>(key: string[], newData: D) {
 		return x;
 	});
 }
-
-// export interface RecursiveQueryResult<D, IS> {
-// 	data: Writable<D | undefined>;
-// 	revalidate: () => Promise<D>;
-// 	isLoading: Readable<boolean>;
-// 	nextParam: Readable<IS | undefined>;
-// }
-
-// export interface RecursiveQueryOption<D, IS, S = IS> {
-// 	initialParam: IS;
-// 	nextParam: (lastPage: D) => IS;
-// 	genParam: (param: IS, page: D) => S | undefined;
-// 	fetcher: (param: IS | S, token?: string) => Promise<D>;
-// 	key?: string[];
-// 	staleTime?: number;
-// 	/**
-// 	 * fetch next page/refetch only when target element is visible
-// 	 * @returns target element
-// 	 */
-// 	target?: () => HTMLElement | null | undefined;
-// 	revalidateOnFocus?: boolean;
-// }
-
-// export function CreateRecursiveQuery<D, IS, S = IS>(
-// 	option: RecursiveQueryOption<D, IS, S>
-// ): RecursiveQueryResult<D, IS> {
-// 	const {
-// 		initialParam,
-// 		fetcher,
-// 		staleTime,
-// 		target,
-// 		genParam,
-// 		nextParam: genNextParam,
-// 		revalidateOnFocus,
-// 		key
-// 	} = option;
-
-// 	let currentParam: S | undefined;
-// 	const queryResult = CreateQuery({
-// 		param: () => (currentParam == undefined ? initialParam : currentParam),
-// 		fetcher: async (param, token) => {
-// 			let result = await fetcher(param, token);
-// 			if (currentParam == undefined) currentParam = genParam(param as IS, result);
-// 			return result;
-// 		},
-// 		staleTime,
-// 		target,
-// 		revalidateOnFocus,
-// 		key
-// 	});
-
-// 	let canFetchNext = writable(target == undefined);
-
-// 	if (target) {
-// 		observeIntersection(
-// 			target,
-// 			([entry]) => {
-// 				const isVisible = entry?.isIntersecting || false;
-// 				canFetchNext.update((x) => x || isVisible);
-// 			},
-// 			{}
-// 		);
-// 	}
-
-// 	let savedNextParam: Writable<IS | undefined> = writable(undefined);
-
-// 	const nextParam = derived(
-// 		[queryResult.data, canFetchNext, savedNextParam],
-// 		([$page, $canFetchNext, $savedNextParam]: [D | undefined, boolean, IS | undefined]) => {
-// 			if ($savedNextParam) return $savedNextParam;
-// 			if ($canFetchNext && $page != undefined) {
-// 				const nextParam = genNextParam($page);
-// 				savedNextParam.set(nextParam);
-// 				return nextParam;
-// 			}
-// 		}
-// 	);
-
-// 	return { nextParam, ...queryResult };
-// }

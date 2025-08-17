@@ -1,14 +1,17 @@
-import { CreateInfiniteQuery, type InfiniteQueryResult, type Page } from './state';
+import { CreateInfiniteQuery, CreateMutation, type InfiniteQueryResult, type Page } from './state';
 import { apiFetch } from './state/errorHandle';
+import type { MutationResult } from './state/mutate';
 import {
 	MessagePaginateReqOrder,
+	type MessageCreateReq,
+	type MessageCreateResp,
 	type MessagePaginateReq,
 	type MessagePaginateReqLimit,
 	type MessagePaginateResp,
 	type MessagePaginateRespList
 } from './types';
 
-const max_size = 10;
+const max_size = 1;
 class MessagesPage implements Page<MessagePaginateRespList> {
 	chatId: number;
 	ids: number[] = [];
@@ -22,15 +25,15 @@ class MessagesPage implements Page<MessagePaginateRespList> {
 		let limit: MessagePaginateReqLimit = this.normal
 			? {
 					chat_id: this.chatId,
-					id: this.ids.at(0),
+					id: this.ids.length != 0 ? this.ids.at(0)! - 1 : undefined,
 					limit: max_size,
-					order: MessagePaginateReqOrder.LT
+					order: MessagePaginateReqOrder.GT
 				}
 			: {
 					chat_id: this.chatId,
 					id: this.ids.at(-1),
 					limit: max_size,
-					order: MessagePaginateReqOrder.GT
+					order: MessagePaginateReqOrder.LT
 				};
 
 		const res = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
@@ -44,7 +47,7 @@ class MessagesPage implements Page<MessagePaginateRespList> {
 		return list;
 	}
 	nextPage(): Page<MessagePaginateRespList> | undefined {
-		if (this.ids.length >= max_size) return new MessagesPage(this.chatId, this.ids.at(-1)!);
+		if (this.ids.length >= max_size) return new MessagesPage(this.chatId, this.ids.at(-1)! + 1);
 	}
 	insertFront(data: MessagePaginateRespList): Page<MessagePaginateRespList> | undefined {
 		if (this.ids.length >= max_size) return new MessagesPage(this.chatId, data.id, false);
@@ -57,5 +60,14 @@ export function useMessage(chat_id: number): InfiniteQueryResult<MessagePaginate
 	return CreateInfiniteQuery({
 		key: ['chat', chat_id.toString()],
 		firstPage: new MessagesPage(chat_id)
+	});
+}
+
+export function createMessage(): MutationResult<MessageCreateReq, MessageCreateResp> {
+	return CreateMutation({
+		path: 'message/create',
+		onSuccess: () => {
+			// TODO: push front the chat pagination
+		}
 	});
 }

@@ -24,8 +24,10 @@
 	bind:modelId
 	bind:mode
 	bind:files
-	onclick={() => {
+	initSelect
+	onsubmit={() => {
 		if (modelId == null) return;
+
 		mutate(
 			{
 				message: content,

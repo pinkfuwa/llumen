@@ -21,3 +21,7 @@ export function dispatchError(errorMsg: string, reason?: string) {
 export function useError() {
 	return latestError;
 }
+
+export function dismissError() {
+	latestError.set(null);
+}

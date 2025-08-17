@@ -14,9 +14,9 @@
 
 <div class="space-y-2" bind:this={div}>
 	{#each $data as msg}
-		{#if msg.role == MessagePaginateRespRole.Assistant}
+		{#if msg.role == MessagePaginateRespRole.User}
 			<UserMessage content={msg.text} />
-		{:else}
+		{:else if msg.role == MessagePaginateRespRole.Assistant}
 			<AssistantMessage content={msg.text} />
 		{/if}
 	{/each}

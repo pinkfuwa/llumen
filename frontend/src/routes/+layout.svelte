@@ -5,6 +5,7 @@
 	import { setLocale } from '$lib/i18n';
 	import { setTheme } from '$lib/theme';
 	import { RenewToken } from '$lib/api/user';
+	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
 
 	let { children } = $props();
 
@@ -31,5 +32,6 @@
 {#if !$isLoading}
 	<div class="h-full w-full bg-light text-dark">
 		{@render children()}
+		<ErrorMessage />
 	</div>
 {/if}
