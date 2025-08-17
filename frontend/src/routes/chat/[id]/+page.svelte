@@ -15,10 +15,7 @@
 	let mode = $state(0 as 0);
 </script>
 
-<div class="mb-auto w-full grow pb-4">
-	<MessagePagination {id} />
-</div>
-<div class="sticky bottom-2 flex justify-center">
+<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
 	<MessageInput
 		above
 		bind:content
@@ -31,3 +28,4 @@
 		}}
 	/>
 </div>
+<MessagePagination {id} />

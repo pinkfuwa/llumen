@@ -12,7 +12,7 @@
 	$effect(() => entry.target.set(div));
 </script>
 
-<div class="space-y-2" bind:this={div}>
+<div class="flex flex-col-reverse space-y-2" bind:this={div}>
 	{#each $data as msg}
 		{#if msg.role == MessagePaginateRespRole.User}
 			<UserMessage content={msg.text} />

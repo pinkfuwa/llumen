@@ -11,7 +11,7 @@
 	<div class="shrink-0 overflow-hidden">
 		<Sidebar addition currentRoom={Number(params.id)} />
 	</div>
-	<div class="nobar flex h-full grow flex-col overflow-y-auto">
+	<div class="nobar flex h-full grow flex-col-reverse overflow-y-auto">
 		{@render children()}
 	</div>
 </div>

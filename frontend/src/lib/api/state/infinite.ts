@@ -59,8 +59,6 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 			cleanupCallback: (callback) => cleanup.add(callback)
 		});
 
-		query.data.subscribe((data) => {});
-
 		data.update((x) => {
 			x.push({
 				page: page,

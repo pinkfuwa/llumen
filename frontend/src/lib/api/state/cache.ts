@@ -1,6 +1,6 @@
 import { writable, type Writable } from 'svelte/store';
 
-const cache_size = 10;
+const cache_size = 100;
 
 type Entry = {
 	store: Writable<any>;

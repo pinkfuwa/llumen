@@ -11,7 +11,7 @@ import {
 	type MessagePaginateRespList
 } from './types';
 
-const max_size = 1;
+const max_size = 16;
 class MessagesPage implements Page<MessagePaginateRespList> {
 	chatId: number;
 	ids: number[] = [];
@@ -25,15 +25,15 @@ class MessagesPage implements Page<MessagePaginateRespList> {
 		let limit: MessagePaginateReqLimit = this.normal
 			? {
 					chat_id: this.chatId,
-					id: this.ids.length != 0 ? this.ids.at(0)! - 1 : undefined,
+					id: this.ids.length != 0 ? this.ids.at(0)! + 1 : undefined,
 					limit: max_size,
-					order: MessagePaginateReqOrder.GT
+					order: MessagePaginateReqOrder.LT
 				}
 			: {
 					chat_id: this.chatId,
 					id: this.ids.at(-1),
 					limit: max_size,
-					order: MessagePaginateReqOrder.LT
+					order: MessagePaginateReqOrder.GT
 				};
 
 		const res = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
@@ -47,7 +47,7 @@ class MessagesPage implements Page<MessagePaginateRespList> {
 		return list;
 	}
 	nextPage(): Page<MessagePaginateRespList> | undefined {
-		if (this.ids.length >= max_size) return new MessagesPage(this.chatId, this.ids.at(-1)! + 1);
+		if (this.ids.length >= max_size) return new MessagesPage(this.chatId, this.ids.at(-1)! - 1);
 	}
 	insertFront(data: MessagePaginateRespList): Page<MessagePaginateRespList> | undefined {
 		if (this.ids.length >= max_size) return new MessagesPage(this.chatId, data.id, false);

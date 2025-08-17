@@ -14,7 +14,8 @@ export function isElementInViewport(element: HTMLElement) {
 
 let count = 0;
 export function nextCount() {
-	return count++;
+	count = count + 1;
+	return count;
 }
 /**
  * helper function that execute when the storable satify the predicate.

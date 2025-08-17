@@ -14,7 +14,7 @@ export interface QueryOption<P, D> {
 	method: 'POST' | 'GET' | 'PUT' | 'UPDATE';
 	key?: string[];
 	staleTime?: number;
-	target?: Readable<HTMLElement | null> | (() => HTMLElement | null);
+	target?: Readable<HTMLElement | null>;
 	revalidateOnFocus?: boolean | 'force';
 }
 
