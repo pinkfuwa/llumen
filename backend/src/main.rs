@@ -82,7 +82,10 @@ async fn main() {
         CorsLayer::new()
             .allow_methods(AllowMethods::any())
             .allow_origin(AllowOrigin::any())
-            .allow_headers(AllowHeaders::any()),
+            .allow_headers(AllowHeaders::list([
+                http::header::AUTHORIZATION,
+                http::header::CONTENT_TYPE,
+            ])),
     );
 
     let tcp = TcpListener::bind(bind_addr).await.unwrap();
