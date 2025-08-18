@@ -33,6 +33,7 @@ export interface InfiniteQueryResult<D> {
 export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): InfiniteQueryResult<D> {
 	const { key, firstPage } = option;
 	const data = globalCache.getOrExecute<Array<InfiniteQueryEntry<D>>>(['inf', ...key], () => []);
+	data.set([]);
 
 	const cleanup = new Cleanups();
 
@@ -40,6 +41,8 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 		const target = writable<HTMLElement | null>(null);
 
 		let stablizedNext = false;
+		let totalPage = 0;
+
 		function applyNext(data: D[] | undefined) {
 			if (stablizedNext || data == undefined) return;
 			const nextPage = page.nextPage();
@@ -51,7 +54,7 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 
 		const query = CreateInternalQuery<D[]>({
 			fetcher: () => page.fetch(),
-			key: [...key, nextCount().toString()],
+			key: [...key, 'p', (totalPage++).toString()],
 			target,
 			onSuccess: applyNext,
 			initialData: [],
@@ -87,7 +90,7 @@ export function PushFrontInfiniteQueryData<D>(key: string[], newData: D) {
 		if (newPage) {
 			const query = CreateInternalQuery<D[]>({
 				fetcher: () => newPage.fetch(),
-				key,
+				key: [...key, nextCount().toString()],
 				target,
 				initialData: [],
 				cleanupCallback: (callback) => cleanup.add(callback)

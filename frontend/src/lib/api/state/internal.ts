@@ -35,7 +35,7 @@ export function CreateInternalQuery<D>(option: InternalQueryOption<D>): Internal
 	const cleanup = cleanupCallback ? cleanupCallback : onDestroy;
 
 	const data = globalCache.get<D>(key);
-	if (initialData) data.set(initialData);
+	if (initialData && !(initialData instanceof Array)) data.set(initialData);
 	const isLoading = derived([data], ([data]) => data === undefined);
 
 	const revalidate = async () => {

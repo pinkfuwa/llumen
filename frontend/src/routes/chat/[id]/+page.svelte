@@ -5,7 +5,7 @@
 	import MessagePagination from '$lib/components/message/MessagePagination.svelte';
 	import { createMessage } from '$lib/api/message.js';
 
-	const id = Number(params.id);
+	let id = $derived(Number(params.id));
 
 	let { mutate } = createMessage();
 
@@ -28,4 +28,6 @@
 		}}
 	/>
 </div>
-<MessagePagination {id} />
+{#key id}
+	<MessagePagination {id} />
+{/key}

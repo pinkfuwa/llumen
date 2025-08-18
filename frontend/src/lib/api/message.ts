@@ -27,13 +27,13 @@ class MessagesPage implements Page<MessagePaginateRespList> {
 					chat_id: this.chatId,
 					id: this.ids.length != 0 ? this.ids.at(0)! + 1 : undefined,
 					limit: max_size,
-					order: MessagePaginateReqOrder.LT
+					order: MessagePaginateReqOrder.Lt
 				}
 			: {
 					chat_id: this.chatId,
 					id: this.ids.at(-1),
 					limit: max_size,
-					order: MessagePaginateReqOrder.GT
+					order: MessagePaginateReqOrder.Gt
 				};
 
 		const res = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {

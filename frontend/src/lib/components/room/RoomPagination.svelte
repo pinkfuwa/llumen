@@ -1,24 +1,21 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
+	import Page from './Page.svelte';
+	import { useRoom } from '$lib/api/chatroom';
+	import New from './New.svelte';
+
 	let { addition = false, currentRoom = undefined as undefined | number } = $props();
-	import ChatroomBtn from './ChatroomBtn.svelte';
-	import { LoaderCircle, Plus } from '@lucide/svelte';
+
+	const { data } = useRoom();
 </script>
 
 <ul class="nobar max-h-[calc(100vh-185px)] overflow-y-auto text-sm">
 	{#if addition}
 		<li>
-			<a
-				href="/chat/new"
-				class="mb-2 flex w-full items-center justify-center rounded-md border border-outline bg-light p-1.5 font-semibold hover:bg-hover"
-			>
-				<Plus class="mr-2 h-5 w-5" />
-				New
-			</a>
+			<New />
 		</li>
 	{/if}
-	<ChatroomBtn name="⭕ hello world" id={1} selected={1 == currentRoom} />
-	<ChatroomBtn name="⭕ test title" id={2} selected={2 == currentRoom} />
-	<li class="mt-1 flex justify-center">
-		<LoaderCircle class="animate-spin" />
-	</li>
+	{#each $data as page}
+		<Page entry={page} {currentRoom} />
+	{/each}
 </ul>

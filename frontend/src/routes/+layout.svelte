@@ -6,8 +6,21 @@
 	import { setTheme } from '$lib/theme';
 	import { RenewToken } from '$lib/api/user';
 	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 
 	let { children } = $props();
+
+	const guardPrefix = ['/chat', '/setting'];
+
+	$effect(() => {
+		return token.subscribe((token) => {
+			const pathname = page.url.pathname;
+			if (token == undefined && guardPrefix.some((m) => pathname.startsWith(m))) {
+				goto(`/login?callback=${encodeURIComponent(pathname)}`);
+			}
+		});
+	});
 
 	theme.subscribe(setTheme);
 	locale.subscribe(setLocale);
