@@ -94,9 +94,9 @@ export interface MessageCreateResp {
 
 export enum MessagePaginateReqOrder {
 	/** greater than */
-	GT = 'gt',
+	GT = 'g_t',
 	/** less than */
-	LT = 'lt'
+	LT = 'l_t'
 }
 
 export interface MessagePaginateReqLimit {

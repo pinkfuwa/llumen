@@ -1,7 +1,7 @@
 <script lang="ts">
 	type Stage = 0 | 1 | 2;
 
-	let { value = $bindable(0) as Stage } = $props();
+	let { value = $bindable(0) as Stage, disabled = false } = $props();
 	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { Atom, SearchCode, ZapOff } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
@@ -11,7 +11,7 @@
 	}
 </script>
 
-<button onclick={nextStage} class="rounded-md bg-background p-1 hover:bg-hover">
+<button onclick={nextStage} class="rounded-md bg-background p-1{disabled ? '' : ' hover:bg-hover'}">
 	{#if value == 2}
 		<Tooltip content={$_('chat.model_mode.deep')}>
 			<Atom class="inline-block" />

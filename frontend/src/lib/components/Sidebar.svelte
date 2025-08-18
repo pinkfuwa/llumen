@@ -1,7 +1,7 @@
 <script lang="ts">
 	let {
 		addition = false,
-		currentRoom = undefined as undefined | string,
+		currentRoom = undefined as undefined | number,
 		collapsed = $bindable(false)
 	} = $props();
 

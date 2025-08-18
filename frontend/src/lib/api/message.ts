@@ -1,41 +1,73 @@
-import { readable } from 'svelte/store';
+import { CreateInfiniteQuery, CreateMutation, type InfiniteQueryResult, type Page } from './state';
+import { apiFetch } from './state/errorHandle';
+import type { MutationResult } from './state/mutate';
+import {
+	MessagePaginateReqOrder,
+	type MessageCreateReq,
+	type MessageCreateResp,
+	type MessagePaginateReq,
+	type MessagePaginateReqLimit,
+	type MessagePaginateResp,
+	type MessagePaginateRespList
+} from './types';
 
-export interface Message {
-	chatroomId: string;
-	id: string;
-	content: string;
-	role: 'assistant' | 'user' | 'tool';
-	files: Document[];
+const max_size = 16;
+class MessagesPage implements Page<MessagePaginateRespList> {
+	chatId: number;
+	ids: number[] = [];
+	normal: boolean;
+	constructor(chatId: number, id?: number, normal = true) {
+		this.chatId = chatId;
+		this.normal = normal;
+		if (id) this.ids = [id];
+	}
+	async fetch(): Promise<MessagePaginateRespList[] | undefined> {
+		let limit: MessagePaginateReqLimit = this.normal
+			? {
+					chat_id: this.chatId,
+					id: this.ids.length != 0 ? this.ids.at(0)! + 1 : undefined,
+					limit: max_size,
+					order: MessagePaginateReqOrder.LT
+				}
+			: {
+					chat_id: this.chatId,
+					id: this.ids.at(-1),
+					limit: max_size,
+					order: MessagePaginateReqOrder.GT
+				};
+
+		const res = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
+			t: 'limit',
+			c: limit
+		});
+		if (!res) return;
+
+		const list = res.list;
+		this.ids = list.map((x) => x.id);
+		return list;
+	}
+	nextPage(): Page<MessagePaginateRespList> | undefined {
+		if (this.ids.length >= max_size) return new MessagesPage(this.chatId, this.ids.at(-1)! - 1);
+	}
+	insertFront(data: MessagePaginateRespList): Page<MessagePaginateRespList> | undefined {
+		if (this.ids.length >= max_size) return new MessagesPage(this.chatId, data.id, false);
+
+		this.ids.unshift(data.id);
+	}
 }
 
-export interface Messages {
-	chatroomId: string;
-	content: string;
-	role: 'assistant' | 'user' | 'tool';
-	files: Document[];
+export function useMessage(chat_id: number): InfiniteQueryResult<MessagePaginateRespList> {
+	return CreateInfiniteQuery({
+		key: ['chat', chat_id.toString()],
+		firstPage: new MessagesPage(chat_id)
+	});
 }
 
-export function createMessageStore(url: string) {
-	return readable<Message[]>([], (set) => {
-		const eventSource = new EventSource(url);
-		const messages: Message[] = [];
-
-		eventSource.onmessage = (event) => {
-			try {
-				const newMessage: Message = JSON.parse(event.data);
-				messages.push(newMessage);
-				set([...messages]);
-			} catch (error) {
-				console.error('Error parsing message:', error);
-			}
-		};
-
-		eventSource.onerror = () => {
-			eventSource.close();
-		};
-
-		return () => {
-			eventSource.close();
-		};
+export function createMessage(): MutationResult<MessageCreateReq, MessageCreateResp> {
+	return CreateMutation({
+		path: 'message/create',
+		onSuccess: () => {
+			// TODO: push front the chat pagination
+		}
 	});
 }
