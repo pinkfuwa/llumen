@@ -5,9 +5,8 @@
 	let { content = $bindable(''), files = $bindable([] as Array<{ name: string }>) } = $props();
 
 	let editable = $state(false);
-	let width = 0;
 
-	let rows = () => content.split('\n').length;
+	let rows = $derived(content.split('\n').length);
 </script>
 
 <div class="flex w-full justify-end px-10 lg:px-20 2xl:px-36">
@@ -21,7 +20,7 @@
 			{#if editable}
 				<textarea
 					class="editor inline field-sizing-content w-full flex-grow resize-none overflow-scroll"
-					rows={rows()}
+					{rows}
 					bind:value={content}
 				></textarea>
 			{:else}

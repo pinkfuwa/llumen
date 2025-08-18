@@ -1,7 +1,6 @@
 <script lang="ts">
 	let { children, params } = $props();
 	import Sidebar from '$lib/components/Sidebar.svelte';
-	let collapsed = $state(true);
 </script>
 
 <svelte:head>

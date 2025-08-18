@@ -1,4 +1,4 @@
-import { writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 
 const cache_size = 100;
 
@@ -22,11 +22,13 @@ export class WritableCache {
 	private getEntry(key: string[]): Entry {
 		const k = this.serialize(key);
 		let entry = this.map.get(k);
+		// console.log('cache', entry ? 'hit' : 'missed');
 		if (!entry) {
 			entry = { store: writable(undefined) };
 			this.map.set(k, entry);
 			this.ensureSizeLimit();
 		} else {
+			// console.log('content', get(entry.store));
 			// move to end to mark as recently used (Map preserves insertion order)
 			this.map.delete(k);
 			this.map.set(k, entry);

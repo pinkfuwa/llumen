@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { InfiniteQueryEntry } from '$lib/api/state';
 	import { MessagePaginateRespRole, type MessagePaginateRespList } from '$lib/api/types';
-	import UserMessage from '$lib/components/message/UserMessage.svelte';
-	import AssistantMessage from '$lib/components/message/AssistantMessage.svelte';
+	import UserMessage from './User.svelte';
+	import AssistantMessage from './Assistant.svelte';
 
 	let div = $state<HTMLElement | null>(null);
 
@@ -19,5 +19,7 @@
 		{:else if msg.role == MessagePaginateRespRole.Assistant}
 			<AssistantMessage content={msg.text} />
 		{/if}
+	{:else}
+		<div class="h-1"></div>
 	{/each}
 </div>
