@@ -19,7 +19,7 @@ class MessagesPage implements Page<MessagePaginateRespList> {
 	constructor(chatId: number, id?: number, normal = true) {
 		this.chatId = chatId;
 		this.normal = normal;
-		if (id) this.ids = [id];
+		if (id != undefined) this.ids = [id];
 	}
 	async fetch(): Promise<MessagePaginateRespList[] | undefined> {
 		let limit: MessagePaginateReqLimit = this.normal
@@ -43,7 +43,7 @@ class MessagesPage implements Page<MessagePaginateRespList> {
 		if (!res) return;
 
 		const list = res.list;
-		this.ids = list.map((x) => x.id);
+		if (list.length != 0) this.ids = list.map((x) => x.id);
 		return list;
 	}
 	nextPage(): Page<MessagePaginateRespList> | undefined {

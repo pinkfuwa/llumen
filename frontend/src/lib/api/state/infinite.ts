@@ -37,11 +37,11 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 
 	const cleanup = new Cleanups();
 
+	let totalPage = 0;
 	function addPage(page: Page<D>) {
 		const target = writable<HTMLElement | null>(null);
 
 		let stablizedNext = false;
-		let totalPage = 0;
 
 		function applyNext(data: D[] | undefined) {
 			if (stablizedNext || data == undefined) return;
@@ -54,7 +54,7 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 
 		const query = CreateInternalQuery<D[]>({
 			fetcher: () => page.fetch(),
-			key: [...key, 'p', (totalPage++).toString()],
+			key: [...key, 'page', (totalPage++).toString()],
 			target,
 			onSuccess: applyNext,
 			initialData: [],
