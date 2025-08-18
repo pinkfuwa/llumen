@@ -1,5 +1,10 @@
 <script lang="ts">
-	let { editable = $bindable(false), value = $bindable(''), placeholder = '' } = $props();
+	let {
+		editable = $bindable(false),
+		value = $bindable(''),
+		placeholder = '',
+		disabled = false
+	} = $props();
 
 	import { default as Markdown } from '../markdown/Root.svelte';
 	import { onStartTyping } from '@sv-use/core';
@@ -24,6 +29,7 @@
 	{placeholder}
 	rows={rows()}
 	bind:this={input}
+	{disabled}
 ></textarea>
 {#if !editable}
 	<div

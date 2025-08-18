@@ -1,17 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Login, HeaderLogin } from '$lib/api/user';
+	import { Login } from '$lib/api/user';
 	import TiltBtn from '$lib/components/buttons/TiltBtn.svelte';
 	import { _ } from 'svelte-i18n';
 
 	let username = $state('');
 	let password = $state('');
-
-	let { mutate: headerAuthMutate } = HeaderLogin();
-
-	$effect(() => {
-		headerAuthMutate(undefined, () => goto('/chat/new'));
-	});
 
 	let { mutate, isPending, isError } = Login();
 

@@ -5,7 +5,7 @@
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 	import { token } from '$lib/store';
 	import { goto } from '$app/navigation';
-	import { clear as clearCache } from 'sswr';
+	import { clearCache } from '$lib/api/state';
 
 	let { children } = $props();
 

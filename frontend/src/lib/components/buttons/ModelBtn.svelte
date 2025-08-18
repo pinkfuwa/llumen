@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ChevronDown, LoaderCircle } from '@lucide/svelte';
 	import { useModels } from '$lib/api/model';
-	let { value = $bindable('0'), above = false } = $props();
+	let { value = $bindable<number | null>(null), above = false, disabled = false } = $props();
 
 	let { data } = useModels();
 
@@ -27,10 +27,13 @@
 		<button
 			class="min-w-[200px] items-center rounded-md {open
 				? 'bg-hover'
-				: 'bg-background'} flex justify-between py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono hover:bg-hover"
+				: 'bg-background'} flex justify-between py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono{disabled
+				? ''
+				: ' hover:bg-hover'}"
 			onclick={() => {
 				open = !open;
 			}}
+			{disabled}
 		>
 			<span>
 				{$data.find((x) => x.modelId == value)?.displayName}
