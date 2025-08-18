@@ -1,12 +1,10 @@
 <script>
-	import { marked } from 'marked';
-
+	import { lexer } from './cache';
 	import Parser from './Parser.svelte';
 
 	let { source } = $props();
 
-	const lexer = new marked.Lexer();
-	let tokens = lexer.lex(source);
+	let tokens = lexer.run(source);
 </script>
 
 <Parser {tokens} />

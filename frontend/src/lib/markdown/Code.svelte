@@ -38,13 +38,15 @@
 	>
 		{#await codeToHtml(text, { lang, theme: $theme == 'light' ? 'github-light' : 'github-dark' })}
 			<pre class="shiki {themeName}" style={themeStyle}><code
-					>{#each text.split('\n') as line}<div class="line"><span>{line}</span></div>{/each}</code
+					>{#each text.split('\n') as line}<div class="line min-h-6"><span>{line}</span
+							></div>{/each}</code
 				></pre>
 		{:then value}
 			{@html value}
 		{:catch}
 			<pre class="shiki {themeName}" style={themeStyle}><code
-					>{#each text.split('\n') as line}<div class="line"><span>{line}</span></div>{/each}</code
+					>{#each text.split('\n') as line}<div class="line min-h-6"><span>{line}</span
+							></div>{/each}</code
 				></pre>
 		{/await}
 	</div>
