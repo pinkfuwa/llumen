@@ -4,7 +4,6 @@ const cache_size = 100;
 
 type Entry = {
 	store: Writable<any>;
-	pending?: Promise<any> | undefined;
 };
 
 export class WritableCache {
@@ -18,18 +17,19 @@ export class WritableCache {
 		return JSON.stringify(key);
 	}
 
+	private hasEntry(key: string[]): boolean {
+		const k = this.serialize(key);
+		return this.map.has(k);
+	}
 	// internal: get or create entry and mark it as most-recently-used
 	private getEntry(key: string[]): Entry {
 		const k = this.serialize(key);
 		let entry = this.map.get(k);
-		// console.log('cache', entry ? 'hit' : 'missed');
 		if (!entry) {
 			entry = { store: writable(undefined) };
 			this.map.set(k, entry);
 			this.ensureSizeLimit();
 		} else {
-			// console.log('content', get(entry.store));
-			// move to end to mark as recently used (Map preserves insertion order)
 			this.map.delete(k);
 			this.map.set(k, entry);
 		}
@@ -43,26 +43,12 @@ export class WritableCache {
 			if (!oldestKey) break;
 			const oldest = this.map.get(oldestKey);
 			this.map.delete(oldestKey);
-			// clear store value to help consumers notice eviction / free references
-			try {
-				oldest?.store.set(undefined);
-			} catch {
-				// ignore if store is already dead for some reason
-			}
+			oldest?.store.set(undefined);
 		}
 	}
 
 	// clear the entire cache and reset stores so consumers see the cleared state
 	clear(): void {
-		for (const [, entry] of this.map) {
-			try {
-				entry.store.set(undefined);
-			} catch {
-				// ignore if store is already dead
-			}
-			// drop any pending promises so callers can retry
-			entry.pending = undefined;
-		}
 		this.map.clear();
 	}
 
@@ -74,46 +60,12 @@ export class WritableCache {
 	}
 
 	// overloads
-	getOrExecute<T>(key: string[], f: () => Promise<T>): Writable<T | undefined>;
-	getOrExecute<T>(key: string[], f: () => T): Writable<T>;
-	getOrExecute<T>(key: string[], f: (() => Promise<T>) | (() => T)): Writable<T | undefined> {
+	getOrExecute<T>(key: string[], f: () => T): Writable<T> {
+		const hasKey = this.hasEntry(key);
 		const entry = this.getEntry(key);
 
-		// If there is already a pending computation, return the store (coalesce)
-		if (entry.pending) {
-			return entry.store as Writable<T | undefined>;
-		}
-
-		let result: Promise<T> | T;
-		try {
-			result = (f as any)();
-		} catch (err) {
-			// synchronous throw: do not set pending, rethrow
-			throw err;
-		}
-
-		const isPromise = result && typeof (result as any).then === 'function';
-
-		if (isPromise) {
-			// set pending so concurrent callers share the same promise
-			const p = (result as Promise<T>)
-				.then((value) => {
-					entry.store.set(value);
-					entry.pending = undefined;
-					return value;
-				})
-				.catch((err) => {
-					entry.pending = undefined;
-					// do not override existing value on error; rethrow so callers see the error
-					throw err;
-				});
-			entry.pending = p;
-			return entry.store as Writable<T | undefined>;
-		} else {
-			// synchronous result: set store immediately
-			entry.store.set(result as T);
-			return entry.store as Writable<T>;
-		}
+		if (!hasKey) entry.store.set(f());
+		return entry.store as Writable<T>;
 	}
 }
 
