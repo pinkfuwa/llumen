@@ -32,7 +32,8 @@ export interface InfiniteQueryResult<D> {
 
 export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): InfiniteQueryResult<D> {
 	const { key, firstPage } = option;
-	const data = globalCache.getOrExecute<Array<InfiniteQueryEntry<D>>>(['inf', ...key], () => []);
+	const parentKey = ['inf', ...key];
+	const data = globalCache.getOrExecute<Array<InfiniteQueryEntry<D>>>(parentKey, () => []);
 	data.set([]);
 
 	const cleanup = new Cleanups();
@@ -54,9 +55,12 @@ export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): Infinite
 
 		const query = CreateInternalQuery<D[]>({
 			fetcher: () => page.fetch(),
-			key: [...key, 'page', (totalPage++).toString()],
+			key: [...key, 'positive', (totalPage++).toString()],
 			target,
-			onSuccess: applyNext,
+			onSuccess: (data: D[] | undefined) => {
+				applyNext(data);
+				globalCache.get(parentKey);
+			},
 			initialData: [],
 			staleTime: 30000,
 			cleanupCallback: (callback) => cleanup.add(callback)
