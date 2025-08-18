@@ -56,7 +56,7 @@ class ChatPage implements Page<ChatPaginateRespList> {
 	normal: boolean;
 	constructor(id?: number, normal = true) {
 		this.normal = normal;
-		if (id) this.ids = [id];
+		if (id != undefined) this.ids = [id];
 	}
 	async fetch(): Promise<ChatPaginateRespList[] | undefined> {
 		let limit: ChatPaginateReqLimit = this.normal
