@@ -44,8 +44,10 @@ export const locale = localState<'en' | 'zh-tw'>(
 	navigator.language.includes('zh') ? 'zh-tw' : 'en',
 	(x) => x === 'en' || x === 'zh-tw'
 );
-export const theme = localState<'light' | 'dark'>(
+export const theme = localState<'light' | 'dark' | 'orange'>(
 	'theme',
-	'light',
-	(x) => x === 'light' || x === 'dark'
+	window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+		? 'dark'
+		: 'orange',
+	(x) => ['light', 'dark', 'orange'].includes(x)
 );

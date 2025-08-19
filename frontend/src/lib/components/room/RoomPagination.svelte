@@ -9,7 +9,7 @@
 	const { data } = useRoom();
 </script>
 
-<ul class="nobar max-h-[calc(100vh-185px)] overflow-y-auto text-sm">
+<ul class="nobar max-h-[calc(100vh-185px)] space-y-1 overflow-y-auto text-sm">
 	{#if addition}
 		<li>
 			<New />
