@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { InfiniteQueryEntry } from '$lib/api/state';
+	import type { PageEntry } from '$lib/api/state';
 	import { MessagePaginateRespRole, type MessagePaginateRespList } from '$lib/api/types';
 	import UserMessage from './User.svelte';
 	import AssistantMessage from './Assistant.svelte';
 
 	let div = $state<HTMLElement | null>(null);
 
-	const { entry }: { entry: InfiniteQueryEntry<MessagePaginateRespList> } = $props();
+	const { entry }: { entry: PageEntry<MessagePaginateRespList> } = $props();
 	const data = entry.data;
 
 	$effect(() => entry.target.set(div));

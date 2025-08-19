@@ -8,15 +8,13 @@ import {
 	type ChatPaginateRespList,
 	type ChatPaginateReq,
 	type ChatPaginateResp,
-	type ChatPaginateReqLimit,
 	ChatPaginateReqOrder
 } from './types';
 import {
 	CreateInfiniteQuery,
 	CreateRawMutation,
-	KeysetPage,
+	type Fetcher,
 	type InfiniteQueryResult,
-	type Page,
 	type RawMutationResult
 } from './state';
 import { apiFetch } from './state/errorHandle';
@@ -51,18 +49,46 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 	});
 }
 
+class ChatFetcher implements Fetcher<ChatPaginateRespList> {
+	async range(startId: number, endId: number) {
+		const x = await apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
+			t: 'range',
+			c: {
+				upper: startId + 1,
+				lower: endId - 1
+			}
+		});
+		return x?.list;
+	}
+	async forward(limit: number, id?: number) {
+		if (id != undefined) id = id + 1;
+		const x = await apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
+			t: 'limit',
+			c: {
+				id,
+				limit,
+				order: ChatPaginateReqOrder.Lt
+			}
+		});
+		return x?.list;
+	}
+	async backward(limit: number, id: number) {
+		if (id != undefined) id = id - 1;
+		const x = await apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
+			t: 'limit',
+			c: {
+				id,
+				limit,
+				order: ChatPaginateReqOrder.Gt
+			}
+		});
+		return x?.list;
+	}
+}
+
 export function useRoom(): InfiniteQueryResult<ChatPaginateRespList> {
 	return CreateInfiniteQuery({
-		key: ['room'],
-		firstPage: new KeysetPage<ChatPaginateRespList>((limit, id) =>
-			apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
-				t: 'limit',
-				c: {
-					id,
-					limit,
-					order: ChatPaginateReqOrder.Lt
-				}
-			}).then((x) => x?.list)
-		)
+		key: ['roomPaginate'],
+		fetcher: new ChatFetcher()
 	});
 }

@@ -1,139 +1,147 @@
-import { type Readable, type Writable, get, writable } from 'svelte/store';
-import { globalCache } from './cache';
+import { type Readable, type Writable, derived, get, readable, writable } from 'svelte/store';
 import { CreateInternalQuery } from './internal';
-import { Cleanups } from './helper';
+import { onDestroy } from 'svelte';
+import { globalCache } from './cache';
 
-export interface Page<D> {
-	fetch(): Promise<D[] | undefined>;
-	nextPage(): Page<D> | undefined;
+export interface Fetcher<D extends { id: number }> {
+	range(startId: number, endId: number): Promise<D[] | undefined>;
+	forward(limit: number, id?: number): Promise<D[] | undefined>;
+	backward(limit: number, id: number): Promise<D[] | undefined>;
 }
 
-export class InfiniteQueryEntries<D> {
-	key: string[];
-	constructor(key: string[], page: Page<D>) {
-		this.key = key;
-
-		if (this.getEntries().length == 0) this.addForwardPage(page);
-	}
-	incrementCount(): number {
-		const page = globalCache.getOr([...this.key, 'pageNo'], [0, 1] as [number, number]);
-		page.update(([x, y]) => [x, y + 1]);
-		return get(page)[1];
-	}
-	addForwardPage(page: Page<D>): InfiniteQueryEntry<D> {
-		const no = this.incrementCount();
-		const entry = new InfiniteQueryEntry(page, no, this.key);
-		this.pushEntries(entry);
-		return entry;
-	}
-	pushEntries(entry: InfiniteQueryEntry<D>) {
-		const entries = globalCache.get(this.key)! as Writable<Array<InfiniteQueryEntry<D>>>;
-
-		entries.update((x) => [...x, entry]);
-	}
-	getEntries() {
-		const entries = globalCache.get(this.key)! as Writable<Array<InfiniteQueryEntry<D>>>;
-		return get(entries);
-	}
-	activate(cleanup: Cleanups) {
-		this.getEntries().forEach((entry) => {
-			const addPage = (page: Page<D>) => {
-				const entry = this.addForwardPage(page);
-				entry.activate(addPage, cleanup);
-			};
-			entry.activate(addPage, cleanup);
-		});
-	}
+interface Page<D> {
+	no: number;
+	startId?: number;
+	endId?: number;
+	data: Writable<D[]>;
+	target: Writable<HTMLElement | null>;
 }
 
-export class InfiniteQueryEntry<D> {
-	page: Page<D>;
-	data: Writable<D[]> = writable([]);
-	target: Writable<HTMLElement | null> = writable(null);
-	revalidate: () => Promise<void> = () => Promise.resolve();
-	hasNext: boolean;
-	parentKey: string[];
-	key: string[];
-
-	constructor(page: Page<D>, no: number, key: string[], hasNext = false) {
-		this.parentKey = key;
-		this.key = [...key, no.toString()];
-
-		this.page = page;
-		this.hasNext = hasNext;
-	}
-	heatParentKey() {
-		globalCache.get(this.parentKey);
-	}
-	checkNextPage(addPage: (page: Page<D>) => void) {
-		if (this.hasNext) return;
-
-		const nextPage = this.page.nextPage();
-		if (nextPage) {
-			this.hasNext = true;
-			addPage(nextPage);
+class Pages<D extends { id: number }> {
+	private maxSize = 16;
+	private fetcher: Fetcher<D>;
+	pages: Writable<Page<D>[]> = writable([]);
+	constructor(fetcher: Fetcher<D>, id?: number | null) {
+		this.fetcher = fetcher;
+		if (id !== undefined) {
+			const startId = id === null ? undefined : id;
+			this.pages.set([{ no: 0, data: writable([]), startId, target: writable(null) }]);
 		}
 	}
-	activate(addPage: (page: Page<D>) => void, cleanup: Cleanups) {
-		const query = CreateInternalQuery<D[]>({
-			fetcher: () => this.page.fetch(),
-			key: this.key,
-			target: this.target,
+	private activatePage(page: Page<D>, cleanupCallback: (d: () => void) => void) {
+		// author's note: duplicated code, but it's more readable!
+		const addForwardPage = () => {
+			this.pages.update((x) => {
+				const last = x.at(-1)!;
+
+				const newPage = {
+					no: last.no + 1,
+					data: writable([]),
+					startId: last.endId! + 1, // TODO: if you want to use ascending, change this
+					target: writable(null)
+				};
+
+				x.push(newPage);
+				this.activatePage(newPage, cleanupCallback);
+
+				return x;
+			});
+		};
+
+		const addBackwardPage = () => {
+			this.pages.update((x) => {
+				const first = x[0];
+				console.log(first);
+
+				const newPage = {
+					no: first.no - 1,
+					data: writable([]),
+					endId: first.startId! + 1, // TODO: if you want to use ascending, change this
+					target: writable(null)
+				};
+
+				x.unshift(newPage);
+				this.activatePage(newPage, cleanupCallback);
+				return x;
+			});
+		};
+
+		CreateInternalQuery<D[]>({
+			fetcher: () => {
+				if (page.endId != undefined && page.startId != undefined)
+					return this.fetcher.range(page.startId, page.endId);
+				if (page.endId != undefined) return this.fetcher.backward(this.maxSize, page.endId);
+				return this.fetcher.forward(this.maxSize, page.startId);
+			},
+			key: page.data,
+			target: page.target,
 			onSuccess: (data: D[] | undefined) => {
-				this.heatParentKey();
-				if (data != undefined) this.checkNextPage(addPage);
+				if (data == undefined || data.length == 0) return;
+
+				// first page special case: always add a backward page
+				if (page.startId == undefined && page.endId == undefined) {
+					page.startId = data[0].id;
+					addBackwardPage();
+				}
+
+				// no > 0 and first page
+				if (page.endId == undefined && data.length >= this.maxSize) {
+					page.endId = data.at(-1)!.id;
+					addForwardPage();
+				}
+
+				// no < 0
+				if (page.startId == undefined && data.length >= this.maxSize) {
+					page.startId = data[0].id;
+					addBackwardPage();
+				}
 			},
 			initialData: [],
 			staleTime: 30000,
-			cleanupCallback: (callback) => cleanup.add(callback)
+			cleanupCallback
 		});
-		this.data = query.data as Writable<D[]>;
-		this.revalidate = query.revalidate;
 	}
-}
+	/**
+	 * start background fetching
+	 */
+	public activate() {
+		const callbacks: Array<() => void> = [];
+		onDestroy(() => callbacks.forEach((x) => x()));
 
-export interface InfiniteQueryOption<D> {
-	key: string[];
-	firstPage: Page<D>;
-}
-
-export interface InfiniteQueryResult<D> {
-	data: Readable<Array<InfiniteQueryEntry<D>>>;
-}
-
-export function CreateInfiniteQuery<D>(option: InfiniteQueryOption<D>): InfiniteQueryResult<D> {
-	const { key, firstPage } = option;
-
-	const data = globalCache.getOr(key, []) as Writable<Array<InfiniteQueryEntry<D>>>;
-
-	const entries = new InfiniteQueryEntries<D>(key, firstPage);
-	entries.activate(new Cleanups());
-
-	return { data };
-}
-
-export class KeysetPage<D extends { id: number }> implements Page<D> {
-	private max_size = 2;
-	private fetcher: (limit: number, id?: number) => Promise<D[] | undefined>;
-	private ids: number[] = [];
-	constructor(fetcher: (limit: number, id?: number) => Promise<D[] | undefined>) {
-		this.fetcher = fetcher;
-	}
-	async fetch(): Promise<D[] | undefined> {
-		const list = await this.fetcher(
-			this.max_size,
-			this.ids.length != 0 ? this.ids.at(0)! + 1 : undefined
+		get(this.pages).forEach((page) =>
+			this.activatePage(page, (callback) => callbacks.push(callback))
 		);
-		if (!list) return;
+	}
+}
 
-		if (list.length != 0) this.ids = list.map((x) => x.id);
-		return list;
-	}
-	nextPage(): Page<D> | undefined {
-		if (this.ids.length >= this.max_size) {
-			const page = new KeysetPage(this.fetcher);
-			page.ids = [this.ids.at(-1)! - 1];
-			return page;
-		}
-	}
+export interface InfiniteQueryOption<D extends { id: number }> {
+	fetcher: Fetcher<D>;
+	key: string[];
+	id?: number;
+}
+
+export interface PageEntry<D> {
+	target: Writable<HTMLElement | null>;
+	data: Readable<D[]>;
+	no: number;
+}
+
+export interface InfiniteQueryResult<D extends { id: number }> {
+	data: Readable<Array<PageEntry<D>>>;
+}
+
+export function CreateInfiniteQuery<D extends { id: number }>(
+	option: InfiniteQueryOption<D>
+): InfiniteQueryResult<D> {
+	let { key, fetcher, id } = option;
+
+	const pageStore = globalCache.getOrExecute(
+		key,
+		() => new Pages<D>(fetcher, id == undefined ? null : id)
+	);
+
+	const page = get(pageStore);
+	page.activate();
+
+	return { data: page.pages };
 }
