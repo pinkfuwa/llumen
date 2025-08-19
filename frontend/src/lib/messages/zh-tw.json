@@ -13,7 +13,8 @@
 		"username": "帳號名稱",
 		"config_override_warning": "此動作會複寫所有人的 openrouter 模型設置",
 		"check_syntax": "檢查語法",
-		"save_settings": "儲存設定"
+		"save_settings": "儲存設定",
+		"github_star": "按個星星"
 	},
 	"login": {
 		"title": "登入流明",
@@ -38,6 +39,7 @@
 			"enable": "已啟用 markdown 渲染",
 			"disable": "正常編輯文字"
 		},
-		"file": "上傳等案"
+		"file": "上傳檔案",
+		"new": "新聊天室"
 	}
 }
