@@ -3,23 +3,17 @@
 	let { name = $bindable('Default chatroom title'), id, selected = false } = $props();
 </script>
 
-<div class="group rounded-sm p-1.5 text-base {selected ? 'bg-hover' : 'hover:bg-hover'}">
+<div
+	class="group flex rounded-sm text-base {selected ? 'bg-hover' : 'hover:bg-hover'} items-center"
+>
 	{#if selected}
-		<div class="flex h-6 items-center">
-			<form class="grow overflow-hidden">
-				<input class="editor w-full truncate pr-1 group-hover:text-clip" bind:value={name} />
-			</form>
-
-			<Trash2 class="hidden h-6 w-6 shrink-0 p-[2px] group-hover:block" />
-		</div>
+		<form class="grow overflow-hidden p-1.5">
+			<input class="editor w-full truncate pr-1 group-hover:text-clip" bind:value={name} />
+		</form>
 	{:else}
-		<a class="flex h-6 items-center select-none" href="/chat/{encodeURIComponent(id)}">
-			<div class="grow truncate group-hover:text-clip">
-				<span class="h-6">
-					{name}
-				</span>
-			</div>
-			<Trash2 class="hidden h-6 w-6 shrink-0 p-[2px] group-hover:block" />
+		<a class="grow truncate p-1.5" href="/chat/{encodeURIComponent(id)}">
+			{name}
 		</a>
 	{/if}
+	<Trash2 class="mr-1 hidden h-6 w-6 shrink-0 p-[2px] group-hover:block" />
 </div>

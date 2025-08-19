@@ -4,6 +4,7 @@
 	import { fade } from 'svelte/transition';
 	import MessageInput from '$lib/components/MessageInput.svelte';
 	import { goto } from '$app/navigation';
+	import Copyright from '$lib/components/Copyright.svelte';
 
 	let { mutate } = createRoom();
 
@@ -13,9 +14,13 @@
 	let mode = $state(0 as 0);
 </script>
 
+<svelte:head>
+	<title>{$_('chat.title')}</title>
+</svelte:head>
+
 <div class="flex h-full w-full flex-col justify-center">
 	<h1
-		class="mx-auto mb-4 bg-gradient-to-r from-dark to-blue-600 bg-clip-text pb-4 text-4xl font-semibold text-transparent md:text-5xl lg:text-6xl"
+		class="mx-auto mb-4 bg-gradient-to-r from-dark to-blue-600 bg-clip-text pb-4 text-4xl font-semibold text-transparent select-none md:text-5xl lg:text-6xl"
 		in:fade={{ duration: 150 }}
 	>
 		{$_('chat.welcome')}
@@ -43,3 +48,5 @@
 		}}
 	/>
 </div>
+
+<Copyright />

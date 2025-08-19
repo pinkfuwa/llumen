@@ -4,6 +4,7 @@
 	import MessageInput from '$lib/components/MessageInput.svelte';
 	import MessagePagination from '$lib/components/message/MessagePagination.svelte';
 	import { createMessage } from '$lib/api/message.js';
+	import Copyright from '$lib/components/Copyright.svelte';
 
 	let id = $derived(Number(params.id));
 
@@ -14,6 +15,12 @@
 	let files = $state([]);
 	let mode = $state(0 as 0);
 </script>
+
+<svelte:head>
+	<title>Chatroom {params.id}</title>
+</svelte:head>
+
+<Copyright top />
 
 <div class="nobar flex h-full flex-col-reverse overflow-y-auto">
 	<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
@@ -32,4 +39,5 @@
 	{#key id}
 		<MessagePagination {id} />
 	{/key}
+	<div class="min-h-2"></div>
 </div>
