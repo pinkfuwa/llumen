@@ -1,13 +1,12 @@
 <script lang="ts">
-	import type { InfiniteQueryEntry } from '$lib/api/state';
+	import type { PageEntry } from '$lib/api/state';
 	import { type ChatPaginateRespList } from '$lib/api/types';
 	import ChatroomBtn from './ChatroomBtn.svelte';
 
 	const {
 		entry,
 		currentRoom
-	}: { entry: InfiniteQueryEntry<ChatPaginateRespList>; currentRoom: number | undefined } =
-		$props();
+	}: { entry: PageEntry<ChatPaginateRespList>; currentRoom: number | undefined } = $props();
 
 	let li = $state<HTMLElement | null>(null);
 

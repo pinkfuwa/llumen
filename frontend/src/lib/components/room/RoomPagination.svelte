@@ -16,6 +16,8 @@
 		</li>
 	{/if}
 	{#each $data as page}
-		<Page entry={page} {currentRoom} />
+		{#key page.no}
+			<Page entry={page} {currentRoom} />
+		{/key}
 	{/each}
 </ul>

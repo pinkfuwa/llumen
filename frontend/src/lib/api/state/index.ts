@@ -8,13 +8,8 @@ export type {
 } from './mutate';
 export { CreateQuery } from './query';
 export type { QueryOption, QueryResult } from './query';
-export { CreateInfiniteQuery, KeysetPage } from './infinite';
-export type {
-	InfiniteQueryEntry,
-	InfiniteQueryResult,
-	InfiniteQueryOption,
-	Page
-} from './infinite';
+export { CreateInfiniteQuery } from './infinite';
+export type { InfiniteQueryResult, InfiniteQueryOption, Fetcher, PageEntry } from './infinite';
 export { CreateMockMutation, CreateMockQuery } from './mock';
 
 export function clearCache() {

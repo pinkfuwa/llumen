@@ -9,5 +9,7 @@
 </script>
 
 {#each $data as page}
-	<Page entry={page} />
+	{#key page.no}
+		<Page entry={page} />
+	{/key}
 {/each}

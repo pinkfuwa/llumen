@@ -1,9 +1,8 @@
 import {
 	CreateInfiniteQuery,
 	CreateMutation,
-	KeysetPage,
-	type InfiniteQueryResult,
-	type Page
+	type Fetcher,
+	type InfiniteQueryResult
 } from './state';
 import { apiFetch } from './state/errorHandle';
 import type { MutationResult } from './state/mutate';
@@ -12,25 +11,61 @@ import {
 	type MessageCreateReq,
 	type MessageCreateResp,
 	type MessagePaginateReq,
-	type MessagePaginateReqLimit,
 	type MessagePaginateResp,
 	type MessagePaginateRespList
 } from './types';
 
+class MessageFetcher implements Fetcher<MessagePaginateRespList> {
+	chatId: number;
+	constructor(chatId: number) {
+		this.chatId = chatId;
+	}
+	async range(startId: number, endId: number) {
+		const x = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
+			t: 'range',
+			c: {
+				chat_id: this.chatId,
+
+				upper: startId + 1,
+				lower: endId - 1
+			}
+		});
+		return x?.list;
+	}
+	async forward(limit: number, id?: number) {
+		if (id != undefined) id = id + 1;
+		const x = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
+			t: 'limit',
+			c: {
+				chat_id: this.chatId,
+
+				id,
+				limit,
+				order: MessagePaginateReqOrder.Lt
+			}
+		});
+		return x?.list;
+	}
+	async backward(limit: number, id: number) {
+		if (id != undefined) id = id - 1;
+		const x = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
+			t: 'limit',
+			c: {
+				chat_id: this.chatId,
+
+				id,
+				limit,
+				order: MessagePaginateReqOrder.Gt
+			}
+		});
+		return x?.list;
+	}
+}
+
 export function useMessage(chat_id: number): InfiniteQueryResult<MessagePaginateRespList> {
 	return CreateInfiniteQuery({
-		key: ['chat', chat_id.toString()],
-		firstPage: new KeysetPage<MessagePaginateRespList>((limit, id) =>
-			apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
-				t: 'limit',
-				c: {
-					chat_id,
-					id,
-					limit,
-					order: MessagePaginateReqOrder.Lt
-				}
-			}).then((x) => x?.list)
-		)
+		key: ['chatPaginate', chat_id.toString()],
+		fetcher: new MessageFetcher(chat_id)
 	});
 }
 

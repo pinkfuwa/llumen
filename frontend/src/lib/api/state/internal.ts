@@ -11,7 +11,7 @@ export interface InternalQueryResult<T> {
 
 export interface InternalQueryOption<D> {
 	fetcher: () => Promise<D | undefined>;
-	key: string[];
+	key: string[] | Writable<D>;
 	staleTime?: number;
 	target?: Readable<HTMLElement | null>;
 	revalidateOnFocus?: boolean | 'force';
@@ -34,15 +34,14 @@ export function CreateInternalQuery<D>(option: InternalQueryOption<D>): Internal
 
 	const cleanup = cleanupCallback ? cleanupCallback : onDestroy;
 
-	const data = globalCache.get<D>(key);
+	const data = key instanceof Array ? globalCache.get<D>(key) : key;
+
 	if (initialData && !(initialData instanceof Array)) data.set(initialData);
 	if (onSuccess && get(data) != undefined) onSuccess(get(data)!);
 
 	const isLoading = derived([data], ([data]) => data === undefined);
 
 	const revalidate = async () => {
-		const data = globalCache.get<D>(key);
-
 		const newData = await fetcher();
 		if (onSuccess) onSuccess(newData);
 		if (newData) data.set(newData);
