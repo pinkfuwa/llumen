@@ -8,7 +8,7 @@ export type {
 } from './mutate';
 export { CreateQuery } from './query';
 export type { QueryOption, QueryResult } from './query';
-export { CreateInfiniteQuery } from './infinite';
+export { CreateInfiniteQuery, RemoveInfiniteQueryData, SetInfiniteQueryData } from './infinite';
 export type { InfiniteQueryResult, InfiniteQueryOption, Fetcher, PageEntry } from './infinite';
 export { CreateMockMutation, CreateMockQuery } from './mock';
 

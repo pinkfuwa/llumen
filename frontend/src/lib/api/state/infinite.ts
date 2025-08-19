@@ -15,6 +15,7 @@ interface Page<D> {
 	endId?: number;
 	data: Writable<D[]>;
 	target: Writable<HTMLElement | null>;
+	revalidate: () => void;
 }
 
 class Pages<D extends { id: number }> {
@@ -25,7 +26,15 @@ class Pages<D extends { id: number }> {
 		this.fetcher = fetcher;
 		if (id !== undefined) {
 			const startId = id === null ? undefined : id;
-			this.pages.set([{ no: 0, data: writable([]), startId, target: writable(null) }]);
+			this.pages.set([
+				{
+					no: 0,
+					data: writable([]),
+					startId,
+					target: writable(null),
+					revalidate: () => console.error('Unreachable!')
+				}
+			]);
 		}
 	}
 	private activatePage(page: Page<D>, cleanupCallback: (d: () => void) => void) {
@@ -38,7 +47,8 @@ class Pages<D extends { id: number }> {
 					no: last.no + 1,
 					data: writable([]),
 					startId: last.endId! + 1, // TODO: if you want to use ascending, change this
-					target: writable(null)
+					target: writable(null),
+					revalidate: () => console.error('Unreachable!')
 				};
 
 				x.push(newPage);
@@ -57,7 +67,8 @@ class Pages<D extends { id: number }> {
 					no: first.no - 1,
 					data: writable([]),
 					endId: first.startId! + 1, // TODO: if you want to use ascending, change this
-					target: writable(null)
+					target: writable(null),
+					revalidate: () => console.error('Unreachable!')
 				};
 
 				x.unshift(newPage);
@@ -66,7 +77,7 @@ class Pages<D extends { id: number }> {
 			});
 		};
 
-		CreateInternalQuery<D[]>({
+		const query = CreateInternalQuery<D[]>({
 			fetcher: () => {
 				if (page.endId != undefined && page.startId != undefined)
 					return this.fetcher.range(page.startId, page.endId);
@@ -100,6 +111,7 @@ class Pages<D extends { id: number }> {
 			staleTime: 30000,
 			cleanupCallback
 		});
+		page.revalidate = query.revalidate;
 	}
 	/**
 	 * start background fetching
@@ -111,6 +123,28 @@ class Pages<D extends { id: number }> {
 		get(this.pages).forEach((page) =>
 			this.activatePage(page, (callback) => callbacks.push(callback))
 		);
+	}
+	public insertData(data: D) {
+		const pages = get(this.pages);
+		if (pages.length == 0) return;
+
+		pages[0].data.update((x) => {
+			x.unshift(data);
+			return x;
+		});
+	}
+	/**
+	 * Remove contineous data/page from beginning of pages where predicate return true
+	 * @param predicate
+	 */
+	public removeData(predicate: (data: D) => boolean) {
+		this.pages.update((x) => {
+			const numberOfRemovalPage = x.findLastIndex((x) => get(x.data).some(predicate));
+			if (numberOfRemovalPage == -1) return x;
+			x.splice(0, numberOfRemovalPage);
+			x[0].data.update((x) => x.filter((x) => !predicate(x)));
+			return x;
+		});
 	}
 }
 
@@ -124,6 +158,7 @@ export interface PageEntry<D> {
 	target: Writable<HTMLElement | null>;
 	data: Readable<D[]>;
 	no: number;
+	revalidate: () => void;
 }
 
 export interface InfiniteQueryResult<D extends { id: number }> {
@@ -140,8 +175,29 @@ export function CreateInfiniteQuery<D extends { id: number }>(
 		() => new Pages<D>(fetcher, id == undefined ? null : id)
 	);
 
-	const page = get(pageStore);
-	page.activate();
+	const pages = get(pageStore);
+	pages.activate();
 
-	return { data: page.pages };
+	return { data: pages.pages };
+}
+
+export function SetInfiniteQueryData<D extends { id: number }>(option: { data: D; key: string[] }) {
+	let { key, data } = option;
+
+	const pageStore = globalCache.get<Pages<D>>(key);
+
+	const pages = get(pageStore);
+	if (pages) pages.insertData(data);
+}
+
+export function RemoveInfiniteQueryData<D extends { id: number }>(option: {
+	predicate: (data: D) => boolean;
+	key: string[];
+}) {
+	let { key, predicate } = option;
+
+	const pageStore = globalCache.get<Pages<D>>(key);
+
+	const pages = get(pageStore);
+	if (pages) pages.removeData(predicate);
 }
