@@ -8,6 +8,7 @@
 	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { CreateSseInternal } from '$lib/sse';
 
 	let { children } = $props();
 
@@ -22,6 +23,7 @@
 		});
 	});
 
+	CreateSseInternal();
 	theme.subscribe(setTheme);
 	locale.subscribe(setLocale);
 	token.subscribe((data) => {
