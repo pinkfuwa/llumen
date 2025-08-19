@@ -14,6 +14,7 @@ import {
 import {
 	CreateInfiniteQuery,
 	CreateRawMutation,
+	KeysetPage,
 	type InfiniteQueryResult,
 	type Page,
 	type RawMutationResult
@@ -50,50 +51,18 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 	});
 }
 
-const max_size = 16;
-class ChatPage implements Page<ChatPaginateRespList> {
-	ids: number[] = [];
-	normal: boolean;
-	constructor(id?: number, normal = true) {
-		this.normal = normal;
-		if (id != undefined) this.ids = [id];
-	}
-	async fetch(): Promise<ChatPaginateRespList[] | undefined> {
-		let limit: ChatPaginateReqLimit = this.normal
-			? {
-					id: this.ids.length != 0 ? this.ids.at(0)! + 1 : undefined,
-					limit: max_size,
-					order: ChatPaginateReqOrder.Lt
-				}
-			: {
-					id: this.ids.at(-1),
-					limit: max_size,
-					order: ChatPaginateReqOrder.Gt
-				};
-
-		const res = await apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
-			t: 'limit',
-			c: limit
-		});
-		if (!res) return;
-
-		const list = res.list;
-		this.ids = list.map((x) => x.id);
-		return list;
-	}
-	nextPage(): Page<ChatPaginateRespList> | undefined {
-		if (this.ids.length >= max_size) return new ChatPage(this.ids.at(-1)! - 1);
-	}
-	insertFront(data: ChatPaginateRespList): Page<ChatPaginateRespList> | undefined {
-		if (this.ids.length >= max_size) return new ChatPage(data.id, false);
-
-		this.ids.unshift(data.id);
-	}
-}
-
 export function useRoom(): InfiniteQueryResult<ChatPaginateRespList> {
 	return CreateInfiniteQuery({
 		key: ['room'],
-		firstPage: new ChatPage()
+		firstPage: new KeysetPage<ChatPaginateRespList>((limit, id) =>
+			apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
+				t: 'limit',
+				c: {
+					id,
+					limit,
+					order: ChatPaginateReqOrder.Lt
+				}
+			}).then((x) => x?.list)
+		)
 	});
 }

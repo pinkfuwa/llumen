@@ -48,3 +48,18 @@ export class Cleanups {
 		this.callbacks.push(callback);
 	}
 }
+
+// export class visibilityTimer{
+//   map: Map<number, ()=>void> = new Map()
+//   constructor(){
+//     let map = this.map;
+//     document.addEventListener("visibilitychange", () => {
+//       console.log(document.visibilityState);
+//     });
+
+//   }
+//   setInterval(f: ()=>void): number{
+
+//   }
+//   clearInterval()
+// }

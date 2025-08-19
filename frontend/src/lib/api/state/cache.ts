@@ -59,7 +59,14 @@ export class WritableCache {
 		return entry.store as Writable<T | undefined>;
 	}
 
-	// overloads
+	getOr<T>(key: string[], val: T): Writable<T> {
+		const hasKey = this.hasEntry(key);
+		const entry = this.getEntry(key);
+
+		if (!hasKey) entry.store.set(val);
+		return entry.store as Writable<T>;
+	}
+
 	getOrExecute<T>(key: string[], f: () => T): Writable<T> {
 		const hasKey = this.hasEntry(key);
 		const entry = this.getEntry(key);
