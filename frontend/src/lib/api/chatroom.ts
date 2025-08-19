@@ -13,6 +13,7 @@ import {
 import {
 	CreateInfiniteQuery,
 	CreateRawMutation,
+	SetInfiniteQueryData,
 	type Fetcher,
 	type InfiniteQueryResult,
 	type RawMutationResult
@@ -42,7 +43,15 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 			});
 			return chatRes;
 		},
-		onSuccess: (data) => {
+		onSuccess: (data, param) => {
+			SetInfiniteQueryData<ChatPaginateRespList>({
+				key: ['chatPaginate'],
+				data: {
+					id: data.id,
+					model_id: param.modelId,
+					title: 'new chat'
+				}
+			});
 			// TODO: push front the rooms pagination
 			// TODO: push front the chat pagination(first message)
 		}
@@ -88,7 +97,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 
 export function useRoom(): InfiniteQueryResult<ChatPaginateRespList> {
 	return CreateInfiniteQuery({
-		key: ['roomPaginate'],
+		key: ['chatPaginate'],
 		fetcher: new ChatFetcher()
 	});
 }

@@ -9,7 +9,7 @@ export interface RawMutationResult<P, D> {
 
 export interface CreateRawMutateOption<P, D> {
 	mutator: (param: P) => Promise<D | undefined>;
-	onSuccess?: (data: D) => void;
+	onSuccess?: (data: D, param: P) => void;
 }
 
 export function CreateRawMutation<P, D>(
@@ -35,7 +35,7 @@ export function CreateRawMutation<P, D>(
 
 			if (result) {
 				if (callback) callback(result);
-				if (onSuccess) onSuccess(result);
+				if (onSuccess) onSuccess(result, param);
 
 				isErrorWritable.set(false);
 
