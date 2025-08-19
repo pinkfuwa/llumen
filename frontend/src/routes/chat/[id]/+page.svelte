@@ -15,19 +15,21 @@
 	let mode = $state(0 as 0);
 </script>
 
-<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
-	<MessageInput
-		above
-		bind:content
-		{modelId}
-		{mode}
-		bind:files
-		onsubmit={() => {
-			mutate({ chat_id: id, text: content });
-			content = '';
-		}}
-	/>
+<div class="nobar flex h-full flex-col-reverse overflow-y-auto">
+	<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
+		<MessageInput
+			above
+			bind:content
+			{modelId}
+			{mode}
+			bind:files
+			onsubmit={() => {
+				mutate({ chat_id: id, text: content });
+				content = '';
+			}}
+		/>
+	</div>
+	{#key id}
+		<MessagePagination {id} />
+	{/key}
 </div>
-{#key id}
-	<MessagePagination {id} />
-{/key}

@@ -15,7 +15,7 @@
 	$effect(() => entry.target.set(li));
 </script>
 
-<li bind:this={li}>
+<li bind:this={li} class="space-y-1">
 	{#each $data as room}
 		<ChatroomBtn name={room.title} id={room.id} selected={room.id == currentRoom} />
 	{:else}

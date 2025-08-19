@@ -17,7 +17,7 @@
 
 {#if $data == undefined}
 	<div
-		class="flex h-[34px] min-w-[200px] items-center justify-between rounded-md bg-background py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono"
+		class="flex h-[34px] min-w-[200px] items-center justify-between rounded-md bg-primary py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono"
 	>
 		<span> Loading </span>
 		<LoaderCircle class="inline-block animate-spin" />
@@ -27,7 +27,7 @@
 		<button
 			class="min-w-[200px] items-center rounded-md {open
 				? 'bg-hover'
-				: 'bg-background'} flex justify-between py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono{disabled
+				: 'bg-primary'} flex justify-between py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono{disabled
 				? ''
 				: ' hover:bg-hover'}"
 			onclick={() => {

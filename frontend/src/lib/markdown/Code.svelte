@@ -3,14 +3,14 @@
 	import { theme } from '$lib/store';
 	import { codeToHtml } from 'shiki/bundle/web';
 	import CopyHint from './CopyHint.svelte';
+	import { isLightTheme } from '$lib/theme';
 
 	let { lang, text } = $props();
 
-	let themeStyle =
-		$theme == 'light'
-			? 'background-color:#fff;color:#24292e'
-			: 'background-color:#24292e;color:#e1e4e8';
-	let themeName = $theme == 'light' ? 'github-light' : 'github-dark';
+	let themeStyle = isLightTheme($theme)
+		? 'background-color:#fff;color:#24292e'
+		: 'background-color:#24292e;color:#e1e4e8';
+	let themeName = isLightTheme($theme) ? 'github-light' : 'github-dark';
 
 	let copied = $state(false);
 

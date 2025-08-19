@@ -13,31 +13,33 @@
 	let mode = $state(0 as 0);
 </script>
 
-<h1
-	class="mx-auto mb-4 bg-gradient-to-r from-dark to-blue-600 bg-clip-text pb-4 text-4xl font-semibold text-transparent lg:text-5xl"
-	in:fade={{ duration: 150 }}
->
-	{$_('chat.welcome')}
-</h1>
-<MessageInput
-	bind:content
-	bind:modelId
-	bind:mode
-	bind:files
-	initSelect
-	onsubmit={() => {
-		if (modelId == null) return;
+<div class="flex h-full w-full flex-col justify-center">
+	<h1
+		class="mx-auto mb-4 bg-gradient-to-r from-dark to-blue-600 bg-clip-text pb-4 text-4xl font-semibold text-transparent md:text-5xl lg:text-6xl"
+		in:fade={{ duration: 150 }}
+	>
+		{$_('chat.welcome')}
+	</h1>
+	<MessageInput
+		bind:content
+		bind:modelId
+		bind:mode
+		bind:files
+		initSelect
+		onsubmit={() => {
+			if (modelId == null) return;
 
-		mutate(
-			{
-				message: content,
-				modelId,
-				files,
-				mode
-			},
-			(data) => {
-				goto('/chat/' + encodeURIComponent(data.id));
-			}
-		);
-	}}
-/>
+			mutate(
+				{
+					message: content,
+					modelId,
+					files,
+					mode
+				},
+				(data) => {
+					goto('/chat/' + encodeURIComponent(data.id));
+				}
+			);
+		}}
+	/>
+</div>

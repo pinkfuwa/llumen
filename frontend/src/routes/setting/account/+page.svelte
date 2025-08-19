@@ -12,9 +12,10 @@
 {#if checkPassword == undefined || (checkPassword as string).length == 0}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="theme">{$_('setting.theme')}: </label>
-		<select id="theme" bind:value={$theme} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<select id="theme" bind:value={$theme} class="mx-1 rounded-md p-1 text-center hover:bg-hover">
 			<option value="light">Modern Light</option>
-			<option value="dark">Eye-caring Dark</option>
+			<option value="dark">Modern Dark</option>
+			<option value="orange">Orange Light</option>
 		</select>
 	</div>
 

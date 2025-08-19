@@ -4,11 +4,14 @@
 </script>
 
 <div class="mb-2 rounded-lg bg-red-700 hover:bg-red-500">
-	<div class="ml-2 bg-background p-3 font-semibold hover:bg-hover">
+	<div class="ml-2 bg-background p-3 font-semibold">
 		{$_('setting.config_override_warning')}
 	</div>
 </div>
-<div contenteditable="plaintext-only" class="min-h-[200px] rounded-md bg-hover p-3">
+<div
+	contenteditable="plaintext-only"
+	class="min-h-[200px] rounded-md border border-outline bg-light p-3"
+>
 	text config
 </div>
 <TiltBtn
