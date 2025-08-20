@@ -1,5 +1,5 @@
 import { type Readable, get, readable, writable } from 'svelte/store';
-import { apiFetch } from './errorHandle';
+import { APIFetch } from './errorHandle';
 
 export interface RawMutationResult<P, D> {
 	mutate: (param: P, callback?: (data: D) => void) => Promise<D | undefined>;
@@ -76,7 +76,7 @@ export function CreateMutation<P, D>(option: CreateMutateOption<D>): MutationRes
 
 	const getPath = typeof path === 'function' ? path : () => path;
 
-	const mutator = (param: P) => apiFetch<D>(getPath(), param, method);
+	const mutator = (param: P) => APIFetch<D>(getPath(), param, method);
 
 	return CreateRawMutation({
 		mutator,

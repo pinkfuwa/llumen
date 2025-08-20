@@ -6,7 +6,7 @@ import { dev } from '$app/environment';
 
 export const apiBase = dev ? 'http://localhost:8001/api/' : '/api/';
 
-export async function apiFetch<D, P = any>(
+export async function APIFetch<D, P = any>(
 	path: string,
 	body: P | null = null,
 	method: 'POST' | 'GET' | 'PUT' | 'UPDATE' = 'POST'
