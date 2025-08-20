@@ -1,5 +1,3 @@
-import type { Component } from 'svelte';
-
 import Blockquote from './Blockquote.svelte';
 import Br from './Br.svelte';
 import Code from './Code.svelte';
