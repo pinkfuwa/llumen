@@ -8,17 +8,22 @@ import {
 	type ChatPaginateRespList,
 	type ChatPaginateReq,
 	type ChatPaginateResp,
-	ChatPaginateReqOrder
+	ChatPaginateReqOrder,
+	type MessagePaginateRespList,
+	MessagePaginateRespRole
 } from './types';
 import {
 	CreateInfiniteQuery,
 	CreateRawMutation,
+	GetEventQueryStatus,
 	SetInfiniteQueryData,
 	type Fetcher,
 	type InfiniteQueryResult,
 	type RawMutationResult
 } from './state';
 import { APIFetch } from './state/errorHandle';
+import { once } from './state/helper';
+import { onDestroy } from 'svelte';
 
 export interface CreateRoomRequest {
 	message: string;
@@ -33,27 +38,45 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 			let chatRes = await APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
 				model_id: param.modelId
 			});
+
 			if (!chatRes) return;
 
-			await goto('/chat/' + encodeURIComponent(chatRes.id));
-
-			await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
-				chat_id: chatRes.id,
-				text: param.message
-			});
-			return chatRes;
-		},
-		onSuccess: (data, param) => {
 			SetInfiniteQueryData<ChatPaginateRespList>({
 				key: ['chatPaginate'],
 				data: {
-					id: data.id,
+					id: chatRes.id,
 					model_id: param.modelId,
 					title: 'new chat'
 				}
 			});
-			// TODO: push front the rooms pagination
-			// TODO: push front the chat pagination(first message)
+
+			const status = GetEventQueryStatus(['messageEvent', chatRes.id.toString()]);
+
+			await goto('/chat/' + encodeURIComponent(chatRes.id));
+
+			// TODO: here is a resource leak(callback should be call on next route change)
+			const callback = once(
+				status,
+				(x) => x,
+				async () => {
+					console.log('get');
+					const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
+						chat_id: chatRes.id,
+						text: param.message
+					});
+					if (!res) return;
+					SetInfiniteQueryData<MessagePaginateRespList>({
+						key: ['messagePaginate', chatRes.id.toString()],
+						data: {
+							id: res.id,
+							text: param.message,
+							role: MessagePaginateRespRole.User
+						}
+					});
+				}
+			);
+
+			return chatRes;
 		}
 	});
 }

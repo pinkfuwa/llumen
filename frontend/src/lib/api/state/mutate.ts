@@ -65,13 +65,13 @@ export interface MutationResult<P, D> {
 	isError: Readable<boolean>;
 }
 
-export interface CreateMutateOption<D> {
-	onSuccess?: (data: D) => void;
+export interface CreateMutateOption<P, D> {
+	onSuccess?: (data: D, param: P) => void;
 	path: string | (() => string);
 	method?: 'POST' | 'GET' | 'PUT' | 'UPDATE';
 }
 
-export function CreateMutation<P, D>(option: CreateMutateOption<D>): MutationResult<P, D> {
+export function CreateMutation<P, D>(option: CreateMutateOption<P, D>): MutationResult<P, D> {
 	const { path, method, onSuccess } = option;
 
 	const getPath = typeof path === 'function' ? path : () => path;

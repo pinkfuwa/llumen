@@ -3,7 +3,7 @@
 	import { MessageInput } from '$lib/components';
 	import MessagePagination from '$lib/components/message/MessagePagination.svelte';
 	import Copyright from '$lib/components/Copyright.svelte';
-	import { createMessage } from '$lib/api/message.js';
+	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
 
 	let id = $derived(Number(params.id));

@@ -1,6 +1,8 @@
 import {
+	CreateEventQuery,
 	CreateInfiniteQuery,
 	CreateMutation,
+	SetInfiniteQueryData,
 	type Fetcher,
 	type InfiniteQueryResult
 } from './state';
@@ -8,11 +10,14 @@ import { APIFetch } from './state/errorHandle';
 import type { MutationResult } from './state/mutate';
 import {
 	MessagePaginateReqOrder,
+	MessagePaginateRespRole,
 	type MessageCreateReq,
 	type MessageCreateResp,
 	type MessagePaginateReq,
 	type MessagePaginateResp,
-	type MessagePaginateRespList
+	type MessagePaginateRespList,
+	type SseReq,
+	type SseResp
 } from './types';
 
 class MessageFetcher implements Fetcher<MessagePaginateRespList> {
@@ -64,7 +69,7 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 
 export function useMessage(chat_id: number): InfiniteQueryResult<MessagePaginateRespList> {
 	return CreateInfiniteQuery({
-		key: ['chatPaginate', chat_id.toString()],
+		key: ['messagePaginate', chat_id.toString()],
 		fetcher: new MessageFetcher(chat_id)
 	});
 }
@@ -72,8 +77,37 @@ export function useMessage(chat_id: number): InfiniteQueryResult<MessagePaginate
 export function createMessage(): MutationResult<MessageCreateReq, MessageCreateResp> {
 	return CreateMutation({
 		path: 'message/create',
-		onSuccess: () => {
-			// TODO: push front the chat pagination
+		onSuccess: (data, param) => {
+			SetInfiniteQueryData<MessagePaginateRespList>({
+				key: ['messagePaginate', param.chat_id.toString()],
+				data: {
+					id: data.id,
+					text: param.text,
+					role: MessagePaginateRespRole.User
+				}
+			});
+		}
+	});
+}
+
+export function handleServerSideMessage(chatId: number) {
+	const handlers: {
+		[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c']) => void;
+	} = {
+		last(data) {},
+		token(data) {},
+		end(data) {},
+		user_message(data) {}
+	};
+
+	CreateEventQuery<SseResp, SseReq>({
+		path: 'chat/sse',
+		key: ['messageEvent', chatId.toString()],
+		body: {
+			id: chatId
+		},
+		onEvent: (res: SseResp) => {
+			handlers[res.t](res.c as any);
 		}
 	});
 }

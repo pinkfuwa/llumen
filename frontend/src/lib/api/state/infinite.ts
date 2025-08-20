@@ -61,7 +61,6 @@ class Pages<D extends { id: number }> {
 		const addBackwardPage = () => {
 			this.pages.update((x) => {
 				const first = x[0];
-				console.log(first);
 
 				const newPage = {
 					no: first.no - 1,

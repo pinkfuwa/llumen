@@ -9,6 +9,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { CreateSseInternal } from '$lib/sse';
+	import { useError } from '$lib/error';
 
 	let { children } = $props();
 
@@ -20,6 +21,13 @@
 			if (token == undefined && guardPrefix.some((m) => pathname.startsWith(m))) {
 				goto(`/login?callback=${encodeURIComponent(pathname)}`);
 			}
+		});
+	});
+
+	const error = useError();
+	$effect(() => {
+		error.subscribe((error) => {
+			if (error?.error == 'malformed_token') token.set(undefined);
 		});
 	});
 
