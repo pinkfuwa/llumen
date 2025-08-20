@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Root from '$lib/markdown/Root.svelte';
 	import { SquarePen, Check } from '@lucide/svelte';
-	import FileGroup from '../FileGroup.svelte';
+	import FileGroup from '../buttons/FileGroup.svelte';
 	let { content = $bindable(''), files = $bindable([] as Array<{ name: string }>) } = $props();
 
 	let editable = $state(false);

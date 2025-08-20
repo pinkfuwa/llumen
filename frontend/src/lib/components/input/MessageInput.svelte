@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { createDropZone } from '@sv-use/core';
-	import MdTextbox from '$lib/components/MDTextbox.svelte';
-	import SearchBtn from '$lib/components/buttons/SearchBtn.svelte';
-	import UploadBtn from '$lib/components/buttons/UploadBtn.svelte';
-	import SendBtn from '$lib/components/buttons/SendBtn.svelte';
-	import FileGroup from '$lib/components/FileGroup.svelte';
-	import ModelBtn from '$lib/components/buttons/ModelBtn.svelte';
-	import MarkdownBtn from '$lib/components/buttons/MarkdownBtn.svelte';
+	import MdTextbox from './MDTextbox.svelte';
+	import SearchBtn from './SearchBtn.svelte';
+	import UploadBtn from './UploadBtn.svelte';
+	import SendBtn from './SendBtn.svelte';
+	import FileGroup from '../buttons/FileGroup.svelte';
+	import ModelBtn from './ModelBtn.svelte';
+	import MarkdownBtn from './MarkdownBtn.svelte';
 	import { _ } from 'svelte-i18n';
 	import type { MouseEventHandler } from 'svelte/elements';
 

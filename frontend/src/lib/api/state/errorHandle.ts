@@ -6,11 +6,12 @@ import { dev } from '$app/environment';
 
 export const apiBase = dev ? 'http://localhost:8001/api/' : '/api/';
 
-export async function APIFetch<D, P = any>(
+export async function RawAPIFetch<P = any>(
 	path: string,
 	body: P | null = null,
-	method: 'POST' | 'GET' | 'PUT' | 'UPDATE' = 'POST'
-): Promise<D | undefined> {
+	method: 'POST' | 'GET' | 'PUT' | 'UPDATE' = 'POST',
+	signal?: AbortSignal
+): Promise<Response> {
 	let tokenVal = get(token)?.value;
 
 	if (path.startsWith('/')) throw new Error('Invalid path');
@@ -19,11 +20,20 @@ export async function APIFetch<D, P = any>(
 	headers['Content-Type'] = 'application/json';
 	if (tokenVal) headers['Authorization'] = tokenVal;
 
-	const res = await fetch(apiBase + path, {
+	return fetch(apiBase + path, {
 		method,
 		headers,
-		body: body ? JSON.stringify(body) : undefined
+		body: body ? JSON.stringify(body) : undefined,
+		signal
 	});
+}
+
+export async function APIFetch<D, P = any>(
+	path: string,
+	body: P | null = null,
+	method: 'POST' | 'GET' | 'PUT' | 'UPDATE' = 'POST'
+): Promise<D | undefined> {
+	const res = await RawAPIFetch(path, body, method);
 
 	try {
 		const resJson: D | APIError = await res.json();

@@ -1,6 +1,6 @@
 <script lang="ts">
 	let { children, params } = $props();
-	import Sidebar from '$lib/components/Sidebar.svelte';
+	import { Sidebar } from '$lib/components';
 
 	let addition = $derived(params.id != undefined);
 </script>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import TiltBtn from '$lib/components/buttons/TiltBtn.svelte';
+	import { TiltBtn } from '$lib/components';
 	import { _ } from 'svelte-i18n';
 </script>
 

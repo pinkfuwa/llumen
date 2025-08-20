@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { createRoom } from '$lib/api/chatroom';
-	import { _ } from 'svelte-i18n';
 	import { fade } from 'svelte/transition';
-	import MessageInput from '$lib/components/MessageInput.svelte';
+	import { MessageInput, Copyright } from '$lib/components';
 	import { goto } from '$app/navigation';
-	import Copyright from '$lib/components/Copyright.svelte';
+	import { _ } from 'svelte-i18n';
 
 	let { mutate } = createRoom();
 
