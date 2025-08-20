@@ -8,6 +8,7 @@
 		header = undefined,
 		rows = undefined,
 		ordered = false,
+		monochrome = false,
 		...rest
 	} = $props();
 </script>
@@ -62,9 +63,9 @@
 		{/if}
 	{:else}
 		{@const SvelteComponent_2 = renderers[type]}
-		<svelte:component this={SvelteComponent_2} {...rest}>
+		<svelte:component this={SvelteComponent_2} {...rest} {monochrome}>
 			{#if tokens}
-				<Parser {tokens} {renderers} />
+				<Parser {tokens} {renderers} {monochrome} />
 			{:else}
 				{rest.raw}
 			{/if}

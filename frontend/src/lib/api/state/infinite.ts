@@ -148,6 +148,14 @@ class Pages<D extends { id: number }> {
 			return x;
 		});
 	}
+	/**
+	 * revalidate pages where predicate return true
+	 */
+	public revalidate(predicate: (data: D) => boolean) {
+		get(this.pages).forEach((page) => {
+			if (get(page.data).some(predicate)) page.revalidate();
+		});
+	}
 }
 
 export interface InfiniteQueryOption<D extends { id: number }> {
@@ -202,4 +210,16 @@ export function RemoveInfiniteQueryData<D extends { id: number }>(option: {
 
 	const pages = get(pageStore);
 	if (pages) pages.removeData(predicate);
+}
+
+export function RevalidateInfiniteQueryData<D extends { id: number }>(option: {
+	predicate: (data: D) => boolean;
+	key: string[];
+}) {
+	let { key, predicate } = option;
+
+	const pageStore = globalCache.get<Pages<D>>(key);
+
+	const pages = get(pageStore);
+	if (pages) pages?.revalidate(predicate);
 }

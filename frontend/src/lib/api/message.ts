@@ -1,7 +1,10 @@
+import type { TokensList } from 'marked';
 import {
 	CreateEventQuery,
 	CreateInfiniteQuery,
 	CreateMutation,
+	RemoveInfiniteQueryData,
+	RevalidateInfiniteQueryData,
 	SetInfiniteQueryData,
 	type Fetcher,
 	type InfiniteQueryResult
@@ -19,6 +22,7 @@ import {
 	type SseReq,
 	type SseResp
 } from './types';
+import { MarkdownPatcher, type UIUpdater } from '$lib/markdown/patcher';
 
 class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 	chatId: number;
@@ -90,14 +94,62 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 	});
 }
 
-export function handleServerSideMessage(chatId: number) {
+export function handleServerSideMessage(chatId: number, streamingUI: UIUpdater) {
+	let patcher = new MarkdownPatcher(streamingUI);
 	const handlers: {
 		[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c']) => void;
 	} = {
-		last(data) {},
-		token(data) {},
-		end(data) {},
-		user_message(data) {}
+		last(data) {
+			RevalidateInfiniteQueryData({
+				key: ['messagePaginate', chatId.toString()],
+				predicate: (entry) => data.id <= entry.id
+			});
+		},
+		token(data) {
+			patcher.feed(data.text);
+		},
+		end(data) {
+			SetInfiniteQueryData<MessagePaginateRespList>({
+				key: ['messagePaginate', chatId.toString()],
+				data: {
+					id: data.id,
+					text: patcher.content,
+					role: MessagePaginateRespRole.Assistant
+				}
+			});
+			patcher.reset();
+		},
+		user_message(data) {
+			// RemoveInfiniteQueryData<MessagePaginateRespList>({
+			// 	key: ['messagePaginate', chatId.toString()],
+			// 	predicate(entry) {
+			// 		return data.id <= entry.id;
+			// 	}
+			// });
+
+			// SetInfiniteQueryData<MessagePaginateRespList>({
+			// 	key: ['messagePaginate', chatId.toString()],
+			// 	data: {
+			// 		id: data.id,
+			// 		text: data.text,
+			// 		role: MessagePaginateRespRole.User
+			// 	}
+			// });
+
+			// TODO: fix bug
+			// consider case when creating chatroom
+			// 1. create chat
+			// 2. setup Status handle for SSE
+			// 3. setup SSE
+			// 4. recieve user_message event
+			// 5. append user message
+			// 6. because status handle, it append user message again
+			// 7. you got two message with same id!
+			RevalidateInfiniteQueryData({
+				key: ['messagePaginate', chatId.toString()],
+				predicate: (entry) => data.id <= entry.id
+			});
+		}
 	};
 
 	CreateEventQuery<SseResp, SseReq>({

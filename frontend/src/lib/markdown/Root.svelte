@@ -2,11 +2,11 @@
 	import { Lexer } from 'marked';
 	import Parser from './Parser.svelte';
 
-	const lexer = new Lexer();
+	let { source, monochrome = false } = $props();
 
-	let { source } = $props();
+	const lexer = new Lexer();
 
 	let tokens = lexer.lex(source);
 </script>
 
-<Parser {tokens} />
+<Parser {tokens} {monochrome} />
