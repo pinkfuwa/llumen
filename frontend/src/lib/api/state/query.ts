@@ -1,6 +1,6 @@
 import { type Readable, type Writable } from 'svelte/store';
 import { CreateInternalQuery } from './internal';
-import { apiFetch } from './errorHandle';
+import { APIFetch } from './errorHandle';
 
 export interface QueryResult<T> {
 	data: Writable<T | undefined>;
@@ -24,7 +24,7 @@ export function CreateQuery<P, D>(option: QueryOption<P, D>): QueryResult<D> {
 	const getPath = () => (path instanceof Function ? path() : path);
 	const getBody = () => (body instanceof Function ? body() : body);
 
-	const fetcher = async () => apiFetch<D>(getPath(), getBody(), method);
+	const fetcher = async () => APIFetch<D>(getPath(), getBody(), method);
 
 	if (!staleTime) staleTime = 30000;
 

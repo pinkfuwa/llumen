@@ -18,7 +18,7 @@ import {
 	type InfiniteQueryResult,
 	type RawMutationResult
 } from './state';
-import { apiFetch } from './state/errorHandle';
+import { APIFetch } from './state/errorHandle';
 
 export interface CreateRoomRequest {
 	message: string;
@@ -30,14 +30,14 @@ export interface CreateRoomRequest {
 export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateResp> {
 	return CreateRawMutation({
 		mutator: async (param) => {
-			let chatRes = await apiFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
+			let chatRes = await APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
 				model_id: param.modelId
 			});
 			if (!chatRes) return;
 
 			await goto('/chat/' + encodeURIComponent(chatRes.id));
 
-			await apiFetch<MessageCreateResp, MessageCreateReq>('message/create', {
+			await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
 				chat_id: chatRes.id,
 				text: param.message
 			});
@@ -60,7 +60,7 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 	async range(startId: number, endId: number) {
-		const x = await apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
+		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
 			t: 'range',
 			c: {
 				upper: startId + 1,
@@ -71,7 +71,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 	}
 	async forward(limit: number, id?: number) {
 		if (id != undefined) id = id + 1;
-		const x = await apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
+		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
 			t: 'limit',
 			c: {
 				id,
@@ -83,7 +83,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 	}
 	async backward(limit: number, id: number) {
 		if (id != undefined) id = id - 1;
-		const x = await apiFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
+		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
 			t: 'limit',
 			c: {
 				id,

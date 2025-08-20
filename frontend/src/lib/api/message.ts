@@ -4,7 +4,7 @@ import {
 	type Fetcher,
 	type InfiniteQueryResult
 } from './state';
-import { apiFetch } from './state/errorHandle';
+import { APIFetch } from './state/errorHandle';
 import type { MutationResult } from './state/mutate';
 import {
 	MessagePaginateReqOrder,
@@ -21,7 +21,7 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 		this.chatId = chatId;
 	}
 	async range(startId: number, endId: number) {
-		const x = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
+		const x = await APIFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
 			t: 'range',
 			c: {
 				chat_id: this.chatId,
@@ -34,7 +34,7 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 	}
 	async forward(limit: number, id?: number) {
 		if (id != undefined) id = id + 1;
-		const x = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
+		const x = await APIFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
 			t: 'limit',
 			c: {
 				chat_id: this.chatId,
@@ -48,7 +48,7 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 	}
 	async backward(limit: number, id: number) {
 		if (id != undefined) id = id - 1;
-		const x = await apiFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
+		const x = await APIFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
 			t: 'limit',
 			c: {
 				chat_id: this.chatId,

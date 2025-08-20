@@ -7,7 +7,7 @@ import {
 	type CreateMutationResult,
 	CreateMockQuery
 } from './state';
-import { apiFetch } from './state/errorHandle';
+import { APIFetch } from './state/errorHandle';
 
 import type { LoginReq, LoginResp, RenewResp, RenewReq } from './types';
 
@@ -46,7 +46,7 @@ export function Login(): CreateMutationResult<LoginReq, LoginResp> {
 }
 
 export async function RenewToken(originalToken: string) {
-	const res = await apiFetch<RenewResp, RenewReq>('auth/renew', { token: originalToken });
+	const res = await APIFetch<RenewResp, RenewReq>('auth/renew', { token: originalToken });
 
 	if (res) {
 		const now = new Date();
