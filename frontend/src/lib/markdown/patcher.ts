@@ -9,8 +9,8 @@ import { Lexer } from 'marked';
  */
 export interface UIUpdater {
 	reset: () => void;
-	append: (tokens: TokensList & { monochrome?: boolean }) => void;
-	replace: (tokens: TokensList & { monochrome?: boolean }) => void;
+	append: (tokens: TokensList) => void;
+	replace: (tokens: TokensList) => void;
 }
 
 const blocktokens = [
@@ -29,23 +29,31 @@ const blocktokens = [
 	'tablecell'
 ];
 
+const mininalFlush = 16;
+
 export class MarkdownPatcher {
 	updater: UIUpdater;
 	buffer: string = '';
 	content: string = '';
-	lexer = new Lexer();
+	lastFlush: number = 0;
 	constructor(updater: UIUpdater) {
 		this.updater = updater;
 	}
 	feed(data: string) {
 		this.buffer += data;
 		this.content += data;
-		const tokens = this.lexer.lex(this.buffer);
+		this.lastFlush += data.length;
+
+		if (this.lastFlush < mininalFlush) return;
+		else this.lastFlush = 0;
+
+		const lexer = new Lexer();
+		const tokens = lexer.lex(this.buffer);
 
 		if (dev && tokens.some((x) => !blocktokens.includes(x.type)))
 			throw new Error('unreachable, only blocktoken can appear at top-level');
 
-		if (tokens.length > 1) {
+		if (tokens.length >= 4 && !tokens[tokens.length - 2].type.startsWith('table')) {
 			let first = tokens;
 
 			let second: TokensList = [first.pop()!] as any;
@@ -53,7 +61,7 @@ export class MarkdownPatcher {
 
 			this.buffer = second[0].raw;
 
-			this.updater.replace({ ...first, monochrome: true });
+			this.updater.replace(first);
 			this.updater.append(second);
 		} else {
 			this.updater.replace(tokens);

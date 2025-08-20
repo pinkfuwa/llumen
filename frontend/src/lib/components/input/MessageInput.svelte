@@ -15,7 +15,7 @@
 		files = $bindable([] as Array<File>),
 		modelId = $bindable<number | null>(null),
 		content = $bindable(''),
-		onsubmit = $bindable(undefined as MouseEventHandler<HTMLButtonElement> | undefined),
+		onsubmit = undefined as undefined | (() => void),
 		above = false,
 		initSelect = false
 	} = $props();
@@ -51,8 +51,8 @@
 			<FileGroup {files} deletable />
 		</div>
 	{/if}
-	<div class="mb-2 flex items-center justify-between space-x-2 border-b border-outline p-2 pb-4">
-		<MdTextbox bind:editable placeholder={$_('chat.question')} bind:value={content} />
+	<div class="mb-2 flex items-center justify-between space-x-2 border-b border-outline pr-2 pb-2">
+		<MdTextbox bind:editable placeholder={$_('chat.question')} bind:value={content} {onsubmit} />
 		<SendBtn onclick={onsubmit} />
 	</div>
 	<div class="flex flex-row items-center justify-between">

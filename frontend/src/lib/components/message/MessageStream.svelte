@@ -13,8 +13,8 @@
 			<FolderSearch class="mr-2 inline-block" />
 			{$_('chat.assistant.response')}
 		</div>
-		{#each list as tokens}
-			<Parser {tokens} monochrome={tokens.monochrome} />
+		{#each list as tokens, i}
+			<Parser {tokens} monochrome />
 		{/each}
 		<!-- TODO: add loading status -->
 	</div>

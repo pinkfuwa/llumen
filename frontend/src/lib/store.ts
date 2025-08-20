@@ -51,3 +51,4 @@ export const theme = localState<'light' | 'dark' | 'orange'>(
 		: 'orange',
 	(x) => ['light', 'dark', 'orange'].includes(x)
 );
+export const enterSubmit = localState<'true' | 'false'>('enterSubmit', 'false');

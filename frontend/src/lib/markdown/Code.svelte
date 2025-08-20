@@ -29,7 +29,7 @@
 			class="absolute top-0 right-0 z-10 m-1 hidden group-hover/codeblock:block"
 			onclick={copy}
 		>
-			<ClipboardCopy class="h-10 w-10 rounded-md bg-background p-2 hover:bg-hover" />
+			<ClipboardCopy class="h-10 w-10 rounded-md bg-primary p-2 hover:bg-hover" />
 		</button>
 	{/if}
 	<div

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Root from '$lib/markdown/Root.svelte';
-	import { SquarePen, Check } from '@lucide/svelte';
+	import { SquarePen, Check, X } from '@lucide/svelte';
 	import FileGroup from '../buttons/FileGroup.svelte';
 	let { content = $bindable(''), files = $bindable([] as Array<{ name: string }>) } = $props();
 
@@ -32,6 +32,15 @@
 				? 'opacity-100'
 				: 'opacity-0'} group-hover/files:opacity-100"
 		>
+			{#if editable}
+				<button
+					onclick={() => {
+						editable = !editable;
+					}}
+				>
+					<X class="m-[1px] h-10 w-10 rounded-lg bg-background p-2 hover:bg-hover" />
+				</button>
+			{/if}
 			<button
 				onclick={() => {
 					editable = !editable;

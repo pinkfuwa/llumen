@@ -20,8 +20,6 @@ export interface EventQueryResult {
 export function CreateEventQuery<D, P = null>(option: EventQueryOption<D, P>): EventQueryResult {
 	let { path, body, method, onEvent, key } = option;
 
-	console.log(key);
-
 	const status = key ? globalCache.getOr(key, false) : writable(false);
 
 	const controller = new AbortController();
@@ -31,13 +29,11 @@ export function CreateEventQuery<D, P = null>(option: EventQueryOption<D, P>): E
 
 	(async () => {
 		const res = await RawAPIFetch<P>(path, body, method, controller.signal);
-		console.log('set');
 		status.set(true);
 		let stream = events(res, controller.signal);
 		try {
 			for await (let event of stream) {
 				const data = event.data;
-				console.log('<<', data);
 
 				if (data != undefined && data.trim() != ':') {
 					const resJson = JSON.parse(data);
@@ -55,6 +51,5 @@ export function CreateEventQuery<D, P = null>(option: EventQueryOption<D, P>): E
 }
 
 export function GetEventQueryStatus(key: string[]) {
-	console.log(key);
 	return globalCache.getOr(key, false);
 }

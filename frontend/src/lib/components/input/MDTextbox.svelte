@@ -3,11 +3,14 @@
 		editable = $bindable(false),
 		value = $bindable(''),
 		placeholder = '',
-		disabled = false
+		disabled = false,
+		onsubmit = undefined as undefined | (() => void)
 	} = $props();
 
 	import { default as Markdown } from '$lib/markdown/Root.svelte';
+	import { enterSubmit } from '$lib/store';
 	import { onStartTyping } from '@sv-use/core';
+	import { get } from 'svelte/store';
 
 	let input = $state<null | HTMLElement>(null);
 
@@ -22,7 +25,7 @@
 </script>
 
 <textarea
-	class="editor field-sizing-content max-h-[60vh] max-w-[65vw] flex-grow resize-none overflow-scroll{editable
+	class="editor field-sizing-content max-h-[60vh] max-w-[65vw] flex-grow resize-none rounded-md p-4 focus:bg-background overflow-scroll{editable
 		? ''
 		: ' hidden'}"
 	bind:value
@@ -30,6 +33,10 @@
 	rows={rows()}
 	bind:this={input}
 	{disabled}
+	onkeypress={(event) => {
+		if (event.key == 'Enter' && !event.shiftKey && get(enterSubmit) == 'true' && onsubmit)
+			onsubmit();
+	}}
 ></textarea>
 {#if !editable}
 	<div
