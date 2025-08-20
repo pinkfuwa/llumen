@@ -11,6 +11,8 @@ export type { QueryOption, QueryResult } from './query';
 export { CreateInfiniteQuery, RemoveInfiniteQueryData, SetInfiniteQueryData } from './infinite';
 export type { InfiniteQueryResult, InfiniteQueryOption, Fetcher, PageEntry } from './infinite';
 export { CreateMockMutation, CreateMockQuery } from './mock';
+export type { EventQueryOption } from './event';
+export { CreateEventQuery } from './event';
 
 export function clearCache() {
 	globalCache.clear();

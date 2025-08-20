@@ -6,10 +6,10 @@
 	} = $props();
 
 	import { slide } from 'svelte/transition';
-	import SettingBtn from './buttons/SettingBtn.svelte';
-	import CollapseBtn from './buttons/CollapseBtn.svelte';
+	import SettingBtn from './SettingBtn.svelte';
+	import CollapseBtn from './CollapseBtn.svelte';
 	import CollapseHeader from './CollapseHeader.svelte';
-	import RoomPagination from './room/RoomPagination.svelte';
+	import RoomPagination from '../room/RoomPagination.svelte';
 </script>
 
 {#if collapsed}

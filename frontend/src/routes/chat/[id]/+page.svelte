@@ -1,10 +1,10 @@
 <script lang="ts">
 	let { params } = $props();
-	import { _ } from 'svelte-i18n';
-	import MessageInput from '$lib/components/MessageInput.svelte';
+	import { MessageInput } from '$lib/components';
 	import MessagePagination from '$lib/components/message/MessagePagination.svelte';
-	import { createMessage } from '$lib/api/message.js';
 	import Copyright from '$lib/components/Copyright.svelte';
+	import { createMessage } from '$lib/api/message.js';
+	import { _ } from 'svelte-i18n';
 
 	let id = $derived(Number(params.id));
 
