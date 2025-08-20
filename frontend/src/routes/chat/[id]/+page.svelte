@@ -39,5 +39,5 @@
 	{#key id}
 		<MessagePagination {id} />
 	{/key}
-	<div class="min-h-2"></div>
+	<div class="min-h-16"></div>
 </div>

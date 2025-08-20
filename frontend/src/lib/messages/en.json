@@ -40,6 +40,7 @@
 			"disable": "Normal text editing"
 		},
 		"file": "upload file",
-		"new": "new chat"
+		"new": "new chat",
+		"assistant.response": "Answer"
 	}
 }
