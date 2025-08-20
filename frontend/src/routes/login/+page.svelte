@@ -1,17 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Login, HeaderLogin } from '$lib/api/user';
+	import { Login } from '$lib/api/user';
 	import TiltBtn from '$lib/components/buttons/TiltBtn.svelte';
+	import { page } from '$app/state';
 	import { _ } from 'svelte-i18n';
 
 	let username = $state('');
 	let password = $state('');
-
-	let { mutate: headerAuthMutate } = HeaderLogin();
-
-	$effect(() => {
-		headerAuthMutate(undefined, () => goto('/chat/new'));
-	});
 
 	let { mutate, isPending, isError } = Login();
 
@@ -22,7 +17,18 @@
 				username: username,
 				password: password
 			},
-			(_) => goto('/chat/new')
+			(_) => {
+				const callback = page.url.searchParams.get('callback');
+
+				if (callback) {
+					let url = new URL(decodeURIComponent(callback), document.baseURI);
+					if (url.origin == window.location.origin) goto(url);
+
+					return;
+				}
+
+				goto('/chat/new');
+			}
 		);
 	}
 </script>

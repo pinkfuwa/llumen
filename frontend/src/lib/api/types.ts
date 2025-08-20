@@ -25,18 +25,30 @@ export interface ChatHaltReq {
 export interface ChatHaltResp {}
 
 export enum ChatPaginateReqOrder {
-	Asc = 'asc',
-	Desc = 'desc'
+	/** greater than */
+	Gt = 'gt',
+	/** less than */
+	Lt = 'lt'
 }
 
-export interface ChatPaginateReq {
+export interface ChatPaginateReqLimit {
 	/**
-	 * default to i32::MAX
-	 * that is, from last to first
+	 * Default to the beginning
+	 * For Gt => minimum id
+	 * For Le => maximum id
 	 */
 	id?: number;
 	order: ChatPaginateReqOrder;
-	limit: number;
+	limit?: number;
+}
+
+/**
+ * Does not include upper & lower
+ * lower [... return items ... ] upper
+ */
+export interface ChatPaginateReqRange {
+	upper: number;
+	lower: number;
 }
 
 export interface ChatPaginateRespList {
@@ -94,9 +106,9 @@ export interface MessageCreateResp {
 
 export enum MessagePaginateReqOrder {
 	/** greater than */
-	GT = 'gt',
+	Gt = 'gt',
 	/** less than */
-	LT = 'lt'
+	Lt = 'lt'
 }
 
 export interface MessagePaginateReqLimit {
@@ -236,6 +248,10 @@ export interface UserReadResp {
 	user_id: number;
 	username: string;
 }
+
+export type ChatPaginateReq =
+	| { t: 'limit'; c: ChatPaginateReqLimit }
+	| { t: 'range'; c: ChatPaginateReqRange };
 
 export type MessagePaginateReq =
 	| { t: 'limit'; c: MessagePaginateReqLimit }

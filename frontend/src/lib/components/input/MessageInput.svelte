@@ -1,22 +1,23 @@
 <script lang="ts">
 	import { createDropZone } from '@sv-use/core';
-	import MdTextbox from '$lib/components/MDTextbox.svelte';
-	import SearchBtn from '$lib/components/buttons/SearchBtn.svelte';
-	import UploadBtn from '$lib/components/buttons/UploadBtn.svelte';
-	import SendBtn from '$lib/components/buttons/SendBtn.svelte';
-	import FileGroup from '$lib/components/FileGroup.svelte';
-	import ModelBtn from '$lib/components/buttons/ModelBtn.svelte';
-	import MarkdownBtn from '$lib/components/buttons/MarkdownBtn.svelte';
+	import MdTextbox from './MDTextbox.svelte';
+	import SearchBtn from './SearchBtn.svelte';
+	import UploadBtn from './UploadBtn.svelte';
+	import SendBtn from './SendBtn.svelte';
+	import FileGroup from '../buttons/FileGroup.svelte';
+	import ModelBtn from './ModelBtn.svelte';
+	import MarkdownBtn from './MarkdownBtn.svelte';
 	import { _ } from 'svelte-i18n';
 	import type { MouseEventHandler } from 'svelte/elements';
 
 	let {
 		mode = $bindable(0 as 0 | 1 | 2),
 		files = $bindable([] as Array<File>),
-		modelId = $bindable(''),
+		modelId = $bindable<number | null>(null),
 		content = $bindable(''),
-		onclick = $bindable(undefined as MouseEventHandler<HTMLButtonElement> | undefined),
-		above = false
+		onsubmit = $bindable(undefined as MouseEventHandler<HTMLButtonElement> | undefined),
+		above = false,
+		initSelect = false
 	} = $props();
 
 	let editable = $state(true);
@@ -52,12 +53,12 @@
 	{/if}
 	<div class="mb-2 flex items-center justify-between space-x-2 border-b border-outline p-2 pb-4">
 		<MdTextbox bind:editable placeholder={$_('chat.question')} bind:value={content} />
-		<SendBtn {onclick} />
+		<SendBtn onclick={onsubmit} />
 	</div>
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex grow items-center space-x-1">
-			<ModelBtn bind:value={modelId} {above} />
-			<SearchBtn bind:value={mode} />
+			<ModelBtn bind:value={modelId} {above} disabled={!initSelect} />
+			<SearchBtn bind:value={mode} disabled={!initSelect} />
 			<UploadBtn bind:files />
 		</div>
 		{#if content.length != 0}

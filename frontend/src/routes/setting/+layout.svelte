@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import { fade } from 'svelte/transition';
-	import { X } from '@lucide/svelte';
+	import { Star, X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 	import { token } from '$lib/store';
 	import { goto } from '$app/navigation';
-	import { clear as clearCache } from 'sswr';
+	import { clearCache } from '$lib/api/state';
 
 	let { children } = $props();
 
@@ -63,6 +63,11 @@
 						}}
 					>
 						<LogOut class="mr-2 inline-block h-5 w-5" /> {$_('setting.logout')}</button
+					>
+				</li>
+				<li class="rounded-md px-5 py-1 hover:bg-hover">
+					<a class="flex items-center" href="https://github.com/pinkfuwa/llumen" target="_blank">
+						<Star class="mr-2 inline-block h-5 w-5" /> {$_('setting.github_star')}</a
 					>
 				</li>
 			</ul>
