@@ -35,12 +35,18 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.0.0
         version: 4.1.11(vite@7.0.5(jiti@2.4.2)(lightningcss@1.30.1))
+      fetch-event-stream:
+        specifier: ^0.1.5
+        version: 0.1.5
       isomorphic-dompurify:
         specifier: ^2.26.0
         version: 2.26.0
       marked:
         specifier: ^16.1.1
         version: 16.1.1
+      marked-katex-extension:
+        specifier: ^5.1.5
+        version: 5.1.5(katex@0.16.22)(marked@16.1.1)
       marked-shiki:
         specifier: ^1.2.0
         version: 1.2.0(marked@16.1.1)(shiki@3.8.1)
@@ -56,9 +62,6 @@ importers:
       shiki:
         specifier: ^3.8.1
         version: 3.8.1
-      sswr:
-        specifier: ^2.2.0
-        version: 2.2.0(svelte@5.36.13)
       svelte:
         specifier: ^5.0.0
         version: 5.36.13
@@ -830,6 +833,10 @@ packages:
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
 
+  commander@8.3.0:
+    resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
+    engines: {node: '>= 12'}
+
   cookie@0.6.0:
     resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
     engines: {node: '>= 0.6'}
@@ -941,6 +948,9 @@ packages:
       picomatch:
         optional: true
 
+  fetch-event-stream@0.1.5:
+    resolution: {integrity: sha512-V1PWovkspxQfssq/NnxoEyQo1DV+MRK/laPuPblIZmSjMN8P5u46OhlFQznSr9p/t0Sp8Uc6SbM3yCMfr0KU8g==}
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -1008,6 +1018,10 @@ packages:
     peerDependenciesMeta:
       canvas:
         optional: true
+
+  katex@0.16.22:
+    resolution: {integrity: sha512-XCHRdUw4lf3SKBaJe4EvgqIuWwkPSo9XoeO8GjQW94Bp7TWv9hNhzZjZ+OH9yf1UmLygb7DIT5GSFQiyt16zYg==}
+    hasBin: true
 
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
@@ -1088,6 +1102,12 @@ packages:
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
+
+  marked-katex-extension@5.1.5:
+    resolution: {integrity: sha512-AAlfnpi3ivBWt4Paqb8YW2R7eq2ESJ+AtrgJU1jImUwnxHJAhPkZ5MsR3POnWV9HKwlBLZTVGC5I5+I2xWRiFg==}
+    peerDependencies:
+      katex: '>=0.16 <0.17'
+      marked: '>=4 <17'
 
   marked-shiki@1.2.0:
     resolution: {integrity: sha512-N924hp8veE6Mc91g5/kCNVoTU7TkeJfB2G2XEWb+k1fVA0Bck2T0rVt93d39BlOYH6ohP4Q9BFlPk+UkblhXbg==}
@@ -1305,11 +1325,6 @@ packages:
   space-separated-tokens@2.0.2:
     resolution: {integrity: sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==}
 
-  sswr@2.2.0:
-    resolution: {integrity: sha512-clTszLPZkmycALTHD1mXGU+mOtA/MIoLgS1KGTTzFNVm9rytQVykgRaP+z1zl572cz0bTqj4rFVoC2N+IGK4Sg==}
-    peerDependencies:
-      svelte: ^4.0.0 || ^5.0.0
-
   stringify-entities@4.0.4:
     resolution: {integrity: sha512-IwfBptatlO+QCJUo19AqvrPNqlVMpW9YEL2LIVY+Rpv2qsjCGxaDLNRgeGsQWJhfItebuJhsGSLjaBbNSQ+ieg==}
 
@@ -1331,9 +1346,6 @@ packages:
   svelte@5.36.13:
     resolution: {integrity: sha512-LnSywHHQM/nJekC65d84T1Yo85IeCYN4AryWYPhTokSvcEAFdYFCfbMhX1mc0zHizT736QQj0nalUk+SXaWrEQ==}
     engines: {node: '>=18'}
-
-  swrev@4.0.0:
-    resolution: {integrity: sha512-LqVcOHSB4cPGgitD1riJ1Hh4vdmITOp+BkmfmXRh4hSF/t7EnS4iD+SOTmq7w5pPm/SiPeto4ADbKS6dHUDWFA==}
 
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
@@ -2085,6 +2097,8 @@ snapshots:
 
   comma-separated-tokens@2.0.3: {}
 
+  commander@8.3.0: {}
+
   cookie@0.6.0: {}
 
   cssstyle@4.6.0:
@@ -2241,6 +2255,8 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.3
 
+  fetch-event-stream@0.1.5: {}
+
   fsevents@2.3.3:
     optional: true
 
@@ -2346,6 +2362,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  katex@0.16.22:
+    dependencies:
+      commander: 8.3.0
+
   kleur@4.1.5: {}
 
   lightningcss-darwin-arm64@1.30.1:
@@ -2404,6 +2424,11 @@ snapshots:
   magic-string@0.30.17:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.4
+
+  marked-katex-extension@5.1.5(katex@0.16.22)(marked@16.1.1):
+    dependencies:
+      katex: 0.16.22
+      marked: 16.1.1
 
   marked-shiki@1.2.0(marked@16.1.1)(shiki@3.8.1):
     dependencies:
@@ -2584,11 +2609,6 @@ snapshots:
 
   space-separated-tokens@2.0.2: {}
 
-  sswr@2.2.0(svelte@5.36.13):
-    dependencies:
-      svelte: 5.36.13
-      swrev: 4.0.0
-
   stringify-entities@4.0.4:
     dependencies:
       character-entities-html4: 2.1.0
@@ -2633,8 +2653,6 @@ snapshots:
       locate-character: 3.0.0
       magic-string: 0.30.17
       zimmerframe: 1.1.2
-
-  swrev@4.0.0: {}
 
   symbol-tree@3.2.4: {}
 

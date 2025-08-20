@@ -1,0 +1,21 @@
+<script lang="ts">
+	let { top = false } = $props();
+</script>
+
+<div class="relative select-none">
+	<div
+		class="absolute {top
+			? 'top-0'
+			: 'bottom-1'} z-10 flex w-full items-center justify-center text-sm text-outline"
+	>
+		<a
+			href="https://github.com/pinkfuwa/llumen"
+			target="_blank"
+			class="rounded-md px-[6px] py-0.5 hover:bg-hover hover:text-dark">llumen</a
+		>Made by<a
+			href="https://github.com/pinkfuwa"
+			target="_blank"
+			class="rounded-md px-[6px] py-0.5 hover:bg-hover hover:text-dark">pinkfuwa</a
+		>&COPY; {new Date().getFullYear()}
+	</div>
+</div>

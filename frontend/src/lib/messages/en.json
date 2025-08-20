@@ -13,7 +13,8 @@
 		"username": "Username",
 		"config_override_warning": "This action will override other's model configuration.",
 		"check_syntax": "Check Syntax",
-		"save_settings": "Save Settings"
+		"save_settings": "Save Settings",
+		"github_star": "Start on Github"
 	},
 	"login": {
 		"title": "Sign in to llumen",
@@ -38,6 +39,8 @@
 			"enable": "Markdown rendering",
 			"disable": "Normal text editing"
 		},
-		"file": "upload file"
+		"file": "upload file",
+		"new": "new chat",
+		"assistant.response": "Answer"
 	}
 }

@@ -6,8 +6,9 @@
 </script>
 
 <div class="flex items-center justify-between">
-	<div class="flex items-center text-lg font-semibold">
-		<Bot class="mx-2 h-6 w-6" /> <span>llumen</span>
+	<div class="flex items-center text-lg font-semibold select-none">
+		<Bot class="mx-2 h-6 w-6" />
+		<a href="https://github.com/pinkfuwa/llumen" target="_blank">llumen</a>
 	</div>
 	<button class="rounded-lg p-3 text-dark hover:bg-hover" {onclick}>
 		<ArrowLeft />

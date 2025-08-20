@@ -1,37 +1,43 @@
 <script lang="ts">
 	let { params } = $props();
-
+	import { MessageInput } from '$lib/components';
+	import MessagePagination from '$lib/components/message/MessagePagination.svelte';
+	import Copyright from '$lib/components/Copyright.svelte';
+	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
-	import MessageInput from '$lib/components/MessageInput.svelte';
-	import MockMessage from '$lib/mockMessages.json';
-	import UserMessage from '$lib/components/message/UserMessage.svelte';
-	import AssistantMessage from '$lib/components/message/AssistantMessage.svelte';
 
-	function scrollToBottom(node: HTMLElement) {
-		node.scroll({ top: node.scrollHeight, behavior: 'smooth' });
-	}
+	let id = $derived(Number(params.id));
+
+	let { mutate } = createMessage();
+
+	let content = $state('');
+	let modelId = $state<number | null>(null);
+	let files = $state([]);
+	let mode = $state(0 as 0);
 </script>
 
-<div class="w-full grow space-y-2 pb-4">
-	{#each MockMessage as msg, i}
-		{#if i % 2 == 0}
-			<UserMessage
-				content={msg}
-				files={[
-					{ name: 'manualA.pdf' },
-					{ name: 'manualB.pdf' },
-					{ name: 'manualC.pdf' },
-					{ name: 'manualD.pdf' }
-				]}
-			/>
-		{:else}
-			<AssistantMessage content={msg} />
-		{/if}
-	{/each}
-	{#key params.id}
-		<div use:scrollToBottom></div>
+<svelte:head>
+	<title>Chatroom {params.id}</title>
+</svelte:head>
+
+<Copyright top />
+
+<div class="nobar flex h-full flex-col-reverse overflow-y-auto">
+	<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
+		<MessageInput
+			above
+			bind:content
+			{modelId}
+			{mode}
+			bind:files
+			onsubmit={() => {
+				mutate({ chat_id: id, text: content });
+				content = '';
+			}}
+		/>
+	</div>
+	{#key id}
+		<MessagePagination {id} />
 	{/key}
-</div>
-<div class="sticky bottom-2 mt-auto flex justify-center">
-	<MessageInput above />
+	<div class="min-h-16"></div>
 </div>
