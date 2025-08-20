@@ -8,7 +8,7 @@
 
 	const { data } = useMessage(id);
 
-	let tokensList = $state<Array<TokensList & { monochrome?: boolean }>>([]);
+	let tokensList = $state<Array<TokensList>>([]);
 
 	handleServerSideMessage(id, {
 		reset() {
@@ -20,6 +20,7 @@
 		replace(tokens) {
 			tokensList.pop();
 			tokensList.push(tokens);
+			console.log(tokensList.length);
 		}
 	});
 </script>

@@ -3,7 +3,7 @@
 
 	import { fade } from 'svelte/transition';
 	import { CheckLine, X } from '@lucide/svelte';
-	import { theme, locale } from '$lib/store';
+	import { theme, locale, enterSubmit } from '$lib/store';
 
 	let passwordBuffer = $state('');
 	let checkPassword: undefined | string = $state(undefined);
@@ -24,6 +24,14 @@
 		<select id="lang" bind:value={$locale} class="mx-1 rounded-md p-1 hover:bg-hover">
 			<option value="en">English</option>
 			<option value="zh-tw">繁體中文</option>
+		</select>
+	</div>
+
+	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
+		<label for="enter">{$_('setting.enter')}: </label>
+		<select id="enter" bind:value={$enterSubmit} class="mx-1 rounded-md p-1 hover:bg-hover">
+			<option value="true">{$_('setting.enable')}</option>
+			<option value="false">{$_('setting.disable')}</option>
 		</select>
 	</div>
 

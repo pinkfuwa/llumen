@@ -59,7 +59,6 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 				status,
 				(x) => x,
 				async () => {
-					console.log('get');
 					const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
 						chat_id: chatRes.id,
 						text: param.message

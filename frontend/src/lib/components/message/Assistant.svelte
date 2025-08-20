@@ -20,7 +20,7 @@
 			<div
 				class="absolute top-0 right-11 hidden h-10 w-sm items-center justify-end group-hover/usage:flex"
 			>
-				<div class="rounded-md bg-hover p-2 select-none">{token} token/${cost}</div>
+				<div class="rounded-md bg-background p-2 select-none">{token} token/${cost}</div>
 			</div>
 		</div>
 	</div>
