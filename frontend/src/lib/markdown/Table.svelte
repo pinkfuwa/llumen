@@ -8,6 +8,10 @@
 	let { children } = $props();
 </script>
 
-<table class="divide-y divide-gray-200 rounded-md border border-outline bg-white">
-	{@render children?.()}
-</table>
+<div class="flex justify-center">
+	<div class="relative justify-center overflow-x-auto rounded-md border border-outline">
+		<table class="divide-y divide-gray-200 bg-background text-dark">
+			{@render children?.()}
+		</table>
+	</div>
+</div>
