@@ -141,7 +141,10 @@ class Pages<D extends { id: number }> {
 			const numberOfRemovalPage = x.findLastIndex((x) => get(x.data).some(predicate));
 			if (numberOfRemovalPage == -1) return x;
 			x.splice(0, numberOfRemovalPage);
+
 			x[0].data.update((x) => x.filter((x) => !predicate(x)));
+			x[0].startId = undefined;
+
 			return x;
 		});
 	}
