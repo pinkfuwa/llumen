@@ -2,8 +2,8 @@
 	import { ClipboardCopy } from '@lucide/svelte';
 	import { theme } from '$lib/store';
 	import { codeToHtml } from 'shiki/bundle/web';
-	import CopyHint from './CopyHint.svelte';
 	import { isLightTheme } from '$lib/theme';
+	import { copy } from '$lib/copy';
 
 	let { lang, text, monochrome = false } = $props();
 
@@ -11,23 +11,13 @@
 		? 'background-color:#fff;color:#24292e'
 		: 'background-color:#24292e;color:#e1e4e8';
 	let themeName = isLightTheme($theme) ? 'github-light' : 'github-dark';
-
-	let copied = $state(false);
-
-	function copy() {
-		navigator.clipboard.writeText(text);
-		copied = true;
-		setTimeout(() => {
-			copied = false;
-		}, 800);
-	}
 </script>
 
 <div class="group/codeblock relative">
 	{#if text.split('\n').length > 1}
 		<button
 			class="absolute top-0 right-0 z-10 m-1 hidden group-hover/codeblock:block"
-			onclick={copy}
+			onclick={() => copy(text)}
 		>
 			<ClipboardCopy class="h-10 w-10 rounded-md bg-primary p-2 hover:bg-hover" />
 		</button>
@@ -58,7 +48,3 @@
 		{/if}
 	</div>
 </div>
-
-{#if copied}
-	<CopyHint />
-{/if}

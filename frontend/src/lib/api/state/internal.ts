@@ -102,3 +102,12 @@ export function CreateInternalQuery<D>(option: InternalQueryOption<D>): Internal
 		isLoading
 	};
 }
+
+export function SetQueryData<D>(option: {
+	key: string[];
+	updater: (data: D | undefined) => D | undefined;
+}) {
+	const { key, updater } = option;
+	const data = globalCache.get<D>(key);
+	data.update(updater);
+}

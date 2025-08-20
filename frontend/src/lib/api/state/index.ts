@@ -18,6 +18,7 @@ export type { InfiniteQueryResult, InfiniteQueryOption, Fetcher, PageEntry } fro
 export { CreateMockMutation, CreateMockQuery } from './mock';
 export type { EventQueryOption, EventQueryResult } from './event';
 export { CreateEventQuery, GetEventQueryStatus } from './event';
+export { SetQueryData } from './internal';
 export { getError } from './errorHandle';
 
 export function clearCache() {

@@ -5,27 +5,63 @@ import {
 	type QueryResult,
 	CreateMutation,
 	type CreateMutationResult,
-	CreateMockQuery
+	CreateMockQuery,
+	SetQueryData
 } from './state';
 import { APIFetch } from './state/errorHandle';
 
-import type { LoginReq, LoginResp, RenewResp, RenewReq } from './types';
+import {
+	type LoginReq,
+	type LoginResp,
+	type RenewResp,
+	type RenewReq,
+	type UserCreateReq,
+	type UserCreateResp,
+	type UserReadResp,
+	UserReadReq
+} from './types';
 
 export interface User {
 	username: string;
 }
 
 export function useUsers(): QueryResult<User[]> {
-	return CreateMockQuery([{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }]);
+	return CreateMockQuery([
+		{ username: 'user1' },
+		{ username: 'user2' },
+		{ username: 'user3' },
+		{ username: 'user1' },
+		{ username: 'user2' },
+		{ username: 'user3' },
+		{ username: 'user1' },
+		{ username: 'user2' },
+		{ username: 'user3' },
+		{ username: 'user1' },
+		{ username: 'user2' },
+		{ username: 'user3' },
+		{ username: 'user1' },
+		{ username: 'user2' },
+		{ username: 'user3' },
+		{ username: 'user1' },
+		{ username: 'user2' },
+		{ username: 'user3' },
+		{ username: 'user1' },
+		{ username: 'user2' },
+		{ username: 'user3' },
+		{ username: 'user1' },
+		{ username: 'user2' },
+		{ username: 'user3' }
+	]);
 }
 
-interface CreateUserRequest {
-	username: string;
-	password: string;
-}
-
-export function CreateUser(): CreateMutationResult<CreateUserRequest, User> {
-	return CreateMockMutation({ username: 'eason' });
+export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp> {
+	return CreateMutation({
+		onSuccess(data, param) {
+			// SetQueryData({ key: ['users'], updater: (list) => list });
+			// TODO: update user query
+		},
+		path: 'user/create'
+	});
 }
 
 export function Login(): CreateMutationResult<LoginReq, LoginResp> {
@@ -59,4 +95,12 @@ export async function RenewToken(originalToken: string) {
 			renewAt: renewAt.toString()
 		});
 	}
+}
+
+export function useUser(): QueryResult<UserReadResp> {
+	return CreateQuery<UserReadReq, UserReadResp>({
+		key: ['currentUser'],
+		path: 'user/read',
+		body: {}
+	});
 }

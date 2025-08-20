@@ -10,6 +10,8 @@
 	import { goto } from '$app/navigation';
 	import { CreateSseInternal } from '$lib/sse';
 	import { useError } from '$lib/error';
+	import { copyCounter } from '$lib/copy';
+	import CopyHint from '$lib/components/buttons/CopyHint.svelte';
 
 	let { children } = $props();
 
@@ -18,7 +20,11 @@
 	$effect(() => {
 		return token.subscribe((token) => {
 			const pathname = page.url.pathname;
-			if (token == undefined && guardPrefix.some((m) => pathname.startsWith(m))) {
+			if (
+				!pathname.startsWith('/login') &&
+				token == undefined &&
+				guardPrefix.some((m) => pathname.startsWith(m))
+			) {
 				goto(`/login?callback=${encodeURIComponent(pathname)}`);
 			}
 		});
@@ -56,5 +62,10 @@
 	<div class="h-full w-full bg-light text-dark">
 		{@render children()}
 		<ErrorMessage />
+		{#if $copyCounter != 0}
+			{#key $copyCounter}
+				<CopyHint />
+			{/key}
+		{/if}
 	</div>
 {/if}
