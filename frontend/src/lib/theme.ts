@@ -20,14 +20,6 @@ export function setTheme(theme: Theme) {
 		}
 	};
 
-	// 	@theme {
-	// 		--color-light: #fcfbf0;
-	// 		--color-dark: black;
-	// 		--color-background: #fdfae6;
-	// 		--color-outline: #ccc;
-	// 		--color-hover: #ffd25e;
-	// 		--color-primary: #fff0ab;
-	// }
 	const style = Object.entries(themeMap[theme])
 		.map(([name, val]) => `--color-${name}: ${val};`)
 		.join('');
@@ -37,4 +29,10 @@ export function setTheme(theme: Theme) {
 
 export function isLightTheme(theme: Theme) {
 	return theme == 'light' || theme == 'orange';
+}
+
+export function getTitleGrad(theme: Theme) {
+	if (theme == 'orange') return 'from-slate-600 to-orange-600';
+	if (theme == 'light') return 'from-slate-700 to-sky-500';
+	return 'from-dark to-blue-600';
 }

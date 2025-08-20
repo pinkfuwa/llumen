@@ -20,7 +20,6 @@
 		replace(tokens) {
 			tokensList.pop();
 			tokensList.push(tokens);
-			console.log(tokensList.length);
 		}
 	});
 </script>

@@ -1,56 +1,54 @@
 <script lang="ts">
-	import { useUsers } from '$lib/api/user';
-	import { Trash, CheckLine } from '@lucide/svelte';
+	import { CheckLine } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
-	import { goto } from '$app/navigation';
+	import UserGrid from '$lib/components/setting/UserGrid.svelte';
+	import CheckPwd from '$lib/components/setting/CheckPwd.svelte';
+	import { CreateUser } from '$lib/api/user';
 
+	let func = $state<'general' | 'retypePwd' | 'notify'>('general');
 	let username = $state('');
 
-	let createdUser = $state('');
-
-	const { isLoading, data } = useUsers();
+	let { mutate: createUserMutate } = CreateUser();
 </script>
 
-{#if createdUser.length != 0}
-	<div class="mb-2 rounded-lg bg-red-700 hover:bg-red-500">
-		<div class="ml-2 p-3 font-semibold hover:bg-hover">
-			user <span class="rounded-md bg-hover p-2">{createdUser}</span> created
+{#if func == 'notify'}
+	<div class="font-semibold">
+		user <span class="rounded-md bg-hover p-2">{username}</span> created
+	</div>
+{:else if func == 'retypePwd'}
+	<CheckPwd
+		{username}
+		onsubmit={(password) => {
+			createUserMutate(
+				{
+					username,
+					password
+				},
+				() => {
+					func = 'notify';
+				}
+			);
+		}}
+	/>
+{:else}
+	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
+		<label for="name">{$_('setting.create_user')}: </label>
+		<div class="flex items-center justify-between">
+			<input
+				type="text"
+				id="name"
+				class="rounded-md border border-outline p-1"
+				bind:value={username}
+				placeholder={$_('setting.username')}
+			/>
+			<button
+				class="mx-1 rounded-md p-1 hover:bg-hover"
+				onclick={() => {
+					if (username.length != 0) func = 'retypePwd';
+				}}><CheckLine /></button
+			>
 		</div>
 	</div>
-{/if}
 
-<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-	<label for="name">{$_('setting.create_user')}: </label>
-	<div class="flex items-center justify-between">
-		<input
-			type="text"
-			id="name"
-			class="rounded-md border border-outline p-1"
-			bind:value={username}
-			placeholder={$_('setting.username')}
-		/>
-		<button
-			class="mx-1 rounded-md p-1 hover:bg-hover"
-			onclick={() => {
-				if (username.length != 0) goto('/setting/admin/create/' + encodeURIComponent(username));
-			}}><CheckLine /></button
-		>
-	</div>
-</div>
-
-{#if $isLoading}
-	<div class="mb-4 flex items-center justify-center border-b border-outline p-6 text-lg">
-		Loading users...
-	</div>
-{:else if $data != undefined}
-	<ul
-		class="grid grid-cols-1 gap-2 border-b border-outline pb-2 text-lg lg:grid-cols-2 2xl:grid-cols-3"
-	>
-		{#each $data as user}
-			<li class="flex items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4">
-				{user.username}
-				<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
-			</li>
-		{/each}
-	</ul>
+	<UserGrid />
 {/if}

@@ -12,10 +12,16 @@
 
 	function handleSubmit(event: Event) {
 		event.preventDefault();
+
+		let usernameVal = username;
+		let passwordVal = password;
+
+		password = '';
+
 		mutate(
 			{
-				username: username,
-				password: password
+				username: usernameVal,
+				password: passwordVal
 			},
 			(_) => {
 				const callback = page.url.searchParams.get('callback');

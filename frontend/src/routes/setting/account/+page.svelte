@@ -5,11 +5,12 @@
 	import { CheckLine, X } from '@lucide/svelte';
 	import { theme, locale, enterSubmit } from '$lib/store';
 
-	let passwordBuffer = $state('');
-	let checkPassword: undefined | string = $state(undefined);
+	let func = $state<'checkPwd' | 'setting'>('setting');
+	let password = $state('');
+	let checkPassword = $state('');
 </script>
 
-{#if checkPassword == undefined || (checkPassword as string).length == 0}
+{#if func == 'setting'}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="theme">{$_('setting.theme')}: </label>
 		<select id="theme" bind:value={$theme} class="mx-1 rounded-md p-1 text-center hover:bg-hover">
@@ -42,15 +43,12 @@
 				type="password"
 				id="password"
 				class="rounded-md border border-outline p-1"
-				bind:value={passwordBuffer}
+				bind:value={password}
 			/>
 			<button
 				class="mx-1 rounded-md p-1 hover:bg-hover"
 				onclick={() => {
-					if (passwordBuffer.length > 0) {
-						checkPassword = passwordBuffer;
-						passwordBuffer = '';
-					}
+					if (password.length > 0) func = 'checkPwd';
 				}}><CheckLine /></button
 			>
 		</div>
@@ -63,17 +61,18 @@
 				type="password"
 				id="password"
 				class="grow rounded-md border border-outline p-1"
-				bind:value={passwordBuffer}
+				bind:value={checkPassword}
 			/>
 
-			{#if checkPassword == passwordBuffer}
+			{#if checkPassword == password}
 				<button class="mx-1 rounded-md p-1 hover:bg-hover"><CheckLine /></button>
 			{:else}
 				<button
 					class="mx-1 rounded-md p-1 hover:bg-hover"
 					onclick={() => {
 						checkPassword = '';
-						passwordBuffer = '';
+						password = '';
+						func = 'setting';
 					}}><X /></button
 				>
 			{/if}

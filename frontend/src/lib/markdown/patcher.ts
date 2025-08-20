@@ -29,7 +29,7 @@ const blocktokens = [
 	'tablecell'
 ];
 
-const mininalFlush = 16;
+const mininalFlush = 10;
 
 export class MarkdownPatcher {
 	updater: UIUpdater;
@@ -53,7 +53,7 @@ export class MarkdownPatcher {
 		if (dev && tokens.some((x) => !blocktokens.includes(x.type)))
 			throw new Error('unreachable, only blocktoken can appear at top-level');
 
-		if (tokens.length >= 4 && !tokens[tokens.length - 2].type.startsWith('table')) {
+		if (tokens.length >= 3 && !tokens[tokens.length - 2].type.startsWith('table')) {
 			let first = tokens;
 
 			let second: TokensList = [first.pop()!] as any;

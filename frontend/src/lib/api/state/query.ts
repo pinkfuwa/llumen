@@ -11,7 +11,7 @@ export interface QueryResult<T> {
 export interface QueryOption<P, D> {
 	path: string | (() => string);
 	body?: P | (() => P);
-	method: 'POST' | 'GET' | 'PUT' | 'UPDATE';
+	method?: 'POST' | 'GET' | 'PUT' | 'UPDATE';
 	key?: string[];
 	staleTime?: number;
 	target?: Readable<HTMLElement | null>;
