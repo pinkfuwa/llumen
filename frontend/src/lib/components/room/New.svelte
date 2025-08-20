@@ -11,5 +11,5 @@
 	out:slide={{ duration: 120 }}
 >
 	<Plus class="mr-2 h-5 w-5" />
-	{$_('chat.file')}
+	{$_('chat.new')}
 </a>
