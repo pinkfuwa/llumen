@@ -6,6 +6,12 @@ import { dev } from '$app/environment';
 
 export const apiBase = dev ? 'http://localhost:8001/api/' : '/api/';
 
+export function getError(data: any): APIError | undefined {
+	if (typeof data === 'object' && data !== null && 'error' in data) {
+		return data as APIError;
+	}
+}
+
 export async function RawAPIFetch<P = any>(
 	path: string,
 	body: P | null = null,
@@ -37,11 +43,9 @@ export async function APIFetch<D, P = any>(
 
 	try {
 		const resJson: D | APIError = await res.json();
-		if (typeof resJson === 'object' && resJson !== null && 'error' in resJson) {
-			dispatchError(resJson.error, resJson.reason);
-		} else {
-			return resJson as D;
-		}
+		const error = getError(resJson);
+		if (error) dispatchError(error.error, error.reason);
+		else return resJson as D;
 	} catch (_) {
 		dispatchError('API(typeshare)');
 	}
