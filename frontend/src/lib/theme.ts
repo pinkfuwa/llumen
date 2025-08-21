@@ -1,7 +1,28 @@
-export type Theme = 'light' | 'dark' | 'orange' | 'blue';
-export function setTheme(theme: Theme) {
-	const themeMap: Record<Theme, {}> = {
-		light: {},
+export type Theme = 'light' | 'dark' | 'orange' | 'blue' | 'custom';
+
+type PartialRecord<K extends keyof any, T> = {
+	[P in K]?: T;
+};
+
+export interface ThemeStyle {
+	light: string;
+	dark: string;
+	background: string;
+	outline: string;
+	hover: string;
+	primary: string;
+}
+
+export async function setTheme(theme: Theme) {
+	const themeMap: PartialRecord<Theme, ThemeStyle> = {
+		light: {
+			light: 'white',
+			dark: 'black',
+			background: '#f8f8f8',
+			outline: '#ccc',
+			hover: '#d6d6d6',
+			primary: '#ebebeb'
+		},
 		dark: {
 			light: 'black',
 			dark: 'white',
@@ -28,7 +49,14 @@ export function setTheme(theme: Theme) {
 		}
 	};
 
-	const style = Object.entries(themeMap[theme])
+	let themeStyle = themeMap[theme];
+
+	if (!themeStyle) {
+		const res = await fetch('/customTheme.json');
+		themeStyle = (await res.json()) as ThemeStyle;
+	}
+
+	const style = Object.entries(themeStyle)
 		.map(([name, val]) => `--color-${name}: ${val};`)
 		.join('');
 
