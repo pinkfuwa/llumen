@@ -1,4 +1,4 @@
-export type Theme = 'light' | 'dark' | 'orange';
+export type Theme = 'light' | 'dark' | 'orange' | 'blue';
 export function setTheme(theme: Theme) {
 	const themeMap: Record<Theme, {}> = {
 		light: {},
@@ -11,12 +11,20 @@ export function setTheme(theme: Theme) {
 			primary: '#383735'
 		},
 		orange: {
-			light: '#fcfbf0',
+			light: '#f7f7f5',
 			dark: 'black',
 			background: '#fdfae6',
 			outline: '#ccc',
 			hover: '#ffd25e',
 			primary: '#fff0ab'
+		},
+		blue: {
+			light: '#12395c',
+			dark: 'white',
+			background: '#0d2840',
+			outline: '#ccc',
+			hover: '#3f7eb5',
+			primary: '#1378d6'
 		}
 	};
 
@@ -33,6 +41,7 @@ export function isLightTheme(theme: Theme) {
 
 export function getTitleGrad(theme: Theme) {
 	if (theme == 'orange') return 'from-slate-600 to-orange-600';
+	if (theme == 'blue') return 'from-white to-sky-500';
 	if (theme == 'light') return 'from-slate-700 to-sky-500';
 	return 'from-dark to-blue-600';
 }

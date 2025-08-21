@@ -44,11 +44,9 @@ export const locale = localState<'en' | 'zh-tw'>(
 	navigator.language.includes('zh') ? 'zh-tw' : 'en',
 	(x) => x === 'en' || x === 'zh-tw'
 );
-export const theme = localState<'light' | 'dark' | 'orange'>(
+export const theme = localState<'light' | 'dark' | 'orange' | 'blue'>(
 	'theme',
-	window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-		? 'dark'
-		: 'orange',
-	(x) => ['light', 'dark', 'orange'].includes(x)
+	window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+	(x) => ['light', 'dark', 'orange', 'blue'].includes(x)
 );
 export const enterSubmit = localState<'true' | 'false'>('enterSubmit', 'false');

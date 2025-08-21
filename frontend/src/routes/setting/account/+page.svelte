@@ -17,6 +17,7 @@
 			<option value="light">Modern Light</option>
 			<option value="dark">Modern Dark</option>
 			<option value="orange">Orange Light</option>
+			<option value="blue">&nbsp;&nbsp;Blue Dark</option>
 		</select>
 	</div>
 

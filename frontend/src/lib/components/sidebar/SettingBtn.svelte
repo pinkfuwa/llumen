@@ -7,7 +7,7 @@
 
 <a
 	class="flex w-full items-center justify-between rounded-lg border border-outline bg-light px-3 py-2 select-none hover:bg-hover"
-	href="/setting/openrouter"
+	href="/setting/account"
 >
 	<span class="font-medium text-dark"
 		>{#if $isLoading}
