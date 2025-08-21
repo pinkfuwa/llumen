@@ -4,8 +4,6 @@
 	let { raw } = $props();
 
 	let text = raw.replace(/`/g, '');
-
-	let copied = $state(false);
 </script>
 
 <span class="py-1">

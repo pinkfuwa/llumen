@@ -41,6 +41,9 @@ importers:
       isomorphic-dompurify:
         specifier: ^2.26.0
         version: 2.26.0
+      katex:
+        specifier: ^0.16.22
+        version: 0.16.22
       marked:
         specifier: ^16.1.1
         version: 16.1.1
