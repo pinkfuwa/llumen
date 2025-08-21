@@ -15,7 +15,7 @@ Perform a focused web search and produce a concise summary and structured result
 
 # Output Format
 
-Directly output the raw JSON format of `Query` without "```json". The `Query` interface is defined as follows:
+**Directly** output the raw JSON format of `Query` **without** "```json". The `Query` interface is defined as follows:
 
 ```ts
 interface QueryResult {
@@ -26,6 +26,7 @@ interface QueryResult {
   snippet?: string;     // optional short excerpt (1–2 sentences)
   domain?: string;      // optional domain (e.g., "nytimes.com")
   authoritative?: boolean; // optional: true if official/authoritative source
+  content: string; // summary of search result
 }
 
 interface Query {
@@ -33,4 +34,3 @@ interface Query {
   answer: string;       // consolidated 3-5 sentence summary
   results: QueryResult[]; // up to 5 results, sorted by score descending
 }
-```
