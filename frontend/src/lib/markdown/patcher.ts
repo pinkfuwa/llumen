@@ -1,6 +1,6 @@
 import { dev } from '$app/environment';
 import type { TokensList } from 'marked';
-import { Lexer } from 'marked';
+import { marked } from 'marked';
 
 /**
  * UIUpdater maintain a list of Token
@@ -26,7 +26,8 @@ const blocktokens = [
 	'paragraph',
 	'table',
 	'tablerow',
-	'tablecell'
+	'tablecell',
+	'blockKatex'
 ];
 
 const mininalFlush = 10;
@@ -47,8 +48,7 @@ export class MarkdownPatcher {
 		if (this.lastFlush < mininalFlush) return;
 		else this.lastFlush = 0;
 
-		const lexer = new Lexer();
-		const tokens = lexer.lex(this.buffer);
+		const tokens = marked.lexer(this.buffer);
 
 		if (dev && tokens.some((x) => !blocktokens.includes(x.type)))
 			throw new Error('unreachable, only blocktoken can appear at top-level');

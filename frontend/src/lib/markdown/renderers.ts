@@ -19,6 +19,8 @@ import TableCell from './TableCell.svelte';
 import TableHead from './TableHead.svelte';
 import TableRow from './TableRow.svelte';
 import Text from './Text.svelte';
+import LatexSpan from './LatexSpan.svelte';
+import Latex from './Latex.svelte';
 
 export const renderers = {
 	heading: Heading,
@@ -43,5 +45,7 @@ export const renderers = {
 	html: Html,
 	blockquote: Blockquote,
 	code: Code,
-	br: Br
+	br: Br,
+	inlineKatex: LatexSpan,
+	blockKatex: Latex
 };

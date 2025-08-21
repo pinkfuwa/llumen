@@ -12,6 +12,7 @@
 	import { useError } from '$lib/error';
 	import { copyCounter } from '$lib/copy';
 	import CopyHint from '$lib/components/buttons/CopyHint.svelte';
+	import initLatex from '$lib/markdown/latex';
 
 	let { children } = $props();
 
@@ -56,6 +57,8 @@
 			}
 		}
 	});
+
+	initLatex();
 </script>
 
 {#if !$isLoading}
