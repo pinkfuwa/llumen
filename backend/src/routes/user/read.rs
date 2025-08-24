@@ -20,7 +20,7 @@ pub struct UserReadReq {
 pub struct UserReadResp {
     pub user_id: i32,
     pub username: String,
-    pub perference: Option<UserPerference>,
+    pub perference: UserPerference,
 }
 
 pub async fn route(

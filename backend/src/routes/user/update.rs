@@ -52,7 +52,7 @@ pub async fn route(
     let mut active_model = res.into_active_model();
 
     if let Some(perference) = perference {
-        active_model.preference = sea_orm::ActiveValue::Set(Some(perference));
+        active_model.preference = sea_orm::ActiveValue::Set(perference);
     }
     if let Some(password) = password {
         let password_hash = app.hasher.hash_password(&password);
