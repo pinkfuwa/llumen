@@ -26,7 +26,8 @@ export function CreateQuery<P, D>(option: QueryOption<P, D>): QueryResult<D> {
 
 	const fetcher = async () => APIFetch<D>(getPath(), getBody(), method);
 
-	if (!staleTime) staleTime = 30000;
+	if (staleTime == undefined) staleTime = 30000;
+	if (staleTime == Infinity || staleTime == 0) staleTime = undefined;
 
 	return CreateInternalQuery({
 		target,

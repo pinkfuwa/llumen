@@ -8,7 +8,6 @@
 	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { CreateSseInternal } from '$lib/sse';
 	import { useError } from '$lib/error';
 	import { copyCounter } from '$lib/copy';
 	import CopyHint from '$lib/components/buttons/CopyHint.svelte';
@@ -16,6 +15,7 @@
 
 	let { children } = $props();
 
+	// check token, redirect if not login
 	const guardPrefix = ['/chat', '/setting'];
 
 	$effect(() => {
@@ -31,6 +31,7 @@
 		});
 	});
 
+	// dispatch error
 	const error = useError();
 	$effect(() => {
 		error.subscribe((error) => {
@@ -38,9 +39,7 @@
 		});
 	});
 
-	CreateSseInternal();
-	theme.subscribe(setTheme);
-	locale.subscribe(setLocale);
+	// renew token
 	token.subscribe((data) => {
 		if (data) {
 			const expireAt = new Date(data.expireAt);
@@ -58,6 +57,10 @@
 		}
 	});
 
+	theme.subscribe(setTheme);
+	locale.subscribe(setLocale);
+
+	// register katex tokenizer in global marked
 	initLatex();
 </script>
 
