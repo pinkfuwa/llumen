@@ -1,66 +1,20 @@
 <script lang="ts">
 	import '../app.css';
-	import { theme, locale, token } from '$lib/store';
 	import { isLoading } from 'svelte-i18n';
-	import { setLocale } from '$lib/i18n';
-	import { setTheme } from '$lib/theme';
-	import { RenewToken } from '$lib/api/user';
 	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { useError } from '$lib/error';
+	import { initError, useError } from '$lib/error';
 	import { copyCounter } from '$lib/copy';
 	import CopyHint from '$lib/components/buttons/CopyHint.svelte';
 	import initLatex from '$lib/markdown/latex';
+	import { initPreference } from '$lib';
+	import { initAuth } from '$lib/api/auth';
 
 	let { children } = $props();
 
-	// check token, redirect if not login
-	const guardPrefix = ['/chat', '/setting'];
+	initError();
+	initAuth();
 
-	$effect(() => {
-		return token.subscribe((token) => {
-			const pathname = page.url.pathname;
-			if (
-				!pathname.startsWith('/login') &&
-				token == undefined &&
-				guardPrefix.some((m) => pathname.startsWith(m))
-			) {
-				goto(`/login?callback=${encodeURIComponent(pathname)}`);
-			}
-		});
-	});
-
-	// dispatch error
-	const error = useError();
-	$effect(() => {
-		error.subscribe((error) => {
-			if (error?.error == 'malformed_token') token.set(undefined);
-		});
-	});
-
-	// renew token
-	token.subscribe((data) => {
-		if (data) {
-			const expireAt = new Date(data.expireAt);
-			const renewAt = new Date(data.renewAt);
-			const now = new Date();
-			const timeout = renewAt.getTime() - now.getTime();
-			if (expireAt < now) {
-				token.set(undefined);
-			} else if (timeout > 0) {
-				const timeoutId = setTimeout(() => RenewToken(data.value), timeout);
-				return () => clearTimeout(timeoutId);
-			} else {
-				RenewToken(data.value);
-			}
-		}
-	});
-
-	theme.subscribe(setTheme);
-	locale.subscribe(setLocale);
-
-	// register katex tokenizer in global marked
+	initPreference();
 	initLatex();
 </script>
 

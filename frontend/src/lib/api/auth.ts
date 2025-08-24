@@ -1,0 +1,81 @@
+import { token } from '$lib/store';
+import { page } from '$app/state';
+import { goto } from '$app/navigation';
+import { CreateMutation, type CreateMutationResult } from './state';
+import { APIFetch } from './state/errorHandle';
+
+import type { LoginReq, LoginResp, RenewResp, RenewReq } from './types';
+import { onDestroy } from 'svelte';
+
+export interface User {
+	username: string;
+}
+
+export function Login(): CreateMutationResult<LoginReq, LoginResp> {
+	return CreateMutation({
+		path: 'auth/login',
+		onSuccess: (data) => {
+			const now = new Date();
+			const expireAt = new Date(data.exp);
+			const renewAt = new Date(expireAt.getTime() / 2 + now.getTime());
+
+			token.set({
+				value: data.token,
+				expireAt: expireAt.toString(),
+				renewAt: renewAt.toString()
+			});
+		}
+	});
+}
+
+export async function RenewToken(originalToken: string) {
+	const res = await APIFetch<RenewResp, RenewReq>('auth/renew', { token: originalToken });
+
+	if (res) {
+		const now = new Date();
+		const expireAt = new Date(res.exp);
+		const renewAt = new Date(expireAt.getTime() / 2 + now.getTime());
+
+		token.set({
+			value: res.token,
+			expireAt: expireAt.toString(),
+			renewAt: renewAt.toString()
+		});
+	}
+}
+
+export function initAuth() {
+	const guardPrefix = ['/chat', '/setting'];
+
+	const unsubscribers = [
+		token.subscribe((token) => {
+			const pathname = page.url.pathname;
+			if (
+				!pathname.startsWith('/login') &&
+				token == undefined &&
+				guardPrefix.some((m) => pathname.startsWith(m))
+			) {
+				goto(`/login?callback=${encodeURIComponent(pathname)}`);
+			}
+		}),
+
+		token.subscribe((data) => {
+			if (data) {
+				const expireAt = new Date(data.expireAt);
+				const renewAt = new Date(data.renewAt);
+				const now = new Date();
+				const timeout = renewAt.getTime() - now.getTime();
+				if (expireAt < now) {
+					token.set(undefined);
+				} else if (timeout > 0) {
+					const timeoutId = setTimeout(() => RenewToken(data.value), timeout);
+					return () => clearTimeout(timeoutId);
+				} else {
+					RenewToken(data.value);
+				}
+			}
+		})
+	];
+
+	onDestroy(() => unsubscribers.forEach((un) => un()));
+}

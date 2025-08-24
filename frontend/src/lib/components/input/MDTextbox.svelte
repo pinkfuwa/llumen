@@ -8,7 +8,7 @@
 	} = $props();
 
 	import { default as Markdown } from '$lib/markdown/Root.svelte';
-	import { enterSubmit } from '$lib/store';
+	import { submitOnEnter } from '$lib/preference';
 	import { onStartTyping } from '@sv-use/core';
 	import { get } from 'svelte/store';
 
@@ -34,7 +34,7 @@
 	bind:this={input}
 	{disabled}
 	onkeypress={(event) => {
-		if (event.key == 'Enter' && !event.shiftKey && get(enterSubmit) == 'true' && onsubmit)
+		if (event.key == 'Enter' && !event.shiftKey && get(submitOnEnter) == 'true' && onsubmit)
 			onsubmit();
 	}}
 ></textarea>
