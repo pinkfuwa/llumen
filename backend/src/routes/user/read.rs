@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{UserPerference, prelude::*};
+use entity::{UserPreference, prelude::*};
 use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -20,7 +20,7 @@ pub struct UserReadReq {
 pub struct UserReadResp {
     pub user_id: i32,
     pub username: String,
-    pub perference: UserPerference,
+    pub preference: UserPreference,
 }
 
 pub async fn route(
@@ -40,6 +40,6 @@ pub async fn route(
     Ok(Json(UserReadResp {
         user_id: res.id,
         username: res.name,
-        perference: res.preference,
+        preference: res.preference,
     }))
 }
