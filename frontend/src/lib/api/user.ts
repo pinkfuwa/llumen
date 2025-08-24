@@ -5,20 +5,21 @@ import {
 	type QueryResult,
 	CreateMutation,
 	type CreateMutationResult,
-	CreateMockQuery,
-	SetQueryData
+	CreateMockQuery
 } from './state';
 import { APIFetch } from './state/errorHandle';
 
-import {
-	type LoginReq,
-	type LoginResp,
-	type RenewResp,
-	type RenewReq,
-	type UserCreateReq,
-	type UserCreateResp,
-	type UserReadResp,
-	UserReadReq
+import type {
+	LoginReq,
+	LoginResp,
+	RenewResp,
+	RenewReq,
+	UserCreateReq,
+	UserCreateResp,
+	UserReadResp,
+	UserReadReq,
+	UserUpdateReq,
+	UserUpdateResp
 } from './types';
 
 export interface User {
@@ -26,32 +27,7 @@ export interface User {
 }
 
 export function useUsers(): QueryResult<User[]> {
-	return CreateMockQuery([
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' }
-	]);
+	return CreateMockQuery([{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }]);
 }
 
 export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp> {
@@ -101,6 +77,13 @@ export function useUser(): QueryResult<UserReadResp> {
 	return CreateQuery<UserReadReq, UserReadResp>({
 		key: ['currentUser'],
 		path: 'user/read',
-		body: {}
+		body: {},
+		staleTime: 0
+	});
+}
+
+export function UpdateUser(): CreateMutationResult<UserUpdateReq, UserUpdateResp> {
+	return CreateMutation({
+		path: 'user/update'
 	});
 }

@@ -52,7 +52,17 @@ pub async fn route(
     let mut active_model = res.into_active_model();
 
     if let Some(perference) = perference {
-        active_model.preference = sea_orm::ActiveValue::Set(perference);
+        let mut new_perference = active_model.preference.take().unwrap();
+        if let Some(theme) = perference.theme {
+            new_perference.theme = Some(theme);
+        }
+        if let Some(language) = perference.locale {
+            new_perference.locale = Some(language);
+        }
+        if let Some(language) = perference.submit_on_enter {
+            new_perference.submit_on_enter = Some(language);
+        }
+        active_model.preference = sea_orm::ActiveValue::Set(new_perference);
     }
     if let Some(password) = password {
         let password_hash = app.hasher.hash_password(&password);

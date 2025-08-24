@@ -242,6 +242,7 @@ export interface UserDeleteResp {
 export interface UserPerference {
 	theme?: string;
 	locale?: string;
+	submit_on_enter?: string;
 }
 
 export interface UserReadReq {
@@ -252,7 +253,7 @@ export interface UserReadReq {
 export interface UserReadResp {
 	user_id: number;
 	username: string;
-	perference?: UserPerference;
+	perference: UserPerference;
 }
 
 export interface UserUpdateReq {

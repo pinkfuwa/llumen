@@ -17,7 +17,7 @@
 	</div>
 {:else if func == 'retypePwd'}
 	<CheckPwd
-		{username}
+		message={`Type password for ${username}`}
 		onsubmit={(password) => {
 			createUserMutate(
 				{
@@ -29,6 +29,7 @@
 				}
 			);
 		}}
+		oncancal={() => (func = 'general')}
 	/>
 {:else}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">

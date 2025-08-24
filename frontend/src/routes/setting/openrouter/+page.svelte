@@ -1,13 +1,10 @@
 <script lang="ts">
 	import { TiltBtn } from '$lib/components';
+	import Warning from '$lib/components/setting/Warning.svelte';
 	import { _ } from 'svelte-i18n';
 </script>
 
-<div class="mb-2 rounded-lg bg-red-700 hover:bg-red-500">
-	<div class="ml-2 bg-background p-3 font-semibold">
-		{$_('setting.config_override_warning')}
-	</div>
-</div>
+<Warning message={$_('setting.config_override_warning')} />
 <div
 	contenteditable="plaintext-only"
 	class="min-h-[200px] rounded-md border border-outline bg-light p-3"
