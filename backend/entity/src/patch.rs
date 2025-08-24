@@ -13,7 +13,7 @@ pub enum MessageKind {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 #[typeshare]
-pub struct UserPerference {
+pub struct UserPreference {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub theme: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

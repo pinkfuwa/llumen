@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{UserPerference, prelude::*};
+use entity::{UserPreference, prelude::*};
 use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -13,7 +13,7 @@ use crate::{AppState, errors::*, middlewares::auth::UserId};
 pub struct UserUpdateReq {
     /// If omit will use the current user instead
     pub user_id: Option<i32>,
-    pub perference: Option<UserPerference>,
+    pub preference: Option<UserPreference>,
     pub password: Option<String>,
 }
 
@@ -30,13 +30,13 @@ pub async fn route(
 ) -> JsonResult<UserUpdateResp> {
     let UserUpdateReq {
         user_id: user_id_req,
-        perference,
+        preference,
         password,
     } = req;
     let user_id = user_id_req.unwrap_or(user_id);
 
     debug_assert!(
-        perference.is_some() || password.is_some(),
+        preference.is_some() || password.is_some(),
         "no field to update"
     );
 
@@ -51,18 +51,18 @@ pub async fn route(
 
     let mut active_model = res.into_active_model();
 
-    if let Some(perference) = perference {
-        let mut new_perference = active_model.preference.take().unwrap();
-        if let Some(theme) = perference.theme {
-            new_perference.theme = Some(theme);
+    if let Some(preference) = preference {
+        let mut new_preference = active_model.preference.take().unwrap();
+        if let Some(theme) = preference.theme {
+            new_preference.theme = Some(theme);
         }
-        if let Some(language) = perference.locale {
-            new_perference.locale = Some(language);
+        if let Some(language) = preference.locale {
+            new_preference.locale = Some(language);
         }
-        if let Some(language) = perference.submit_on_enter {
-            new_perference.submit_on_enter = Some(language);
+        if let Some(language) = preference.submit_on_enter {
+            new_preference.submit_on_enter = Some(language);
         }
-        active_model.preference = sea_orm::ActiveValue::Set(new_perference);
+        active_model.preference = sea_orm::ActiveValue::Set(new_preference);
     }
     if let Some(password) = password {
         let password_hash = app.hasher.hash_password(&password);
