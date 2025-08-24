@@ -11,12 +11,14 @@
 	let func = $state<'checkPwd' | 'setting'>('setting');
 	let password = $state('');
 
+	let message = $state('');
+
 	let { mutate, isPending, isError } = UpdateUser();
 </script>
 
 {#if func == 'setting'}
 	{#if $isError}
-		<Warning message="error syncing perference" />
+		<Warning {message} />
 	{/if}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="theme">{$_('setting.theme')}: </label>
@@ -24,12 +26,10 @@
 			id="theme"
 			bind:value={$theme}
 			class="mx-1 rounded-md p-1 text-center hover:bg-hover"
-			onchange={() =>
-				mutate({
-					perference: {
-						theme: get(theme)
-					}
-				})}
+			onchange={() => {
+				message = 'error syncing perference';
+				mutate({ perference: { theme: get(theme) } });
+			}}
 			disabled={$isPending}
 		>
 			<option value="light">Modern Light</option>
@@ -46,12 +46,10 @@
 			id="lang"
 			bind:value={$locale}
 			class="mx-1 rounded-md p-1 hover:bg-hover"
-			onchange={() =>
-				mutate({
-					perference: {
-						locale: get(locale)
-					}
-				})}
+			onchange={() => {
+				message = 'error syncing perference';
+				mutate({ perference: { locale: get(locale) } });
+			}}
 			disabled={$isPending}
 		>
 			<option value="en">English</option>
@@ -65,12 +63,10 @@
 			id="enter"
 			bind:value={$enterSubmit}
 			class="mx-1 rounded-md p-1 hover:bg-hover"
-			onchange={() =>
-				mutate({
-					perference: {
-						submit_on_enter: get(enterSubmit)
-					}
-				})}
+			onchange={() => {
+				message = 'error syncing perference';
+				mutate({ perference: { submit_on_enter: get(enterSubmit) } });
+			}}
 			disabled={$isPending}
 		>
 			<option value="true">{$_('setting.enable')}</option>
@@ -100,7 +96,8 @@
 	<CheckPwd
 		message="Enter new password"
 		onsubmit={(password) => {
-			// TODO: change password
+			message = 'error updating password';
+			mutate({ password });
 		}}
 		oncancal={() => {
 			func = 'setting';
