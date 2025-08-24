@@ -853,6 +853,8 @@ name = "entity"
 version = "0.1.0"
 dependencies = [
  "sea-orm",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
