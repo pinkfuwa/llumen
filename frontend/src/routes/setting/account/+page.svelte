@@ -2,18 +2,28 @@
 	import { _ } from 'svelte-i18n';
 
 	import { CheckLine, X } from '@lucide/svelte';
-	import { theme, locale, enterSubmit } from '$lib/store';
+	import { theme, locale, submitOnEnter } from '$lib/preference';
 	import CheckPwd from '$lib/components/setting/CheckPwd.svelte';
 	import { UpdateUser } from '$lib/api/user';
 	import { get } from 'svelte/store';
 	import Warning from '$lib/components/setting/Warning.svelte';
+	import type { UserPreference } from '$lib/api/types';
 
 	let func = $state<'checkPwd' | 'setting'>('setting');
 	let password = $state('');
 
 	let message = $state('');
 
+	let themeData = $state(get(theme));
+	let localeData = $state(get(locale));
+	let submitOnEnterData = $state(get(submitOnEnter));
+
 	let { mutate, isPending, isError } = UpdateUser();
+
+	function mutatePreference(preference: UserPreference) {
+		message = 'error syncing preference';
+		mutate({ preference });
+	}
 </script>
 
 {#if func == 'setting'}
@@ -24,12 +34,9 @@
 		<label for="theme">{$_('setting.theme')}: </label>
 		<select
 			id="theme"
-			bind:value={$theme}
+			bind:value={themeData}
 			class="mx-1 rounded-md p-1 text-center hover:bg-hover"
-			onchange={() => {
-				message = 'error syncing perference';
-				mutate({ perference: { theme: get(theme) } });
-			}}
+			onchange={() => mutatePreference({ theme: themeData })}
 			disabled={$isPending}
 		>
 			<option value="light">Modern Light</option>
@@ -44,12 +51,9 @@
 		<label for="lang">{$_('setting.language')}: </label>
 		<select
 			id="lang"
-			bind:value={$locale}
+			bind:value={localeData}
 			class="mx-1 rounded-md p-1 hover:bg-hover"
-			onchange={() => {
-				message = 'error syncing perference';
-				mutate({ perference: { locale: get(locale) } });
-			}}
+			onchange={() => mutatePreference({ locale: localeData })}
 			disabled={$isPending}
 		>
 			<option value="en">English</option>
@@ -61,12 +65,9 @@
 		<label for="enter">{$_('setting.enter')}: </label>
 		<select
 			id="enter"
-			bind:value={$enterSubmit}
+			bind:value={submitOnEnterData}
 			class="mx-1 rounded-md p-1 hover:bg-hover"
-			onchange={() => {
-				message = 'error syncing perference';
-				mutate({ perference: { submit_on_enter: get(enterSubmit) } });
-			}}
+			onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}
 			disabled={$isPending}
 		>
 			<option value="true">{$_('setting.enable')}</option>

@@ -239,7 +239,7 @@ export interface UserDeleteResp {
 	deleted: boolean;
 }
 
-export interface UserPerference {
+export interface UserPreference {
 	theme?: string;
 	locale?: string;
 	submit_on_enter?: string;
@@ -253,13 +253,13 @@ export interface UserReadReq {
 export interface UserReadResp {
 	user_id: number;
 	username: string;
-	perference: UserPerference;
+	preference: UserPreference;
 }
 
 export interface UserUpdateReq {
 	/** If omit will use the current user instead */
 	user_id?: number;
-	perference?: UserPerference;
+	preference?: UserPreference;
 	password?: string;
 }
 
