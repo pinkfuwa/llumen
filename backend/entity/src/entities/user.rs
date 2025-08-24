@@ -2,6 +2,7 @@
 
 use sea_orm::{FromJsonQueryResult, entity::prelude::*};
 use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "user")]
@@ -10,12 +11,15 @@ pub struct Model {
     pub id: i32,
     pub name: String,
     pub password: String,
-    pub preference: Option<UserPerference>,
+    pub preference: UserPerference,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[typeshare]
 pub struct UserPerference {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub theme: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>,
 }
 

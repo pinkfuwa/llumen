@@ -855,6 +855,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "typeshare",
 ]
 
 [[package]]

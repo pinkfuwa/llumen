@@ -239,6 +239,11 @@ export interface UserDeleteResp {
 	deleted: boolean;
 }
 
+export interface UserPerference {
+	theme?: string;
+	locale?: string;
+}
+
 export interface UserReadReq {
 	/** If omit will use the current user instead */
 	user_id?: number;
@@ -247,6 +252,18 @@ export interface UserReadReq {
 export interface UserReadResp {
 	user_id: number;
 	username: string;
+	perference?: UserPerference;
+}
+
+export interface UserUpdateReq {
+	/** If omit will use the current user instead */
+	user_id?: number;
+	perference?: UserPerference;
+	password?: string;
+}
+
+export interface UserUpdateResp {
+	user_id: number;
 }
 
 export type ChatPaginateReq =
