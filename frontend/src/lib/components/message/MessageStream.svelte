@@ -3,8 +3,11 @@
 	import type { TokensList } from 'marked';
 	import Parser from '$lib/markdown/Parser.svelte';
 	import { _ } from 'svelte-i18n';
+	import { slide } from 'svelte/transition';
 
 	const { list }: { list: (TokensList & { monochrome?: boolean })[] } = $props();
+
+	let showReasoning = $state(false);
 </script>
 
 <div class="space-y-2">
@@ -13,7 +16,29 @@
 			<FolderSearch class="mr-2 inline-block" />
 			{$_('chat.assistant.response')}
 		</div>
+
+		<!-- TODO: display reasoning -->
+		<!-- <button
+			onclick={() => (showReasoning = !showReasoning)}
+			class="w-full text-left"
+			in:slide={{ duration: 180, axis: 'y' }}
+		>
+			{#if showReasoning}
+				<div>
+					{#each reasoning.split('\n'), line}
+						<p>{line}</p>
+					{/each}
+				</div>
+			{:else}
+				<div class="max-w-80 truncate text-outline" in:slide={{ duration: 180, axis: 'y' }}>
+					Reasoning:&nbsp;{reasoning.replaceAll('\n', '&nbsp;&nbsp;')}
+				</div>
+			{/if}
+		</button> -->
+
 		{#each list as tokens, i}
+			<!-- TODO: add reasoning -->
+			<!-- monochrome to imporve performance -->
 			<Parser {tokens} monochrome />
 		{/each}
 		<!-- TODO: add loading status -->

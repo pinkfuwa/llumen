@@ -12,6 +12,10 @@
 		<FolderSearch class="mr-2 inline-block" />
 		{$_('chat.assistant.response')}
 	</div>
+
+	<!-- TODO: display output file -->
+	<!-- <FileGroup files={[{ name: 'compressed.png' }, { name: 'translated.txt' }]} /> -->
+
 	<Root source={content} />
 	<div class="flex justify-end space-x-1 opacity-0 group-hover:opacity-100">
 		<div class="group/usage relative flex space-x-1">
