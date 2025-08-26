@@ -28,6 +28,7 @@ export function CreateEventQuery<D, P = null>(option: EventQueryOption<D, P>): E
 	onDestroy(() => status.set(false));
 
 	(async () => {
+		// TODO: respect visibilityStateChange
 		const res = await RawAPIFetch<P>(path, body, method, controller.signal);
 		status.set(true);
 		let stream = events(res, controller.signal);

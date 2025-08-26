@@ -83,16 +83,36 @@ export function CreateInternalQuery<D>(option: InternalQueryOption<D>): Internal
 		revalidate();
 	}
 
-	if (staleTime != undefined) {
-		let intervalId = setInterval(revalidateIfVisible, staleTime);
+	if (staleTime != undefined && staleTime != Infinity) {
+		let intervalId: NodeJS.Timeout | undefined = setInterval(revalidateIfVisible, staleTime);
 
-		cleanup(() => clearInterval(intervalId));
+		if (revalidateOnFocus) {
+			const visibilityStateHandler = () => {
+				if (document.visibilityState == 'visible' && intervalId == undefined) {
+					intervalId = setInterval(revalidateIfVisible, staleTime);
+				} else if (document.visibilityState == 'hidden' && intervalId != undefined) {
+					clearInterval(intervalId);
+					intervalId = undefined;
+				}
+			};
+
+			window.addEventListener('visibilitychange', visibilityStateHandler);
+			cleanup(() => window.removeEventListener('visibilitychange', visibilityStateHandler));
+		}
+
+		cleanup(() => {
+			if (intervalId != undefined) clearInterval(intervalId);
+		});
 	}
 
 	if (revalidateOnFocus) {
-		const revalidateFnFocus = revalidateOnFocus == 'force' ? revalidate : revalidateIfVisible;
+		const revalidateFnFocus = () => {
+			if (document.visibilityState == 'hidden') return;
+			if (revalidateOnFocus == 'force') revalidate();
+			else revalidateIfVisible();
+		};
 
-		window.addEventListener('focus', revalidateFnFocus);
+		window.addEventListener('visibilitychange', revalidateFnFocus);
 		cleanup(() => window.removeEventListener('focus', revalidateFnFocus));
 	}
 

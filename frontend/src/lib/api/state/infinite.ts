@@ -108,7 +108,8 @@ class Pages<D extends { id: number }> {
 			},
 			initialData: [],
 			staleTime: 30000,
-			cleanupCallback
+			cleanupCallback,
+			revalidateOnFocus: true
 		});
 		page.revalidate = query.revalidate;
 	}
