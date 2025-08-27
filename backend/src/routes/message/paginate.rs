@@ -129,11 +129,11 @@ pub async fn route(
         .into_iter()
         .map(|x| MessagePaginateRespList {
             id: x.id,
-            text: x.text,
+            text: x.text.unwrap_or_default(),
             role: match x.kind {
                 patch::MessageKind::User => MessagePaginateRespRole::User,
                 patch::MessageKind::Assistant => MessagePaginateRespRole::Assistant,
-                patch::MessageKind::Think => MessagePaginateRespRole::Think,
+                patch::MessageKind::Reasoning => MessagePaginateRespRole::Think,
             },
         })
         .collect();

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     Extension, Json,
@@ -9,13 +9,12 @@ use axum::{
     },
 };
 use entity::prelude::*;
-use futures_util::{Stream, StreamExt, stream};
+use futures_util::{Stream, StreamExt};
 use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
-use tokio::sync::broadcast;
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId, utils::sse::SubscribeToken};
+use crate::{AppState, errors::*, middlewares::auth::UserId, sse::Token};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -47,6 +46,7 @@ pub enum SseResp {
 #[typeshare]
 pub struct SseRespLast {
     pub id: i32,
+    pub version: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -92,37 +92,15 @@ pub async fn route(
         .subscribe(req.id)
         .await
         .kind(ErrorKind::MalformedRequest)?;
-
-    let remain = |mut channel: broadcast::Receiver<SubscribeToken>| async move {
-        Some((
-            channel
-                .recv()
-                .await
-                .map(|v| match v {
-                    SubscribeToken::UserText(id, text) => {
-                        Ok(SseResp::UserMessage(SseRespUserMessage { id, text }))
-                    }
-                    SubscribeToken::Token(text) => Ok(SseResp::Token(SseRespToken { text })),
-                    SubscribeToken::Error(error) => Err(error),
-                    SubscribeToken::End(id) => Ok(SseResp::End(SseRespEnd { id })),
-                })
-                .map_err(|e| Error {
-                    error: ErrorKind::Internal,
-                    reason: e.to_string(),
-                })
-                .and_then(|x| x),
-            channel,
-        ))
-    };
-    let remain = stream::unfold(sub.channel, remain);
-
-    let last = Ok(SseResp::Last(SseRespLast { id: sub.last }));
-    let sse = match sub.message {
-        Some(text) => stream::iter([last, Ok(SseResp::Token(SseRespToken { text }))]).left_stream(),
-        None => stream::iter([last]).right_stream(),
-    }
-    .chain(remain)
-    .map(|x| Event::default().json_data(JsonUnion::from(x)));
-
-    Ok(Sse::new(sse).keep_alive(KeepAlive::new()))
+    let st = sub
+        .map(|x| {
+            x.map(|v| match v {
+                Token::Last(id, version) => SseResp::Last(SseRespLast { id, version }),
+                Token::Token(text) => SseResp::Token(SseRespToken { text }),
+                Token::End(id) => SseResp::End(SseRespEnd { id }),
+                Token::User(id, text) => SseResp::UserMessage(SseRespUserMessage { id, text }),
+            })
+        })
+        .map(|x| Event::default().json_data(JsonUnion::from(x)));
+    Ok(Sse::new(st).keep_alive(KeepAlive::new().interval(Duration::from_secs(10))))
 }

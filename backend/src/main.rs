@@ -3,6 +3,7 @@ mod errors;
 mod middlewares;
 mod openrouter;
 mod routes;
+mod sse;
 mod utils;
 
 use std::sync::Arc;
@@ -13,9 +14,9 @@ use dotenv::var;
 use entity::prelude::*;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};
+use sse::SseContext;
 use tokio::net::TcpListener;
 use utils::password_hash::Hasher;
-use utils::sse::{SseContext, spawn_sse};
 
 #[cfg(feature = "dev")]
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
@@ -52,7 +53,7 @@ async fn main() {
     )
     .expect("Cannot parse paseto key");
 
-    let sse = spawn_sse(conn.clone());
+    let sse = SseContext::new(conn.clone());
     let state = Arc::new(AppState {
         conn,
         key,

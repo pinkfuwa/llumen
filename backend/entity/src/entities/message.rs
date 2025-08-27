@@ -8,7 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub chat_id: i32,
-    pub text: String,
+    pub text: Option<String>,
     pub kind: crate::patch::MessageKind,
 }
 
