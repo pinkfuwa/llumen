@@ -84,7 +84,7 @@ impl MigrationTrait for Migration {
                             .on_update(ForeignKeyAction::Cascade)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
-                    .col(string(Message::Text))
+                    .col(string_null(Message::Text))
                     .col(integer(Message::Kind))
                     .to_owned(),
             )
@@ -127,7 +127,6 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .col(string(File::Name))
-                    .col(binary(File::Bytes))
                     .to_owned(),
             )
             .await?;
@@ -227,7 +226,6 @@ enum File {
     Id,
     MessageId,
     Name,
-    Bytes,
 }
 
 #[derive(DeriveIden)]

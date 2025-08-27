@@ -3,14 +3,14 @@ use std::sync::Arc;
 use axum::{Extension, Json, extract::State};
 use entity::{message, patch::MessageKind, prelude::*};
 use migration::Expr;
-use sea_orm::{ActiveValue::Set, EntityOrSelect, EntityTrait, QueryOrder, QuerySelect};
+use sea_orm::{EntityOrSelect, EntityTrait, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use tokio::select;
 use typeshare::typeshare;
 
 use crate::{
     AppState, errors::*, middlewares::auth::UserId, openrouter::chat_completions,
-    utils::sse::PublishToken,
+    sse::PublisherKind,
 };
 
 #[derive(Debug, Deserialize)]
@@ -43,28 +43,20 @@ pub async fn route(
         }));
     }
 
-    let publish = app
+    let mut puber = app
         .sse
         .publish(req.chat_id)
         .await
         .kind(ErrorKind::Internal)?;
-    let user_msg_res = Message::insert(message::ActiveModel {
-        chat_id: Set(req.chat_id),
-        text: Set(req.text.clone()),
-        kind: Set(MessageKind::User),
-        ..Default::default()
-    })
-    .exec(&app.conn)
-    .await
-    .kind(ErrorKind::Internal)?;
-    publish.channel.send(PublishToken::UserText(
-        user_msg_res.last_insert_id,
-        req.text,
-    ));
+    let msg_id = puber
+        .user_message(req.text)
+        .await
+        .kind(ErrorKind::Internal)?;
+
     let res = Message::find()
         .select()
         .expr(Expr::col(message::Column::ChatId).eq(req.chat_id))
-        .order_by_desc(message::Column::Id)
+        .order_by_asc(message::Column::Id)
         .all(&app.conn)
         .await
         .kind(ErrorKind::Internal)?;
@@ -74,14 +66,16 @@ pub async fn route(
             let role = match x.kind {
                 MessageKind::User => chat_completions::Role::User,
                 MessageKind::Assistant => chat_completions::Role::Assistant,
-                MessageKind::Think => return None,
+                MessageKind::Reasoning => return None,
             };
-            Some(chat_completions::Message {
-                role,
-                content: x.text,
-            })
+            let Some(content) = x.text else {
+                return None;
+            };
+            Some(chat_completions::Message { role, content })
         })
         .collect();
+
+    puber.new_stream(PublisherKind::Assistant).await;
     tokio::spawn(async move {
         let res = chat_completions::Completion::request(
             messages,
@@ -93,10 +87,11 @@ pub async fn route(
         let mut completion = match res {
             Ok(v) => v,
             Err(e) => {
-                publish.channel.send(PublishToken::Error(Error {
+                puber.raw_token(Err(Error {
                     error: ErrorKind::ApiFail,
                     reason: e.to_string(),
                 }));
+                puber.close().await;
 
                 return;
             }
@@ -104,37 +99,33 @@ pub async fn route(
 
         loop {
             select! {
-                _ = publish.halt.notified() => {
-                    publish
-                        .channel
-                        .send(PublishToken::End);
+                _ = puber.on_halt() => {
+                    puber.close().await;
+                    completion.close();
                     return;
                 }
 
                 c = completion.next() => {
                     match c {
-                        Some(Ok(mut v)) => {
+                        Some(Ok(v)) => {
                             if v.choices.is_empty() {
                                 continue;
                             };
 
-                            publish
-                                .channel
-                                .send(PublishToken::Text(v.choices.swap_remove(0).delta.content));
+                            puber.token(&v.choices[0].delta.content).await;
                         }
                         Some(Err(e)) => {
-                            publish
-                                .channel
-                                .send(PublishToken::Error(Error {
-                                    error: ErrorKind::ApiFail,
-                                    reason: e.to_string(),
-                                }));
+                            puber.raw_token(Err(Error {
+                                error: ErrorKind::ApiFail,
+                                reason: e.to_string(),
+                            }));
+
+                            puber.close().await;
                             completion.close();
+                            return;
                         }
                         None => {
-                            publish
-                                .channel
-                                .send(PublishToken::End);
+                            puber.close().await;
                             return;
                         }
                     }
@@ -143,7 +134,5 @@ pub async fn route(
         }
     });
 
-    Ok(Json(MessageCreateResp {
-        id: user_msg_res.last_insert_id,
-    }))
+    Ok(Json(MessageCreateResp { id: msg_id }))
 }

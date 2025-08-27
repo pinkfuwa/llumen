@@ -9,8 +9,6 @@ pub struct Model {
     pub id: i32,
     pub message_id: i32,
     pub name: String,
-    #[sea_orm(column_type = "Binary(1)")]
-    pub bytes: Vec<u8>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

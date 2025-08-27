@@ -6,5 +6,5 @@ use sea_orm::{DeriveActiveEnum, entity::prelude::*};
 pub enum MessageKind {
     User = 0,
     Assistant = 1,
-    Think = 2,
+    Reasoning = 2,
 }

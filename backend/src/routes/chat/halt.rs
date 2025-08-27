@@ -35,6 +35,6 @@ pub async fn route(
         }));
     }
 
-    app.sse.halt(req.id).kind(ErrorKind::Internal)?;
+    app.sse.halt(req.id);
     Ok(Json(ChatHaltResp {}))
 }
