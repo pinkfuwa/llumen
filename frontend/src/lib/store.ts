@@ -1,6 +1,6 @@
 import { writable, type Writable } from 'svelte/store';
 
-function localState<T>(
+export function localState<T>(
 	key: string,
 	defaultValue: T,
 	checker: (data: T) => boolean = () => true
@@ -39,14 +39,3 @@ export const token = localState<undefined | { value: string; expireAt: string; r
 	'token',
 	undefined
 );
-export const locale = localState<'en' | 'zh-tw'>(
-	'language',
-	navigator.language.includes('zh') ? 'zh-tw' : 'en',
-	(x) => x === 'en' || x === 'zh-tw'
-);
-export const theme = localState<'light' | 'dark' | 'orange' | 'blue' | 'custom'>(
-	'theme',
-	window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-	(x) => ['light', 'dark', 'orange', 'blue'].includes(x)
-);
-export const enterSubmit = localState<'true' | 'false'>('enterSubmit', 'false');

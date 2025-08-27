@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Login } from '$lib/api/user';
+	import { Login } from '$lib/api/auth';
 	import TiltBtn from '$lib/components/buttons/TiltBtn.svelte';
 	import { page } from '$app/state';
 	import { _ } from 'svelte-i18n';

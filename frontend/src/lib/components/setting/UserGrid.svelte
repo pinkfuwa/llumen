@@ -14,7 +14,7 @@
 	<ul class="grid max-h-[50vh] grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg lg:grid-cols-2">
 		{#each $data as user}
 			<li
-				class="flex min-h-[50px] items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
+				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
 			>
 				{user.username}
 				<!-- TODO: expose delete button if not current user -->

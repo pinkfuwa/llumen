@@ -4,8 +4,7 @@
 	import { MessageInput, Copyright } from '$lib/components';
 	import { goto } from '$app/navigation';
 	import { _ } from 'svelte-i18n';
-	import { theme } from '$lib/store';
-	import { getTitleGrad } from '$lib/theme';
+	import { titleGrad } from '$lib/preference';
 
 	let { mutate } = createRoom();
 
@@ -21,9 +20,7 @@
 
 <div class="flex h-full w-full flex-col justify-center">
 	<h1
-		class="mx-auto mb-4 bg-gradient-to-r {getTitleGrad(
-			$theme
-		)} bg-clip-text pb-4 text-4xl font-semibold text-transparent select-none md:text-5xl lg:text-6xl"
+		class="mx-auto mb-4 bg-gradient-to-r {$titleGrad} bg-clip-text pb-4 text-4xl font-semibold text-transparent select-none md:text-5xl lg:text-6xl"
 		in:fade={{ duration: 150 }}
 	>
 		{$_('chat.welcome')}

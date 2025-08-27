@@ -17,7 +17,8 @@
 		"config_override_warning": "此動作會複寫所有人的 openrouter 模型設置",
 		"check_syntax": "檢查語法",
 		"save_settings": "儲存設定",
-		"github_star": "按個星星"
+		"github_star": "按個星星",
+		"old_password": "舊密碼"
 	},
 	"login": {
 		"title": "登入流明",

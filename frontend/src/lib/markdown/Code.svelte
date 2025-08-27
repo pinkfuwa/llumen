@@ -1,16 +1,15 @@
 <script>
 	import { ClipboardCopy } from '@lucide/svelte';
-	import { theme } from '$lib/store';
 	import { codeToHtml } from 'shiki/bundle/web';
-	import { isLightTheme } from '$lib/theme';
+	import { isLightTheme } from '$lib/preference';
 	import { copy } from '$lib/copy';
 
 	let { lang, text, monochrome = false } = $props();
 
-	let themeStyle = isLightTheme($theme)
+	let themeStyle = $isLightTheme
 		? 'background-color:#fff;color:#24292e'
 		: 'background-color:#24292e;color:#e1e4e8';
-	let themeName = isLightTheme($theme) ? 'github-light' : 'github-dark';
+	let themeName = $isLightTheme ? 'github-light' : 'github-dark';
 </script>
 
 <div class="group/codeblock relative">
