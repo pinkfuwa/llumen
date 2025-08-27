@@ -79,7 +79,7 @@ pub async fn route(
     tokio::spawn(async move {
         let res = chat_completions::Completion::request(
             messages,
-            "google/gemma-3-4b-it:free".to_owned(),
+            "openai/gpt-oss-20b:free".to_owned(),
             &app.api_key,
         )
         .await;

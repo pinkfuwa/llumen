@@ -1,3 +1,4 @@
+import { updatePreference } from '$lib/preference';
 import { token } from '$lib/store';
 import {
 	CreateQuery,
@@ -5,20 +6,21 @@ import {
 	type QueryResult,
 	CreateMutation,
 	type CreateMutationResult,
-	CreateMockQuery,
-	SetQueryData
+	CreateMockQuery
 } from './state';
 import { APIFetch } from './state/errorHandle';
 
-import {
-	type LoginReq,
-	type LoginResp,
-	type RenewResp,
-	type RenewReq,
-	type UserCreateReq,
-	type UserCreateResp,
-	type UserReadResp,
-	UserReadReq
+import type {
+	LoginReq,
+	LoginResp,
+	RenewResp,
+	RenewReq,
+	UserCreateReq,
+	UserCreateResp,
+	UserReadResp,
+	UserReadReq,
+	UserUpdateReq,
+	UserUpdateResp
 } from './types';
 
 export interface User {
@@ -26,32 +28,7 @@ export interface User {
 }
 
 export function useUsers(): QueryResult<User[]> {
-	return CreateMockQuery([
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' },
-		{ username: 'user1' },
-		{ username: 'user2' },
-		{ username: 'user3' }
-	]);
+	return CreateMockQuery([{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }]);
 }
 
 export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp> {
@@ -64,43 +41,20 @@ export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp
 	});
 }
 
-export function Login(): CreateMutationResult<LoginReq, LoginResp> {
-	return CreateMutation({
-		path: 'auth/login',
-		onSuccess: (data) => {
-			const now = new Date();
-			const expireAt = new Date(data.exp);
-			const renewAt = new Date(expireAt.getTime() / 2 + now.getTime());
-
-			token.set({
-				value: data.token,
-				expireAt: expireAt.toString(),
-				renewAt: renewAt.toString()
-			});
-		}
-	});
-}
-
-export async function RenewToken(originalToken: string) {
-	const res = await APIFetch<RenewResp, RenewReq>('auth/renew', { token: originalToken });
-
-	if (res) {
-		const now = new Date();
-		const expireAt = new Date(res.exp);
-		const renewAt = new Date(expireAt.getTime() / 2 + now.getTime());
-
-		token.set({
-			value: res.token,
-			expireAt: expireAt.toString(),
-			renewAt: renewAt.toString()
-		});
-	}
-}
-
 export function useUser(): QueryResult<UserReadResp> {
 	return CreateQuery<UserReadReq, UserReadResp>({
 		key: ['currentUser'],
 		path: 'user/read',
-		body: {}
+		body: {},
+		staleTime: 0
+	});
+}
+
+export function UpdateUser(): CreateMutationResult<UserUpdateReq, UserUpdateResp> {
+	return CreateMutation({
+		path: 'user/update',
+		onSuccess(data, param) {
+			if (param.preference) updatePreference(param.preference);
+		}
 	});
 }

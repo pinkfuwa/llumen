@@ -1,30 +1,61 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 
-	import { fade } from 'svelte/transition';
 	import { CheckLine, X } from '@lucide/svelte';
-	import { theme, locale, enterSubmit } from '$lib/store';
+	import { theme, locale, submitOnEnter } from '$lib/preference';
+	import CheckPwd from '$lib/components/setting/CheckPwd.svelte';
+	import { UpdateUser } from '$lib/api/user';
+	import { get } from 'svelte/store';
+	import Warning from '$lib/components/setting/Warning.svelte';
+	import type { UserPreference } from '$lib/api/types';
 
 	let func = $state<'checkPwd' | 'setting'>('setting');
 	let password = $state('');
-	let checkPassword = $state('');
+
+	let message = $state('');
+
+	let themeData = $state(get(theme));
+	let localeData = $state(get(locale));
+	let submitOnEnterData = $state(get(submitOnEnter));
+
+	let { mutate, isPending, isError } = UpdateUser();
+
+	function mutatePreference(preference: UserPreference) {
+		message = 'error syncing preference';
+		mutate({ preference });
+	}
 </script>
 
 {#if func == 'setting'}
+	{#if $isError}
+		<Warning {message} />
+	{/if}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="theme">{$_('setting.theme')}: </label>
-		<select id="theme" bind:value={$theme} class="mx-1 rounded-md p-1 text-center hover:bg-hover">
+		<select
+			id="theme"
+			bind:value={themeData}
+			class="mx-1 rounded-md p-1 text-center hover:bg-hover"
+			onchange={() => mutatePreference({ theme: themeData })}
+			disabled={$isPending}
+		>
 			<option value="light">Modern Light</option>
 			<option value="dark">Modern Dark</option>
 			<option value="orange">Orange Light</option>
 			<option value="blue">&nbsp;&nbsp;Blue Dark</option>
-			<option value="custom">Custom Color</option>
+			<!-- <option value="custom">Custom Color</option> -->
 		</select>
 	</div>
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="lang">{$_('setting.language')}: </label>
-		<select id="lang" bind:value={$locale} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<select
+			id="lang"
+			bind:value={localeData}
+			class="mx-1 rounded-md p-1 hover:bg-hover"
+			onchange={() => mutatePreference({ locale: localeData })}
+			disabled={$isPending}
+		>
 			<option value="en">English</option>
 			<option value="zh-tw">繁體中文</option>
 		</select>
@@ -32,7 +63,13 @@
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="enter">{$_('setting.enter')}: </label>
-		<select id="enter" bind:value={$enterSubmit} class="mx-1 rounded-md p-1 hover:bg-hover">
+		<select
+			id="enter"
+			bind:value={submitOnEnterData}
+			class="mx-1 rounded-md p-1 hover:bg-hover"
+			onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}
+			disabled={$isPending}
+		>
 			<option value="true">{$_('setting.enable')}</option>
 			<option value="false">{$_('setting.disable')}</option>
 		</select>
@@ -44,8 +81,9 @@
 			<input
 				type="password"
 				id="password"
-				class="rounded-md border border-outline p-1"
+				class="rounded-md border border-outline p-1 text-right"
 				bind:value={password}
+				placeholder={$_('setting.old_password')}
 			/>
 			<button
 				class="mx-1 rounded-md p-1 hover:bg-hover"
@@ -56,28 +94,15 @@
 		</div>
 	</div>
 {:else}
-	<div in:fade={{ duration: 180 }} class="flex flex-col space-y-2 text-lg">
-		<label for="password">Type Password Again: </label>
-		<div class="flex">
-			<input
-				type="password"
-				id="password"
-				class="grow rounded-md border border-outline p-1"
-				bind:value={checkPassword}
-			/>
-
-			{#if checkPassword == password}
-				<button class="mx-1 rounded-md p-1 hover:bg-hover"><CheckLine /></button>
-			{:else}
-				<button
-					class="mx-1 rounded-md p-1 hover:bg-hover"
-					onclick={() => {
-						checkPassword = '';
-						password = '';
-						func = 'setting';
-					}}><X /></button
-				>
-			{/if}
-		</div>
-	</div>
+	<CheckPwd
+		message="Enter new password"
+		onsubmit={(password) => {
+			message = 'error updating password';
+			mutate({ password });
+		}}
+		oncancal={() => {
+			func = 'setting';
+			password = '';
+		}}
+	></CheckPwd>
 {/if}
