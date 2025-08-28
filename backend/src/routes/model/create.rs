@@ -22,11 +22,20 @@ pub struct ModelCreateResp {
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
+    Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelCreateReq>,
 ) -> JsonResult<ModelCreateResp> {
+    let config = req.config;
+
+    if let Err(reason) = model::Model::check_config(&config) {
+        return Err(Json(Error {
+            error: ErrorKind::MalformedRequest,
+            reason,
+        }));
+    }
+
     let res = Model::insert(model::ActiveModel {
-        config: Set(req.config),
+        config: Set(config),
         ..Default::default()
     })
     .exec(&app.conn)

@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
+use entity::{model, patch::ModelConfig};
+use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -14,24 +16,27 @@ pub struct ModelReadReq {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct ModelReadResp {
-    pub name: String,
-    pub capability: ModelReadRespCapability,
-    pub config: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct ModelReadRespCapability {
-    pub image: bool,
-    pub audio: bool,
-    pub ocr: bool,
-}
+pub struct ModelReadResp(ModelConfig);
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
+    Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelReadReq>,
 ) -> JsonResult<ModelReadResp> {
-    todo!()
+    let model = model::Entity::find_by_id(req.id)
+        .one(&app.conn)
+        .await
+        .kind(ErrorKind::Internal)?;
+
+    let model = model.ok_or_else(|| Error {
+        error: ErrorKind::ResourceNotFound,
+        reason: "model not found".to_owned(),
+    })?;
+
+    let config = model.get_config().ok_or_else(|| Error {
+        error: ErrorKind::Internal,
+        reason: "invalid model config".to_owned(),
+    })?;
+
+    Ok(Json(ModelReadResp(config)))
 }

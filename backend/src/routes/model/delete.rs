@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
+use entity::model;
+use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -20,8 +22,13 @@ pub struct ModelDeleteResp {
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
+    Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelDeleteReq>,
 ) -> JsonResult<ModelDeleteResp> {
-    todo!()
+    model::Entity::delete_by_id(req.id)
+        .exec(&app.conn)
+        .await
+        .kind(ErrorKind::ResourceNotFound)?;
+
+    Ok(Json(ModelDeleteResp { deleted: true }))
 }
