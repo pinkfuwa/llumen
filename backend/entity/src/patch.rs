@@ -23,15 +23,18 @@ pub struct UserPreference {
 }
 
 impl crate::entities::model::Model {
-    pub fn check_config(config: &str) -> bool {
-        toml::from_str::<ModelConfig>(config).is_ok()
+    pub fn check_config(config: &str) -> Result<(), String> {
+        toml::from_str::<ModelConfig>(config)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
     pub fn get_config(&self) -> Option<ModelConfig> {
         toml::from_str(&self.config).ok()
     }
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Default, Serialize)]
+#[typeshare]
 pub enum OcrEngine {
     Native,
     Text,
@@ -40,7 +43,8 @@ pub enum OcrEngine {
     Disabled,
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default, Serialize)]
+#[typeshare]
 pub struct ModelCapability {
     #[serde(default)]
     pub image: bool,
@@ -50,8 +54,10 @@ pub struct ModelCapability {
     pub ocr: OcrEngine,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[typeshare]
 pub struct ModelConfig {
+    pub display_name: String,
     pub openrouter_id: String,
     #[serde(default)]
     pub capability: ModelCapability,
