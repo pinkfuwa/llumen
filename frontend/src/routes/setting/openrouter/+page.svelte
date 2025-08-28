@@ -1,21 +1,19 @@
 <script lang="ts">
-	import { TiltBtn } from '$lib/components';
+	import ModelGrid from '$lib/components/setting/ModelGrid.svelte';
 	import Warning from '$lib/components/setting/Warning.svelte';
+	import { Plus } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 </script>
 
 <Warning message={$_('setting.config_override_warning')} />
-<div
-	contenteditable="plaintext-only"
-	class="min-h-[200px] rounded-md border border-outline bg-light p-3"
->
-	text config
+<div class="my-2 border-b border-outline pb-2">
+	<a
+		class="flex min-h-[50px] w-full shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4 text-lg"
+		href="/setting/openrouter/new"
+	>
+		Add New Model
+		<Plus />
+	</a>
 </div>
-<TiltBtn
-	class="mt-3 rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
-	>{$_('setting.check_syntax')}</TiltBtn
->
-<TiltBtn
-	class="mt-3 ml-2 rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
-	>{$_('setting.save_settings')}</TiltBtn
->
+
+<ModelGrid />

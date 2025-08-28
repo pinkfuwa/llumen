@@ -4,9 +4,9 @@
 	import { _ } from 'svelte-i18n';
 
 	const { mutate: deleteUser } = DeleteUser();
-	const { data } = useUsers();
+	const { isLoading, data } = useUsers();
 
-	const { isLoading, data: userData } = useUser();
+	const { isLoading: isUserDataLoading, data: userData } = useUser();
 </script>
 
 {#if $isLoading}
@@ -18,7 +18,7 @@
 				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
 			>
 				{user.name}
-				{#if !isLoading && user.id != $userData?.user_id}
+				{#if !isUserDataLoading && user.id != $userData?.user_id}
 					<button
 						onclick={() =>
 							deleteUser({

@@ -1,5 +1,11 @@
-import { CreateQuery, type QueryResult } from './state';
-import type { ModelListResp } from './types';
+import {
+	CreateMutation,
+	CreateQuery,
+	SetQueryData,
+	type CreateMutationResult,
+	type QueryResult
+} from './state';
+import type { ModelDeleteReq, ModelDeleteResp, ModelListResp } from './types';
 
 export enum Mode {
 	DEEP = 2,
@@ -17,6 +23,22 @@ export interface Capabilty {
 export function useModels(): QueryResult<ModelListResp> {
 	return CreateQuery({
 		path: 'model/list',
-		body: {}
+		body: {},
+		key: ['models']
+	});
+}
+
+export function DeleteModel(): CreateMutationResult<ModelDeleteReq, ModelDeleteResp> {
+	return CreateMutation({
+		path: 'user/delete',
+		onSuccess(data, param) {
+			SetQueryData<ModelListResp>({
+				key: ['models'],
+				updater: (x) => {
+					if (x != undefined) x.list = x.list.filter((u) => u.id !== param.id);
+					return x;
+				}
+			});
+		}
 	});
 }
