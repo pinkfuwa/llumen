@@ -14,6 +14,7 @@ import {
 } from './types';
 import {
 	CreateInfiniteQuery,
+	CreateMutation,
 	CreateRawMutation,
 	GetEventQueryStatus,
 	SetInfiniteQueryData,
@@ -121,5 +122,14 @@ export function useRoom(): InfiniteQueryResult<ChatPaginateRespList> {
 	return CreateInfiniteQuery({
 		key: ['chatPaginate'],
 		fetcher: new ChatFetcher()
+	});
+}
+
+export function haltCompletion() {
+	return CreateMutation({
+		path: 'chat/halt',
+		onSuccess: (data) => {
+			// no need to update cache, SSE will handle it
+		}
 	});
 }
