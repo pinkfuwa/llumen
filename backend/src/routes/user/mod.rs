@@ -6,6 +6,7 @@ use crate::AppState;
 
 mod create;
 mod delete;
+mod list;
 mod read;
 mod update;
 
@@ -15,4 +16,5 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/delete", post(delete::route))
         .route("/read", post(read::route))
         .route("/update", post(update::route))
+        .route("/list", post(list::route))
 }
