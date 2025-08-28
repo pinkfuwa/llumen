@@ -1,34 +1,33 @@
 import { updatePreference } from '$lib/preference';
-import { token } from '$lib/store';
 import {
 	CreateQuery,
-	CreateMockMutation,
 	type QueryResult,
 	CreateMutation,
 	type CreateMutationResult,
-	CreateMockQuery
+	SetQueryData
 } from './state';
-import { APIFetch } from './state/errorHandle';
 
 import type {
-	LoginReq,
-	LoginResp,
-	RenewResp,
-	RenewReq,
 	UserCreateReq,
 	UserCreateResp,
 	UserReadResp,
 	UserReadReq,
 	UserUpdateReq,
-	UserUpdateResp
+	UserUpdateResp,
+	UserListResp,
+	UserDeleteReq
 } from './types';
 
 export interface User {
 	username: string;
 }
 
-export function useUsers(): QueryResult<User[]> {
-	return CreateMockQuery([{ username: 'user1' }, { username: 'user2' }, { username: 'user3' }]);
+export function useUsers(): QueryResult<UserListResp> {
+	return CreateQuery({
+		path: 'user/list',
+		body: {},
+		key: ['users']
+	});
 }
 
 export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp> {
@@ -55,6 +54,21 @@ export function UpdateUser(): CreateMutationResult<UserUpdateReq, UserUpdateResp
 		path: 'user/update',
 		onSuccess(data, param) {
 			if (param.preference) updatePreference(param.preference);
+		}
+	});
+}
+
+export function DeleteUser(): CreateMutationResult<UserDeleteReq, UserReadResp> {
+	return CreateMutation({
+		path: 'user/delete',
+		onSuccess(data, param) {
+			SetQueryData<UserListResp>({
+				key: ['users'],
+				updater: (x) => {
+					if (x != undefined) x.list = x.list.filter((u) => u.id !== param.user_id);
+					return x;
+				}
+			});
 		}
 	});
 }

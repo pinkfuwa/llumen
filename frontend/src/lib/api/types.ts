@@ -260,6 +260,17 @@ export interface UserDeleteResp {
 	deleted: boolean;
 }
 
+export interface UserList {
+	id: number;
+	name: string;
+}
+
+export interface UserListReq {}
+
+export interface UserListResp {
+	list: UserList[];
+}
+
 export interface UserPreference {
 	theme?: string;
 	locale?: string;
