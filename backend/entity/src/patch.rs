@@ -21,3 +21,50 @@ pub struct UserPreference {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub submit_on_enter: Option<String>,
 }
+
+impl crate::entities::model::Model {
+    pub fn check_config(config: &str) -> bool {
+        toml::from_str::<ModelConfig>(config).is_ok()
+    }
+    pub fn get_config(&self) -> Option<ModelConfig> {
+        toml::from_str(&self.config).ok()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Default)]
+pub enum OcrEngine {
+    Native,
+    Text,
+    Mistral,
+    #[default]
+    Disabled,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct ModelCapability {
+    #[serde(default)]
+    pub image: bool,
+    #[serde(default)]
+    pub audio: bool,
+    #[serde(default)]
+    pub ocr: OcrEngine,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ModelConfig {
+    pub openrouter_id: String,
+    #[serde(default)]
+    pub capability: ModelCapability,
+}
+
+impl ModelConfig {
+    pub fn is_image_capable(&self) -> bool {
+        self.capability.image
+    }
+    pub fn is_audio_capable(&self) -> bool {
+        self.capability.audio
+    }
+    pub fn is_other_file_capable(&self) -> bool {
+        self.capability.ocr != OcrEngine::Disabled
+    }
+}

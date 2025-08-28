@@ -1086,6 +1086,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "toml 0.9.4",
  "typeshare",
 ]
 
