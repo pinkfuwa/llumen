@@ -21,3 +21,19 @@ pub struct UserPreference {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub submit_on_enter: Option<String>,
 }
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[typeshare]
+pub struct Capability {
+    pub image_input: bool,
+    pub audio_input: bool,
+    pub file_output: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[typeshare]
+pub struct ModelConfig {
+    pub openrouter_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub capability: Option<Capability>,
+}
