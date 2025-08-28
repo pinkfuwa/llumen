@@ -157,6 +157,9 @@ class Pages<D extends { id: number }> {
 			if (get(page.data).some(predicate)) page.revalidate();
 		});
 	}
+	public revalidateAll() {
+		get(this.pages).forEach((page) => page.revalidate());
+	}
 }
 
 export interface InfiniteQueryOption<D extends { id: number }> {
@@ -214,7 +217,7 @@ export function RemoveInfiniteQueryData<D extends { id: number }>(option: {
 }
 
 export function RevalidateInfiniteQueryData<D extends { id: number }>(option: {
-	predicate: (data: D) => boolean;
+	predicate?: (data: D) => boolean;
 	key: string[];
 }) {
 	let { key, predicate } = option;
@@ -222,5 +225,8 @@ export function RevalidateInfiniteQueryData<D extends { id: number }>(option: {
 	const pageStore = globalCache.get<Pages<D>>(key);
 
 	const pages = get(pageStore);
-	if (pages) pages?.revalidate(predicate);
+	if (pages) {
+		if (predicate == undefined) pages.revalidateAll();
+		else pages.revalidate(predicate);
+	}
 }

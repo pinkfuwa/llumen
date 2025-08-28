@@ -100,6 +100,7 @@ export function handleServerSideMessage(chatId: number, streamingUI: UIUpdater) 
 		[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c']) => void;
 	} = {
 		last(data) {
+			// data.version
 			RevalidateInfiniteQueryData({
 				key: ['messagePaginate', chatId.toString()],
 				predicate: (entry) => data.id <= entry.id
