@@ -35,6 +35,6 @@ pub async fn route(
         }));
     }
 
-    app.sse.halt(req.id);
+    app.sse.halt(req.id).await;
     Ok(Json(ChatHaltResp {}))
 }
