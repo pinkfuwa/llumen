@@ -45,6 +45,7 @@
 		},
 		"file": "upload file",
 		"new": "new chat",
-		"assistant.response": "Answer"
+		"assistant.response": "Answer",
+		"stop_first": "stop the correct responding to type new message."
 	}
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { id }: { id: number } = $props();
+	let { id, isStreaming = $bindable(false) }: { id: number; isStreaming?: boolean } = $props();
 
 	import { handleServerSideMessage, useMessage } from '$lib/api/message';
 	import Page from './Page.svelte';
@@ -13,13 +13,16 @@
 	handleServerSideMessage(id, {
 		reset() {
 			tokensList = [];
+			isStreaming = false;
 		},
 		append(tokens) {
 			tokensList.push(tokens);
+			isStreaming = true;
 		},
 		replace(tokens) {
 			tokensList.pop();
 			tokensList.push(tokens);
+			isStreaming = true;
 		}
 	});
 </script>
