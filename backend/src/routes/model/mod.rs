@@ -1,3 +1,4 @@
+mod check;
 mod create;
 mod delete;
 mod list;
@@ -17,4 +18,5 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/write", post(write::route))
         .route("/list", post(list::route))
         .route("/read", post(read::route))
+        .route("/check", post(check::route))
 }
