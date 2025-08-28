@@ -35,14 +35,14 @@
 		<select
 			id="theme"
 			bind:value={themeData}
-			class="mx-1 rounded-md p-1 text-center hover:bg-hover"
+			class="mx-1 rounded-md p-1 text-right hover:bg-hover"
 			onchange={() => mutatePreference({ theme: themeData })}
 			disabled={$isPending}
 		>
 			<option value="light">Modern Light</option>
 			<option value="dark">Modern Dark</option>
 			<option value="orange">Orange Light</option>
-			<option value="blue">&nbsp;&nbsp;Blue Dark</option>
+			<option value="blue">Blue Dark</option>
 			<!-- <option value="custom">Custom Color</option> -->
 		</select>
 	</div>
@@ -52,7 +52,7 @@
 		<select
 			id="lang"
 			bind:value={localeData}
-			class="mx-1 rounded-md p-1 hover:bg-hover"
+			class="mx-1 rounded-md p-1 text-right hover:bg-hover"
 			onchange={() => mutatePreference({ locale: localeData })}
 			disabled={$isPending}
 		>
@@ -66,7 +66,7 @@
 		<select
 			id="enter"
 			bind:value={submitOnEnterData}
-			class="mx-1 rounded-md p-1 hover:bg-hover"
+			class="mx-1 rounded-md p-1 text-right hover:bg-hover"
 			onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}
 			disabled={$isPending}
 		>
