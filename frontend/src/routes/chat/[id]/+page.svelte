@@ -5,10 +5,12 @@
 	import Copyright from '$lib/components/Copyright.svelte';
 	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
+	import { haltCompletion } from '$lib/api/chatroom.js';
 
 	let id = $derived(Number(params.id));
 
 	let { mutate } = createMessage();
+	let { mutate: halt } = haltCompletion();
 
 	let content = $state('');
 	let modelId = $state<number | null>(null);
@@ -36,9 +38,11 @@
 			onsubmit={() => {
 				mutate({ chat_id: id, text: content });
 				content = '';
+				isStreaming = true;
 			}}
 			oncancel={() => {
-				// TODO: cancel streaming
+				halt({ id });
+				isStreaming = false;
 			}}
 			disabled={isStreaming}
 		/>
