@@ -30,7 +30,6 @@
 		bind:modelId
 		bind:mode
 		bind:files
-		initSelect
 		onsubmit={() => {
 			if (modelId == null) return;
 

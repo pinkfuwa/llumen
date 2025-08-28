@@ -1,4 +1,5 @@
-import { CreateMockQuery, CreateQuery, type QueryResult } from './state';
+import { CreateQuery, type QueryResult } from './state';
+import type { ModelListResp } from './types';
 
 export enum Mode {
 	DEEP = 2,
@@ -13,35 +14,9 @@ export interface Capabilty {
 	video: boolean;
 }
 
-interface Model {
-	displayName: string;
-	modelId: number;
-	capacity: Capabilty;
-}
-
-type ModelListResp = Model[];
-
 export function useModels(): QueryResult<ModelListResp> {
-	return CreateMockQuery([
-		{
-			displayName: 'Gemini-2.5-Flash',
-			modelId: 1,
-			capacity: {
-				image: true,
-				audio: true,
-				document: true,
-				video: true
-			}
-		},
-		{
-			displayName: 'Grok-4',
-			modelId: 2,
-			capacity: {
-				image: true,
-				audio: true,
-				document: true,
-				video: false
-			}
-		}
-	]);
+	return CreateQuery({
+		path: 'model/list',
+		body: {}
+	});
 }

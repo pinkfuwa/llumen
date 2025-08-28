@@ -45,6 +45,7 @@
 		},
 		"file": "上傳檔案",
 		"new": "新聊天室",
-		"assistant.response": "回答"
+		"assistant.response": "回答",
+		"stop_first": "暫停目前的對話以輸入訊息"
 	}
 }

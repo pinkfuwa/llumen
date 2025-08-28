@@ -8,7 +8,7 @@
 	import ModelBtn from './ModelBtn.svelte';
 	import MarkdownBtn from './MarkdownBtn.svelte';
 	import { _ } from 'svelte-i18n';
-	import type { MouseEventHandler } from 'svelte/elements';
+	import StopBtn from './StopBtn.svelte';
 
 	let {
 		mode = $bindable(0 as 0 | 1 | 2),
@@ -16,8 +16,10 @@
 		modelId = $bindable<number | null>(null),
 		content = $bindable(''),
 		onsubmit = undefined as undefined | (() => void),
+		oncancel = undefined as undefined | (() => void),
 		above = false,
-		initSelect = false
+		selectionDisabled = false,
+		disabled = false
 	} = $props();
 
 	let editable = $state(true);
@@ -52,13 +54,23 @@
 		</div>
 	{/if}
 	<div class="mb-2 flex items-center justify-between space-x-2 border-b border-outline pr-2 pb-2">
-		<MdTextbox bind:editable placeholder={$_('chat.question')} bind:value={content} {onsubmit} />
-		<SendBtn onclick={onsubmit} />
+		<MdTextbox
+			bind:editable
+			placeholder={disabled ? $_('chat.stop_first') : $_('chat.question')}
+			bind:value={content}
+			{onsubmit}
+			{disabled}
+		/>
+		{#if disabled}
+			<StopBtn onclick={oncancel} />
+		{:else}
+			<SendBtn onclick={onsubmit} />
+		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex grow items-center space-x-1">
-			<ModelBtn bind:value={modelId} {above} disabled={!initSelect} />
-			<SearchBtn bind:value={mode} disabled={!initSelect} />
+			<ModelBtn bind:value={modelId} {above} disabled={selectionDisabled} />
+			<SearchBtn bind:value={mode} disabled={selectionDisabled} />
 			<UploadBtn bind:files />
 		</div>
 		{#if content.length != 0}

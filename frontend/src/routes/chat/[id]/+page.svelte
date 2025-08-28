@@ -14,6 +14,8 @@
 	let modelId = $state<number | null>(null);
 	let files = $state([]);
 	let mode = $state(0 as 0);
+
+	let isStreaming = $state(false);
 </script>
 
 <svelte:head>
@@ -26,6 +28,7 @@
 	<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
 		<MessageInput
 			above
+			selectionDisabled
 			bind:content
 			{modelId}
 			{mode}
@@ -34,10 +37,14 @@
 				mutate({ chat_id: id, text: content });
 				content = '';
 			}}
+			oncancel={() => {
+				// TODO: cancel streaming
+			}}
+			disabled={isStreaming}
 		/>
 	</div>
 	{#key id}
-		<MessagePagination {id} />
+		<MessagePagination {id} bind:isStreaming />
 	{/key}
 	<div class="min-h-16"></div>
 </div>

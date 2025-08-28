@@ -9,8 +9,8 @@
 
 	$effect(() => {
 		if ($data) {
-			let lastModel = $data?.at(-1);
-			if (lastModel) value = lastModel.modelId;
+			let lastModel = $data?.list.at(-1);
+			if (lastModel) value = lastModel.id;
 		}
 	});
 </script>
@@ -36,7 +36,7 @@
 			{disabled}
 		>
 			<span>
-				{$data.find((x) => x.modelId == value)?.displayName}
+				{$data.list.find((x) => x.id == value)?.display_name}
 			</span>
 			<ChevronDown class="inline-block" />
 		</button>
@@ -46,7 +46,7 @@
 					? ' bottom-0 mb-11'
 					: ' mt-1'}"
 			>
-				{#each $data as model}
+				{#each $data.list as model}
 					<li
 						class="text-md flex w-full items-center justify-between rounded-sm p-1.5 hover:bg-hover"
 					>
@@ -54,10 +54,10 @@
 							class="w-full text-left"
 							onclick={() => {
 								open = false;
-								value = model.modelId;
+								value = model.id;
 							}}
 						>
-							{model.displayName}
+							{model.display_name}
 						</button>
 					</li>
 				{/each}
