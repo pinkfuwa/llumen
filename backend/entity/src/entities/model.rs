@@ -7,7 +7,7 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub config: crate::patch::ModelConfig,
+    pub config: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
