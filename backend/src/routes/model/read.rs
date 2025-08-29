@@ -16,7 +16,9 @@ pub struct ModelReadReq {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct ModelReadResp(ModelConfig);
+pub struct ModelReadResp {
+    raw: String,
+}
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
@@ -33,10 +35,7 @@ pub async fn route(
         reason: "model not found".to_owned(),
     })?;
 
-    let config = model.get_config().ok_or_else(|| Error {
-        error: ErrorKind::Internal,
-        reason: "invalid model config".to_owned(),
-    })?;
+    let raw = model.config;
 
-    Ok(Json(ModelReadResp(config)))
+    Ok(Json(ModelReadResp { raw }))
 }
