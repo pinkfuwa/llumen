@@ -1,20 +1,31 @@
 <script lang="ts">
+	let { params } = $props();
+	let id = $derived(Number(params.id));
+
+	import { readModel } from '$lib/api/model';
 	import { TiltBtn } from '$lib/components';
+	import ConfigEditor from '$lib/components/setting/ConfigEditor.svelte';
 	import { _ } from 'svelte-i18n';
 
 	let config = $state('');
+
+	let readModelPromise = $derived(readModel(id).then((x) => (config = x.raw)));
+
+	let saveSetting = $_('setting.save_settings');
 </script>
 
-<!-- TODO: use shiki and create a overlay editor -->
-<textarea
-	class="min-h-[200px] w-full rounded-md border border-outline bg-light p-3"
-	bind:value={config}
-></textarea>
-<TiltBtn
-	class="mt-3 rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
-	>{$_('setting.check_syntax')}</TiltBtn
->
-<TiltBtn
-	class="mt-3 ml-2 rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
-	>{$_('setting.save_settings')}</TiltBtn
->
+{#await readModelPromise}
+	Loading
+{:then _}
+	{#key id}
+		<ConfigEditor bind:value={config}>
+			<TiltBtn
+				class="rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
+			>
+				{saveSetting}
+			</TiltBtn>
+		</ConfigEditor>
+	{/key}
+{:catch}
+	Error
+{/await}

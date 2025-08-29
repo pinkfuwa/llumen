@@ -5,21 +5,10 @@
 
 	const useCodeMirrorPromise = import('./index');
 
-	const defaultConfig = [
-		'display_name="GPT-OSS 20B"',
-		'# From https://openrouter.ai/models',
-		'# don\'t put "online" suffix.',
-		'openrouter_id="openai/gpt-oss-20b:free"',
-		'',
-		'[capability]',
-		'# allow user to upload image, the model need to support it',
-		'# set to false to disallow upload despite its support',
-		'image = false',
-		'audio = false',
-		'# available option: Native, Text, Mistral, Disabled',
-		'ocr = Native'
-	].join('\n');
-	let { value = $bindable(defaultConfig) } = $props();
+	let {
+		value = $bindable('# defaultConfig'),
+		onchange = undefined as ((val: string) => void) | undefined
+	} = $props();
 	let div = $state<HTMLDivElement | null>(null);
 
 	let valWritable = writable(value);
@@ -40,13 +29,18 @@
 		if (callback != undefined) callback();
 	});
 
+	if (onchange) {
+		let unsubscriber = valWritable.subscribe(onchange);
+		onDestroy(unsubscriber);
+	}
+
 	let themeStyle = $isLightTheme
 		? 'background-color:#fff;color:#24292e'
 		: 'background-color:#24292e;color:#e1e4e8';
 </script>
 
 <div
-	class="border-radius-md w-full overflow-x-auto rounded-md border border-outline p-2"
+	class="border-radius-md flex max-h-[480px] min-h-[200px] w-full flex-col overflow-auto rounded-md border border-outline p-2"
 	style={themeStyle}
 >
 	<div bind:this={div} class="h-full shrink-0 space-y-2"></div>

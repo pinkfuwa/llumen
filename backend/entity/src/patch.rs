@@ -23,10 +23,8 @@ pub struct UserPreference {
 }
 
 impl crate::entities::model::Model {
-    pub fn check_config(config: &str) -> Result<(), String> {
-        toml::from_str::<ModelConfig>(config)
-            .map(|_| ())
-            .map_err(|e| e.to_string())
+    pub fn check_config(config: &str) -> Result<ModelConfig, String> {
+        toml::from_str::<ModelConfig>(config).map_err(|e| e.to_string())
     }
     pub fn get_config(&self) -> Option<ModelConfig> {
         toml::from_str(&self.config).ok()

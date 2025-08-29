@@ -18,6 +18,7 @@ pub struct ModelCreateReq {
 #[typeshare]
 pub struct ModelCreateResp {
     pub id: i32,
+    pub display_name: String,
 }
 
 pub async fn route(
@@ -27,22 +28,24 @@ pub async fn route(
 ) -> JsonResult<ModelCreateResp> {
     let config = req.config;
 
-    if let Err(reason) = model::Model::check_config(&config) {
-        return Err(Json(Error {
+    match model::Model::check_config(&config) {
+        Ok(cfg) => {
+            Model::insert(model::ActiveModel {
+                config: Set(config),
+                ..Default::default()
+            })
+            .exec(&app.conn)
+            .await
+            .kind(ErrorKind::Internal)?;
+
+            Ok(Json(ModelCreateResp {
+                id: 0,
+                display_name: cfg.display_name,
+            }))
+        }
+        Err(reason) => Err(Json(Error {
             error: ErrorKind::MalformedRequest,
             reason,
-        }));
+        })),
     }
-
-    let res = Model::insert(model::ActiveModel {
-        config: Set(config),
-        ..Default::default()
-    })
-    .exec(&app.conn)
-    .await
-    .kind(ErrorKind::Internal)?;
-
-    Ok(Json(ModelCreateResp {
-        id: res.last_insert_id,
-    }))
 }

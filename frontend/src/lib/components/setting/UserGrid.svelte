@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { DeleteUser, useUser, useUsers } from '$lib/api/user';
 	import { Trash } from '@lucide/svelte';
+	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { _ } from 'svelte-i18n';
 
 	const { mutate: deleteUser } = DeleteUser();
@@ -18,7 +19,7 @@
 				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
 			>
 				{user.name}
-				{#if !isUserDataLoading && user.id != $userData?.user_id}
+				{#if !$isUserDataLoading && user.id != $userData?.user_id}
 					<button
 						onclick={() =>
 							deleteUser({

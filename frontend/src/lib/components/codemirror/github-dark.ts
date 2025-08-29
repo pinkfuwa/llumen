@@ -52,7 +52,11 @@ export const githubDarkTheme = EditorView.theme(
 			backgroundColor: config.background
 		},
 
-		'.cm-content': { caretColor: config.cursor },
+		'.cm-content': {
+			caretColor: config.cursor,
+			fontFamily:
+				'var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace)'
+		},
 
 		'.cm-cursor, .cm-dropCursor': { borderLeftColor: config.cursor },
 		'&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection':

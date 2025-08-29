@@ -5,7 +5,19 @@ import {
 	type CreateMutationResult,
 	type QueryResult
 } from './state';
-import type { ModelDeleteReq, ModelDeleteResp, ModelListResp } from './types';
+import { APIFetch } from './state/errorHandle';
+import type { MutationResult } from './state/mutate';
+import type {
+	ModelReadReq,
+	ModelReadResp,
+	ModelDeleteReq,
+	ModelDeleteResp,
+	ModelListResp,
+	ModelCheckResp,
+	ModelCheckReq,
+	ModelCreateReq,
+	ModelCreateResp
+} from './types';
 
 export enum Mode {
 	DEEP = 2,
@@ -30,7 +42,7 @@ export function useModels(): QueryResult<ModelListResp> {
 
 export function DeleteModel(): CreateMutationResult<ModelDeleteReq, ModelDeleteResp> {
 	return CreateMutation({
-		path: 'user/delete',
+		path: 'model/delete',
 		onSuccess(data, param) {
 			SetQueryData<ModelListResp>({
 				key: ['models'],
@@ -42,3 +54,46 @@ export function DeleteModel(): CreateMutationResult<ModelDeleteReq, ModelDeleteR
 		}
 	});
 }
+
+export async function readModel(id: number): Promise<ModelReadResp> {
+	const res = await APIFetch<ModelReadResp, ModelReadReq>('model/read', { id });
+
+	if (res == undefined) throw new Error('No response from server');
+	return res;
+}
+
+export function checkConfig(): MutationResult<ModelCheckReq, ModelCheckResp> {
+	return CreateMutation({
+		path: 'model/check'
+	});
+}
+
+export function createModel(): CreateMutationResult<ModelCreateReq, ModelCreateResp> {
+	return CreateMutation({
+		path: 'model/create',
+		onSuccess(data, param) {
+			SetQueryData<ModelListResp>({
+				key: ['models'],
+				updater: (x) => {
+					if (x != undefined) x.list = [data, ...x.list];
+					return x;
+				}
+			});
+		}
+	});
+}
+
+export const defaultModelConfig = [
+	'display_name="GPT-OSS 20B"',
+	'# From https://openrouter.ai/models',
+	'# don\'t put "online" suffix.',
+	'openrouter_id="openai/gpt-oss-20b:free"',
+	'',
+	'[capability]',
+	'# allow user to upload image, the model need to support it',
+	'# set to false to disallow upload despite its support',
+	'image = false',
+	'audio = false',
+	'# available option: Native, Text, Mistral, Disabled',
+	'ocr = "Native"'
+].join('\n');
