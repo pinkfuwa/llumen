@@ -10,12 +10,18 @@
 {#if $isLoading}
 	<div class="mb-4 flex items-center justify-center p-6 text-lg">Loading models...</div>
 {:else if $data != undefined}
-	<ul class="grid max-h-[50vh] grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg lg:grid-cols-2">
+	<div class="grid max-h-[50vh] grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg lg:grid-cols-2">
 		{#each $data.list as model}
-			<li
-				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
+			<div
+				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline px-2 py-1"
 			>
-				{model.display_name}
+				<a
+					class="flex h-full grow items-center rounded-md pl-2 hover:bg-hover"
+					href={'/setting/openrouter/' + encodeURIComponent(model.id)}
+				>
+					{model.display_name}
+				</a>
+				<!-- TODO: mutation was supposed to be at top level -->
 				<button
 					onclick={() =>
 						deleteModel({
@@ -24,7 +30,7 @@
 				>
 					<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
 				</button>
-			</li>
+			</div>
 		{/each}
-	</ul>
+	</div>
 {/if}

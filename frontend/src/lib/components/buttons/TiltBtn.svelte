@@ -1,11 +1,14 @@
 <script lang="ts">
+	import type { MouseEventHandler } from 'svelte/elements';
+
 	let {
 		rotationIntensity = 10,
 		shadowIntensity = 0.8,
 		children,
 		type = undefined,
 		disabled = null,
-		class: className = ''
+		class: className = '',
+		onclick = undefined as MouseEventHandler<HTMLButtonElement> | null | undefined
 	} = $props();
 
 	function handleMouseMove(event: MouseEvent) {
@@ -45,6 +48,7 @@
 	onmouseleave={handleMouseLeave}
 	{type}
 	{disabled}
+	{onclick}
 >
 	{@render children()}
 </button>

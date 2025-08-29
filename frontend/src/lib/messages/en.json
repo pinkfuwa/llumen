@@ -17,6 +17,7 @@
 		"config_override_warning": "This action will override other's model configuration.",
 		"check_syntax": "Check Syntax",
 		"save_settings": "Save Settings",
+		"create_setting": "Create New",
 		"github_star": "Start on Github",
 		"old_password": "Old Password"
 	},

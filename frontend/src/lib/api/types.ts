@@ -184,6 +184,7 @@ export interface ModelCreateReq {
 
 export interface ModelCreateResp {
 	id: number;
+	display_name: string;
 }
 
 export interface ModelDeleteReq {
