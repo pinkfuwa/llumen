@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { TiltBtn } from '$lib/components';
+	import Toml from '$lib/components/codemirror/Toml.svelte';
 	import { _ } from 'svelte-i18n';
 	const defaultConfig = 'openrouter_id="openai/gpt-oss-20b:free"\ndisplay_name="GPT-OSS 20B"';
 
@@ -7,10 +8,11 @@
 </script>
 
 <!-- TODO: use shiki and create a overlay editor -->
-<textarea
+<!-- <textarea
 	class="min-h-[200px] w-full rounded-md border border-outline bg-light p-3"
 	bind:value={config}
-></textarea>
+></textarea> -->
+<Toml />
 <TiltBtn
 	class="mt-3 rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
 	>{$_('setting.check_syntax')}</TiltBtn
