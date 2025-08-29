@@ -11,6 +11,9 @@
 	let tokensList = $state<Array<TokensList>>([]);
 
 	handleServerSideMessage(id, {
+		tick() {
+			isStreaming = true;
+		},
 		reset() {
 			tokensList = [];
 			isStreaming = false;

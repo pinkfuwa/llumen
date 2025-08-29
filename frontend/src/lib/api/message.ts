@@ -34,12 +34,11 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 			t: 'range',
 			c: {
 				chat_id: this.chatId,
-
 				upper: startId + 1,
 				lower: endId - 1
 			}
 		});
-		return x?.list;
+		return x?.list.sort((a, b) => b.id - a.id);
 	}
 	async forward(limit: number, id?: number) {
 		if (id != undefined) id = id + 1;
@@ -53,7 +52,7 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 				order: MessagePaginateReqOrder.Lt
 			}
 		});
-		return x?.list;
+		return x?.list.sort((a, b) => b.id - a.id);
 	}
 	async backward(limit: number, id: number) {
 		if (id != undefined) id = id - 1;
@@ -67,7 +66,7 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 				order: MessagePaginateReqOrder.Gt
 			}
 		});
-		return x?.list;
+		return x?.list.sort((a, b) => b.id - a.id);
 	}
 }
 
@@ -107,6 +106,7 @@ export function handleServerSideMessage(chatId: number, streamingUI: UIUpdater) 
 			});
 		},
 		token(data) {
+			streamingUI.tick();
 			patcher.feed(data.text);
 		},
 		end(data) {
