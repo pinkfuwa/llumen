@@ -18,4 +18,5 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/paginate", post(paginate::route))
         .route("/read", post(read::route))
         .route("/create", post(create::route))
+        .route("/halt", post(halt::route))
 }
