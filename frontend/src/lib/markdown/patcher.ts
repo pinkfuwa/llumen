@@ -8,6 +8,10 @@ import { marked } from 'marked';
  * When replace, it replace last append token, and only update those changed
  */
 export interface UIUpdater {
+	/**
+	 * When empty token are received, tick is called
+	 */
+	tick: () => void;
 	reset: () => void;
 	append: (tokens: TokensList) => void;
 	replace: (tokens: TokensList) => void;

@@ -6,6 +6,7 @@
 	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
 	import { haltCompletion } from '$lib/api/chatroom.js';
+	import { onNavigate } from '$app/navigation';
 
 	let id = $derived(Number(params.id));
 

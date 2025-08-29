@@ -46,7 +46,7 @@ class Pages<D extends { id: number }> {
 				const newPage = {
 					no: last.no + 1,
 					data: writable([]),
-					startId: last.endId! + 1, // TODO: if you want to use ascending, change this
+					startId: last.endId! - 1, // TODO: if you want to use ascending, change this
 					target: writable(null),
 					revalidate: () => console.error('Unreachable!')
 				};

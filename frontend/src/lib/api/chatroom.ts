@@ -90,7 +90,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 				lower: endId - 1
 			}
 		});
-		return x?.list;
+		return x?.list.sort((a, b) => b.id - a.id);
 	}
 	async forward(limit: number, id?: number) {
 		if (id != undefined) id = id + 1;
@@ -102,7 +102,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 				order: ChatPaginateReqOrder.Lt
 			}
 		});
-		return x?.list;
+		return x?.list.sort((a, b) => b.id - a.id);
 	}
 	async backward(limit: number, id: number) {
 		if (id != undefined) id = id - 1;
@@ -114,7 +114,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 				order: ChatPaginateReqOrder.Gt
 			}
 		});
-		return x?.list;
+		return x?.list.sort((a, b) => b.id - a.id);
 	}
 }
 
