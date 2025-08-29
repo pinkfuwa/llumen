@@ -1,7 +1,7 @@
 /* github-light.ts
- * vendered from https://github.com/primer/codemirror-github-light/tree/master
+ * vendered from https://github.com/dennis84/codemirror-themes/blob/main/theme/github-light.ts
  *
- * LICENSE: [MIT](https://github.com/primer/codemirror-github-light/blob/master/LICENSE)
+ * LICENSE: [MIT](https://github.com/dennis84/codemirror-themes/blob/main/LICENSE)
  */
 
 import { EditorView } from '@codemirror/view';

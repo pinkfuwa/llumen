@@ -1,3 +1,8 @@
+/* github-light.ts
+ * vendered from https://github.com/dennis84/codemirror-themes/blob/main/theme/github-dark.ts
+ *
+ * LICENSE: [MIT](https://github.com/dennis84/codemirror-themes/blob/main/LICENSE)
+ */
 import { EditorView } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
