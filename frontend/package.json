@@ -17,6 +17,7 @@
 		"@codemirror/legacy-modes": "^6.5.1",
 		"@codemirror/state": "^6.5.2",
 		"@codemirror/view": "^6.38.1",
+		"@lezer/highlight": "^1.2.1",
 		"@lucide/svelte": "^0.525.0",
 		"@octokit/rest": "^22.0.0",
 		"@sv-use/core": "^1.15.1",

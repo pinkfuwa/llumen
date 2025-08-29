@@ -23,6 +23,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.1
         version: 6.38.1
+      '@lezer/highlight':
+        specifier: ^1.2.1
+        version: 1.2.1
       '@lucide/svelte':
         specifier: ^0.525.0
         version: 0.525.0(svelte@5.36.13)
