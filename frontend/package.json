@@ -12,6 +12,11 @@
 		"lint": "prettier --check ."
 	},
 	"dependencies": {
+		"@codemirror/commands": "^6.8.1",
+		"@codemirror/language": "^6.11.3",
+		"@codemirror/legacy-modes": "^6.5.1",
+		"@codemirror/state": "^6.5.2",
+		"@codemirror/view": "^6.38.1",
 		"@lucide/svelte": "^0.525.0",
 		"@octokit/rest": "^22.0.0",
 		"@sv-use/core": "^1.15.1",
@@ -21,6 +26,7 @@
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
 		"@tailwindcss/vite": "^4.0.0",
+		"codemirror": "^6.0.2",
 		"fetch-event-stream": "^0.1.5",
 		"isomorphic-dompurify": "^2.26.0",
 		"katex": "^0.16.22",

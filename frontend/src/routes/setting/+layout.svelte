@@ -71,7 +71,7 @@
 					>
 				</li>
 			</ul>
-			<div class="grow px-2 pt-1">
+			<div class="min-w-0 grow px-2 pt-1">
 				{@render children()}
 			</div>
 		</div>
