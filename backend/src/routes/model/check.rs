@@ -17,7 +17,7 @@ pub struct ModelCheckReq {
 #[typeshare]
 pub struct ModelCheckResp {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
+    pub reason: Option<String>,
 }
 
 pub async fn route(
@@ -29,5 +29,7 @@ pub async fn route(
 
     let check = model::Model::check_config(&config);
 
-    Ok(Json(ModelCheckResp { error: check.err() }))
+    Ok(Json(ModelCheckResp {
+        reason: check.err(),
+    }))
 }

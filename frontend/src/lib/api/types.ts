@@ -169,7 +169,7 @@ export interface ModelCheckReq {
 }
 
 export interface ModelCheckResp {
-	error?: string;
+	reason?: string;
 }
 
 export interface ModelConfig {
