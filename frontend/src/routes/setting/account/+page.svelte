@@ -28,7 +28,9 @@
 
 {#if func == 'setting'}
 	{#if $isError}
-		<Warning {message} />
+		<Warning>
+			{message}
+		</Warning>
 	{/if}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 		<label for="theme">{$_('setting.theme')}: </label>
