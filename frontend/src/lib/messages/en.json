@@ -19,7 +19,8 @@
 		"save_settings": "Save Settings",
 		"create_setting": "Create New",
 		"github_star": "Start on Github",
-		"old_password": "Old Password"
+		"old_password": "Old Password",
+		"add_model": "Add New Model"
 	},
 	"login": {
 		"title": "Sign in to llumen",
@@ -47,6 +48,7 @@
 		"file": "upload file",
 		"new": "new chat",
 		"assistant.response": "Answer",
+		"error.no_output": "No response from model, please try again.",
 		"stop_first": "stop the correct responding to type new message."
 	}
 }

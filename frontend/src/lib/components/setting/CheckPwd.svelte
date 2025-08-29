@@ -60,7 +60,7 @@
 {#if bounceKey != 0}
 	{#key bounceKey}
 		<div in:fade={{ duration: 300 }}>
-			<Warning message="test" />
+			<Warning>TODO: fill the translation</Warning>
 		</div>
 	{/key}
 {/if}

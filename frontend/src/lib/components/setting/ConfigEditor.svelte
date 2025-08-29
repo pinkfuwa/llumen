@@ -57,6 +57,8 @@
 
 {#if configErrored}
 	<div out:fade={{ duration: 300, delay: 100 }}>
-		<Warning message={errorReason} />
+		<Warning>
+			{errorReason}
+		</Warning>
 	</div>
 {/if}
