@@ -118,6 +118,7 @@ class Pages<D extends { id: number }> {
 	 */
 	public activate() {
 		const callbacks: Array<() => void> = [];
+		// onDestroy(() => console.log('inf query destroyed'));
 		onDestroy(() => callbacks.forEach((x) => x()));
 
 		get(this.pages).forEach((page) =>

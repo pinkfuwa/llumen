@@ -138,8 +138,13 @@ export function haltCompletion() {
 	});
 }
 
+const roomInfoCache = new Map<number, ChatReadResp>();
 export async function readRoom(id: number): Promise<ChatReadResp> {
+	// roomInfo is immutable
+	if (roomInfoCache.has(id)) return roomInfoCache.get(id)!;
+
 	const res = await APIFetch<ChatReadResp, ChatReadReq>('chat/read', { id });
 	if (res == undefined) throw new Error('Chat not found');
+	roomInfoCache.set(id, res);
 	return res;
 }
