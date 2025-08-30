@@ -3,7 +3,6 @@
 	import type { TokensList } from 'marked';
 	import Parser from '$lib/markdown/Parser.svelte';
 	import { _ } from 'svelte-i18n';
-	import { slide } from 'svelte/transition';
 
 	const { list }: { list: (TokensList & { monochrome?: boolean })[] } = $props();
 

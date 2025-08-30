@@ -49,17 +49,42 @@ export class Cleanups {
 	}
 }
 
-// export class visibilityTimer{
-//   map: Map<number, ()=>void> = new Map()
-//   constructor(){
-//     let map = this.map;
-//     document.addEventListener("visibilitychange", () => {
-//       console.log(document.visibilityState);
-//     });
+type VisibilityStateListenierId = number;
+let visibilityListenerCount = 0;
+let visibilityListeners = new Map<VisibilityStateListenierId, () => void>();
 
-//   }
-//   setInterval(f: ()=>void): number{
+let visibilityHandlerAttached = false;
 
-//   }
-//   clearInterval()
-// }
+function runVisibilityListeners() {
+	for (const cb of visibilityListeners.values()) {
+		try {
+			cb();
+		} catch (err) {
+			console.error('visibility listener error', err);
+		}
+	}
+}
+
+export function addVisibliityListener(callback: () => void): VisibilityStateListenierId {
+	visibilityListenerCount += 1;
+	const id = visibilityListenerCount;
+	visibilityListeners.set(id, callback);
+
+	if (!visibilityHandlerAttached) {
+		// Attach the global handler once
+		document.addEventListener('visibilitychange', runVisibilityListeners);
+		visibilityHandlerAttached = true;
+	}
+
+	return id;
+}
+
+export function clearVisibilityListener(id: VisibilityStateListenierId) {
+	visibilityListeners.delete(id);
+
+	// If no more listeners, detach the global handler to avoid unnecessary work
+	if (visibilityListeners.size === 0 && visibilityHandlerAttached) {
+		document.removeEventListener('visibilitychange', runVisibilityListeners);
+		visibilityHandlerAttached = false;
+	}
+}
