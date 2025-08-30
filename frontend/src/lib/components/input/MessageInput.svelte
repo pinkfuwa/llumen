@@ -9,6 +9,7 @@
 	import MarkdownBtn from './MarkdownBtn.svelte';
 	import { _ } from 'svelte-i18n';
 	import StopBtn from './StopBtn.svelte';
+	import { afterNavigate } from '$app/navigation';
 
 	let {
 		mode = $bindable(0 as 0 | 1 | 2),
@@ -34,6 +35,11 @@
 				files.forEach((f) => files.push(f));
 			}
 		}
+	});
+
+	afterNavigate(() => {
+		content = '';
+		editable = true;
 	});
 </script>
 
