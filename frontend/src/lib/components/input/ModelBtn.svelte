@@ -10,7 +10,7 @@
 	$effect(() => {
 		if ($data) {
 			let lastModel = $data?.list.at(-1);
-			if (lastModel) value = lastModel.id;
+			if (lastModel && value == null) value = lastModel.id;
 		}
 	});
 </script>
