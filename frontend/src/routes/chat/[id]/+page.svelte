@@ -5,8 +5,7 @@
 	import Copyright from '$lib/components/Copyright.svelte';
 	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
-	import { haltCompletion } from '$lib/api/chatroom.js';
-	import { onNavigate } from '$app/navigation';
+	import { haltCompletion, readRoom } from '$lib/api/chatroom.js';
 
 	let id = $derived(Number(params.id));
 
@@ -17,6 +16,13 @@
 	let modelId = $state<number | null>(null);
 	let files = $state([]);
 	let mode = $state(0 as 0);
+
+	$effect(() => {
+		modelId = null;
+		readRoom(id).then((data) => {
+			if (data.model_id != undefined) modelId = data.model_id;
+		});
+	});
 
 	let isStreaming = $state(false);
 </script>

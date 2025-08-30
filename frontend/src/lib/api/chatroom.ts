@@ -10,16 +10,20 @@ import {
 	type ChatPaginateResp,
 	ChatPaginateReqOrder,
 	type MessagePaginateRespList,
-	MessagePaginateRespRole
+	MessagePaginateRespRole,
+	type ChatReadResp,
+	type ChatReadReq
 } from './types';
 import {
 	CreateInfiniteQuery,
 	CreateMutation,
+	CreateQuery,
 	CreateRawMutation,
 	GetEventQueryStatus,
 	SetInfiniteQueryData,
 	type Fetcher,
 	type InfiniteQueryResult,
+	type QueryResult,
 	type RawMutationResult
 } from './state';
 import { APIFetch } from './state/errorHandle';
@@ -118,7 +122,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 	}
 }
 
-export function useRoom(): InfiniteQueryResult<ChatPaginateRespList> {
+export function useRooms(): InfiniteQueryResult<ChatPaginateRespList> {
 	return CreateInfiniteQuery({
 		key: ['chatPaginate'],
 		fetcher: new ChatFetcher()
@@ -132,4 +136,10 @@ export function haltCompletion() {
 			// no need to update cache, SSE will handle it
 		}
 	});
+}
+
+export async function readRoom(id: number): Promise<ChatReadResp> {
+	const res = await APIFetch<ChatReadResp, ChatReadReq>('chat/read', { id });
+	if (res == undefined) throw new Error('Chat not found');
+	return res;
 }

@@ -66,8 +66,8 @@ export interface ChatReadReq {
 }
 
 export interface ChatReadResp {
-	model_id: number;
-	title: number;
+	model_id?: number;
+	title: string;
 }
 
 export enum ErrorKind {
