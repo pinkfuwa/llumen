@@ -20,10 +20,8 @@
 <form
 	class="mb-4 flex items-center justify-between space-x-2 border-b border-outline pb-2 text-lg"
 	onsubmit={() => {
-		console.log(bounceKey);
-		if (matched) {
-			onsubmit(password);
-		} else {
+		if (matched) onsubmit(password);
+		else {
 			bounceKey += 1;
 			passwordCheck = '';
 		}
