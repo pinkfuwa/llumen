@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
+use entity::{chat, model};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -15,8 +17,9 @@ pub struct ChatReadReq {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct ChatReadResp {
-    pub model_id: i32,
-    pub title: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<i32>,
+    pub title: String,
 }
 
 pub async fn route(
@@ -24,5 +27,23 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<ChatReadReq>,
 ) -> JsonResult<ChatReadResp> {
-    todo!()
+    let res = chat::Entity::find_by_id(req.id)
+        .filter(chat::Column::OwnerId.eq(user_id))
+        .find_also_related(model::Entity)
+        .one(&app.conn)
+        .await
+        .kind(ErrorKind::Internal)?;
+
+    match res {
+        Some((chat, model)) => Ok(Json(ChatReadResp {
+            model_id: model.map(|x| x.id),
+            title: chat.title,
+        })),
+        None => {
+            return Err(Json(Error {
+                error: ErrorKind::ResourceNotFound,
+                reason: "".to_owned(),
+            }));
+        }
+    }
 }
