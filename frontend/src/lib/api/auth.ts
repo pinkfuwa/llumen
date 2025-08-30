@@ -17,7 +17,7 @@ export function Login(): CreateMutationResult<LoginReq, LoginResp> {
 		onSuccess: (data) => {
 			const now = new Date();
 			const expireAt = new Date(data.exp);
-			const renewAt = new Date(expireAt.getTime() / 2 + now.getTime());
+			const renewAt = new Date(now.getTime() + (expireAt.getTime() - now.getTime()) / 2);
 
 			token.set({
 				value: data.token,
@@ -29,12 +29,13 @@ export function Login(): CreateMutationResult<LoginReq, LoginResp> {
 }
 
 export async function RenewToken(originalToken: string) {
+	console.log('renew');
 	const res = await APIFetch<RenewResp, RenewReq>('auth/renew', { token: originalToken });
 
 	if (res) {
 		const now = new Date();
 		const expireAt = new Date(res.exp);
-		const renewAt = new Date(expireAt.getTime() / 2 + now.getTime());
+		const renewAt = new Date(now.getTime() + (expireAt.getTime() - now.getTime()) / 2);
 
 		token.set({
 			value: res.token,
@@ -65,6 +66,7 @@ export function initAuth() {
 				const renewAt = new Date(data.renewAt);
 				const now = new Date();
 				const timeout = renewAt.getTime() - now.getTime();
+				console.log({ timeout, now, renewAt, expireAt, renewAtStr: data.renewAt });
 				if (expireAt < now) {
 					token.set(undefined);
 				} else if (timeout > 0) {
