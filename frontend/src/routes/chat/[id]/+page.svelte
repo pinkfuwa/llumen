@@ -5,7 +5,7 @@
 	import Copyright from '$lib/components/Copyright.svelte';
 	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
-	import { haltCompletion, readRoom } from '$lib/api/chatroom.js';
+	import { haltCompletion, useRoom } from '$lib/api/chatroom.js';
 
 	let id = $derived(Number(params.id));
 
@@ -13,20 +13,11 @@
 	let { mutate: halt } = haltCompletion();
 
 	let content = $state('');
-	let modelId = $state<number | null>(null);
 	let files = $state([]);
 	let mode = $state(0 as 0);
 	let title = $state<string | null>(null);
 
-	$effect(() => {
-		// TODO: cache request
-		// NOTE: Query is not used here, because response attr is editable, however, you should cache them(assuming other is not changing title).
-		modelId = null;
-		readRoom(id).then((data) => {
-			if (data.model_id != undefined) modelId = data.model_id;
-			title = data.title;
-		});
-	});
+	let { data: room } = $derived(useRoom(id));
 
 	let isStreaming = $state(false);
 </script>
@@ -47,7 +38,7 @@
 			above
 			selectionDisabled
 			bind:content
-			{modelId}
+			modelId={$room?.model_id}
 			{mode}
 			bind:files
 			onsubmit={() => {
