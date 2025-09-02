@@ -39,7 +39,8 @@ features = ["cors"]
 
 [dependencies.reqwest]
 version = "0.12.22"
-features = ["json"]
+default-features = false
+features = ["json", "native-tls-vendored", "charset", "http2"]
 
 [dependencies.serde]
 version = "1.0.219"
