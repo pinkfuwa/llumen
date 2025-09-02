@@ -15,6 +15,7 @@
 	$effect(() => valWritable.subscribe((newVal) => (value = newVal)));
 
 	let callback: () => void | undefined;
+	let loaded = $state(false);
 
 	useCodeMirrorPromise.then((useCodeMirror) => {
 		useCodeMirror.default({
@@ -23,6 +24,7 @@
 			element: toStore(() => div!),
 			onDestroy: (x) => (callback = x)
 		});
+		loaded = true;
 	});
 
 	onDestroy(() => {
@@ -43,5 +45,8 @@
 	class="border-radius-md flex max-h-[480px] min-h-[200px] w-full flex-col overflow-auto rounded-md border border-outline p-2"
 	style={themeStyle}
 >
+	{#if !loaded}
+		<div class="p-[6px] font-mono">Loading code editor...</div>
+	{/if}
 	<div bind:this={div} class="h-full shrink-0 space-y-2"></div>
 </div>
