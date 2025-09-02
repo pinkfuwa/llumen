@@ -12,7 +12,7 @@ Its design goal is simplicity: you only need a single OpenRouter API key to use 
 - Single API key requirement (OpenRouter) for model calls.
 - Markdown rendering with code and math support.
 - Multiple chat modes (normal, web-search-enabled).
-- Roadmap: deep-research and agentic modes (WIP).
+- Roadmap: deep-research and agentic modes, including file modification (WIP).
 
 ## Screenshots
 
@@ -53,6 +53,6 @@ Ordered by priority
 
 1. Customized system prompt
 2. Title Generation
-3. T support
+3. Tool support
 4. File upload
 5. Deep research mode
