@@ -19,6 +19,8 @@
             rustc
             rustfmt
             rustPackages.clippy
+
+            pnpm
             just
 
             pkg-config
