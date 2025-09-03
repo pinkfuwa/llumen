@@ -8,6 +8,10 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,15 +57,23 @@ jobs:
           build-args: |
             ARCH=aarch64
 
-      - name: Create and push manifest
+      - name: Get Digests
+        id: digests
         run: |
-          docker manifest create ghcr.io/pinkfuwa/llumen:${{ github.ref_name }} \
-            ghcr.io/pinkfuwa/llumen:amd64 \
-            ghcr.io/pinkfuwa/llumen:arm64
-          docker manifest push ghcr.io/pinkfuwa/llumen:${{ github.ref_name }}
+          IMAGE=ghcr.io/pinkfuwa/llumen
 
-          # Also push latest tag
-          docker manifest create ghcr.io/pinkfuwa/llumen:latest \
-            ghcr.io/pinkfuwa/llumen:amd64 \
-            ghcr.io/pinkfuwa/llumen:arm64
-          docker manifest push ghcr.io/pinkfuwa/llumen:latest
+          DIGEST_AMD64=$(docker buildx imagetools inspect ${IMAGE}:amd64 --format '{{json .Manifest.Digest}}' | tr -d '"')
+          DIGEST_ARM64=$(docker buildx imagetools inspect ${IMAGE}:arm64 --format '{{json .Manifest.Digest}}' | tr -d '"')
+
+          echo "amd64_digest=${DIGEST_AMD64}" >> "$GITHUB_OUTPUT"
+          echo "arm64_digest=${DIGEST_ARM64}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and Push Manifest
+        run: |
+          IMAGE=ghcr.io/pinkfuwa/llumen
+
+          docker manifest create ${IMAGE}:latest \
+            ${IMAGE}@${{ steps.digests.outputs.amd64_digest }} \
+            ${IMAGE}@${{ steps.digests.outputs.arm64_digest }}
+
+          docker manifest push ${IMAGE}:latest
