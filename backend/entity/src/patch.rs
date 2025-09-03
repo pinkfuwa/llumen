@@ -9,6 +9,7 @@ pub enum MessageKind {
     User = 0,
     Assistant = 1,
     Reasoning = 2,
+    System = 3,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]

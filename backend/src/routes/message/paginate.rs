@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{message, patch, prelude::*};
+use entity::{MessageKind, message, prelude::*};
 use migration::ExprTrait;
 use sea_orm::{QueryOrder, QuerySelect, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -127,14 +127,17 @@ pub async fn route(
     let res = q.all(&app.conn).await.kind(ErrorKind::Internal)?;
     let list = res
         .into_iter()
-        .map(|x| MessagePaginateRespList {
-            id: x.id,
-            text: x.text.unwrap_or_default(),
-            role: match x.kind {
-                patch::MessageKind::User => MessagePaginateRespRole::User,
-                patch::MessageKind::Assistant => MessagePaginateRespRole::Assistant,
-                patch::MessageKind::Reasoning => MessagePaginateRespRole::Think,
-            },
+        .filter_map(|x| {
+            Some(MessagePaginateRespList {
+                id: x.id,
+                text: x.text.unwrap_or_default(),
+                role: match x.kind {
+                    MessageKind::User => MessagePaginateRespRole::User,
+                    MessageKind::Assistant => MessagePaginateRespRole::Assistant,
+                    MessageKind::Reasoning => MessagePaginateRespRole::Think,
+                    MessageKind::System => return None,
+                },
+            })
         })
         .collect();
 
