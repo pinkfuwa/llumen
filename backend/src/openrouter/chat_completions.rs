@@ -76,6 +76,7 @@ pub struct Message {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Role {
+    System,
     User,
     Assistant,
     Tool,

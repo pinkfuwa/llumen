@@ -64,6 +64,7 @@ pub async fn route(
         .into_iter()
         .filter_map(|x| {
             let role = match x.kind {
+                MessageKind::System => chat_completions::Role::System,
                 MessageKind::User => chat_completions::Role::User,
                 MessageKind::Assistant => chat_completions::Role::Assistant,
                 MessageKind::Reasoning => return None,
