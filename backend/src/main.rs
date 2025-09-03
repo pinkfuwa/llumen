@@ -2,16 +2,19 @@ mod config;
 mod errors;
 mod middlewares;
 mod openrouter;
+mod prompts;
 mod routes;
 mod sse;
 mod utils;
 
 use std::sync::Arc;
 
+use crate::prompts::PromptEnv;
 use anyhow::Context;
 use axum::{Router, middleware};
 use dotenv::var;
 use entity::prelude::*;
+use migration::MigratorTrait;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};
 use sse::SseContext;
@@ -25,6 +28,7 @@ pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
     pub sse: SseContext,
+    pub prompt: PromptEnv,
     pub api_key: String,
     pub hasher: Hasher,
 }
@@ -42,6 +46,10 @@ async fn main() {
         .await
         .expect("Cannot connect to database");
 
+    migration::Migrator::up(&conn, None)
+        .await
+        .expect("Cannot migrate database");
+
     let key = SymmetricKey::from(
         &Config::find_by_id("paseto_key")
             .one(&conn)
@@ -54,12 +62,15 @@ async fn main() {
     .expect("Cannot parse paseto key");
 
     let sse = SseContext::new(conn.clone());
+    let prompt = PromptEnv::new(conn.clone());
+
     let state = Arc::new(AppState {
         conn,
         key,
         sse,
         api_key,
         hasher: Hasher::default(),
+        prompt,
     });
 
     let app = Router::new()
