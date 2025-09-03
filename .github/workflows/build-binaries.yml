@@ -5,6 +5,11 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
 jobs:
   build-binaries:
     runs-on: ${{ matrix.os }}
