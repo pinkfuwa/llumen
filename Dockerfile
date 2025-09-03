@@ -22,6 +22,9 @@ RUN --mount=type=cache,target=~/.cargo/registry/index/
 RUN --mount=type=cache,target=~/.cargo/registry/cache/
 RUN --mount=type=cache,target=~/.cargo/git/db/
 
+WORKDIR /prompts
+COPY ./prompts .
+
 WORKDIR /compiler
 COPY ./backend .
 
