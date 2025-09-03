@@ -62,16 +62,14 @@ pub async fn route(
         .kind(ErrorKind::Internal)?;
     let messages = res
         .into_iter()
-        .filter_map(|x| {
-            let role = match x.kind {
-                MessageKind::User => chat_completions::Role::User,
-                MessageKind::Assistant => chat_completions::Role::Assistant,
-                MessageKind::Reasoning => return None,
-            };
-            let Some(content) = x.text else {
-                return None;
-            };
-            Some(chat_completions::Message { role, content })
+        .filter_map(|x| match x.kind {
+            MessageKind::User => Some(chat_completions::Message::User(
+                x.text.unwrap_or("x".to_string()),
+            )),
+            MessageKind::Assistant => Some(chat_completions::Message::Assistant(
+                x.text.unwrap_or("x".to_string()),
+            )),
+            MessageKind::Reasoning => None,
         })
         .collect();
 
@@ -81,6 +79,7 @@ pub async fn route(
             messages,
             "openai/gpt-oss-20b".to_owned(),
             &app.api_key,
+            Vec::default(),
         )
         .await;
 
@@ -105,14 +104,10 @@ pub async fn route(
                     return;
                 }
 
-                c = completion.next() => {
-                    match c {
-                        Some(Ok(v)) => {
-                            if v.choices.is_empty() {
-                                continue;
-                            };
-
-                            puber.token(&v.choices[0].delta.content).await;
+                token = completion.next() => {
+                    match token {
+                        Some(Ok(chat_completions::CompletionResp::ResponseToken(t))) => {
+                            puber.token(&t).await;
                         }
                         Some(Err(e)) => {
                             puber.raw_token(Err(Error {
@@ -123,6 +118,9 @@ pub async fn route(
                             puber.close().await;
                             completion.close();
                             return;
+                        }
+                        Some(_)=> {
+                            continue;
                         }
                         None => {
                             puber.close().await;
