@@ -9,10 +9,7 @@ use serde::{Deserialize, Serialize};
 use tokio::select;
 use typeshare::typeshare;
 
-use crate::{
-    AppState, errors::*, middlewares::auth::UserId, openrouter::chat_completions,
-    sse::PublisherKind,
-};
+use crate::{AppState, errors::*, middlewares::auth::UserId, openrouter, sse::PublisherKind};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -81,9 +78,9 @@ pub async fn route(
                 return None;
             };
             match x.kind {
-                MessageKind::User => Some(chat_completions::Message::User(content)),
-                MessageKind::Assistant => Some(chat_completions::Message::Assistant(content)),
-                MessageKind::System => Some(chat_completions::Message::System(content)),
+                MessageKind::User => Some(openrouter::Message::User(content)),
+                MessageKind::Assistant => Some(openrouter::Message::Assistant(content)),
+                MessageKind::System => Some(openrouter::Message::System(content)),
                 MessageKind::Reasoning => None,
             }
         })
@@ -119,7 +116,7 @@ pub async fn route(
 
                 token = completion.next() => {
                     match token {
-                        Some(Ok(chat_completions::CompletionResp::ResponseToken(t))) => {
+                        Some(Ok(openrouter::CompletionResp::ResponseToken(t))) => {
                             puber.token(&t).await;
                         }
                         Some(Err(e)) => {

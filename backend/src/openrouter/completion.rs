@@ -6,12 +6,12 @@ use reqwest_eventsource::{Event, EventSource};
 
 use super::raw;
 
-pub struct OpenRouter {
+pub struct Openrouter {
     api_key: String,
     chat_completion_endpoint: String,
 }
 
-impl OpenRouter {
+impl Openrouter {
     pub fn new() -> Self {
         let api_key = var("API_KEY").expect("API_KEY is required");
         let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/".to_string());
