@@ -22,6 +22,11 @@ RUN --mount=type=cache,target=~/.cargo/registry/index/
 RUN --mount=type=cache,target=~/.cargo/registry/cache/
 RUN --mount=type=cache,target=~/.cargo/git/db/
 
+ARG ARCH=x86_64
+
+WORKDIR /
+RUN rustup target add ${ARCH}-unknown-linux-musl
+
 WORKDIR /prompts
 COPY ./prompts .
 
@@ -31,9 +36,6 @@ COPY ./backend .
 WORKDIR /compiler
 RUN --mount=type=cache,target=target
 
-ARG ARCH=x86_64
-
-RUN rustup target add ${ARCH}-unknown-linux-musl
 RUN cargo install --target ${ARCH}-unknown-linux-musl --path .
 
 FROM scratch

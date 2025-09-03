@@ -38,7 +38,7 @@ version = "0.3.41"
 
 [dependencies.tower-http]
 version = "0.6.6"
-features = ["cors"]
+features = ["cors", "fs"]
 
 [dependencies.reqwest]
 version = "0.12.22"

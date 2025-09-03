@@ -19,6 +19,8 @@ use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};
 use sse::SseContext;
 use tokio::net::TcpListener;
+use tower::ServiceBuilder;
+use tower_http::services::ServeDir;
 use utils::password_hash::Hasher;
 
 #[cfg(feature = "dev")]
@@ -40,6 +42,7 @@ async fn main() {
 
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
+    let static_dir = var("STATIC_DIR").unwrap_or("../frontend/build".to_owned());
 
     migration::migrate(&database_url)
         .await
@@ -90,6 +93,13 @@ async fn main() {
                     _,
                 >(state.clone()))
                 .nest("/auth", routes::auth::routes()),
+        )
+        .fallback_service(
+            ServiceBuilder::new().service(
+                ServeDir::new(static_dir)
+                    .precompressed_gzip()
+                    .precompressed_br(),
+            ),
         )
         .with_state(state);
 
