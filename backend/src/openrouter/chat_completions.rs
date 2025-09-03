@@ -23,9 +23,9 @@ impl Completion {
 
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            stream: true,
             model,
             tools,
+            ..Default::default()
         };
 
         let builder = Client::new()
@@ -121,9 +121,18 @@ pub enum CompletionResp {
     },
 }
 
+pub struct File {
+    name: String,
+    data: Vec<u8>,
+}
+
 pub enum Message {
     User(String),
     Assistant(String),
+    MultipartUser {
+        text: String,
+        files: Vec<File>,
+    },
     ToolRequest {
         id: String,
         name: String,
@@ -141,34 +150,51 @@ impl From<Message> for raw::Message {
             Message::User(msg) => raw::Message {
                 role: raw::Role::User,
                 content: Some(msg),
-                tool_calls: None,
-                tool_call_id: None,
+                ..Default::default()
             },
             Message::Assistant(msg) => raw::Message {
                 role: raw::Role::Assistant,
                 content: Some(msg),
-                tool_calls: None,
-                tool_call_id: None,
+                ..Default::default()
             },
+            Message::MultipartUser { text, files } => {
+                let files = files
+                    .into_iter()
+                    .map(|f| {
+                        let (first, second) = raw::MessagePart::unknown(&f.name, f.data);
+                        vec![first, second]
+                    })
+                    .flatten()
+                    .collect::<Vec<_>>();
+
+                raw::Message {
+                    role: raw::Role::User,
+                    contents: Some(
+                        std::iter::once(raw::MessagePart::text(text))
+                            .chain(files.into_iter())
+                            .collect(),
+                    ),
+                    ..Default::default()
+                }
+            }
             Message::ToolRequest {
                 id,
                 name,
                 arguments,
             } => raw::Message {
                 role: raw::Role::Tool,
-                content: None,
                 tool_calls: Some(vec![raw::ToolCallReq {
                     id,
                     function: raw::ToolFunctionResp { name, arguments },
                     r#type: "function".to_string(),
                 }]),
-                tool_call_id: None,
+                ..Default::default()
             },
             Message::ToolResult { id, content } => raw::Message {
                 role: raw::Role::Tool,
                 content: Some(content),
-                tool_calls: None,
                 tool_call_id: Some(id),
+                ..Default::default()
             },
         }
     }
