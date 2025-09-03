@@ -1,45 +1,14 @@
 <script lang="ts">
-	import { FolderSearch } from '@lucide/svelte';
 	import type { TokensList } from 'marked';
 	import Parser from '$lib/markdown/Parser.svelte';
 	import { _ } from 'svelte-i18n';
+	import ResponseBox from './buttons/ResponseBox.svelte';
 
-	const { list }: { list: (TokensList & { monochrome?: boolean })[] } = $props();
-
-	let showReasoning = $state(false);
+	const { list }: { list: TokensList[] } = $props();
 </script>
 
-<div class="space-y-2">
-	<div class="group w-full space-y-2 px-10 py-2 wrap-break-word lg:px-20 2xl:px-36">
-		<div class="mb-2 border-b border-outline pb-2 select-none">
-			<FolderSearch class="mr-2 inline-block" />
-			{$_('chat.assistant.response')}
-		</div>
-
-		<!-- TODO: display reasoning -->
-		<!-- <button
-			onclick={() => (showReasoning = !showReasoning)}
-			class="w-full text-left"
-			in:slide={{ duration: 180, axis: 'y' }}
-		>
-			{#if showReasoning}
-				<div>
-					{#each reasoning.split('\n'), line}
-						<p>{line}</p>
-					{/each}
-				</div>
-			{:else}
-				<div class="max-w-80 truncate text-outline" in:slide={{ duration: 180, axis: 'y' }}>
-					Reasoning:&nbsp;{reasoning.replaceAll('\n', '&nbsp;&nbsp;')}
-				</div>
-			{/if}
-		</button> -->
-
-		{#each list as tokens, i}
-			<!-- TODO: add reasoning -->
-			<!-- monochrome to imporve performance -->
-			<Parser {tokens} monochrome />
-		{/each}
-		<!-- TODO: add loading status -->
-	</div>
-</div>
+<ResponseBox>
+	{#each list as tokens, i}
+		<Parser {tokens} monochrome />
+	{/each}
+</ResponseBox>

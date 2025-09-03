@@ -1,0 +1,6 @@
+/target
+/db.sqlite
+/.env
+*.nix
+flake.nix
+.envrc

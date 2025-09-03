@@ -42,6 +42,10 @@ async fn main() {
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
     let api_key = var("API_KEY").expect("API_KEY is required");
 
+    migration::migrate(&database_url)
+        .await
+        .expect("Migration failed");
+
     let conn = Database::connect(database_url)
         .await
         .expect("Cannot connect to database");
