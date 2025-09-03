@@ -13,9 +13,7 @@ RUN pnpm run build
 FROM rust:1.89.0-slim-trixie AS backend-builder
 
 RUN apt update -y \
-    && apt install musl-tools pkg-config make -y
-
-RUN cargo install just
+    && apt install musl-tools pkg-config make perl -y
 
 RUN --mount=type=cache,target=~/.cargo/bin/
 RUN --mount=type=cache,target=~/.cargo/registry/index/
@@ -24,7 +22,6 @@ RUN --mount=type=cache,target=~/.cargo/git/db/
 
 ARG ARCH=x86_64
 
-WORKDIR /
 RUN rustup target add ${ARCH}-unknown-linux-musl
 
 WORKDIR /prompts
