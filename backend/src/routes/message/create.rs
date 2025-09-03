@@ -91,9 +91,10 @@ pub async fn route(
 
     puber.new_stream(PublisherKind::Assistant).await;
     tokio::spawn(async move {
-        let res =
-            chat_completions::Completion::request(messages, model, &app.api_key, Vec::default())
-                .await;
+        let res = app
+            .openrouter
+            .complete(messages, model, Vec::default())
+            .await;
 
         let mut completion = match res {
             Ok(v) => v,
