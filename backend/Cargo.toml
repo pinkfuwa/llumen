@@ -32,6 +32,7 @@ http = "1.3.1"
 openrouter-rs = "0.4.5"
 fastrand = "2.3.0"
 minijinja = "2.12.0"
+base64 = "0.22.1"
 
 [dependencies.time]
 version = "0.3.41"
@@ -42,7 +43,8 @@ features = ["cors"]
 
 [dependencies.reqwest]
 version = "0.12.22"
-features = ["json"]
+default-features = false
+features = ["json", "native-tls-vendored", "charset", "http2"]
 
 [dependencies.serde]
 version = "1.0.219"

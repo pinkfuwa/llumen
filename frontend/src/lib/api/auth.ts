@@ -66,7 +66,6 @@ export function initAuth() {
 				const renewAt = new Date(data.renewAt);
 				const now = new Date();
 				const timeout = renewAt.getTime() - now.getTime();
-				console.log({ timeout, now, renewAt, expireAt, renewAtStr: data.renewAt });
 				if (expireAt < now) {
 					token.set(undefined);
 				} else if (timeout > 0) {

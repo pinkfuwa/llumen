@@ -138,13 +138,12 @@ export function haltCompletion() {
 	});
 }
 
-const roomInfoCache = new Map<number, ChatReadResp>();
-export async function readRoom(id: number): Promise<ChatReadResp> {
-	// roomInfo is immutable
-	if (roomInfoCache.has(id)) return roomInfoCache.get(id)!;
-
-	const res = await APIFetch<ChatReadResp, ChatReadReq>('chat/read', { id });
-	if (res == undefined) throw new Error('Chat not found');
-	roomInfoCache.set(id, res);
-	return res;
+export function useRoom(id: number): QueryResult<ChatReadResp> {
+	return CreateQuery<ChatReadReq, ChatReadResp>({
+		key: ['chatRead', id.toString()],
+		path: 'chat/read',
+		body: { id },
+		revalidateOnFocus: false,
+		staleTime: Infinity
+	});
 }
