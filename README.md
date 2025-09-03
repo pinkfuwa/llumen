@@ -26,7 +26,7 @@ Its design goal is simplicity: you only need a single OpenRouter API key to use 
 - Example: build and run the container (binds port 80 by default).
 
 ```
-docker build -t llumen .
+docker build -f docker/Dockerfile -t llumen .
 docker run -it --rm \
   -e API_KEY="<YOUR_OPENROUTER_API_KEY>" \
   -p 80:80 \
