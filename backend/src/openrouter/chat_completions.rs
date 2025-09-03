@@ -1,19 +1,53 @@
 use anyhow::{Context, Result, anyhow};
+use dotenv::var;
 use futures_util::StreamExt;
 use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
 
 use super::raw;
 
+pub struct OpenRouter {
+    api_key: String,
+    chat_completion_endpoint: String,
+}
+
+impl OpenRouter {
+    pub fn new() -> Self {
+        let api_key = var("API_KEY").expect("API_KEY is required");
+        let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/".to_string());
+        let chat_completion_endpoint =
+            format!("{}/api/v1/chat/completions", api_base.trim_end_matches('/'));
+        Self {
+            api_key,
+            chat_completion_endpoint,
+        }
+    }
+    pub fn complete(
+        &self,
+        messages: Vec<Message>,
+        model: String,
+        tools: Vec<Tool>,
+    ) -> impl std::future::Future<Output = Result<Completion>> {
+        Completion::request(
+            messages,
+            model,
+            &self.api_key,
+            &self.chat_completion_endpoint,
+            tools,
+        )
+    }
+}
+
 pub struct Completion {
     source: EventSource,
 }
 
 impl Completion {
-    pub async fn request(
+    async fn request(
         messages: Vec<Message>,
         model: String,
         api_key: &str,
+        endpoint: &str,
         tools: Vec<Tool>,
     ) -> Result<Completion> {
         let tools = match tools.is_empty() {
@@ -28,10 +62,7 @@ impl Completion {
             ..Default::default()
         };
 
-        let builder = Client::new()
-            .post(" https://openrouter.ai/api/v1/chat/completions")
-            .bearer_auth(api_key)
-            .json(&req);
+        let builder = Client::new().post(endpoint).bearer_auth(api_key).json(&req);
 
         let source = EventSource::new(builder)?;
 

@@ -15,6 +15,7 @@ use axum::{Router, middleware};
 use dotenv::var;
 use entity::prelude::*;
 use migration::MigratorTrait;
+use openrouter::chat_completions::OpenRouter;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};
 use sse::SseContext;
@@ -29,8 +30,8 @@ pub struct AppState {
     pub key: SymmetricKey<V4>,
     pub sse: SseContext,
     pub prompt: PromptEnv,
-    pub api_key: String,
     pub hasher: Hasher,
+    pub openrouter: OpenRouter,
 }
 
 #[tokio::main]
@@ -40,7 +41,6 @@ async fn main() {
 
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
-    let api_key = var("API_KEY").expect("API_KEY is required");
 
     migration::migrate(&database_url)
         .await
@@ -67,13 +67,14 @@ async fn main() {
 
     let sse = SseContext::new(conn.clone());
     let prompt = PromptEnv::new(conn.clone());
+    let openrouter = OpenRouter::new();
 
     let state = Arc::new(AppState {
         conn,
         key,
         sse,
-        api_key,
         hasher: Hasher::default(),
+        openrouter,
         prompt,
     });
 
