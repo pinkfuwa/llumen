@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::Context;
 use axum::{Extension, Json, extract::State};
 use entity::{message, patch::MessageKind, prelude::*};
 use migration::Expr;
@@ -31,17 +32,30 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageCreateReq>,
 ) -> JsonResult<MessageCreateResp> {
-    let res = Chat::find_by_id(req.chat_id)
+    let chat = Chat::find_by_id(req.chat_id)
         .one(&app.conn)
         .await
-        .kind(ErrorKind::Internal)?;
+        .kind(ErrorKind::Internal)?
+        .context("")
+        .kind(ErrorKind::ResourceNotFound)?;
 
-    if !res.is_some_and(|x| x.owner_id == user_id) {
+    if chat.owner_id != user_id {
         return Err(Json(Error {
             error: ErrorKind::ResourceNotFound,
             reason: "".to_owned(),
         }));
     }
+
+    let model = Model::find_by_id(chat.model_id)
+        .one(&app.conn)
+        .await
+        .kind(ErrorKind::Internal)?
+        .context("")
+        .kind(ErrorKind::Internal)?
+        .get_config()
+        .context("")
+        .kind(ErrorKind::Internal)?
+        .openrouter_id;
 
     let mut puber = app
         .sse
@@ -77,13 +91,9 @@ pub async fn route(
 
     puber.new_stream(PublisherKind::Assistant).await;
     tokio::spawn(async move {
-        let res = chat_completions::Completion::request(
-            messages,
-            "openai/gpt-oss-20b".to_owned(),
-            &app.api_key,
-            Vec::default(),
-        )
-        .await;
+        let res =
+            chat_completions::Completion::request(messages, model, &app.api_key, Vec::default())
+                .await;
 
         let mut completion = match res {
             Ok(v) => v,
