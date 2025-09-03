@@ -15,7 +15,6 @@ use axum::{Router, middleware};
 use dotenv::var;
 use entity::prelude::*;
 use migration::MigratorTrait;
-use openrouter::chat_completions::OpenRouter;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};
 use sse::SseContext;
@@ -31,7 +30,7 @@ pub struct AppState {
     pub sse: SseContext,
     pub prompt: PromptEnv,
     pub hasher: Hasher,
-    pub openrouter: OpenRouter,
+    pub openrouter: openrouter::Openrouter,
 }
 
 #[tokio::main]
@@ -67,7 +66,7 @@ async fn main() {
 
     let sse = SseContext::new(conn.clone());
     let prompt = PromptEnv::new(conn.clone());
-    let openrouter = OpenRouter::new();
+    let openrouter = openrouter::Openrouter::new();
 
     let state = Arc::new(AppState {
         conn,

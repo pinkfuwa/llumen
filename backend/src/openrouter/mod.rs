@@ -1,2 +1,4 @@
-pub mod chat_completions;
+mod completion;
 mod raw;
+
+pub use completion::{CompletionResp, File, Message, Openrouter, Tool};
