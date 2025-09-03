@@ -62,28 +62,16 @@ pub async fn route(
         .kind(ErrorKind::Internal)?;
     let messages = res
         .into_iter()
-<<<<<<< HEAD
         .filter_map(|x| {
-            let role = match x.kind {
-                MessageKind::System => chat_completions::Role::System,
-                MessageKind::User => chat_completions::Role::User,
-                MessageKind::Assistant => chat_completions::Role::Assistant,
-                MessageKind::Reasoning => return None,
-            };
             let Some(content) = x.text else {
                 return None;
             };
-            Some(chat_completions::Message { role, content })
-=======
-        .filter_map(|x| match x.kind {
-            MessageKind::User => Some(chat_completions::Message::User(
-                x.text.unwrap_or("x".to_string()),
-            )),
-            MessageKind::Assistant => Some(chat_completions::Message::Assistant(
-                x.text.unwrap_or("x".to_string()),
-            )),
-            MessageKind::Reasoning => None,
->>>>>>> main
+            match x.kind {
+                MessageKind::User => Some(chat_completions::Message::User(content)),
+                MessageKind::Assistant => Some(chat_completions::Message::Assistant(content)),
+                MessageKind::System => Some(chat_completions::Message::System(content)),
+                MessageKind::Reasoning => None,
+            }
         })
         .collect();
 

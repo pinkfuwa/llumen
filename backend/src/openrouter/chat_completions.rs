@@ -126,16 +126,8 @@ pub struct File {
     data: Vec<u8>,
 }
 
-<<<<<<< HEAD
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Role {
-    System,
-    User,
-    Assistant,
-    Tool,
-=======
 pub enum Message {
+    System(String),
     User(String),
     Assistant(String),
     MultipartUser {
@@ -151,12 +143,16 @@ pub enum Message {
         id: String,
         content: String,
     },
->>>>>>> main
 }
 
 impl From<Message> for raw::Message {
     fn from(msg: Message) -> Self {
         match msg {
+            Message::System(msg) => raw::Message {
+                role: raw::Role::System,
+                content: Some(msg),
+                ..Default::default()
+            },
             Message::User(msg) => raw::Message {
                 role: raw::Role::User,
                 content: Some(msg),
