@@ -1,4 +1,9 @@
 mod completion;
 mod raw;
+mod stream;
 
-pub use completion::{CompletionResp, File, Message, Openrouter, Tool};
+static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
+static X_TITLE: &str = "llumen";
+
+pub use completion::{File, Message, Openrouter, Tool};
+pub use stream::{StreamCompletion, StreamCompletionResp};
