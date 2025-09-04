@@ -4,7 +4,7 @@ use anyhow::Context;
 use axum::{Extension, Json, extract::State};
 use entity::{message, patch::MessageKind, prelude::*};
 use migration::Expr;
-use sea_orm::{EntityOrSelect, EntityTrait, QueryOrder, QuerySelect};
+use sea_orm::{EntityOrSelect, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use tokio::select;
 use typeshare::typeshare;
@@ -66,7 +66,7 @@ pub async fn route(
 
     let res = Message::find()
         .select()
-        .expr(Expr::col(message::Column::ChatId).eq(req.chat_id))
+        .filter(Expr::col(message::Column::ChatId).eq(req.chat_id))
         .order_by_asc(message::Column::Id)
         .all(&app.conn)
         .await
