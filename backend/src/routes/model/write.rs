@@ -17,7 +17,9 @@ pub struct ModelWriteReq {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct ModelWriteResp {}
+pub struct ModelWriteResp {
+    display_name: String,
+}
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
@@ -26,12 +28,14 @@ pub async fn route(
 ) -> JsonResult<ModelWriteResp> {
     let config = req.config;
 
-    if let Err(reason) = model::Model::check_config(&config) {
-        return Err(Json(Error {
-            error: ErrorKind::MalformedRequest,
-            reason,
-        }));
-    }
+    let display_name = model::Model::check_config(&config)
+        .map_err(|e| {
+            Json(Error {
+                error: ErrorKind::MalformedRequest,
+                reason: e,
+            })
+        })?
+        .display_name;
 
     model::Entity::update_many()
         .col_expr(model::Column::Config, config.into())
@@ -40,5 +44,5 @@ pub async fn route(
         .await
         .kind(ErrorKind::ResourceNotFound)?;
 
-    Ok(Json(ModelWriteResp {}))
+    Ok(Json(ModelWriteResp { display_name }))
 }

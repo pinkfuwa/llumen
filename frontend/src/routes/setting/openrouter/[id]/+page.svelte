@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+
 	let { params } = $props();
 	let id = $derived(Number(params.id));
 
-	import { readModel } from '$lib/api/model';
+	import { readModel, updateModel } from '$lib/api/model';
 	import { TiltBtn } from '$lib/components';
 	import ConfigEditor from '$lib/components/setting/ConfigEditor.svelte';
 	import { _ } from 'svelte-i18n';
@@ -12,6 +14,8 @@
 	let readModelPromise = $derived(readModel(id).then((x) => (config = x.raw)));
 
 	let saveSetting = $_('setting.save_settings');
+
+	let { mutate } = updateModel();
 </script>
 
 {#await readModelPromise}
@@ -21,6 +25,7 @@
 		<ConfigEditor bind:value={config}>
 			<TiltBtn
 				class="rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
+				onclick={() => mutate({ id, config }, () => goto('/setting/openrouter'))}
 			>
 				{saveSetting}
 			</TiltBtn>

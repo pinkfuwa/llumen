@@ -219,7 +219,9 @@ export interface ModelWriteReq {
 	config: string;
 }
 
-export interface ModelWriteResp {}
+export interface ModelWriteResp {
+	display_name: string;
+}
 
 export interface RenewReq {
 	token: string;
