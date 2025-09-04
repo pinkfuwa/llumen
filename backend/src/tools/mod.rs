@@ -67,13 +67,11 @@ where
     T: Tool,
 {
     fn call(&mut self, input: Value) -> Result<(Response, Value)> {
-        Tool::call(self, serde_json::from_value(input)?)
-            .map(|(resp, state)| {
-                serde_json::to_value(state)
-                    .context("Cannot se the value")
-                    .map(|state| (resp.into_response(), state))
-            })
-            .flatten()
+        Tool::call(self, serde_json::from_value(input)?).map(|(resp, state)| {
+            serde_json::to_value(state)
+                .context("Cannot se the value")
+                .map(|state| (resp.into_response(), state))
+        })?
     }
 
     fn se(self) -> Result<Value> {
