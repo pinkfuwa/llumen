@@ -249,3 +249,21 @@ pub struct ToolFunctionResp {
     pub arguments: String,
     pub name: String,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CompletionResponse {
+    pub output: Vec<OutputMessage>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OutputMessage {
+    pub r#type: String,
+    pub role: String,
+    pub content: Vec<OutputContent>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OutputContent {
+    pub r#type: Option<String>,
+    pub text: Option<String>,
+}
