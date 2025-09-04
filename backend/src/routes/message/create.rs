@@ -88,10 +88,7 @@ pub async fn route(
 
     puber.new_stream(PublisherKind::Assistant).await;
     tokio::spawn(async move {
-        let res = app
-            .openrouter
-            .complete(messages, model, Vec::default())
-            .await;
+        let res = app.openrouter.stream(messages, model, Vec::default()).await;
 
         let mut completion = match res {
             Ok(v) => v,
@@ -116,7 +113,7 @@ pub async fn route(
 
                 token = completion.next() => {
                     match token {
-                        Some(Ok(openrouter::CompletionResp::ResponseToken(t))) => {
+                        Some(Ok(openrouter::StreamCompletionResp::ResponseToken(t))) => {
                             puber.token(&t).await;
                         }
                         Some(Err(e)) => {
