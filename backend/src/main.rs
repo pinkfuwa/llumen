@@ -5,6 +5,7 @@ mod openrouter;
 mod prompts;
 mod routes;
 mod sse;
+mod tools;
 mod utils;
 
 use std::sync::Arc;
