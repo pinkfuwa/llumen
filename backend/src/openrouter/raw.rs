@@ -13,7 +13,7 @@ pub struct CompletionReq {
     pub stream: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<Tool>>,
-    pub plugins: Plugin,
+    pub plugins: Vec<Plugin>,
 }
 
 impl Default for CompletionReq {
@@ -23,12 +23,12 @@ impl Default for CompletionReq {
             messages: vec![],
             stream: true,
             tools: None,
-            plugins: Plugin {
+            plugins: vec![Plugin {
                 id: "file-parser".to_string(),
                 pdf: PdfPlugin {
                     engine: "pdf-text".to_string(),
                 },
-            },
+            }],
         }
     }
 }
