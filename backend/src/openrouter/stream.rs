@@ -1,0 +1,127 @@
+use anyhow::{Context, Result, anyhow};
+use dotenv::var;
+use futures_util::StreamExt;
+use reqwest::Client;
+use reqwest_eventsource::{Event, EventSource};
+
+use super::completion;
+use super::{HTTP_REFERER, X_TITLE, raw};
+
+pub struct StreamCompletion {
+    source: EventSource,
+}
+
+impl StreamCompletion {
+    pub(super) async fn request(
+        messages: Vec<completion::Message>,
+        model: String,
+        api_key: &str,
+        endpoint: &str,
+        tools: Vec<completion::Tool>,
+    ) -> Result<StreamCompletion> {
+        let tools = match tools.is_empty() {
+            true => None,
+            false => Some(tools.into_iter().map(|t| t.into()).collect()),
+        };
+
+        let req = raw::CompletionReq {
+            messages: messages.into_iter().map(|m| m.into()).collect(),
+            model,
+            tools,
+            ..Default::default()
+        };
+
+        let builder = Client::new()
+            .post(endpoint)
+            .bearer_auth(api_key)
+            .header("HTTP-Referer", HTTP_REFERER)
+            .header("X-Title", X_TITLE)
+            .json(&req);
+
+        let source = EventSource::new(builder)?;
+
+        Ok(Self { source })
+    }
+
+    pub fn close(&mut self) {
+        self.source.close();
+    }
+
+    fn handle_choice(&mut self, choice: raw::Choice) -> StreamCompletionResp {
+        let delta = choice.delta;
+
+        if let Some(reason) = choice.finish_reason {
+            return match reason {
+                raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(delta.content),
+                raw::FinishReason::Length => StreamCompletionResp::ResponseToken(delta.content),
+                raw::FinishReason::ToolCalls => {
+                    let tool_calls = delta.tool_calls.map(|x| x.into_iter().next()).flatten();
+                    match tool_calls {
+                        Some(tool_call) => StreamCompletionResp::ToolCall {
+                            name: tool_call.function.name,
+                            args: tool_call.function.arguments,
+                            id: tool_call.id,
+                        },
+                        None => StreamCompletionResp::ResponseToken(delta.content),
+                    }
+                }
+            };
+        }
+        if let Some(reasoning) = delta.reasoning {
+            return StreamCompletionResp::ReasoningToken(reasoning);
+        }
+        return StreamCompletionResp::ResponseToken(delta.content);
+    }
+
+    fn handle_data(&mut self, data: &str) -> Result<StreamCompletionResp> {
+        // this approach made it compatible with both openrouter and openai
+        if let Ok(resp) = serde_json::from_str::<raw::CompletionInfoResp>(data) {
+            return Ok(StreamCompletionResp::Usage {
+                price: resp.usage.cost,
+                // cloak model may return null for total_tokens
+                token: resp.usage.total_tokens.map(|x| x as usize).unwrap_or(0),
+            });
+        }
+
+        let resp = serde_json::from_str::<raw::CompletionResp>(data).context("Parse error")?;
+
+        let choice = resp
+            .choices
+            .into_iter()
+            .next()
+            .ok_or(anyhow!("No returned choices in completion"))?;
+
+        Ok(self.handle_choice(choice))
+    }
+
+    pub async fn next(&mut self) -> Option<Result<StreamCompletionResp>> {
+        loop {
+            match self.source.next().await? {
+                Ok(Event::Open) => continue,
+                Ok(Event::Message(e)) if &e.data != "[DONE]" => {
+                    return Some(self.handle_data(&e.data));
+                }
+                Err(e) => match e {
+                    reqwest_eventsource::Error::StreamEnded => return None,
+                    e => return Some(Err(anyhow!("{e}"))),
+                },
+                _ => return None,
+            }
+        }
+    }
+}
+
+pub enum StreamCompletionResp {
+    ReasoningToken(String),
+    ResponseToken(String),
+    ToolCall {
+        name: String,
+        args: String,
+        id: String,
+    },
+    ToolToken(String),
+    Usage {
+        price: f64,
+        token: usize,
+    },
+}

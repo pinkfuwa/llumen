@@ -1,10 +1,12 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use dotenv::var;
-use futures_util::StreamExt;
 use reqwest::Client;
-use reqwest_eventsource::{Event, EventSource};
 
 use super::raw;
+use super::stream::StreamCompletion;
+
+static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
+static X_TITLE: &str = "llumen";
 
 pub struct Openrouter {
     api_key: String,
@@ -22,13 +24,13 @@ impl Openrouter {
             chat_completion_endpoint,
         }
     }
-    pub fn complete(
+    pub fn stream(
         &self,
         messages: Vec<Message>,
         model: String,
         tools: Vec<Tool>,
-    ) -> impl std::future::Future<Output = Result<Completion>> {
-        Completion::request(
+    ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
+        StreamCompletion::request(
             messages,
             model,
             &self.api_key,
@@ -36,120 +38,61 @@ impl Openrouter {
             tools,
         )
     }
-}
-
-pub struct Completion {
-    source: EventSource,
-}
-
-impl Completion {
-    async fn request(
-        messages: Vec<Message>,
-        model: String,
-        api_key: &str,
-        endpoint: &str,
-        tools: Vec<Tool>,
-    ) -> Result<Completion> {
-        let tools = match tools.is_empty() {
-            true => None,
-            false => Some(tools.into_iter().map(|t| t.into()).collect()),
-        };
-
+    pub async fn complete(&self, messages: Vec<Message>, model: String) -> Result<ChatCompletion> {
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
             model,
-            tools,
             ..Default::default()
         };
 
-        let builder = Client::new().post(endpoint).bearer_auth(api_key).json(&req);
+        let res = Client::new()
+            .post(&self.chat_completion_endpoint)
+            .bearer_auth(&self.api_key)
+            .header("HTTP-Referer", HTTP_REFERER)
+            .header("X-Title", X_TITLE)
+            .json(&req)
+            .send()
+            .await
+            .context("Failed to build request")?;
 
-        let source = EventSource::new(builder)?;
+        let json = res
+            .json::<raw::CompletionResponse>()
+            .await
+            .context("Failed to parse response")?;
 
-        Ok(Self { source })
-    }
-
-    pub fn close(&mut self) {
-        self.source.close();
-    }
-
-    fn handle_choice(&mut self, choice: raw::Choice) -> CompletionResp {
-        let delta = choice.delta;
-
-        if let Some(reason) = choice.finish_reason {
-            return match reason {
-                raw::FinishReason::Stop => CompletionResp::ResponseToken(delta.content),
-                raw::FinishReason::Length => CompletionResp::ResponseToken(delta.content),
-                raw::FinishReason::ToolCalls => {
-                    let tool_calls = delta.tool_calls.map(|x| x.into_iter().next()).flatten();
-                    match tool_calls {
-                        Some(tool_call) => CompletionResp::ToolCall {
-                            name: tool_call.function.name,
-                            args: tool_call.function.arguments,
-                            id: tool_call.id,
-                        },
-                        None => CompletionResp::ResponseToken(delta.content),
-                    }
-                }
-            };
-        }
-        if let Some(reasoning) = delta.reasoning {
-            return CompletionResp::ReasoningToken(reasoning);
-        }
-        return CompletionResp::ResponseToken(delta.content);
-    }
-
-    fn handle_data(&mut self, data: &str) -> Result<CompletionResp> {
-        // this approach made it compatible with both openrouter and openai
-        if let Ok(resp) = serde_json::from_str::<raw::CompletionInfoResp>(data) {
-            return Ok(CompletionResp::Usage {
-                price: resp.usage.cost,
-                // cloak model may return null for total_tokens
-                token: resp.usage.total_tokens.map(|x| x as usize).unwrap_or(0),
-            });
-        }
-
-        let resp = serde_json::from_str::<raw::CompletionResp>(data).context("Parse error")?;
-
-        let choice = resp
-            .choices
+        let text = json
+            .output
             .into_iter()
-            .next()
-            .ok_or(anyhow!("No returned choices in completion"))?;
+            .map(|msg| {
+                msg.content
+                    .into_iter()
+                    .filter_map(|part| {
+                        if let Some(kind) = part.r#type {
+                            if kind.contains("text") {
+                                return part.text;
+                            }
+                        }
+                        None
+                    })
+                    .collect::<Vec<_>>()
+                    .join("")
+            })
+            .collect::<Vec<_>>()
+            .join("");
 
-        Ok(self.handle_choice(choice))
-    }
-
-    pub async fn next(&mut self) -> Option<Result<CompletionResp>> {
-        loop {
-            match self.source.next().await? {
-                Ok(Event::Open) => continue,
-                Ok(Event::Message(e)) if &e.data != "[DONE]" => {
-                    return Some(self.handle_data(&e.data));
-                }
-                Err(e) => match e {
-                    reqwest_eventsource::Error::StreamEnded => return None,
-                    e => return Some(Err(anyhow!("{e}"))),
-                },
-                _ => return None,
-            }
-        }
+        // TODO: calculate price and token usage
+        Ok(ChatCompletion {
+            price: 0.0,
+            token: 0,
+            response: text,
+        })
     }
 }
 
-pub enum CompletionResp {
-    ReasoningToken(String),
-    ResponseToken(String),
-    ToolCall {
-        name: String,
-        args: String,
-        id: String,
-    },
-    ToolToken(String),
-    Usage {
-        price: f64,
-        token: usize,
-    },
+pub struct ChatCompletion {
+    pub price: f64,
+    pub token: usize,
+    pub response: String,
 }
 
 pub struct File {
