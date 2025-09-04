@@ -10,7 +10,7 @@ mod utils;
 
 use std::sync::Arc;
 
-use crate::prompts::PromptEnv;
+use crate::{openrouter::Openrouter, prompts::PromptEnv, tools::ToolStore};
 use anyhow::Context;
 use axum::{Router, middleware};
 use dotenv::var;
@@ -33,7 +33,8 @@ pub struct AppState {
     pub sse: SseContext,
     pub prompt: PromptEnv,
     pub hasher: Hasher,
-    pub openrouter: openrouter::Openrouter,
+    pub openrouter: Openrouter,
+    pub tools: ToolStore,
 }
 
 #[tokio::main]
@@ -70,7 +71,8 @@ async fn main() {
 
     let sse = SseContext::new(conn.clone());
     let prompt = PromptEnv::new(conn.clone());
-    let openrouter = openrouter::Openrouter::new();
+    let openrouter = Openrouter::new();
+    let tools = ToolStore::new();
 
     let state = Arc::new(AppState {
         conn,
@@ -79,9 +81,11 @@ async fn main() {
         hasher: Hasher::default(),
         openrouter,
         prompt,
+        tools,
     });
 
-    let app = Router::new()
+    let var_name = Router::new();
+    let app = var_name
         .nest(
             "/api",
             Router::new()
