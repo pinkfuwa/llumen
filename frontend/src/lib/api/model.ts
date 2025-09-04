@@ -16,7 +16,9 @@ import type {
 	ModelCheckResp,
 	ModelCheckReq,
 	ModelCreateReq,
-	ModelCreateResp
+	ModelCreateResp,
+	ModelWriteReq,
+	ModelWriteResp
 } from './types';
 
 export enum Mode {
@@ -76,6 +78,23 @@ export function createModel(): CreateMutationResult<ModelCreateReq, ModelCreateR
 				key: ['models'],
 				updater: (x) => {
 					if (x != undefined) x.list = [data, ...x.list];
+					return x;
+				}
+			});
+		}
+	});
+}
+
+export function updateModel(): CreateMutationResult<ModelWriteReq, ModelWriteResp> {
+	return CreateMutation({
+		path: 'model/write',
+		onSuccess(data, param) {
+			SetQueryData<ModelListResp>({
+				key: ['models'],
+				updater: (x) => {
+					const model = x?.list.find((u) => u.id === param.id);
+					if (model) model.display_name = data.display_name;
+
 					return x;
 				}
 			});
