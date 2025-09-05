@@ -12,6 +12,14 @@ pub struct CompletionReq {
     pub messages: Vec<Message>,
     pub stream: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repeat_penalty: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub top_k: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub top_p: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<Tool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plugins: Option<Vec<Plugin>>,
@@ -24,6 +32,10 @@ impl Default for CompletionReq {
             messages: vec![],
             stream: true,
             tools: None,
+            temperature: None,
+            repeat_penalty: None,
+            top_k: None,
+            top_p: None,
             plugins: Some(vec![Plugin {
                 id: "file-parser".to_string(),
                 pdf: PdfPlugin {

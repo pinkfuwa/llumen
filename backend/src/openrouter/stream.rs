@@ -3,7 +3,6 @@ use futures_util::StreamExt;
 use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
 
-use super::completion;
 use super::{HTTP_REFERER, X_TITLE, raw};
 
 pub struct StreamCompletion {
