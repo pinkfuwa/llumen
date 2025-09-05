@@ -19,27 +19,23 @@
 	{#each $data as msg}
 		{#if msg.role == MessagePaginateRespRole.User}
 			<User content={msg.text} />
-		{:else if msg.role == MessagePaginateRespRole.Assistant}
+		{:else if msg.role == MessagePaginateRespRole.Assistant && msg.text.length != 0}
 			<ResponseBox>
-				{#if msg.text.length == 0}
-					<ResponseError />
-				{:else}
-					<!--
-					{#each msg.parts as part}
-						{#if part.role == MessagePaginateRespPartRole.Response}
-							<Root source={part.text} />
-						{:else if part.role == MessagePaginateRespPartRole.Reasoning}
-							<Reasoning content={part.text} />
-						{:else if part.role == MessagePaginateRespPartRole.Reasoning}
-							<Tool content={part.text} />
-						{/if}
-					{/each}
-					<ResponseEdit />
-					-->
+				<!--
+				{#each msg.parts as part}
+					{#if part.role == MessagePaginateRespPartRole.Response}
+						<Root source={part.text} />
+					{:else if part.role == MessagePaginateRespPartRole.Reasoning}
+						<Reasoning content={part.text} />
+					{:else if part.role == MessagePaginateRespPartRole.Reasoning}
+						<Tool content={part.text} />
+					{/if}
+				{/each}
+				<ResponseEdit />
+				-->
 
-					<Root source={msg.text} />
-					<ResponseEdit />
-				{/if}
+				<Root source={msg.text} />
+				<ResponseEdit />
 			</ResponseBox>
 		{/if}
 	{:else}

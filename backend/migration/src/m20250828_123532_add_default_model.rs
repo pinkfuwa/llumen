@@ -1,7 +1,7 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
 static DEFAULT_MODEL_CONFIG: &str =
-    "openrouter_id=\"openai/gpt-oss-20b:free\"\ndisplay_name=\"GPT-OSS 20B\"";
+    "model_id=\"openai/gpt-oss-20b:free\"\ndisplay_name=\"GPT-OSS 20B\"";
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;

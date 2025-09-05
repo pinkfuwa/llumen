@@ -8,6 +8,15 @@ use super::stream::StreamCompletion;
 static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
 
+#[derive(Clone, Default)]
+pub struct Model {
+    pub id: String,
+    pub temperature: Option<f32>,
+    pub repeat_penalty: Option<f32>,
+    pub top_k: Option<i32>,
+    pub top_p: Option<f32>,
+}
+
 pub struct Openrouter {
     api_key: String,
     chat_completion_endpoint: String,
@@ -35,7 +44,7 @@ impl Openrouter {
     pub fn stream(
         &self,
         messages: Vec<Message>,
-        model: String,
+        model: Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
         let tools = match tools.is_empty() {
@@ -45,17 +54,25 @@ impl Openrouter {
 
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model,
+            model: model.id,
+            temperature: model.temperature,
+            repeat_penalty: model.repeat_penalty,
+            top_k: model.top_k,
+            top_p: model.top_p,
             tools,
             ..self.default_req.clone()
         };
 
         StreamCompletion::request(&self.api_key, &self.chat_completion_endpoint, req)
     }
-    pub async fn complete(&self, messages: Vec<Message>, model: String) -> Result<ChatCompletion> {
+    pub async fn complete(&self, messages: Vec<Message>, model: Model) -> Result<ChatCompletion> {
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model,
+            model: model.id,
+            temperature: model.temperature,
+            repeat_penalty: model.repeat_penalty,
+            top_k: model.top_k,
+            top_p: model.top_p,
             ..self.default_req.clone()
         };
 
