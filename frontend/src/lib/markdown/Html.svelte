@@ -2,4 +2,4 @@
 	let { text } = $props();
 </script>
 
-{@html text}
+{text}
