@@ -5,4 +5,5 @@ pub use super::config::Entity as Config;
 pub use super::file::Entity as File;
 pub use super::message::Entity as Message;
 pub use super::model::Entity as Model;
+pub use super::tool::Entity as Tool;
 pub use super::user::Entity as User;

@@ -7,4 +7,5 @@ pub mod config;
 pub mod file;
 pub mod message;
 pub mod model;
+pub mod tool;
 pub mod user;

@@ -9,7 +9,7 @@ pub struct Model {
     pub id: i32,
     pub name: String,
     pub password: String,
-    pub preference: crate::patch::UserPreference,
+    pub preference: crate::UserPreference,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
