@@ -106,7 +106,7 @@ export const defaultModelConfig = [
 	'display_name="GPT-OSS 20B"',
 	'# From https://openrouter.ai/models',
 	'# don\'t put "online" suffix.',
-	'openrouter_id="openai/gpt-oss-20b:free"',
+	'model_id="openai/gpt-oss-20b:free"',
 	'',
 	'[capability]',
 	'# allow user to upload image, the model need to support it',

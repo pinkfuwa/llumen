@@ -174,7 +174,7 @@ export interface ModelCheckResp {
 
 export interface ModelConfig {
 	display_name: string;
-	openrouter_id: string;
+	model_id: string;
 	capability?: ModelCapability;
 }
 

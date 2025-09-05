@@ -3,7 +3,6 @@ use futures_util::StreamExt;
 use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
 
-use super::completion;
 use super::{HTTP_REFERER, X_TITLE, raw};
 
 pub struct StreamCompletion {
@@ -71,7 +70,6 @@ impl StreamCompletion {
             });
         }
 
-        dbg!(data);
         let resp = serde_json::from_str::<raw::CompletionResp>(data).context("Parse error")?;
 
         let choice = resp
