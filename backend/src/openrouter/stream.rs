@@ -1,5 +1,4 @@
 use anyhow::{Context, Result, anyhow};
-use dotenv::var;
 use futures_util::StreamExt;
 use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
@@ -13,24 +12,10 @@ pub struct StreamCompletion {
 
 impl StreamCompletion {
     pub(super) async fn request(
-        messages: Vec<completion::Message>,
-        model: String,
         api_key: &str,
         endpoint: &str,
-        tools: Vec<completion::Tool>,
+        req: raw::CompletionReq,
     ) -> Result<StreamCompletion> {
-        let tools = match tools.is_empty() {
-            true => None,
-            false => Some(tools.into_iter().map(|t| t.into()).collect()),
-        };
-
-        let req = raw::CompletionReq {
-            messages: messages.into_iter().map(|m| m.into()).collect(),
-            model,
-            tools,
-            ..Default::default()
-        };
-
         let builder = Client::new()
             .post(endpoint)
             .bearer_auth(api_key)
@@ -50,10 +35,16 @@ impl StreamCompletion {
     fn handle_choice(&mut self, choice: raw::Choice) -> StreamCompletionResp {
         let delta = choice.delta;
 
+        let content = delta.content.unwrap_or("".to_string());
+
+        if let Some(reasoning) = delta.reasoning {
+            return StreamCompletionResp::ReasoningToken(reasoning);
+        }
+
         if let Some(reason) = choice.finish_reason {
             return match reason {
-                raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(delta.content),
-                raw::FinishReason::Length => StreamCompletionResp::ResponseToken(delta.content),
+                raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
+                raw::FinishReason::Length => StreamCompletionResp::ResponseToken(content),
                 raw::FinishReason::ToolCalls => {
                     let tool_calls = delta.tool_calls.map(|x| x.into_iter().next()).flatten();
                     match tool_calls {
@@ -62,15 +53,12 @@ impl StreamCompletion {
                             args: tool_call.function.arguments,
                             id: tool_call.id,
                         },
-                        None => StreamCompletionResp::ResponseToken(delta.content),
+                        None => StreamCompletionResp::ResponseToken(content),
                     }
                 }
             };
         }
-        if let Some(reasoning) = delta.reasoning {
-            return StreamCompletionResp::ReasoningToken(reasoning);
-        }
-        return StreamCompletionResp::ResponseToken(delta.content);
+        return StreamCompletionResp::ResponseToken(content);
     }
 
     fn handle_data(&mut self, data: &str) -> Result<StreamCompletionResp> {
@@ -83,6 +71,7 @@ impl StreamCompletion {
             });
         }
 
+        dbg!(data);
         let resp = serde_json::from_str::<raw::CompletionResp>(data).context("Parse error")?;
 
         let choice = resp
