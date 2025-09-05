@@ -17,14 +17,15 @@
           buildInputs = [
             cargo
             rustc
-            rustfmt
             rustPackages.clippy
-
             pnpm
-            just
-
             pkg-config
             openssl
+          ];
+          nativeBuildInputs = [
+            rustfmt
+            just
+            nushell
             sea-orm-cli
             typeshare
           ];
