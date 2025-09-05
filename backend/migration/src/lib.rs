@@ -4,6 +4,7 @@ use sea_orm_migration::sea_orm::Database;
 mod m20250724_144358_create_tables;
 mod m20250824_044739_add_user_config;
 mod m20250828_123532_add_default_model;
+mod m20250905_055820_tools;
 
 pub struct Migrator;
 
@@ -14,6 +15,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250724_144358_create_tables::Migration),
             Box::new(m20250824_044739_add_user_config::Migration),
             Box::new(m20250828_123532_add_default_model::Migration),
+            Box::new(m20250905_055820_tools::Migration),
         ]
     }
 }
