@@ -34,7 +34,7 @@ const blocktokens = [
 	'blockKatex'
 ];
 
-const mininalFlush = 10;
+const flushThreshold = 9;
 
 export class MarkdownPatcher {
 	updater: UIUpdater;
@@ -44,12 +44,24 @@ export class MarkdownPatcher {
 	constructor(updater: UIUpdater) {
 		this.updater = updater;
 	}
+	get flushWeight(): number {
+		let weight = 0;
+		for (let i = 0; i < this.buffer.length; i++) {
+			const code = this.buffer.charCodeAt(i);
+			if (code >= 0x4e00 && code <= 0x9fa5)
+				weight += 4; // Chinese char
+			else if (code < 128)
+				weight += 1; // English char
+			else weight += 2; // Other unicode char
+		}
+		return weight;
+	}
 	feed(data: string) {
 		this.buffer += data;
 		this.content += data;
 		this.lastFlush += data.length;
 
-		if (this.lastFlush < mininalFlush) return;
+		if (this.flushWeight < flushThreshold) return;
 		else this.lastFlush = 0;
 
 		const tokens = marked.lexer(this.buffer);
