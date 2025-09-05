@@ -1,5 +1,4 @@
 use anyhow::{Context, Result, anyhow};
-use dotenv::var;
 use futures_util::StreamExt;
 use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
@@ -13,24 +12,10 @@ pub struct StreamCompletion {
 
 impl StreamCompletion {
     pub(super) async fn request(
-        messages: Vec<completion::Message>,
-        model: String,
         api_key: &str,
         endpoint: &str,
-        tools: Vec<completion::Tool>,
+        req: raw::CompletionReq,
     ) -> Result<StreamCompletion> {
-        let tools = match tools.is_empty() {
-            true => None,
-            false => Some(tools.into_iter().map(|t| t.into()).collect()),
-        };
-
-        let req = raw::CompletionReq {
-            messages: messages.into_iter().map(|m| m.into()).collect(),
-            model,
-            tools,
-            ..Default::default()
-        };
-
         let builder = Client::new()
             .post(endpoint)
             .bearer_auth(api_key)
