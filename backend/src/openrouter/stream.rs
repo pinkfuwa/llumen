@@ -71,7 +71,6 @@ impl StreamCompletion {
             });
         }
 
-        dbg!(data);
         let resp = serde_json::from_str::<raw::CompletionResp>(data).context("Parse error")?;
 
         let choice = resp

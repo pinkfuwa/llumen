@@ -57,7 +57,7 @@ pub struct ModelCapability {
 #[typeshare]
 pub struct ModelConfig {
     pub display_name: String,
-    pub openrouter_id: String,
+    pub model_id: String,
     #[serde(default)]
     pub capability: ModelCapability,
 }
