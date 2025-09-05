@@ -3,10 +3,10 @@ use std::sync::Arc;
 use axum::{Json, extract::State};
 use pasetors::{
     Local,
-    claims::Claims,
+    claims::{Claims, ClaimsValidationRules},
     local,
     token::UntrustedToken,
-    version4::{LocalToken, V4},
+    version4::V4,
 };
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -32,8 +32,8 @@ pub async fn route(
 ) -> JsonResult<RenewResp> {
     let token = UntrustedToken::<Local, V4>::try_from(&token).kind(ErrorKind::MalformedRequest)?;
 
-    let token =
-        LocalToken::decrypt(&app.key, &token, None, None).kind(ErrorKind::MalformedRequest)?;
+    let token = local::decrypt(&app.key, &token, &ClaimsValidationRules::new(), None, None)
+        .kind(ErrorKind::MalformedRequest)?;
     let claim = token
         .payload_claims()
         .map(|x| x.get_claim("uid").map(|x| x.as_u64()))
