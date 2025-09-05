@@ -21,7 +21,7 @@ use sea_orm::{Database, DbConn, EntityTrait};
 use sse::SseContext;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 use utils::password_hash::Hasher;
 
 #[cfg(feature = "dev")]
@@ -45,6 +45,7 @@ async fn main() {
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
     let static_dir = var("STATIC_DIR").unwrap_or("../frontend/build".to_owned());
+    let index_html = format!("{}/index.html", static_dir);
 
     migration::migrate(&database_url)
         .await
@@ -100,11 +101,17 @@ async fn main() {
                 .nest("/auth", routes::auth::routes()),
         )
         .fallback_service(
-            ServiceBuilder::new().service(
-                ServeDir::new(static_dir)
-                    .precompressed_gzip()
-                    .precompressed_br(),
-            ),
+            ServiceBuilder::new()
+                .service(
+                    ServeDir::new(static_dir)
+                        .precompressed_gzip()
+                        .precompressed_br(),
+                )
+                .not_found_service(
+                    ServeFile::new(index_html)
+                        .precompressed_br()
+                        .precompressed_gzip(),
+                ),
         )
         .with_state(state);
 
