@@ -19,7 +19,7 @@
 	{#each $data as msg}
 		{#if msg.role == MessagePaginateRespRole.User}
 			<User content={msg.text} />
-		{:else if msg.role == MessagePaginateRespRole.Assistant}
+		{:else if msg.role == MessagePaginateRespRole.Assistant && msg.text.length != 0}
 			<ResponseBox>
 				<!--
 				{#each msg.parts as part}
