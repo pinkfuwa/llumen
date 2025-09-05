@@ -181,6 +181,30 @@ pub struct ToolCallReq {
     pub r#type: String,
 }
 
+// {
+//   "id": "chatcmpl-CjtmYdmuJano4dBCuhmkDcUg4RAFqFQv",
+//   "choices": [
+//     {
+//       "delta": {
+//         "content": "<think>",
+//         "function_call": null,
+//         "refusal": null,
+//         "role": null,
+//         "tool_calls": null
+//       },
+//       "finish_reason": null,
+//       "index": 0,
+//       "logprobs": null
+//     }
+//   ],
+//   "created": 1757088030,
+//   "model": "Qwen3-4B-GGUF",
+//   "object": "chat.completion.chunk",
+//   "service_tier": null,
+//   "system_fingerprint": "b6097-9515c613",
+//   "usage": null
+// }
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct CompletionResp {
     pub id: String,
@@ -231,8 +255,8 @@ pub struct Choice {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Delta {
-    pub role: Role,
-    pub content: String,
+    pub role: Option<Role>,
+    pub content: Option<String>,
     pub reasoning: Option<String>,
     pub tool_calls: Option<Vec<ToolCall>>,
 }

@@ -35,10 +35,16 @@ impl StreamCompletion {
     fn handle_choice(&mut self, choice: raw::Choice) -> StreamCompletionResp {
         let delta = choice.delta;
 
+        let content = delta.content.unwrap_or("".to_string());
+
+        if let Some(reasoning) = delta.reasoning {
+            return StreamCompletionResp::ReasoningToken(reasoning);
+        }
+
         if let Some(reason) = choice.finish_reason {
             return match reason {
-                raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(delta.content),
-                raw::FinishReason::Length => StreamCompletionResp::ResponseToken(delta.content),
+                raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
+                raw::FinishReason::Length => StreamCompletionResp::ResponseToken(content),
                 raw::FinishReason::ToolCalls => {
                     let tool_calls = delta.tool_calls.map(|x| x.into_iter().next()).flatten();
                     match tool_calls {
@@ -47,15 +53,12 @@ impl StreamCompletion {
                             args: tool_call.function.arguments,
                             id: tool_call.id,
                         },
-                        None => StreamCompletionResp::ResponseToken(delta.content),
+                        None => StreamCompletionResp::ResponseToken(content),
                     }
                 }
             };
         }
-        if let Some(reasoning) = delta.reasoning {
-            return StreamCompletionResp::ReasoningToken(reasoning);
-        }
-        return StreamCompletionResp::ResponseToken(delta.content);
+        return StreamCompletionResp::ResponseToken(content);
     }
 
     fn handle_data(&mut self, data: &str) -> Result<StreamCompletionResp> {
@@ -68,6 +71,7 @@ impl StreamCompletion {
             });
         }
 
+        dbg!(data);
         let resp = serde_json::from_str::<raw::CompletionResp>(data).context("Parse error")?;
 
         let choice = resp
