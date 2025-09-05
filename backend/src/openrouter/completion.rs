@@ -11,6 +11,7 @@ static X_TITLE: &str = "llumen";
 pub struct Openrouter {
     api_key: String,
     chat_completion_endpoint: String,
+    default_req: raw::CompletionReq,
 }
 
 impl Openrouter {
@@ -19,9 +20,16 @@ impl Openrouter {
         let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/".to_string());
         let chat_completion_endpoint =
             format!("{}/api/v1/chat/completions", api_base.trim_end_matches('/'));
+        let mut default_req = raw::CompletionReq::default();
+
+        if !api_base.contains("openrouter") {
+            default_req.plugins = None;
+        }
+
         Self {
             api_key,
             chat_completion_endpoint,
+            default_req,
         }
     }
     pub fn stream(
@@ -30,19 +38,25 @@ impl Openrouter {
         model: String,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
-        StreamCompletion::request(
-            messages,
+        let tools = match tools.is_empty() {
+            true => None,
+            false => Some(tools.into_iter().map(|t| t.into()).collect()),
+        };
+
+        let req = raw::CompletionReq {
+            messages: messages.into_iter().map(|m| m.into()).collect(),
             model,
-            &self.api_key,
-            &self.chat_completion_endpoint,
             tools,
-        )
+            ..self.default_req.clone()
+        };
+
+        StreamCompletion::request(&self.api_key, &self.chat_completion_endpoint, req)
     }
     pub async fn complete(&self, messages: Vec<Message>, model: String) -> Result<ChatCompletion> {
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
             model,
-            ..Default::default()
+            ..self.default_req.clone()
         };
 
         let res = Client::new()
