@@ -52,7 +52,7 @@ pub async fn route(
         .get_config()
         .context("")
         .kind(ErrorKind::Internal)?
-        .openrouter_id;
+        .model_id;
 
     let mut puber = app
         .sse
