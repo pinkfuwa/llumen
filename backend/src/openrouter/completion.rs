@@ -55,6 +55,10 @@ impl Openrouter {
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
             model: model.id,
+            temperature: model.temperature,
+            repeat_penalty: model.repeat_penalty,
+            top_k: model.top_k,
+            top_p: model.top_p,
             tools,
             ..self.default_req.clone()
         };
@@ -65,6 +69,10 @@ impl Openrouter {
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
             model: model.id,
+            temperature: model.temperature,
+            repeat_penalty: model.repeat_penalty,
+            top_k: model.top_k,
+            top_p: model.top_p,
             ..self.default_req.clone()
         };
 
