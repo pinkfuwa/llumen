@@ -4,7 +4,7 @@ use anyhow::Context;
 use axum::{Extension, Json, extract::State};
 use entity::{message, patch::MessageKind, prelude::*};
 use migration::Expr;
-use sea_orm::{EntityOrSelect, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{EntityOrSelect, EntityTrait, QueryFilter, QueryOrder};
 use serde::{Deserialize, Serialize};
 use tokio::select;
 use typeshare::typeshare;
@@ -51,8 +51,7 @@ pub async fn route(
         .kind(ErrorKind::Internal)?
         .get_config()
         .context("")
-        .kind(ErrorKind::Internal)?
-        .model_id;
+        .kind(ErrorKind::Internal)?;
 
     let mut puber = app
         .sse
@@ -88,7 +87,10 @@ pub async fn route(
 
     puber.new_stream(PublisherKind::Assistant).await;
     tokio::spawn(async move {
-        let res = app.openrouter.stream(messages, model, Vec::default()).await;
+        let res = app
+            .openrouter
+            .stream(messages, model.into(), Vec::default())
+            .await;
 
         let mut completion = match res {
             Ok(v) => v,
