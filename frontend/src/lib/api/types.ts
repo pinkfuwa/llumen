@@ -172,10 +172,18 @@ export interface ModelCheckResp {
 	reason?: string;
 }
 
+export interface ModelParameter {
+	temperature?: number;
+	repeat_penalty?: number;
+	top_k?: number;
+	top_p?: number;
+}
+
 export interface ModelConfig {
 	display_name: string;
 	model_id: string;
 	capability?: ModelCapability;
+	parameter?: ModelParameter;
 }
 
 export interface ModelCreateReq {
@@ -238,8 +246,15 @@ export interface SseReq {
 	id: number;
 }
 
+export enum SseRespEndKind {
+	Complete = 'complete',
+	Halt = 'halt',
+	Error = 'error'
+}
+
 export interface SseRespEnd {
 	id: number;
+	kind: SseRespEndKind;
 }
 
 export interface SseRespLast {
@@ -321,12 +336,18 @@ export type MessagePaginateReq =
 	| { t: 'range'; c: MessagePaginateReqRange };
 
 /**
- * When connect, the respond will be `Last -> [[Token] -> Enc -> UserMessage]`
- * When update the message, the respond will be `Last -> UserMessage(updated) -> [[Token] -> Enc -> UserMessage]`
+ * `{Stream Message}` will be `Start -> [Token] -> {Stream End}`
+ *
+ * `{Stream End}` will be `End -> Error` if `End.kind == error`, otherwise `End`
+ *
+ * When connect, the respond will be `Last -> [{Stream Message} -> UserMessage]`
+ *
+ * When update the message, the respond will be `Last -> UserMessage(updated) -> [{Stream Message} -> UserMessage]`
  */
 export type SseResp =
 	/**
 	 * When connect to SSE, the first respond will be this
+	 *
 	 * Use this to get old message
 	 */
 	| { t: 'last'; c: SseRespLast }

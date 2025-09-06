@@ -42,31 +42,13 @@ impl Subscriber {
             Entry::Occupied(entry) => {
                 let inner = entry.get().read().await;
 
-                let (st, offset) = match inner.db_id {
-                    // Completing
-                    Some(id) if id == inner.last_id => {
-                        let st = stream::iter([
-                            Ok(Token::Last(inner.last_id, inner.version)),
-                            Ok(Token::Token(inner.buffer.clone())),
-                        ])
-                        .left_stream();
-
-                        (st, inner.buffer.len())
-                    }
-                    // Already end
-                    _ => {
-                        let st = stream::iter([Ok(Token::Last(inner.last_id, inner.version))])
-                            .right_stream();
-
-                        (st, 0)
-                    }
-                };
+                let st = stream::iter([Ok(Token::Last(inner.last_id, inner.version))]);
 
                 let state = State {
                     inner: entry.get().clone(),
                     on_receive: inner.on_receive.clone(),
                     channel: inner.channel.subscribe(),
-                    offset,
+                    offset: 0,
                 };
                 (state, st)
             }
@@ -75,8 +57,7 @@ impl Subscriber {
                 let on_receive = inner.on_receive.clone();
                 let channel = inner.channel.subscribe();
 
-                let st =
-                    stream::iter([Ok(Token::Last(inner.last_id, inner.version))]).right_stream();
+                let st = stream::iter([Ok(Token::Last(inner.last_id, inner.version))]);
                 let inner = entry.insert(Arc::new(RwLock::new(inner))).clone();
 
                 let state = State {
