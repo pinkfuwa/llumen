@@ -30,16 +30,17 @@ pub async fn route(
 
     match model::Model::check_config(&config) {
         Ok(cfg) => {
-            Model::insert(model::ActiveModel {
+            let id = Model::insert(model::ActiveModel {
                 config: Set(config),
                 ..Default::default()
             })
             .exec(&app.conn)
             .await
-            .kind(ErrorKind::Internal)?;
+            .kind(ErrorKind::Internal)?
+            .last_insert_id;
 
             Ok(Json(ModelCreateResp {
-                id: 0,
+                id,
                 display_name: cfg.display_name,
             }))
         }
