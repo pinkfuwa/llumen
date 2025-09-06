@@ -21,6 +21,7 @@
             pnpm
             pkg-config
             openssl
+            nodejs-slim
           ];
           nativeBuildInputs = [
             rustfmt
