@@ -33,7 +33,7 @@ pub async fn route(
         .one(&app.conn)
         .await
         .kind(ErrorKind::Internal)?
-        .context("")
+        .context("The request chat is not exists")
         .kind(ErrorKind::ResourceNotFound)?;
 
     if chat.owner_id != user_id {
@@ -47,10 +47,10 @@ pub async fn route(
         .one(&app.conn)
         .await
         .kind(ErrorKind::Internal)?
-        .context("")
+        .context("Malformde database")
         .kind(ErrorKind::Internal)?
         .get_config()
-        .context("")
+        .context("Malformed model config")
         .kind(ErrorKind::Internal)?;
 
     let mut puber = app
@@ -85,32 +85,18 @@ pub async fn route(
         })
         .collect();
 
+    let mut completion = app
+        .openrouter
+        .stream(messages, model.into(), Vec::default())
+        .await
+        .kind(ErrorKind::ApiFail)?;
     puber.new_stream(PublisherKind::Assistant).await;
     tokio::spawn(async move {
-        let res = app
-            .openrouter
-            .stream(messages, model.into(), Vec::default())
-            .await;
-
-        let mut completion = match res {
-            Ok(v) => v,
-            Err(e) => {
-                puber.raw_token(Err(Error {
-                    error: ErrorKind::ApiFail,
-                    reason: e.to_string(),
-                }));
-                puber.close().await;
-
-                return;
-            }
-        };
-
         loop {
             select! {
                 _ = puber.on_halt() => {
-                    puber.close().await;
-                    completion.close();
-                    return;
+                    puber.halt_stream().await;
+                    break;
                 }
 
                 token = completion.next() => {
@@ -119,26 +105,26 @@ pub async fn route(
                             puber.token(&t).await;
                         }
                         Some(Err(e)) => {
-                            puber.raw_token(Err(Error {
+                            puber.close_stream_with_error(Error {
                                 error: ErrorKind::ApiFail,
                                 reason: e.to_string(),
-                            }));
+                            }).await;
 
-                            puber.close().await;
-                            completion.close();
-                            return;
+                            break;
                         }
                         Some(_)=> {
                             continue;
                         }
                         None => {
-                            puber.close().await;
-                            return;
+                            puber.close_stream().await;
+
+                            break;
                         }
                     }
                 }
             }
         }
+        completion.close();
     });
 
     Ok(Json(MessageCreateResp { id: msg_id }))
