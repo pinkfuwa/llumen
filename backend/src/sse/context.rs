@@ -23,7 +23,7 @@ pub struct SseContext {
 pub struct SseInner {
     /// Last message id
     /// Default to last message id in DB
-    /// for pagination
+    /// for pagination and update message
     pub last_id: i32,
 
     /// A random version
@@ -33,7 +33,6 @@ pub struct SseInner {
     /// `on_receive` will notify when buffer/id change
     pub on_receive: Arc<Notify>,
     pub buffer: String,
-    pub db_id: Option<i32>,
 
     /// Extra token
     pub channel: broadcast::Sender<Result<Token, Error>>,
@@ -58,7 +57,6 @@ impl SseInner {
             on_receive: Arc::new(Notify::new()),
             on_halt: Arc::new(Notify::new()),
             channel: broadcast::channel(MAX_SSE_BUF).0,
-            db_id: None,
         })
     }
 }
@@ -94,6 +92,14 @@ pub enum Token {
     // id, version
     Last(i32, u32),
     Token(String),
+
+    /// End token
     End(i32),
+    Halt(i32),
+    Error(i32),
+
+    /// Extra token
     User(i32, String),
+    /// name, state
+    Tool(&'static str, String),
 }

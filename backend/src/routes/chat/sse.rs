@@ -25,10 +25,16 @@ pub struct SseReq {
 #[derive(Debug, Serialize)]
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
-/// When connect, the respond will be `Last -> [[Token] -> Enc -> UserMessage]`
-/// When update the message, the respond will be `Last -> UserMessage(updated) -> [[Token] -> Enc -> UserMessage]`
+/// `{Stream Message}` will be `Start -> [Token] -> {Stream End}`
+///
+/// `{Stream End}` will be `End -> Error` if `End.kind == error`, otherwise `End`
+///
+/// When connect, the respond will be `Last -> [{Stream Message} -> UserMessage]`
+///
+/// When update the message, the respond will be `Last -> UserMessage(updated) -> [{Stream Message} -> UserMessage]`
 pub enum SseResp {
     /// When connect to SSE, the first respond will be this
+    ///
     /// Use this to get old message
     Last(SseRespLast),
 
@@ -51,14 +57,24 @@ pub struct SseRespLast {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespEnd {
-    pub id: i32,
+pub struct SseRespToken {
+    pub text: String,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespToken {
-    pub text: String,
+pub struct SseRespEnd {
+    pub id: i32,
+    pub kind: SseRespEndKind,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+#[serde(rename_all = "snake_case")]
+pub enum SseRespEndKind {
+    Complete,
+    Halt,
+    Error,
 }
 
 #[derive(Debug, Serialize)]
@@ -97,8 +113,24 @@ pub async fn route(
             x.map(|v| match v {
                 Token::Last(id, version) => SseResp::Last(SseRespLast { id, version }),
                 Token::Token(text) => SseResp::Token(SseRespToken { text }),
-                Token::End(id) => SseResp::End(SseRespEnd { id }),
+
+                // end token
+                Token::End(id) => SseResp::End(SseRespEnd {
+                    id,
+                    kind: SseRespEndKind::Complete,
+                }),
+                Token::Halt(id) => SseResp::End(SseRespEnd {
+                    id,
+                    kind: SseRespEndKind::Halt,
+                }),
+                Token::Error(id) => SseResp::End(SseRespEnd {
+                    id,
+                    kind: SseRespEndKind::Error,
+                }),
+
+                // extra token
                 Token::User(id, text) => SseResp::UserMessage(SseRespUserMessage { id, text }),
+                Token::Tool(_, _) => todo!(),
             })
         })
         .map(|x| Event::default().json_data(JsonUnion::from(x)));

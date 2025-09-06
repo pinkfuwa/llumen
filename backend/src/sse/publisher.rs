@@ -51,24 +51,34 @@ impl Publisher {
         self.raw_token(Ok(Token::User(res.last_insert_id, t)));
         Ok(res.last_insert_id)
     }
-    pub fn raw_token(&self, t: Result<Token, Error>) {
+
+    pub async fn close_stream(self) {
+        self.raw_close(Ok(Token::End(self.chat_id))).await;
+    }
+
+    pub async fn halt_stream(self) {
+        self.raw_close(Ok(Token::Halt(self.chat_id))).await;
+    }
+
+    pub async fn close_stream_with_error(self, e: Error) {
+        self.raw_close(Ok(Token::Error(self.chat_id))).await;
+        self.raw_token(Err(e));
+    }
+
+    pub fn error(&self, e: Error) {
+        self.raw_token(Err(e));
+    }
+
+    fn raw_token(&self, t: Result<Token, Error>) {
         self.channel.send(t).ok();
     }
 
-    pub async fn close(self) {
+    async fn raw_close(&self, end_token: Result<Token, Error>) {
         let mut inner = self.inner.write().await;
-        let Some(id) = inner.db_id else {
-            drop(inner);
-            self.raw_token(Err(Error {
-                error: ErrorKind::Internal,
-                reason: "Publisher is in a undefine state".to_owned(),
-            }));
 
-            return;
-        };
         let text = inner.buffer.clone();
         let res = Message::update(message::ActiveModel {
-            id: Set(id),
+            id: Set(inner.last_id),
             text: Set(Some(text)),
             ..Default::default()
         })
@@ -84,8 +94,8 @@ impl Publisher {
             return;
         }
         inner.last_id += 1;
-        self.raw_token(Ok(Token::End(id)));
 
+        self.raw_token(end_token);
         inner.on_receive.notify_waiters();
     }
 
@@ -117,7 +127,6 @@ impl Publisher {
         };
 
         inner.buffer.clear();
-        inner.db_id = Some(db_id);
         inner.last_id = db_id;
     }
 
