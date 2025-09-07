@@ -15,7 +15,7 @@
 
 {#if !type}
 	{#each tokens as token}
-		<Parser {...token} {renderers} />
+		<Parser {...token} {renderers} {monochrome} />
 	{/each}
 {:else if renderers[type]}
 	{#if type === 'table'}
