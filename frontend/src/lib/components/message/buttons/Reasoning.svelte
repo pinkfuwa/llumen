@@ -1,19 +1,12 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
-	import type { TokensList } from 'marked';
-	import Parser from '$lib/markdown/Parser.svelte';
-
-	const { list }: { list: TokensList[] } = $props();
-
-	let reasoningContent = $derived(
-		list
-			.slice(0, 3)
-			.flat()
-			.map((x) => x.raw)
-			.join('')
-	);
+	const { content }: { content: string } = $props();
 
 	let showReasoning = $state(false);
+
+	let lines = $derived(content.split('\n'));
+
+	let contentTruncated = $derived(content.replaceAll('\n', ' '));
 </script>
 
 <button
@@ -23,11 +16,13 @@
 >
 	{#if showReasoning}
 		<div>
-			<Parser tokens={list} monochrome />
+			{#each lines as line}
+				<p>{line}</p>
+			{/each}
 		</div>
 	{:else}
 		<div class="max-w-80 truncate text-outline" in:slide={{ duration: 180, axis: 'y' }}>
-			Reasoning:&nbsp;{reasoningContent.replaceAll('\n', '&nbsp;&nbsp;')}
+			Reasoning:&nbsp;{contentTruncated}
 		</div>
 	{/if}
 </button>
