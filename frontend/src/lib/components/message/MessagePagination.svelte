@@ -30,7 +30,7 @@
 	});
 </script>
 
-{#if tokensList.length != 0}
+{#if isStreaming}
 	<MessageStream list={tokensList} />
 {/if}
 
