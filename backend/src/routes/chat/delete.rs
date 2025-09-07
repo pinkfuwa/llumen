@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
+use entity::chat;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -23,5 +25,13 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<ChatDeleteReq>,
 ) -> JsonResult<ChatDeleteResp> {
-    todo!()
+    let result = chat::Entity::delete_by_id(req.id)
+        .filter(chat::Column::OwnerId.eq(user_id))
+        .exec(&app.conn)
+        .await
+        .kind(ErrorKind::Internal)?;
+
+    let deleted = result.rows_affected > 0;
+
+    Ok(Json(ChatDeleteResp { deleted }))
 }
