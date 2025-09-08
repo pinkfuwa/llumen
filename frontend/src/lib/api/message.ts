@@ -121,6 +121,8 @@ export function handleServerSideMessage(chatId: number, streamingUI: UIUpdater) 
 			patcher.reset();
 		},
 		user_message(data) {
+			streamingUI.tick();
+
 			// RemoveInfiniteQueryData<MessagePaginateRespList>({
 			// 	key: ['messagePaginate', chatId.toString()],
 			// 	predicate(entry) {

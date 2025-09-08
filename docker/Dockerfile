@@ -12,8 +12,9 @@ RUN pnpm run build
 
 FROM rust:1.89.0-slim-trixie AS backend-builder
 
+# Install gcc-aarch64-linux-gnu even if not cross compiling(reuse docker build cache from x86)
 RUN apt update -y \
-    && apt install musl-tools pkg-config make perl -y
+    && apt install -y musl-tools pkg-config make perl gcc-aarch64-linux-gnu
 
 RUN --mount=type=cache,target=~/.cargo/bin/
 RUN --mount=type=cache,target=~/.cargo/registry/index/

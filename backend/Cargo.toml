@@ -55,4 +55,4 @@ features = ["macros", "rt-multi-thread", "sync"]
 
 [dependencies.sea-orm]
 version = "1.1.14"
-features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"]
+features = ["sqlx-sqlite", "runtime-tokio", "macros"]
