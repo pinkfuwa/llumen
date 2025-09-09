@@ -39,7 +39,7 @@ pub struct AppState {
     pub tools: ToolStore,
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     dotenv::dotenv().ok();
 
