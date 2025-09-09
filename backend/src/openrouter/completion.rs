@@ -15,6 +15,7 @@ pub struct Model {
     pub repeat_penalty: Option<f32>,
     pub top_k: Option<i32>,
     pub top_p: Option<f32>,
+    pub online: bool,
 }
 
 pub struct Openrouter {
@@ -55,9 +56,11 @@ impl Openrouter {
             false => Some(tools.into_iter().map(|t| t.into()).collect()),
         };
 
+        let model_suffix = if model.online { ":online" } else { "" };
+
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.id,
+            model: model.id.to_string() + model_suffix,
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
@@ -71,9 +74,14 @@ impl Openrouter {
     pub async fn complete(&self, messages: Vec<Message>, model: Model) -> Result<ChatCompletion> {
         tracing::info!(target: "completion", model=&model.id);
 
+        if model.online {
+            tracing::warn!(target: "completion", "Online models should not be used in non-streaming completions.");
+        }
+        let model_suffix = if model.online { ":online" } else { "" };
+
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.id,
+            model: model.id + model_suffix,
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
