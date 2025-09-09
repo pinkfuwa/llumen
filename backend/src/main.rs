@@ -22,6 +22,8 @@ use sse::SseContext;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
+use tracing::Level;
+use tracing_subscriber::{filter, layer::SubscriberExt, util::SubscriberInitExt};
 use utils::password_hash::Hasher;
 
 #[cfg(feature = "dev")]
@@ -40,7 +42,13 @@ pub struct AppState {
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    tracing_subscriber::fmt::init();
+
+    let filter = filter::Targets::new().with_target("backend", Level::TRACE);
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(filter)
+        .init();
 
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
