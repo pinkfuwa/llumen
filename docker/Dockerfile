@@ -1,3 +1,5 @@
+# support cross compiling only on x86_64 host
+# you should manifest resulting image for both x86_64 and aarch64(incorrect
 FROM node:22-slim AS frontend-builder
 
 ENV PNPM_HOME="/pnpm"
@@ -12,9 +14,13 @@ RUN pnpm run build
 
 FROM rust:1.89.0-slim-trixie AS backend-builder
 
-# Install gcc-aarch64-linux-gnu even if not cross compiling(reuse docker build cache from x86)
 RUN apt update -y \
-    && apt install -y musl-tools pkg-config make perl gcc-aarch64-linux-gnu
+    && apt install -y musl-tools pkg-config make perl curl xz-utils
+
+# Install aarch64-linux-musl-gcc even if not cross compiling(reuse docker build cache from x86)
+WORKDIR /opt/aarch64-linux-musl-cross
+RUN curl -L https://musl.cc/aarch64-linux-musl-cross.tgz | tar -xz -C /opt/aarch64-linux-musl-cross --strip-components=1
+ENV PATH=/opt/aarch64-linux-musl-cross/bin:$PATH
 
 RUN --mount=type=cache,target=~/.cargo/bin/
 RUN --mount=type=cache,target=~/.cargo/registry/index/
@@ -22,6 +28,8 @@ RUN --mount=type=cache,target=~/.cargo/registry/cache/
 RUN --mount=type=cache,target=~/.cargo/git/db/
 
 ARG ARCH=x86_64
+
+WORKDIR /
 
 RUN rustup target add ${ARCH}-unknown-linux-musl
 
