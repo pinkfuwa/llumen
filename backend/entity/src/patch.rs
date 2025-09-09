@@ -2,14 +2,21 @@ use sea_orm::{DeriveActiveEnum, FromJsonQueryResult, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-/// need patch `Message::Kind`
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum MessageKind {
-    User = 0,
-    Assistant = 1,
-    Reasoning = 2,
-    System = 3,
+    System = 0,
+    User = 1,
+    Assistant = 2,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(rs_type = "i32", db_type = "Integer")]
+pub enum ChunkKind {
+    Text = 0,
+    Reasoning = 1,
+    ToolCall = 2,
+    ToolResult = 3,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]

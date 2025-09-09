@@ -1,22 +1,14 @@
 pub use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::Database;
 
-mod m20250724_144358_create_tables;
-mod m20250824_044739_add_user_config;
-mod m20250828_123532_add_default_model;
-mod m20250905_055820_tools;
+mod m20250908_082005_create_table;
 
 pub struct Migrator;
 
 #[async_trait::async_trait]
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-        vec![
-            Box::new(m20250724_144358_create_tables::Migration),
-            Box::new(m20250824_044739_add_user_config::Migration),
-            Box::new(m20250828_123532_add_default_model::Migration),
-            Box::new(m20250905_055820_tools::Migration),
-        ]
+        vec![Box::new(m20250908_082005_create_table::Migration)]
     }
 }
 

@@ -1,5 +1,7 @@
 use sea_orm_migration::{prelude::*, schema::*};
 
+use super::entity::*;
+
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
@@ -9,28 +11,22 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Tool::Table)
                     .if_not_exists()
-                    .col(integer(Tool::ChatId))
-                    .col(string(Tool::FunctionName))
-                    .col(string(Tool::State))
-                    .primary_key(Index::create().col(Tool::ChatId).col(Tool::FunctionName))
+                    .table(Model::Table)
+                    .col(pk_auto(Model::Id))
+                    .col(string(Model::Config))
                     .to_owned(),
             )
-            .await
+            .await?;
+
+        Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Tool::Table).to_owned())
-            .await
-    }
-}
+            .drop_table(Table::drop().table(Model::Table).to_owned())
+            .await?;
 
-#[derive(DeriveIden)]
-enum Tool {
-    Table,
-    ChatId,
-    FunctionName,
-    State,
+        Ok(())
+    }
 }
