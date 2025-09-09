@@ -32,6 +32,7 @@ impl Openrouter {
         let mut default_req = raw::CompletionReq::default();
 
         if !api_base.contains("openrouter") {
+            tracing::warn!(target: "openrouter","Custom API_BASE detected, disabling plugin support");
             default_req.plugins = None;
         }
 
@@ -47,6 +48,8 @@ impl Openrouter {
         model: Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
+        tracing::info!(target: "stream_completion", model=&model.id);
+
         let tools = match tools.is_empty() {
             true => None,
             false => Some(tools.into_iter().map(|t| t.into()).collect()),
@@ -66,6 +69,8 @@ impl Openrouter {
         StreamCompletion::request(&self.api_key, &self.chat_completion_endpoint, req)
     }
     pub async fn complete(&self, messages: Vec<Message>, model: Model) -> Result<ChatCompletion> {
+        tracing::info!(target: "completion", model=&model.id);
+
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
             model: model.id,
@@ -84,6 +89,10 @@ impl Openrouter {
             .json(&req)
             .send()
             .await
+            .map_err(|err| {
+                tracing::warn!(target: "completion", "openrouter finish with error: {}", &err);
+                err
+            })
             .context("Failed to build request")?;
 
         let json = res

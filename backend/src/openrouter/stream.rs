@@ -22,9 +22,13 @@ impl StreamCompletion {
             .header("X-Title", X_TITLE)
             .json(&req);
 
-        let source = EventSource::new(builder)?;
-
-        Ok(Self { source })
+        match EventSource::new(builder) {
+            Ok(source) => Ok(Self { source }),
+            Err(e) => {
+                tracing::error!(target: "stream_completion", "Failed to create event source: {}", e);
+                Err(anyhow!("Failed to create event source: {}", e))
+            }
+        }
     }
 
     pub fn close(&mut self) {
@@ -40,6 +44,7 @@ impl StreamCompletion {
             return StreamCompletionResp::ReasoningToken(reasoning);
         }
 
+        tracing::trace!(target: "stream_completion", "Received token: {}", content);
         if let Some(reason) = choice.finish_reason {
             return match reason {
                 raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
@@ -89,8 +94,14 @@ impl StreamCompletion {
                     return Some(self.handle_data(&e.data));
                 }
                 Err(e) => match e {
-                    reqwest_eventsource::Error::StreamEnded => return None,
-                    e => return Some(Err(anyhow!("{e}"))),
+                    reqwest_eventsource::Error::StreamEnded => {
+                        tracing::debug!(target: "stream_completion", "Stream ended");
+                        return None;
+                    }
+                    e => {
+                        tracing::error!(target: "stream_completion", "Stream error: {}", e);
+                        return Some(Err(anyhow!("{e}")));
+                    }
                 },
                 _ => return None,
             }
