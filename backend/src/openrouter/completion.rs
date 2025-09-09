@@ -49,7 +49,7 @@ impl Openrouter {
         model: Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
-        tracing::info!("start completion with model {}", &model.id);
+        tracing::info!("start streaming with model {}", &model.id);
 
         let tools = match tools.is_empty() {
             true => None,

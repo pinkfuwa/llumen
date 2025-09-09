@@ -1,4 +1,4 @@
-use sea_orm_migration::{prelude::*, schema::*};
+use sea_orm_migration::prelude::*;
 
 static DEFAULT_MODEL_CONFIG: &str =
     "model_id=\"openai/gpt-oss-20b:free\"\ndisplay_name=\"GPT-OSS 20B\"";
@@ -17,7 +17,7 @@ impl MigrationTrait for Migration {
         manager.exec_stmt(default_model).await
     }
 
-    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+    async fn down(&self, _: &SchemaManager) -> Result<(), DbErr> {
         Ok(())
     }
 }
