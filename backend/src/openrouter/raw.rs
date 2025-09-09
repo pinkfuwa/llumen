@@ -46,6 +46,17 @@ impl Default for CompletionReq {
     }
 }
 
+impl CompletionReq {
+    pub fn log(&self) {
+        if let Ok(req) = serde_json::to_string_pretty(&self) {
+            tracing::debug!(
+                "completion requst:\n===============\n{}\n===============",
+                req
+            );
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Plugin {
     pub id: String,

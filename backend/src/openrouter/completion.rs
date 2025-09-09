@@ -69,6 +69,8 @@ impl Openrouter {
             ..self.default_req.clone()
         };
 
+        req.log();
+
         StreamCompletion::request(&self.api_key, &self.chat_completion_endpoint, req)
     }
     pub async fn complete(&self, messages: Vec<Message>, model: Model) -> Result<ChatCompletion> {
@@ -88,6 +90,8 @@ impl Openrouter {
             top_p: model.top_p,
             ..self.default_req.clone()
         };
+
+        req.log();
 
         let res = Client::new()
             .post(&self.chat_completion_endpoint)
