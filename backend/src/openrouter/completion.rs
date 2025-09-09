@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use dotenv::var;
-use reqwest::Client;
 
 use super::raw;
 use super::stream::StreamCompletion;
@@ -22,6 +21,7 @@ pub struct Openrouter {
     api_key: String,
     chat_completion_endpoint: String,
     default_req: raw::CompletionReq,
+    http_client: reqwest::Client,
 }
 
 impl Openrouter {
@@ -41,6 +41,7 @@ impl Openrouter {
             api_key,
             chat_completion_endpoint,
             default_req,
+            http_client: reqwest::Client::new(),
         }
     }
     pub fn stream(
@@ -71,7 +72,12 @@ impl Openrouter {
 
         req.log();
 
-        StreamCompletion::request(&self.api_key, &self.chat_completion_endpoint, req)
+        StreamCompletion::request(
+            &self.http_client,
+            &self.api_key,
+            &self.chat_completion_endpoint,
+            req,
+        )
     }
     pub async fn complete(&self, messages: Vec<Message>, model: Model) -> Result<ChatCompletion> {
         tracing::info!("start completion with model {}", &model.id);
@@ -93,7 +99,8 @@ impl Openrouter {
 
         req.log();
 
-        let res = Client::new()
+        let res = self
+            .http_client
             .post(&self.chat_completion_endpoint)
             .bearer_auth(&self.api_key)
             .header("HTTP-Referer", HTTP_REFERER)

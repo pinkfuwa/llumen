@@ -11,11 +11,12 @@ pub struct StreamCompletion {
 
 impl StreamCompletion {
     pub(super) async fn request(
+        http_client: &Client,
         api_key: &str,
         endpoint: &str,
         req: raw::CompletionReq,
     ) -> Result<StreamCompletion> {
-        let builder = Client::new()
+        let builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
             .header("HTTP-Referer", HTTP_REFERER)

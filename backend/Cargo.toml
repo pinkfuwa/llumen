@@ -49,7 +49,7 @@ features = ["cors", "fs"]
 [dependencies.reqwest]
 version = "0.12.22"
 default-features = false
-features = ["json", "native-tls-vendored", "charset", "http2", "hickory-dns"]
+features = ["json", "native-tls-vendored", "charset", "http2"]
 
 [dependencies.serde]
 version = "1.0.219"
@@ -57,7 +57,7 @@ features = ["derive"]
 
 [dependencies.tokio]
 version = "1.46.1"
-features = ["macros", "rt-multi-thread", "sync"]
+features = ["macros", "rt", "sync"]
 
 [dependencies.sea-orm]
 version = "1.1.14"
