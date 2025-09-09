@@ -46,6 +46,8 @@ RUN cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknow
     cp target/aarch64-unknown-linux-musl/release/backend /app/linux/arm64 && \
     cp target/x86_64-unknown-linux-musl/release/backend /app/linux/amd64
 
+FROM alpine AS ca
+
 FROM scratch
 
 ARG TARGETPLATFORM
@@ -54,6 +56,7 @@ WORKDIR /static
 WORKDIR /data
 WORKDIR /
 
+COPY --from=ca /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=frontend-builder /app/build /static
 COPY --from=backend-builder /app/${TARGETPLATFORM} /backend
 
