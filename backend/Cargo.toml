@@ -7,6 +7,9 @@ edition = "2024"
 default = []
 dev = []
 
+[profile.release]
+opt-level = "s"
+lto = true
 
 [workspace]
 members = [".", "entity", "migration"]
