@@ -100,7 +100,7 @@ impl StreamCompletion {
                     }
                     e => {
                         tracing::error!("Stream error: {}", e);
-                        return Some(Err(anyhow!("{e}")));
+                        return Some(Err(e.into()));
                     }
                 },
                 _ => return None,

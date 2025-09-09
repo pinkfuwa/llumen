@@ -43,17 +43,14 @@ pub struct AppState {
 async fn main() {
     dotenv::dotenv().ok();
 
-    let filter = filter::Targets::new().with_target("backend", Level::TRACE);
-
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
-        .with(filter)
+        .with(filter::Targets::new().with_target("backend", Level::TRACE))
         .init();
 
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
     let static_dir = var("STATIC_DIR").unwrap_or("../frontend/build".to_owned());
-    let index_html = format!("{}/index.html", static_dir);
 
     migration::migrate(&database_url)
         .await
@@ -111,12 +108,12 @@ async fn main() {
         .fallback_service(
             ServiceBuilder::new()
                 .service(
-                    ServeDir::new(static_dir)
+                    ServeDir::new(static_dir.to_owned())
                         .precompressed_gzip()
                         .precompressed_br(),
                 )
                 .not_found_service(
-                    ServeFile::new(index_html)
+                    ServeFile::new(format!("{}/index.html", static_dir))
                         .precompressed_br()
                         .precompressed_gzip(),
                 ),
