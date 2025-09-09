@@ -46,7 +46,7 @@ features = ["cors", "fs"]
 [dependencies.reqwest]
 version = "0.12.22"
 default-features = false
-features = ["json", "native-tls-vendored", "charset", "http2"]
+features = ["json", "native-tls-vendored", "charset", "http2", "hickory-dns"]
 
 [dependencies.serde]
 version = "1.0.219"
