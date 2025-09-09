@@ -33,7 +33,7 @@ impl Openrouter {
         let mut default_req = raw::CompletionReq::default();
 
         if !api_base.contains("openrouter") {
-            tracing::warn!(target: "openrouter","Custom API_BASE detected, disabling plugin support");
+            tracing::warn!("Custom API_BASE detected, disabling plugin support");
             default_req.plugins = None;
         }
 
@@ -49,7 +49,7 @@ impl Openrouter {
         model: Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
-        tracing::info!(target: "stream_completion", model=&model.id);
+        tracing::info!("start completion with model {}", &model.id);
 
         let tools = match tools.is_empty() {
             true => None,
@@ -72,10 +72,10 @@ impl Openrouter {
         StreamCompletion::request(&self.api_key, &self.chat_completion_endpoint, req)
     }
     pub async fn complete(&self, messages: Vec<Message>, model: Model) -> Result<ChatCompletion> {
-        tracing::info!(target: "completion", model=&model.id);
+        tracing::info!("start completion with model {}", &model.id);
 
         if model.online {
-            tracing::warn!(target: "completion", "Online models should not be used in non-streaming completions.");
+            tracing::warn!("Online models should not be used in non-streaming completions.");
         }
         let model_suffix = if model.online { ":online" } else { "" };
 
@@ -98,7 +98,7 @@ impl Openrouter {
             .send()
             .await
             .map_err(|err| {
-                tracing::warn!(target: "completion", "openrouter finish with error: {}", &err);
+                tracing::warn!("openrouter finish with error: {}", &err);
                 err
             })
             .context("Failed to build request")?;

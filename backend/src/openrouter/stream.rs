@@ -25,7 +25,7 @@ impl StreamCompletion {
         match EventSource::new(builder) {
             Ok(source) => Ok(Self { source }),
             Err(e) => {
-                tracing::error!(target: "stream_completion", "Failed to create event source: {}", e);
+                tracing::error!("Failed to create event source: {}", e);
                 Err(anyhow!("Failed to create event source: {}", e))
             }
         }
@@ -44,7 +44,7 @@ impl StreamCompletion {
             return StreamCompletionResp::ReasoningToken(reasoning);
         }
 
-        tracing::trace!(target: "stream_completion", "Received token: {}", content);
+        tracing::trace!("Received token: {}", content);
         if let Some(reason) = choice.finish_reason {
             return match reason {
                 raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
@@ -95,11 +95,11 @@ impl StreamCompletion {
                 }
                 Err(e) => match e {
                     reqwest_eventsource::Error::StreamEnded => {
-                        tracing::debug!(target: "stream_completion", "Stream ended");
+                        tracing::debug!("Stream ended");
                         return None;
                     }
                     e => {
-                        tracing::error!(target: "stream_completion", "Stream error: {}", e);
+                        tracing::error!("Stream error: {}", e);
                         return Some(Err(anyhow!("{e}")));
                     }
                 },
