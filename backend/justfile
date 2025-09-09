@@ -22,3 +22,4 @@ gen-entity:
     sea-orm-cli generate entity -u sqlite://db.sqlite -o entity/src/entities
     open "entity/src/entities/user.rs" | str replace "preference: String" "preference: crate::UserPreference" | save "entity/src/entities/user.rs" -f
     open "entity/src/entities/message.rs" | str replace "kind: i32" "kind: crate::MessageKind" | save "entity/src/entities/message.rs" -f
+    open "entity/src/entities/chunk.rs" | str replace "kind: i32" "kind: crate::ChunkKind" | save "entity/src/entities/chunk.rs" -f

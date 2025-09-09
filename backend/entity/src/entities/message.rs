@@ -8,7 +8,6 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub chat_id: i32,
-    pub text: Option<String>,
     pub kind: crate::MessageKind,
 }
 
@@ -22,8 +21,8 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Chat,
-    #[sea_orm(has_many = "super::file::Entity")]
-    File,
+    #[sea_orm(has_many = "super::chunk::Entity")]
+    Chunk,
 }
 
 impl Related<super::chat::Entity> for Entity {
@@ -32,9 +31,9 @@ impl Related<super::chat::Entity> for Entity {
     }
 }
 
-impl Related<super::file::Entity> for Entity {
+impl Related<super::chunk::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::File.def()
+        Relation::Chunk.def()
     }
 }
 
