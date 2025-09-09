@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Brain } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
 	const { content }: { content: string } = $props();
 
@@ -11,18 +12,20 @@
 
 <button
 	onclick={() => (showReasoning = !showReasoning)}
-	class="w-full text-left"
-	in:slide={{ duration: 180, axis: 'y' }}
+	class="w-full border-l-6 border-primary py-1 pl-4 text-left"
 >
+	<div class="flex items-center">
+		<Brain class="mr-2" /> Reasoning{#if !showReasoning}...{/if}
+	</div>
 	{#if showReasoning}
-		<div>
+		<div
+			class="mt-1"
+			in:slide={{ duration: 180, axis: 'y' }}
+			out:slide={{ duration: 180, axis: 'y' }}
+		>
 			{#each lines as line}
 				<p>{line}</p>
 			{/each}
-		</div>
-	{:else}
-		<div class="max-w-80 truncate text-outline" in:slide={{ duration: 180, axis: 'y' }}>
-			Reasoning:&nbsp;{contentTruncated}
 		</div>
 	{/if}
 </button>

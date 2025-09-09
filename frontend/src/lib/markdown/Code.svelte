@@ -4,7 +4,7 @@
 	import { isLightTheme } from '$lib/preference';
 	import { copy } from '$lib/copy';
 
-	let { lang, text, monochrome = false } = $props();
+	let { lang, text, monochrome = false, copiable = true } = $props();
 
 	let themeStyle = $isLightTheme
 		? 'background-color:#fff;color:#24292e'
@@ -15,7 +15,7 @@
 <div class="group/codeblock relative">
 	{#if text.split('\n').length > 1}
 		<button
-			class="absolute top-0 right-0 z-10 m-1 hidden group-hover/codeblock:block"
+			class="absolute top-0 right-0 z-10 m-1 hidden {copiable ? 'group-hover/codeblock:block' : ''}"
 			onclick={() => copy(text)}
 		>
 			<ClipboardCopy class="h-10 w-10 rounded-md bg-primary p-2 hover:bg-hover" />
