@@ -36,45 +36,11 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest
 
-      - name: Build and push AMD64 image
+      - name: Build image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
-          platforms: linux/amd64
+          platforms: "linux/amd64,linux/arm64"
           push: true
-          tags: ghcr.io/pinkfuwa/llumen:amd64
-          build-args: |
-            ARCH=x86_64
-
-      - name: Build and push ARM64 image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          platforms: linux/arm64
-          push: true
-          tags: ghcr.io/pinkfuwa/llumen:arm64
-          build-args: |
-            ARCH=aarch64
-
-      - name: Get Digests
-        id: digests
-        run: |
-          IMAGE=ghcr.io/pinkfuwa/llumen
-
-          DIGEST_AMD64=$(docker buildx imagetools inspect ${IMAGE}:amd64 --format '{{json .Manifest.Digest}}' | tr -d '"')
-          DIGEST_ARM64=$(docker buildx imagetools inspect ${IMAGE}:arm64 --format '{{json .Manifest.Digest}}' | tr -d '"')
-
-          echo "amd64_digest=${DIGEST_AMD64}" >> "$GITHUB_OUTPUT"
-          echo "arm64_digest=${DIGEST_ARM64}" >> "$GITHUB_OUTPUT"
-
-      - name: Create and Push Manifest
-        run: |
-          IMAGE=ghcr.io/pinkfuwa/llumen
-
-          docker manifest create ${IMAGE}:latest \
-            ${IMAGE}@${{ steps.digests.outputs.amd64_digest }} \
-            ${IMAGE}@${{ steps.digests.outputs.arm64_digest }}
-
-          docker manifest push ${IMAGE}:latest
+          tags: ghcr.io/pinkfuwa/llumen:latest

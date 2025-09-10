@@ -33,14 +33,12 @@
 
 	<div class="flex grow flex-col">
 		<input
-			type="text"
-			id="password"
+			type="password"
 			class="mb-1 rounded-md border border-outline p-1"
 			bind:value={password}
 		/>
 		<input
-			type="text"
-			id="password"
+			type="password"
 			class="rounded-md border border-outline p-1"
 			bind:value={passwordCheck}
 		/>

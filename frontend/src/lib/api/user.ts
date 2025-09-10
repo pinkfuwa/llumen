@@ -33,8 +33,17 @@ export function useUsers(): QueryResult<UserListResp> {
 export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp> {
 	return CreateMutation({
 		onSuccess(data, param) {
-			// SetQueryData({ key: ['users'], updater: (list) => list });
-			// TODO: update user query
+			SetQueryData<UserListResp>({
+				key: ['users'],
+				updater: (list) => {
+					if (list != undefined)
+						list.list.unshift({
+							id: data.user_id,
+							name: param.username
+						});
+					return list;
+				}
+			});
 		},
 		path: 'user/create'
 	});

@@ -2,10 +2,8 @@ use std::sync::Arc;
 
 use axum::{
     Json,
-    extract::{FromRequestParts, Request, State},
+    extract::FromRequestParts,
     http::{header, request::Parts},
-    middleware::Next,
-    response::Response,
 };
 use pasetors::{Local, claims::ClaimsValidationRules, local, token::UntrustedToken, version4::V4};
 

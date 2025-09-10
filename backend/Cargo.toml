@@ -7,6 +7,9 @@ edition = "2024"
 default = []
 dev = []
 
+[profile.release]
+opt-level = "s"
+lto = true
 
 [workspace]
 members = [".", "entity", "migration"]
@@ -23,7 +26,6 @@ anyhow = "1.0.98"
 futures-util = "0.3.31"
 reqwest-eventsource = "0.6.0"
 toml = "0.9.4"
-tracing = "0.1"
 tracing-subscriber = "0.3"
 rust-argon2 = "3.0.0"
 tower = "0.5.2"
@@ -32,6 +34,10 @@ fastrand = "2.3.0"
 minijinja = "2.12.0"
 base64 = "0.22.1"
 schemars = "1.0.4"
+
+[dependencies.tracing]
+version = "0.1"
+features = ["release_max_level_debug"]
 
 [dependencies.time]
 version = "0.3.41"
@@ -51,8 +57,8 @@ features = ["derive"]
 
 [dependencies.tokio]
 version = "1.46.1"
-features = ["macros", "rt-multi-thread", "sync"]
+features = ["macros", "rt", "sync"]
 
 [dependencies.sea-orm]
 version = "1.1.14"
-features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"]
+features = ["sqlx-sqlite", "runtime-tokio", "macros"]

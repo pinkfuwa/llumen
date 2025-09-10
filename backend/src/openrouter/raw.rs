@@ -46,6 +46,17 @@ impl Default for CompletionReq {
     }
 }
 
+impl CompletionReq {
+    pub fn log(&self) {
+        if let Ok(req) = serde_json::to_string_pretty(&self) {
+            tracing::debug!(
+                "completion requst:\n===============\n{}\n===============",
+                req
+            );
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Plugin {
     pub id: String,
@@ -151,7 +162,7 @@ impl MessagePart {
             r#type: MultiPartMessageType::File,
             file: Some(InputFile {
                 filename,
-                file_data: base64::encode(file_data),
+                file_data: STANDARD.encode(file_data),
             }),
             ..Default::default()
         }
@@ -161,7 +172,7 @@ impl MessagePart {
         Self {
             r#type: MultiPartMessageType::InputAudio,
             input_audio: Some(InputAudio {
-                data: base64::encode(data),
+                data: STANDARD.encode(data),
                 format,
             }),
             ..Default::default()
@@ -192,30 +203,6 @@ pub struct ToolCallReq {
     pub function: ToolFunctionResp,
     pub r#type: String,
 }
-
-// {
-//   "id": "chatcmpl-CjtmYdmuJano4dBCuhmkDcUg4RAFqFQv",
-//   "choices": [
-//     {
-//       "delta": {
-//         "content": "<think>",
-//         "function_call": null,
-//         "refusal": null,
-//         "role": null,
-//         "tool_calls": null
-//       },
-//       "finish_reason": null,
-//       "index": 0,
-//       "logprobs": null
-//     }
-//   ],
-//   "created": 1757088030,
-//   "model": "Qwen3-4B-GGUF",
-//   "object": "chat.completion.chunk",
-//   "service_tier": null,
-//   "system_fingerprint": "b6097-9515c613",
-//   "usage": null
-// }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CompletionResp {

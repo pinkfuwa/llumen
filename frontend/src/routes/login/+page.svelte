@@ -42,13 +42,13 @@
 <svelte:head>
 	<title>{$_('login.title')}</title>
 </svelte:head>
-<div class="flex h-screen flex-col items-center justify-center">
-	<div class="mb-3 bg-gradient-to-r from-dark to-blue-600 bg-clip-text text-4xl text-transparent">
+<main class="flex h-screen flex-col items-center justify-center">
+	<h2 class="mb-3 bg-gradient-to-r from-dark to-blue-600 bg-clip-text text-4xl text-transparent">
 		{$_('login.welcome')}
-	</div>
-	<div class="text-md mb-3 font-serif">
+	</h2>
+	<p class="text-md mb-3 font-serif">
 		{$_('login.description')}
-	</div>
+	</p>
 	<div class="min-w-lg items-center rounded-lg p-6">
 		<form
 			class="flex flex-col items-center justify-center text-xl"
@@ -62,6 +62,7 @@
 				<input
 					type="text"
 					placeholder="admin"
+					id="username"
 					class="login mb-2 grow border-b border-outline pb-2"
 					bind:value={username}
 					required
@@ -74,6 +75,7 @@
 				<input
 					type="password"
 					placeholder="P@88w0rd"
+					id="password"
 					class="login mb-2 grow border-b border-outline pb-2"
 					bind:value={password!}
 					required
@@ -95,7 +97,7 @@
 			</TiltBtn>
 		</form>
 	</div>
-</div>
+</main>
 
 <style>
 	input.login:focus-visible {
