@@ -14,7 +14,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .table(Chunk::Table)
                     .col(pk_auto(Chunk::Id))
-                    .col(string_null(Chunk::Content))
+                    .col(string(Chunk::Content))
                     .col(integer(Chunk::Kind))
                     .col(integer(Chunk::MessageId))
                     .foreign_key(
