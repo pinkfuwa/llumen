@@ -131,23 +131,29 @@ pub struct File {
     data: Vec<u8>,
 }
 
+pub struct MessageToolCall {
+    pub id: String,
+    pub name: String,
+    pub arguments: String,
+}
+
+pub struct MessageToolResult {
+    pub id: String,
+    pub content: String,
+}
+
+pub struct MessageMultipartUser {
+    pub text: String,
+    pub files: Vec<File>,
+}
+
 pub enum Message {
     System(String),
     User(String),
     Assistant(String),
-    MultipartUser {
-        text: String,
-        files: Vec<File>,
-    },
-    ToolRequest {
-        id: String,
-        name: String,
-        arguments: String,
-    },
-    ToolResult {
-        id: String,
-        content: String,
-    },
+    MultipartUser(MessageMultipartUser),
+    ToolCall(MessageToolCall),
+    ToolResult(MessageToolResult),
 }
 
 impl From<Message> for raw::Message {
@@ -168,7 +174,7 @@ impl From<Message> for raw::Message {
                 content: Some(msg),
                 ..Default::default()
             },
-            Message::MultipartUser { text, files } => {
+            Message::MultipartUser(MessageMultipartUser { text, files }) => {
                 let files = files
                     .into_iter()
                     .map(|f| {
@@ -188,11 +194,11 @@ impl From<Message> for raw::Message {
                     ..Default::default()
                 }
             }
-            Message::ToolRequest {
+            Message::ToolCall(MessageToolCall {
                 id,
                 name,
                 arguments,
-            } => raw::Message {
+            }) => raw::Message {
                 role: raw::Role::Tool,
                 tool_calls: Some(vec![raw::ToolCallReq {
                     id,
@@ -201,7 +207,7 @@ impl From<Message> for raw::Message {
                 }]),
                 ..Default::default()
             },
-            Message::ToolResult { id, content } => raw::Message {
+            Message::ToolResult(MessageToolResult { id, content }) => raw::Message {
                 role: raw::Role::Tool,
                 content: Some(content),
                 tool_call_id: Some(id),
