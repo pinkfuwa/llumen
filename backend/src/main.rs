@@ -15,6 +15,7 @@ use anyhow::Context;
 use axum::{Router, middleware};
 use dotenv::var;
 use entity::prelude::*;
+use middlewares::cache_control::CacheControlLayer;
 use migration::MigratorTrait;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};
@@ -106,17 +107,16 @@ async fn main() {
                 .nest("/auth", routes::auth::routes()),
         )
         .fallback_service(
-            ServiceBuilder::new()
-                .service(
-                    ServeDir::new(static_dir.to_owned())
-                        .precompressed_gzip()
-                        .precompressed_br(),
-                )
-                .not_found_service(
-                    ServeFile::new(format!("{}/index.html", static_dir))
-                        .precompressed_br()
-                        .precompressed_gzip(),
-                ),
+            ServiceBuilder::new().layer(CacheControlLayer).service(
+                ServeDir::new(static_dir.to_owned())
+                    .precompressed_gzip()
+                    .precompressed_br()
+                    .fallback(
+                        ServeFile::new(format!("{}/index.html", static_dir))
+                            .precompressed_br()
+                            .precompressed_gzip(),
+                    ),
+            ),
         )
         .with_state(state);
 
