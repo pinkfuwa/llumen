@@ -34,6 +34,7 @@ fastrand = "2.3.0"
 minijinja = "2.12.0"
 base64 = "0.22.1"
 schemars = "1.0.4"
+redb = "2.6.3"
 
 [dependencies.tracing]
 version = "0.1"

@@ -255,6 +255,7 @@ dependencies = [
  "migration",
  "minijinja",
  "pasetors",
+ "redb",
  "reqwest",
  "reqwest-eventsource",
  "rust-argon2",
@@ -2062,6 +2063,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "redb"
+version = "2.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8eca1e9d98d5a7e9002d0013e18d5a9b000aee942eb134883a82f06ebffb6c01"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3075,7 +3085,7 @@ dependencies = [
  "getrandom 0.3.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
