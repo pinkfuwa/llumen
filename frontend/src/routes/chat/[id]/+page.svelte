@@ -32,7 +32,7 @@
 
 <Copyright top />
 
-<div class="nobar flex h-full flex-col-reverse overflow-y-auto">
+<main class="nobar flex h-full flex-col-reverse overflow-y-auto">
 	<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
 		<MessageInput
 			above
@@ -57,4 +57,4 @@
 		<MessagePagination {id} bind:isStreaming />
 	{/key}
 	<div class="min-h-16"></div>
-</div>
+</main>

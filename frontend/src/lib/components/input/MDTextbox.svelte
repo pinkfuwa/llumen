@@ -33,6 +33,7 @@
 	rows={rows()}
 	bind:this={input}
 	{disabled}
+	aria-label="type message"
 	onkeypress={(event) => {
 		if (event.key == 'Enter' && !event.shiftKey && get(submitOnEnter) == 'true' && onsubmit)
 			onsubmit();
