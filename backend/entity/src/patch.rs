@@ -10,6 +10,7 @@ pub enum MessageKind {
     System = 1,
     User = 2,
     Assistant = 3,
+    Reasoning = 4,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
