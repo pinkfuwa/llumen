@@ -81,7 +81,6 @@ pub async fn route(
                 MessageKind::Assistant => Some(openrouter::Message::Assistant(content)),
                 MessageKind::System => Some(openrouter::Message::System(content)),
                 MessageKind::Reasoning => None,
-                MessageKind::Hidden => None,
             }
         })
         .collect();
