@@ -26,6 +26,7 @@ pub type JsonResult<T> = Result<Json<T>, Json<Error>>;
 
 pub trait WithKind<T> {
     fn kind(self, kind: ErrorKind) -> Result<T, Json<Error>>;
+    fn raw_kind(self, kind: ErrorKind) -> Result<T, Error>;
 }
 
 impl<T, E> WithKind<T> for Result<T, E>
@@ -38,6 +39,13 @@ where
                 error: kind,
                 reason: e.to_string(),
             })
+        })
+    }
+
+    fn raw_kind(self, kind: ErrorKind) -> Result<T, Error> {
+        self.map_err(|e| Error {
+            error: kind,
+            reason: e.to_string(),
         })
     }
 }
