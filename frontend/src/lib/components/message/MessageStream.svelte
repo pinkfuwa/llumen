@@ -11,4 +11,8 @@
 	{#each list as tokens, i}
 		<Parser {tokens} monochrome />
 	{/each}
+	<div class="space-y-4">
+		<hr class="mx-3 animate-pulse rounded-md bg-hover p-1 text-hover" />
+		<hr class="mx-3 animate-pulse rounded-md bg-hover p-1 text-hover" />
+	</div>
 </ResponseBox>

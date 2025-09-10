@@ -11,7 +11,11 @@
 	}
 </script>
 
-<button onclick={nextStage} class="rounded-md bg-primary p-1{disabled ? '' : ' hover:bg-hover'}">
+<button
+	onclick={nextStage}
+	class="rounded-md bg-primary p-1{disabled ? '' : ' hover:bg-hover'}"
+	aria-label="change mode"
+>
 	{#if value == 2}
 		<Tooltip content={$_('chat.model_mode.deep')}>
 			<Atom class="inline-block" />

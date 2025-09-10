@@ -10,6 +10,7 @@ impl From<entity::ModelConfig> for openrouter::Model {
             repeat_penalty: value.parameter.repeat_penalty,
             top_k: value.parameter.top_k,
             top_p: value.parameter.top_p,
+            online: false,
         }
     }
 }

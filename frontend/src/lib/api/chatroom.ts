@@ -12,7 +12,9 @@ import {
 	type MessagePaginateRespList,
 	MessagePaginateRespRole,
 	type ChatReadResp,
-	type ChatReadReq
+	type ChatReadReq,
+	type ChatDeleteReq,
+	type ChatDeleteResp
 } from './types';
 import {
 	CreateInfiniteQuery,
@@ -29,6 +31,7 @@ import {
 import { APIFetch } from './state/errorHandle';
 import { once } from './state/helper';
 import { onDestroy } from 'svelte';
+import type { MutationResult } from './state/mutate';
 
 export interface CreateRoomRequest {
 	message: string;
@@ -145,5 +148,11 @@ export function useRoom(id: number): QueryResult<ChatReadResp> {
 		body: { id },
 		revalidateOnFocus: false,
 		staleTime: Infinity
+	});
+}
+
+export function deleteRoom(): MutationResult<ChatDeleteReq, ChatDeleteResp> {
+	return CreateMutation<ChatDeleteReq, ChatDeleteResp>({
+		path: 'chat/delete'
 	});
 }

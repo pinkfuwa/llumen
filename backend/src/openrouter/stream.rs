@@ -11,20 +11,25 @@ pub struct StreamCompletion {
 
 impl StreamCompletion {
     pub(super) async fn request(
+        http_client: &Client,
         api_key: &str,
         endpoint: &str,
         req: raw::CompletionReq,
     ) -> Result<StreamCompletion> {
-        let builder = Client::new()
+        let builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
             .json(&req);
 
-        let source = EventSource::new(builder)?;
-
-        Ok(Self { source })
+        match EventSource::new(builder) {
+            Ok(source) => Ok(Self { source }),
+            Err(e) => {
+                tracing::error!("Failed to create event source: {}", e);
+                Err(anyhow!("Failed to create event source: {}", e))
+            }
+        }
     }
 
     pub fn close(&mut self) {
@@ -40,6 +45,7 @@ impl StreamCompletion {
             return StreamCompletionResp::ReasoningToken(reasoning);
         }
 
+        tracing::trace!("Received token: {}", content);
         if let Some(reason) = choice.finish_reason {
             return match reason {
                 raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
@@ -89,8 +95,14 @@ impl StreamCompletion {
                     return Some(self.handle_data(&e.data));
                 }
                 Err(e) => match e {
-                    reqwest_eventsource::Error::StreamEnded => return None,
-                    e => return Some(Err(anyhow!("{e}"))),
+                    reqwest_eventsource::Error::StreamEnded => {
+                        tracing::debug!("Stream ended");
+                        return None;
+                    }
+                    e => {
+                        tracing::error!("Stream error: {}", e);
+                        return Some(Err(e.into()));
+                    }
                 },
                 _ => return None,
             }

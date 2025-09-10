@@ -4,3 +4,4 @@
 *.nix
 flake.nix
 .envrc
+/*.bak

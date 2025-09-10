@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use dotenv::var;
-use reqwest::Client;
 
 use super::raw;
 use super::stream::StreamCompletion;
@@ -15,12 +14,14 @@ pub struct Model {
     pub repeat_penalty: Option<f32>,
     pub top_k: Option<i32>,
     pub top_p: Option<f32>,
+    pub online: bool,
 }
 
 pub struct Openrouter {
     api_key: String,
     chat_completion_endpoint: String,
     default_req: raw::CompletionReq,
+    http_client: reqwest::Client,
 }
 
 impl Openrouter {
@@ -32,6 +33,7 @@ impl Openrouter {
         let mut default_req = raw::CompletionReq::default();
 
         if !api_base.contains("openrouter") {
+            tracing::warn!("Custom API_BASE detected, disabling plugin support");
             default_req.plugins = None;
         }
 
@@ -39,6 +41,7 @@ impl Openrouter {
             api_key,
             chat_completion_endpoint,
             default_req,
+            http_client: reqwest::Client::new(),
         }
     }
     pub fn stream(
@@ -47,14 +50,18 @@ impl Openrouter {
         model: Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
+        tracing::info!("start streaming with model {}", &model.id);
+
         let tools = match tools.is_empty() {
             true => None,
             false => Some(tools.into_iter().map(|t| t.into()).collect()),
         };
 
+        let model_suffix = if model.online { ":online" } else { "" };
+
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.id,
+            model: model.id.to_string() + model_suffix,
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
@@ -63,12 +70,26 @@ impl Openrouter {
             ..self.default_req.clone()
         };
 
-        StreamCompletion::request(&self.api_key, &self.chat_completion_endpoint, req)
+        req.log();
+
+        StreamCompletion::request(
+            &self.http_client,
+            &self.api_key,
+            &self.chat_completion_endpoint,
+            req,
+        )
     }
     pub async fn complete(&self, messages: Vec<Message>, model: Model) -> Result<ChatCompletion> {
+        tracing::info!("start completion with model {}", &model.id);
+
+        if model.online {
+            tracing::warn!("Online models should not be used in non-streaming completions.");
+        }
+        let model_suffix = if model.online { ":online" } else { "" };
+
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.id,
+            model: model.id + model_suffix,
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
@@ -76,7 +97,10 @@ impl Openrouter {
             ..self.default_req.clone()
         };
 
-        let res = Client::new()
+        req.log();
+
+        let res = self
+            .http_client
             .post(&self.chat_completion_endpoint)
             .bearer_auth(&self.api_key)
             .header("HTTP-Referer", HTTP_REFERER)
@@ -84,6 +108,10 @@ impl Openrouter {
             .json(&req)
             .send()
             .await
+            .map_err(|err| {
+                tracing::warn!("openrouter finish with error: {}", &err);
+                err
+            })
             .context("Failed to build request")?;
 
         let json = res

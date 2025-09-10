@@ -45,6 +45,7 @@
 				onclick={() => {
 					editable = !editable;
 				}}
+				aria-label="edit user message"
 			>
 				{#if editable}
 					<Check class="m-[1px] h-10 w-10 rounded-lg bg-background p-2 hover:bg-hover" />

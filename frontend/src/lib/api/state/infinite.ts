@@ -171,7 +171,7 @@ export interface InfiniteQueryOption<D extends { id: number }> {
 
 export interface PageEntry<D> {
 	target: Writable<HTMLElement | null>;
-	data: Readable<D[]>;
+	data: Writable<D[]>;
 	no: number;
 	revalidate: () => void;
 }

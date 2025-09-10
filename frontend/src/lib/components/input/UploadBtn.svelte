@@ -16,7 +16,11 @@
 	});
 </script>
 
-<button class="rounded-md bg-primary p-1 hover:bg-hover" onclick={dialog.open}>
+<button
+	class="rounded-md bg-primary p-1 hover:bg-hover"
+	onclick={dialog.open}
+	aria-label="upload file"
+>
 	<Tooltip content={$_('chat.file')}>
 		<Upload class="inline-block" />
 	</Tooltip>
