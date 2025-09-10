@@ -1,3 +1,4 @@
+use anyhow::Result;
 use sea_orm::{DeriveActiveEnum, FromJsonQueryResult, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -5,9 +6,10 @@ use typeshare::typeshare;
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum MessageKind {
-    System = 0,
-    User = 1,
-    Assistant = 2,
+    Hidden = 0,
+    System = 1,
+    User = 2,
+    Assistant = 3,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
@@ -16,7 +18,6 @@ pub enum ChunkKind {
     Text = 0,
     Reasoning = 1,
     ToolCall = 2,
-    ToolResult = 3,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -123,5 +124,20 @@ impl ModelConfig {
     }
     pub fn is_other_file_capable(&self) -> bool {
         self.capability.ocr != OcrEngine::Disabled
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolCall {
+    pub id: String,
+    pub name: String,
+    pub args: String,
+    pub content: String,
+}
+
+impl crate::chunk::Model {
+    pub fn as_tool_call(&self) -> Result<ToolCall> {
+        debug_assert_eq!(self.kind, ChunkKind::ToolCall);
+        Ok(serde_json::from_str(&self.content)?)
     }
 }
