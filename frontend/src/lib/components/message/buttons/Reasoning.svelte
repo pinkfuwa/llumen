@@ -6,8 +6,6 @@
 	let showReasoning = $state(false);
 
 	let lines = $derived(content.split('\n'));
-
-	let contentTruncated = $derived(content.replaceAll('\n', ' '));
 </script>
 
 <button

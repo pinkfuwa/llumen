@@ -3,7 +3,7 @@
 </script>
 
 <div class="relative select-none">
-	<div
+	<footer
 		class="absolute {top
 			? 'top-0'
 			: 'bottom-1'} z-10 flex w-full items-center justify-center text-sm text-outline"
@@ -17,5 +17,5 @@
 			target="_blank"
 			class="rounded-md px-[6px] py-0.5 hover:bg-hover hover:text-dark">pinkfuwa</a
 		>&COPY; {new Date().getFullYear()}
-	</div>
+	</footer>
 </div>

@@ -4,6 +4,6 @@
 	let { onclick = (() => {}) as MouseEventHandler<HTMLButtonElement> } = $props();
 </script>
 
-<button class="mr-[-5px] rounded-md p-1 hover:bg-hover" {onclick}>
+<button class="mr-[-5px] rounded-md p-1 hover:bg-hover" {onclick} aria-label="send">
 	<CornerDownLeft class="inline-block" />
 </button>

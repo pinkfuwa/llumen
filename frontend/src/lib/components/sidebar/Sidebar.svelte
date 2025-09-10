@@ -15,7 +15,7 @@
 {#if collapsed}
 	<CollapseBtn onclick={() => (collapsed = false)} />
 {:else}
-	<div
+	<header
 		in:slide={{ duration: 180, axis: 'x' }}
 		out:slide={{ duration: 180, axis: 'x' }}
 		class="flex h-screen w-64 flex-col justify-between overflow-x-hidden border-r border-outline bg-background p-5 text-nowrap lg:w-80 xl:w-100"
@@ -30,5 +30,5 @@
 		<div class="mt-4 border-t border-outline pt-4">
 			<SettingBtn />
 		</div>
-	</div>
+	</header>
 {/if}

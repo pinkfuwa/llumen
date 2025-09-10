@@ -34,6 +34,7 @@
 				open = !open;
 			}}
 			{disabled}
+			aria-label="open model selection"
 		>
 			<span>
 				{$data.list.find((x) => x.id == value)?.display_name}
@@ -56,6 +57,7 @@
 								open = false;
 								value = model.id;
 							}}
+							aria-label="select {model.display_name}"
 						>
 							{model.display_name}
 						</button>
