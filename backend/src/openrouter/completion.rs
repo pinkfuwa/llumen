@@ -154,27 +154,32 @@ pub struct ChatCompletion {
     pub response: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct File {
     name: String,
     data: Vec<u8>,
 }
 
+#[derive(Debug, Clone)]
 pub struct MessageToolCall {
     pub id: String,
     pub name: String,
     pub arguments: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct MessageToolResult {
     pub id: String,
     pub content: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct MessageMultipartUser {
     pub text: String,
     pub files: Vec<File>,
 }
 
+#[derive(Debug, Clone)]
 pub enum Message {
     System(String),
     User(String),
@@ -245,6 +250,7 @@ impl From<Message> for raw::Message {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Tool {
     pub name: String,
     pub description: String,

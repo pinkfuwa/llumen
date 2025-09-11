@@ -14,7 +14,12 @@ use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId, sse::Token};
+use crate::{
+    AppState,
+    errors::*,
+    middlewares::auth::UserId,
+    sse::{EndKind, Token},
+};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -25,32 +30,24 @@ pub struct SseReq {
 #[derive(Debug, Serialize)]
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
-/// `{Stream Message}` will be `Start -> [Token] -> {Stream End}`
-///
-/// `{Stream End}` will be `End -> Error` if `End.kind == error`, otherwise `End`
-///
-/// When connect, the respond will be `Last -> [{Stream Message} -> UserMessage]`
-///
-/// When update the message, the respond will be `Last -> UserMessage(updated) -> [{Stream Message} -> UserMessage]`
 pub enum SseResp {
-    /// When connect to SSE, the first respond will be this
-    ///
-    /// Use this to get old message
-    Last(SseRespLast),
+    LastMessage(SseRespLastMessage),
 
-    /// token
     Token(SseRespToken),
+    ReasoningToken(SseRespToken),
+    ChunkEnd(SseRespChunkEnd),
 
-    /// End of the streaming message
-    /// next token will be `Start`
-    End(SseRespEnd),
+    ToolCall(SseRespToolCall),
+    ToolCallEnd(SseRespToolCallEnd),
 
-    /// The message sent by user
+    MessageEnd(SseRespMessageEnd),
+
     UserMessage(SseRespUserMessage),
 }
+
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespLast {
+pub struct SseRespLastMessage {
     pub id: i32,
     pub version: u32,
 }
@@ -58,12 +55,19 @@ pub struct SseRespLast {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct SseRespToken {
-    pub text: String,
+    pub content: String,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespEnd {
+pub struct SseRespChunkEnd {
+    pub id: i32,
+    pub kind: SseRespEndKind,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespMessageEnd {
     pub id: i32,
     pub kind: SseRespEndKind,
 }
@@ -80,8 +84,25 @@ pub enum SseRespEndKind {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct SseRespUserMessage {
-    pub id: i32,
-    pub text: String,
+    pub message_id: i32,
+    pub chunk_id: i32,
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespToolCall {
+    pub name: String,
+    pub args: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespToolCallEnd {
+    pub chunk_id: i32,
+    pub name: String,
+    pub args: String,
+    pub content: String,
 }
 
 pub async fn route(
@@ -111,26 +132,46 @@ pub async fn route(
     let st = sub
         .map(|x| {
             x.map(|v| match v {
-                Token::Last(id, version) => SseResp::Last(SseRespLast { id, version }),
-                Token::Token(text) => SseResp::Token(SseRespToken { text }),
-
-                // end token
-                Token::End(id) => SseResp::End(SseRespEnd {
+                Token::LastMessage(id, version) => {
+                    SseResp::LastMessage(SseRespLastMessage { id, version })
+                }
+                Token::Token(content) => SseResp::Token(SseRespToken { content }),
+                Token::ReasoningToken(content) => SseResp::ReasoningToken(SseRespToken { content }),
+                Token::ChunkEnd(id, end_kind) => SseResp::ChunkEnd(SseRespChunkEnd {
                     id,
-                    kind: SseRespEndKind::Complete,
+                    kind: match end_kind {
+                        EndKind::Complete => SseRespEndKind::Complete,
+                        EndKind::Halt => SseRespEndKind::Halt,
+                        EndKind::Error => SseRespEndKind::Error,
+                    },
                 }),
-                Token::Halt(id) => SseResp::End(SseRespEnd {
+                Token::MessageEnd(id, end_kind) => SseResp::MessageEnd(SseRespMessageEnd {
                     id,
-                    kind: SseRespEndKind::Halt,
+                    kind: match end_kind {
+                        EndKind::Complete => SseRespEndKind::Complete,
+                        EndKind::Halt => SseRespEndKind::Halt,
+                        EndKind::Error => SseRespEndKind::Error,
+                    },
                 }),
-                Token::Error(id) => SseResp::End(SseRespEnd {
-                    id,
-                    kind: SseRespEndKind::Error,
+                Token::UserMessage(message_id, chunk_id, content) => {
+                    SseResp::UserMessage(SseRespUserMessage {
+                        message_id,
+                        chunk_id,
+                        content,
+                    })
+                }
+                Token::ToolCall(name, args) => SseResp::ToolCall(SseRespToolCall {
+                    name: name.to_owned(),
+                    args,
                 }),
-
-                // extra token
-                Token::User(id, text) => SseResp::UserMessage(SseRespUserMessage { id, text }),
-                Token::Tool(_, _) => todo!(),
+                Token::ToolCallEnd(name, args, content, chunk_id) => {
+                    SseResp::ToolCallEnd(SseRespToolCallEnd {
+                        chunk_id,
+                        name: name.to_owned(),
+                        args,
+                        content,
+                    })
+                }
             })
         })
         .map(|x| Event::default().json_data(JsonUnion::from(x)));

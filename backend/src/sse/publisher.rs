@@ -1,139 +1,107 @@
 use std::{collections::hash_map::Entry, sync::Arc};
 
-use anyhow::Result;
-use entity::{message, patch::MessageKind, prelude::*};
-use sea_orm::{ActiveValue::Set, DbConn, EntityTrait};
+use anyhow::{Result, bail};
+use entity::{MessageKind, chunk, message, patch::ChunkKind, prelude::*};
+use futures_util::FutureExt;
+use sea_orm::{ActiveValue::Set, TransactionTrait, prelude::*};
 use tokio::sync::{Notify, RwLock, broadcast};
 
 use crate::{
     errors::*,
-    sse::{SseContext, SseInner, Token},
+    sse::{AssistantMessage, SseContext, SseInner, Token},
 };
 
 #[derive(Debug)]
 pub struct Publisher {
-    chat_id: i32,
+    pub(super) chat_id: i32,
     channel: broadcast::Sender<Result<Token, Error>>,
-    inner: Arc<RwLock<SseInner>>,
-    on_halt: Arc<Notify>,
-    conn: DbConn,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum PublisherKind {
-    Assistant,
-    Reasoning,
+    pub(super) inner: Arc<RwLock<SseInner>>,
+    pub(super) on_halt: Arc<Notify>,
+    pub(super) conn: DbConn,
 }
 
 impl Publisher {
+    pub async fn scope<'a, T, F>(&'a self, func: impl FnOnce(&'a Self) -> F) -> Option<T>
+    where
+        F: Future<Output = Result<T, Error>>,
+    {
+        let res = func(self).await;
+        match res {
+            Ok(v) => return Some(v),
+            Err(err) => self.raw_token(Err(err)),
+        }
+        None
+    }
+
     pub async fn on_halt(&self) {
         self.on_halt.notified().await;
     }
 
-    pub async fn token(&mut self, t: &str) {
-        let mut inner = self.inner.write().await;
-        inner.buffer.push_str(t);
+    pub async fn user_message(&self, t: String) -> Result<i32> {
+        let (message_id, chunk_id) = self
+            .conn
+            .transaction(|conn| {
+                let chat_id = self.chat_id;
+                let t = t.clone();
+                async move {
+                    let message_id = Message::insert(message::ActiveModel {
+                        chat_id: Set(chat_id),
+                        kind: Set(MessageKind::User),
+                        ..Default::default()
+                    })
+                    .exec(conn)
+                    .await?
+                    .last_insert_id;
 
-        inner.on_receive.notify_waiters();
-    }
+                    let chunk_id = Chunk::insert(chunk::ActiveModel {
+                        content: Set(t),
+                        kind: Set(ChunkKind::Text),
+                        message_id: Set(message_id),
+                        ..Default::default()
+                    })
+                    .exec(conn)
+                    .await?
+                    .last_insert_id;
 
-    pub async fn user_message(&mut self, t: String) -> Result<i32> {
-        let res = Message::insert(message::ActiveModel {
-            chat_id: Set(self.chat_id),
-            text: Set(Some(t.clone())),
-            kind: Set(MessageKind::User),
-            ..Default::default()
-        })
-        .exec(&self.conn)
-        .await?;
+                    Result::<_>::Ok((message_id, chunk_id))
+                }
+                .boxed()
+            })
+            .await?;
 
-        self.inner.write().await.last_id = res.last_insert_id;
-        self.raw_token(Ok(Token::User(res.last_insert_id, t)));
-        Ok(res.last_insert_id)
-    }
-
-    pub async fn close_stream(self) {
-        self.raw_close(Ok(Token::End(self.chat_id))).await;
-    }
-
-    pub async fn halt_stream(self) {
-        self.raw_close(Ok(Token::Halt(self.chat_id))).await;
-    }
-
-    pub async fn close_stream_with_error(self, e: Error) {
-        self.raw_close(Ok(Token::Error(self.chat_id))).await;
-        self.raw_token(Err(e));
+        self.inner.write().await.last_message_id = message_id + 1;
+        self.raw_token(Ok(Token::UserMessage(message_id, chunk_id, t)));
+        Ok(message_id)
     }
 
     pub fn error(&self, e: Error) {
         self.raw_token(Err(e));
     }
 
-    fn raw_token(&self, t: Result<Token, Error>) {
+    pub fn raw_token(&self, t: Result<Token, Error>) {
         self.channel.send(t).ok();
     }
 
-    async fn raw_close(&self, end_token: Result<Token, Error>) {
-        let mut inner = self.inner.write().await;
-
-        let text = inner.buffer.clone();
-        let res = Message::update(message::ActiveModel {
-            id: Set(inner.last_id),
-            text: Set(Some(text)),
-            ..Default::default()
-        })
-        .exec(&self.conn)
-        .await;
-
-        if let Err(e) = res {
-            drop(inner);
-            self.raw_token(Err(Error {
-                error: ErrorKind::Internal,
-                reason: e.to_string(),
-            }));
-            return;
-        }
-        inner.last_id += 1;
-
-        self.raw_token(end_token);
-        inner.on_receive.notify_waiters();
-    }
-
-    pub async fn new_stream(&self, kind: PublisherKind) {
-        let mut inner = self.inner.write().await;
-
-        let db_kind = match kind {
-            PublisherKind::Assistant => MessageKind::Assistant,
-            PublisherKind::Reasoning => MessageKind::Reasoning,
-        };
-
-        let res = Message::insert(message::ActiveModel {
+    pub async fn new_assistant_message<'a>(&'a self) -> Result<AssistantMessage<'a>> {
+        let message_id = Message::insert(message::ActiveModel {
             chat_id: Set(self.chat_id),
-            kind: Set(db_kind),
+            kind: Set(MessageKind::Assistant),
             ..Default::default()
         })
         .exec(&self.conn)
-        .await;
+        .await?
+        .last_insert_id;
 
-        let db_id = match res {
-            Ok(v) => v.last_insert_id,
-            Err(e) => {
-                self.raw_token(Err(Error {
-                    error: ErrorKind::Internal,
-                    reason: e.to_string(),
-                }));
-                return;
-            }
-        };
-
-        inner.buffer.clear();
-        inner.last_id = db_id;
+        Ok(AssistantMessage::new(message_id, self))
     }
 
     pub(super) async fn new(ctx: &SseContext, chat_id: i32) -> Result<Self> {
         match ctx.map.lock().await.entry(chat_id) {
             Entry::Occupied(entry) => {
                 let inner = entry.get().write().await;
+                if inner.channel.strong_count() != 1 {
+                    bail!("Only 1 publisher can exisit at the same time");
+                }
 
                 let channel = inner.channel.clone();
                 let on_halt = inner.on_halt.clone();

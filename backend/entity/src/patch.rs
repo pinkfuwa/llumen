@@ -3,16 +3,15 @@ use sea_orm::{DeriveActiveEnum, FromJsonQueryResult, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum MessageKind {
     Hidden = 0,
-    System = 1,
-    User = 2,
-    Assistant = 3,
+    User = 1,
+    Assistant = 2,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum ChunkKind {
     Text = 0,
