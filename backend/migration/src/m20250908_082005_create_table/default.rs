@@ -8,7 +8,7 @@ display_name="GPT-OSS 20B"
 "#;
 
 use pasetors::keys::Generate;
-use sea_orm_migration::{prelude::*, schema::*};
+use sea_orm_migration::prelude::*;
 
 use super::entity::*;
 
@@ -45,7 +45,7 @@ impl MigrationTrait for Migration {
         Ok(())
     }
 
-    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+    async fn down(&self, _manager: &SchemaManager) -> Result<(), DbErr> {
         Ok(())
     }
 }
