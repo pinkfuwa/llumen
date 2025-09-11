@@ -1,21 +1,40 @@
 use std::sync::Arc;
 
-use anyhow::Context;
+use anyhow::{Context, Result};
 use axum::{Extension, Json, extract::State};
-use entity::{message, patch::MessageKind, prelude::*};
+use entity::{MessageKind, ModelConfig, message, patch::ChunkKind, prelude::*};
 use migration::Expr;
-use sea_orm::{EntityOrSelect, EntityTrait, QueryFilter, QueryOrder};
+use sea_orm::{EntityOrSelect, QueryOrder, prelude::*};
 use serde::{Deserialize, Serialize};
-use tokio::select;
+use tokio::{select, task::yield_now};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId, openrouter, sse::PublisherKind};
+use crate::{
+    AppState,
+    errors::*,
+    middlewares::auth::UserId,
+    openrouter::{self, StreamCompletionResp},
+    prompts::{self, PromptStore},
+    sse::{BufferChunk, EndKind, Publisher},
+    tools::{self, ToolBox},
+};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
 pub struct MessageCreateReq {
     pub chat_id: i32,
+    pub mode: MessageCreateReqMode,
     pub text: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[typeshare]
+#[serde(rename_all = "snake_case")]
+pub enum MessageCreateReqMode {
+    Normal,
+    Search,
+    Agent,
+    Research,
 }
 
 #[derive(Debug, Serialize)]
@@ -53,7 +72,7 @@ pub async fn route(
         .context("Malformed model config")
         .kind(ErrorKind::Internal)?;
 
-    let mut puber = app
+    let puber = app
         .sse
         .publish(req.chat_id)
         .await
@@ -63,69 +82,270 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?;
 
-    let res = Message::find()
-        .select()
-        .filter(Expr::col(message::Column::ChatId).eq(req.chat_id))
-        .order_by_asc(message::Column::Id)
-        .all(&app.conn)
+    let tool_set = match req.mode {
+        MessageCreateReqMode::Normal => tools::NORMAL,
+        MessageCreateReqMode::Search => tools::SEARCH,
+        MessageCreateReqMode::Agent => tools::AGENT,
+        MessageCreateReqMode::Research => tools::RESEARCH,
+    };
+    let (tool_prompts, tools) = app.tools.list(tool_set);
+    let mut tool_box = app
+        .tools
+        .grab(req.chat_id, tool_set)
         .await
         .kind(ErrorKind::Internal)?;
-    let messages = res
-        .into_iter()
-        .filter_map(|x| {
-            let Some(content) = x.text else {
-                return None;
-            };
-            match x.kind {
-                MessageKind::User => Some(openrouter::Message::User(content)),
-                MessageKind::Assistant => Some(openrouter::Message::Assistant(content)),
-                MessageKind::System => Some(openrouter::Message::System(content)),
-                MessageKind::Reasoning => None,
-            }
-        })
-        .collect();
 
-    let mut completion = app
-        .openrouter
-        .stream(messages, model.into(), Vec::default())
+    let user = User::find_by_id(user_id)
+        .one(&app.conn)
         .await
-        .kind(ErrorKind::ApiFail)?;
-    puber.new_stream(PublisherKind::Assistant).await;
+        .kind(ErrorKind::Internal)?
+        .context("Cannot find user")
+        .kind(ErrorKind::Internal)?;
+    let system_prompt = prompts::ChatStore
+        .template(user.preference.locale.as_deref())
+        .await
+        .kind(ErrorKind::Internal)?
+        .render(&app.prompt, req.chat_id, tool_prompts, (), ())
+        .await
+        .kind(ErrorKind::Internal)?;
+
     tokio::spawn(async move {
+        puber
+            .scope(|puber| {
+                handle_sse(
+                    app.clone(),
+                    req.chat_id,
+                    model,
+                    system_prompt,
+                    tools,
+                    &mut tool_box,
+                    puber,
+                )
+            })
+            .await;
+        let res = app
+            .tools
+            .put_back(tool_box)
+            .await
+            .raw_kind(ErrorKind::Internal);
+        if let Err(err) = res {
+            puber.raw_token(Err(err));
+        }
+    });
+
+    Ok(Json(MessageCreateResp { id: msg_id }))
+}
+
+async fn handle_sse(
+    app: Arc<AppState>,
+    chat_id: i32,
+    model: ModelConfig,
+    system_prompt: String,
+    tools: Vec<openrouter::Tool>,
+    tool_box: &mut ToolBox,
+    puber: &Publisher,
+) -> Result<(), Error> {
+    let assistant = puber
+        .new_assistant_message()
+        .await
+        .raw_kind(ErrorKind::Internal)?;
+
+    let mut tool_calls: Vec<openrouter::MessageToolCall> = vec![];
+
+    loop {
+        for tool_call in tool_calls.drain(..) {
+            let Some((name, tool)) = tool_box.get(&tool_call.name.as_str()) else {
+                continue;
+            };
+
+            assistant.start_tool_call(name, tool_call.arguments.clone());
+            let args = serde_json::to_value(tool_call.arguments.clone())
+                .context("Malform input arguments")
+                .raw_kind(ErrorKind::ToolCallFail);
+            match args {
+                Ok(args) => {
+                    let output = tool.call(args).await.raw_kind(ErrorKind::ToolCallFail);
+                    let content = serde_json::to_string(&JsonUnion::from(output))
+                        .raw_kind(ErrorKind::Internal)?;
+                    assistant
+                        .end_tool_call(name, tool_call.arguments, content, tool_call.id)
+                        .await
+                        .raw_kind(ErrorKind::Internal)?;
+                }
+                Err(err) => {
+                    let content = serde_json::to_string(&err).raw_kind(ErrorKind::Internal)?;
+                    assistant
+                        .end_tool_call(name, tool_call.arguments, content, tool_call.id)
+                        .await
+                        .raw_kind(ErrorKind::Internal)?;
+                }
+            }
+        }
+
+        let messages = get_message(chat_id, &app.conn, system_prompt.clone())
+            .await
+            .raw_kind(ErrorKind::Internal)?;
+        let mut completion = app
+            .openrouter
+            .stream(messages.clone(), model.clone().into(), tools.clone())
+            .await
+            .raw_kind(ErrorKind::ApiFail)?;
+
+        let mut buffer_chunk: Option<BufferChunk<'_, '_>> = None;
         loop {
             select! {
+                biased;
                 _ = puber.on_halt() => {
-                    puber.halt_stream().await;
-                    break;
+                    if let Some(bc) = buffer_chunk {
+                        bc.end_buffer_chunk(EndKind::Complete)
+                            .await
+                            .raw_kind(ErrorKind::Internal)?;
+                    }
+
+                    assistant.end_message(EndKind::Halt).await.raw_kind(ErrorKind::Internal)?;
+                    return Ok(());
                 }
 
                 token = completion.next() => {
                     match token {
-                        Some(Ok(openrouter::StreamCompletionResp::ResponseToken(t))) => {
-                            puber.token(&t).await;
-                        }
-                        Some(Err(e)) => {
-                            puber.close_stream_with_error(Error {
+                        Some(Ok(token)) => match token {
+                            StreamCompletionResp::ReasoningToken(token) => {
+                                if token.is_empty() {
+                                    continue;
+                                }
+
+                                match buffer_chunk {
+                                    Some(bc) if bc.kind() != ChunkKind::Reasoning => {
+                                        bc.end_buffer_chunk(EndKind::Complete)
+                                            .await
+                                            .raw_kind(ErrorKind::Internal)?;
+                                        yield_now().await;
+                                        buffer_chunk =
+                                            Some(assistant.new_buffer_chunk(ChunkKind::Reasoning).await);
+                                    }
+                                    None => {
+                                        buffer_chunk =
+                                            Some(assistant.new_buffer_chunk(ChunkKind::Reasoning).await);
+                                    }
+                                    _ => {}
+                                }
+                                buffer_chunk
+                                    .as_ref()
+                                    .unwrap()
+                                    .send_token(&token)
+                                    .await
+                                    .raw_kind(ErrorKind::Internal)?;
+                            }
+                            StreamCompletionResp::ResponseToken(token) => {
+                                if token.is_empty() {
+                                    continue;
+                                }
+
+                                match buffer_chunk {
+                                    Some(bc) if bc.kind() != ChunkKind::Text => {
+                                        bc.end_buffer_chunk(EndKind::Complete)
+                                            .await
+                                            .raw_kind(ErrorKind::Internal)?;
+                                        yield_now().await;
+                                        buffer_chunk = Some(assistant.new_buffer_chunk(ChunkKind::Text).await);
+                                    }
+                                    None => {
+                                        buffer_chunk = Some(assistant.new_buffer_chunk(ChunkKind::Text).await);
+                                    }
+                                    _ => {}
+                                }
+                                buffer_chunk
+                                    .as_ref()
+                                    .unwrap()
+                                    .send_token(&token)
+                                    .await
+                                    .raw_kind(ErrorKind::Internal)?;
+                            }
+                            StreamCompletionResp::ToolCall { name, args, id } => {
+                                tool_calls.push(openrouter::MessageToolCall {
+                                    id,
+                                    name,
+                                    arguments: args,
+                                })
+                            }
+                            _ => {}
+                        },
+                        Some(Err(err)) => {
+                            return Err(Error {
                                 error: ErrorKind::ApiFail,
-                                reason: e.to_string(),
-                            }).await;
-
-                            break;
+                                reason: err.to_string(),
+                            });
                         }
-                        Some(_)=> {
-                            continue;
-                        }
-                        None => {
-                            puber.close_stream().await;
+                        None => break,
+                    }
+                }
 
-                            break;
+
+
+            };
+        }
+        if let Some(bc) = buffer_chunk.take() {
+            bc.end_buffer_chunk(EndKind::Complete)
+                .await
+                .raw_kind(ErrorKind::Internal)?;
+        }
+        if tool_calls.is_empty() {
+            break;
+        }
+    }
+
+    Ok(())
+}
+
+async fn get_message(
+    chat_id: i32,
+    conn: &DbConn,
+    system_prompt: String,
+) -> Result<Vec<openrouter::Message>> {
+    let res = Message::find()
+        .select()
+        .filter(Expr::col(message::Column::ChatId).eq(chat_id))
+        .order_by_asc(message::Column::Id)
+        .find_with_related(Chunk)
+        .all(conn)
+        .await?;
+
+    let mut messages = vec![openrouter::Message::System(system_prompt)];
+    for (message, chunks) in res {
+        match message.kind {
+            MessageKind::Hidden => continue,
+            MessageKind::User => messages.extend(
+                chunks
+                    .into_iter()
+                    .map(|chunk| openrouter::Message::User(chunk.content)),
+            ),
+            MessageKind::Assistant => {
+                for chunk in chunks {
+                    match chunk.kind {
+                        ChunkKind::Text => {
+                            messages.push(openrouter::Message::Assistant(chunk.content))
+                        }
+                        ChunkKind::Reasoning => continue,
+                        ChunkKind::ToolCall => {
+                            let tool_call = chunk.as_tool_call()?;
+
+                            messages.extend([
+                                openrouter::Message::ToolCall(openrouter::MessageToolCall {
+                                    id: tool_call.id.clone(),
+                                    name: tool_call.name,
+                                    arguments: tool_call.args,
+                                }),
+                                openrouter::Message::ToolResult(openrouter::MessageToolResult {
+                                    id: tool_call.id,
+                                    content: tool_call.content,
+                                }),
+                            ]);
                         }
                     }
                 }
             }
         }
-        completion.close();
-    });
+    }
 
-    Ok(Json(MessageCreateResp { id: msg_id }))
+    Ok(messages)
 }

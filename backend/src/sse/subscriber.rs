@@ -42,7 +42,8 @@ impl Subscriber {
             Entry::Occupied(entry) => {
                 let inner = entry.get().read().await;
 
-                let st = stream::iter([Ok(Token::Last(inner.last_id, inner.version))]);
+                let st =
+                    stream::iter([Ok(Token::LastMessage(inner.last_message_id, inner.version))]);
 
                 let state = State {
                     inner: entry.get().clone(),
@@ -57,7 +58,8 @@ impl Subscriber {
                 let on_receive = inner.on_receive.clone();
                 let channel = inner.channel.subscribe();
 
-                let st = stream::iter([Ok(Token::Last(inner.last_id, inner.version))]);
+                let st =
+                    stream::iter([Ok(Token::LastMessage(inner.last_message_id, inner.version))]);
                 let inner = entry.insert(Arc::new(RwLock::new(inner))).clone();
 
                 let state = State {
@@ -102,7 +104,7 @@ async fn handle_channel(
     })??;
 
     match token {
-        Token::End(_) => {
+        Token::ChunkEnd(..) => {
             state.offset = 0;
         }
         // don't care token
@@ -117,6 +119,11 @@ async fn handle_buffer(state: &mut State) -> Result<Token, Error> {
     let token = inner.buffer[state.offset..].to_owned();
     state.offset = inner.buffer.len();
 
+    let is_reasoning = inner.is_reasoning;
     drop(inner);
-    Ok(Token::Token(token))
+    if is_reasoning {
+        Ok(Token::ReasoningToken(token))
+    } else {
+        Ok(Token::Token(token))
+    }
 }

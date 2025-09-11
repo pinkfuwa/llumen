@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{MessageKind, message, prelude::*};
+use entity::{ChunkKind, MessageKind, message, prelude::*};
 use migration::ExprTrait;
 use sea_orm::{QueryOrder, QuerySelect, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -58,8 +58,15 @@ pub struct MessagePaginateResp {
 #[typeshare]
 pub struct MessagePaginateRespList {
     pub id: i32,
-    pub text: String,
     pub role: MessagePaginateRespRole,
+    pub chunks: Vec<MessagePaginateRespChunk>,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunk {
+    pub id: i32,
+    pub kind: MessagePaginateRespChunkKind,
 }
 
 #[derive(Debug, Serialize)]
@@ -68,7 +75,34 @@ pub struct MessagePaginateRespList {
 pub enum MessagePaginateRespRole {
     User,
     Assistant,
-    Think,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+#[serde(tag = "t", content = "c")]
+pub enum MessagePaginateRespChunkKind {
+    Text(MessagePaginateRespChunkKindText),
+    Reasoning(MessagePaginateRespChunkKindReasoning),
+    ToolCall(MessagePaginateRespChunkKindToolCall),
+}
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindText {
+    pub context: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindReasoning {
+    pub context: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindToolCall {
+    pub name: String,
+    pub args: String,
+    pub context: String,
 }
 
 pub async fn route(
@@ -124,22 +158,57 @@ pub async fn route(
         }
     };
 
-    let res = q.all(&app.conn).await.kind(ErrorKind::Internal)?;
+    let res = q
+        .find_with_related(Chunk)
+        .all(&app.conn)
+        .await
+        .kind(ErrorKind::Internal)?;
     let list = res
         .into_iter()
-        .filter_map(|x| {
-            Some(MessagePaginateRespList {
-                id: x.id,
-                text: x.text.unwrap_or_default(),
-                role: match x.kind {
-                    MessageKind::User => MessagePaginateRespRole::User,
-                    MessageKind::Assistant => MessagePaginateRespRole::Assistant,
-                    MessageKind::Reasoning => MessagePaginateRespRole::Think,
-                    MessageKind::System => return None,
-                },
-            })
+        .filter_map(|(message, chunks)| {
+            let role = match message.kind {
+                MessageKind::User => MessagePaginateRespRole::User,
+                MessageKind::Assistant => MessagePaginateRespRole::Assistant,
+                MessageKind::Hidden => return None,
+            };
+            let chunks: Result<_, Json<Error>> = chunks
+                .into_iter()
+                .map(|chunk| {
+                    Ok(MessagePaginateRespChunk {
+                        id: chunk.id,
+                        kind: match chunk.kind {
+                            ChunkKind::Text => MessagePaginateRespChunkKind::Text(
+                                MessagePaginateRespChunkKindText {
+                                    context: chunk.content,
+                                },
+                            ),
+                            ChunkKind::Reasoning => MessagePaginateRespChunkKind::Reasoning(
+                                MessagePaginateRespChunkKindReasoning {
+                                    context: chunk.content,
+                                },
+                            ),
+                            ChunkKind::ToolCall => {
+                                let tool_call = chunk.as_tool_call().kind(ErrorKind::Internal)?;
+                                MessagePaginateRespChunkKind::ToolCall(
+                                    MessagePaginateRespChunkKindToolCall {
+                                        name: tool_call.name,
+                                        args: tool_call.args,
+                                        context: tool_call.content,
+                                    },
+                                )
+                            }
+                        },
+                    })
+                })
+                .collect();
+
+            Some(chunks.map(|chunks| MessagePaginateRespList {
+                id: message.id,
+                role,
+                chunks,
+            }))
         })
-        .collect();
+        .collect::<Result<_, _>>()?;
 
     Ok(Json(MessagePaginateResp { list }))
 }

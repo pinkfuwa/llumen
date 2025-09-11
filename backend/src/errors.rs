@@ -20,6 +20,7 @@ pub enum ErrorKind {
     LoginFail,
     ResourceNotFound,
     ApiFail,
+    ToolCallFail,
 }
 
 pub type JsonResult<T> = Result<Json<T>, Json<Error>>;

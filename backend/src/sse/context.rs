@@ -7,11 +7,7 @@ use serde::Serialize;
 use tokio::sync::{Mutex, Notify, RwLock, broadcast};
 
 use super::subscriber::Subscriber;
-use crate::{
-    config::MAX_SSE_BUF,
-    errors::Error,
-    sse::{Publisher, PublisherKind},
-};
+use crate::{config::MAX_SSE_BUF, errors::Error, sse::Publisher};
 
 #[derive(Debug, Clone)]
 pub struct SseContext {
@@ -23,8 +19,8 @@ pub struct SseContext {
 pub struct SseInner {
     /// Last message id
     /// Default to last message id in DB
-    /// for pagination and update message
-    pub last_id: i32,
+    /// for pagination
+    pub last_message_id: i32,
 
     /// A random version
     /// When update it will +1
@@ -32,6 +28,7 @@ pub struct SseInner {
 
     /// `on_receive` will notify when buffer/id change
     pub on_receive: Arc<Notify>,
+    pub is_reasoning: bool,
     pub buffer: String,
 
     /// Extra token
@@ -52,11 +49,12 @@ impl SseInner {
         let version = fastrand::u32(0..u16::MAX as u32);
         Ok(Self {
             buffer: "".to_owned(),
-            last_id,
+            last_message_id: last_id,
             version,
             on_receive: Arc::new(Notify::new()),
             on_halt: Arc::new(Notify::new()),
             channel: broadcast::channel(MAX_SSE_BUF).0,
+            is_reasoning: true,
         })
     }
 }
@@ -90,16 +88,26 @@ impl SseContext {
 #[derive(Debug, Clone, Serialize)]
 pub enum Token {
     // id, version
-    Last(i32, u32),
+    LastMessage(i32, u32),
     Token(String),
+    ReasoningToken(String),
 
     /// End token
-    End(i32),
-    Halt(i32),
-    Error(i32),
+    ChunkEnd(i32, EndKind),
+    MessageEnd(i32, EndKind),
 
-    /// Extra token
-    User(i32, String),
-    /// name, state
-    Tool(&'static str, String),
+    /// message id, chunk id, content
+    UserMessage(i32, i32, String),
+
+    /// name, args
+    ToolCall(&'static str, String),
+    /// name, args, context, id
+    ToolCallEnd(&'static str, String, String, i32),
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub enum EndKind {
+    Complete,
+    Halt,
+    Error,
 }

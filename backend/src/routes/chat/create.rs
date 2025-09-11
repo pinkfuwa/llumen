@@ -1,18 +1,12 @@
 use std::sync::Arc;
 
-use anyhow::Context;
 use axum::{Extension, Json, extract::State};
-use entity::{MessageKind, chat, message, prelude::*};
+use entity::{chat, prelude::*};
 use sea_orm::{ActiveValue::Set, EntityTrait};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{
-    AppState,
-    errors::*,
-    middlewares::auth::UserId,
-    prompts::{self, PromptStore},
-};
+use crate::{AppState, errors::*, middlewares::auth::UserId};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -31,7 +25,7 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<ChatCreateReq>,
 ) -> JsonResult<ChatCreateResp> {
-    let res = Chat::insert(chat::ActiveModel {
+    let chat_id = Chat::insert(chat::ActiveModel {
         owner_id: Set(user_id),
         model_id: Set(req.model_id),
         // FIXME:
@@ -41,34 +35,8 @@ pub async fn route(
     })
     .exec(&app.conn)
     .await
-    .kind(ErrorKind::Internal)?;
+    .kind(ErrorKind::Internal)?
+    .last_insert_id;
 
-    let user = User::find_by_id(user_id)
-        .one(&app.conn)
-        .await
-        .kind(ErrorKind::Internal)?
-        .context("Cannot find user")
-        .kind(ErrorKind::ResourceNotFound)?;
-
-    let template = prompts::ChatStore
-        .template(user.preference.locale.as_deref())
-        .await
-        .kind(ErrorKind::Internal)?
-        .render(&app.prompt, res.last_insert_id, (), ())
-        .await
-        .kind(ErrorKind::Internal)?;
-
-    Message::insert(message::ActiveModel {
-        chat_id: Set(res.last_insert_id),
-        text: Set(Some(template)),
-        kind: Set(MessageKind::System),
-        ..Default::default()
-    })
-    .exec(&app.conn)
-    .await
-    .kind(ErrorKind::Internal)?;
-
-    Ok(Json(ChatCreateResp {
-        id: res.last_insert_id,
-    }))
+    Ok(Json(ChatCreateResp { id: chat_id }))
 }
