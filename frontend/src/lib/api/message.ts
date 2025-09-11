@@ -22,7 +22,8 @@ import {
 	type SseReq,
 	type SseResp
 } from './types';
-import { MarkdownPatcher, type UIUpdater } from '$lib/markdown/patcher';
+import { MarkdownPatcher, type UIUpdater } from '$lib/components/markdown/patcher';
+import { globalCache } from './state/cache';
 
 class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 	chatId: number;
@@ -81,6 +82,12 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 	return CreateMutation({
 		path: 'message/create',
 		onSuccess: (data, param) => {
+			const roomStreamingState = globalCache.getOr(
+				['chat', 'stream', param.chat_id.toString()],
+				false
+			);
+			roomStreamingState.set(true);
+
 			SetInfiniteQueryData<MessagePaginateRespList>({
 				key: ['messagePaginate', param.chat_id.toString()],
 				data: {
@@ -110,6 +117,17 @@ export function handleServerSideMessage(chatId: number, streamingUI: UIUpdater) 
 			patcher.feed(data.text);
 		},
 		end(data) {
+			// TODO: fix bug
+			// consider following case
+			// 1. user send message
+			// 2. client got empty message with pagination API, thus ignored by display
+			// 3. sse flush streaming message, creating a new message
+			// 4. client got message update with pagination API, thus that message is not ignored
+			// => Display two duplicate message
+			//
+			// There are two violation lead to this:
+			// 1. SetInfiniteQueryData should **correct** local data to the state of remote
+			// 2. Page of each InfiniteQuery should not overflow
 			SetInfiniteQueryData<MessagePaginateRespList>({
 				key: ['messagePaginate', chatId.toString()],
 				data: {

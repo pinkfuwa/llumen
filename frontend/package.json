@@ -9,7 +9,8 @@
 		"preview": "vite preview",
 		"format": "prettier --write .",
 		"format-ffi": "prettier --write src/lib/api/types.ts",
-		"lint": "prettier --check ."
+		"lint": "prettier --check .",
+		"codegen-shiki": "node shiki-codegen.js"
 	},
 	"dependencies": {
 		"@codemirror/commands": "^6.8.1",
@@ -37,7 +38,7 @@
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
-		"shiki": "^3.8.1",
+		"shiki-codegen": "^3.12.2",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"svelte-i18n": "^4.0.1",
@@ -49,5 +50,8 @@
 		"onlyBuiltDependencies": [
 			"esbuild"
 		]
+	},
+	"devDependencies": {
+		"shiki": "^3.8.1"
 	}
 }
