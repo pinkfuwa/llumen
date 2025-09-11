@@ -5,7 +5,7 @@
 	import Copyright from '$lib/components/Copyright.svelte';
 	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
-	import { haltCompletion, useRoom } from '$lib/api/chatroom.js';
+	import { haltCompletion, useRoom, useRoomStreamingState } from '$lib/api/chatroom.js';
 
 	let id = $derived(Number(params.id));
 
@@ -19,7 +19,7 @@
 
 	let { data: room } = $derived(useRoom(id));
 
-	let isStreaming = $state(false);
+	let isStreaming = $derived(useRoomStreamingState(id));
 </script>
 
 <svelte:head>
@@ -44,17 +44,17 @@
 			onsubmit={() => {
 				mutate({ chat_id: id, text: content });
 				content = '';
-				isStreaming = true;
+				isStreaming.set(true);
 			}}
 			oncancel={() => {
 				halt({ id });
-				isStreaming = false;
+				isStreaming.set(false);
 			}}
-			disabled={isStreaming}
+			disabled={$isStreaming}
 		/>
 	</div>
 	{#key id}
-		<MessagePagination {id} bind:isStreaming />
+		<MessagePagination {id} />
 	{/key}
 	<div class="min-h-16"></div>
 </main>

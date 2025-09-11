@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageEntry } from '$lib/api/state';
 	import { MessagePaginateRespRole as Role, type MessagePaginateRespList } from '$lib/api/types';
-	import Root from '$lib/markdown/Root.svelte';
+	import Root from '../markdown/Root.svelte';
 	import Reasoning from './buttons/Reasoning.svelte';
 	import ResponseBox from './buttons/ResponseBox.svelte';
 	import ResponseEdit from './buttons/ResponseEdit.svelte';

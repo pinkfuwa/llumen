@@ -5,7 +5,7 @@
 	import { initError, useError } from '$lib/error';
 	import { copyCounter } from '$lib/copy';
 	import CopyHint from '$lib/components/buttons/CopyHint.svelte';
-	import initLatex from '$lib/markdown/latex';
+	import initLatex from '$lib/components/markdown/latex';
 	import { initPreference } from '$lib';
 	import { initAuth } from '$lib/api/auth';
 

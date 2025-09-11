@@ -10,9 +10,10 @@ Its design goal is simplicity: you only need a single OpenRouter API key to use 
 ## Highlights
 
 - Single API key requirement (OpenRouter) for model calls.
+- Very fast and high quality UI
 - Markdown rendering with code and math support.
 - Multiple chat modes (normal, web-search-enabled).
-- Roadmap: deep-research and agentic modes, including file modification (WIP).
+- Deep-research and agentic modes, including file modification (WIP).
 
 ## Screenshots
 
@@ -22,10 +23,13 @@ Its design goal is simplicity: you only need a single OpenRouter API key to use 
 
 ## Quickstart: Docker
 
+> [!TIP]
+> Use [reasoning-proxy](https://github.com/Eason0729/reasoning-proxy) to unlock advance feature with normal openai endpoint
+
 - The repository includes a multi-stage `Dockerfile` that builds the frontend and the backend and produces a small image that serves static files and runs the server.
 - Example: build and run the container (binds port 80 by default).
 
-```
+```bash
 docker build -f docker/Dockerfile -t llumen .
 docker run -it --rm \
   -e API_KEY="<YOUR_OPENROUTER_API_KEY>" \
@@ -51,8 +55,7 @@ docker run -it --rm \
 
 Ordered by priority
 
-1. Customized system prompt
-2. Title Generation
-3. Tool support
-4. File upload
-5. Deep research mode
+1. Title Generation
+2. Tool support
+3. File upload
+4. Deep research mode

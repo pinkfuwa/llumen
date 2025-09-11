@@ -32,6 +32,8 @@ import { APIFetch } from './state/errorHandle';
 import { once } from './state/helper';
 import { onDestroy } from 'svelte';
 import type { MutationResult } from './state/mutate';
+import { globalCache } from './state/cache';
+import type { Writable } from 'svelte/store';
 
 export interface CreateRoomRequest {
 	message: string;
@@ -155,4 +157,8 @@ export function deleteRoom(): MutationResult<ChatDeleteReq, ChatDeleteResp> {
 	return CreateMutation<ChatDeleteReq, ChatDeleteResp>({
 		path: 'chat/delete'
 	});
+}
+
+export function useRoomStreamingState(id: number): Writable<boolean> {
+	return globalCache.getOr(['chat', 'stream', id.toString()], false);
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Root from '$lib/markdown/Root.svelte';
+	import Root from '../../markdown/Root.svelte';
 
 	let { content } = $props();
 </script>

@@ -1,36 +1,36 @@
 <script lang="ts">
-	let { id, isStreaming = $bindable(false) }: { id: number; isStreaming?: boolean } = $props();
+	let { id }: { id: number } = $props();
 
 	import { handleServerSideMessage, useMessage } from '$lib/api/message';
 	import Page from './Page.svelte';
 	import type { TokensList } from 'marked';
 	import MessageStream from './MessageStream.svelte';
+	import { useRoomStreamingState } from '$lib/api/chatroom';
 
 	const { data } = useMessage(id);
 
 	let tokensList = $state<Array<TokensList>>([]);
 
+	let isStreaming = $derived(useRoomStreamingState(id));
+
 	handleServerSideMessage(id, {
 		tick() {
-			isStreaming = true;
+			isStreaming.set(true);
 		},
 		reset() {
 			tokensList = [];
-			isStreaming = false;
 		},
 		append(tokens) {
 			tokensList.push(tokens);
-			isStreaming = true;
 		},
 		replace(tokens) {
 			tokensList.pop();
 			tokensList.push(tokens);
-			isStreaming = true;
 		}
 	});
 </script>
 
-{#if isStreaming}
+{#if $isStreaming}
 	<MessageStream list={tokensList} />
 {/if}
 
