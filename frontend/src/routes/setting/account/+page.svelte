@@ -33,7 +33,7 @@
 		</Warning>
 	{/if}
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="theme">{$_('setting.theme')}: </label>
+		<label for="theme" class="grow">{$_('setting.theme')}: </label>
 		<select
 			id="theme"
 			bind:value={themeData}
@@ -50,7 +50,7 @@
 	</div>
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="lang">{$_('setting.language')}: </label>
+		<label for="lang" class="grow">{$_('setting.language')}: </label>
 		<select
 			id="lang"
 			bind:value={localeData}
@@ -64,7 +64,7 @@
 	</div>
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="enter">{$_('setting.enter')}: </label>
+		<label for="enter" class="grow">{$_('setting.enter')}: </label>
 		<select
 			id="enter"
 			bind:value={submitOnEnterData}
@@ -78,7 +78,7 @@
 	</div>
 
 	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="password">{$_('setting.change_password')}: </label>
+		<label for="password" class="grow">{$_('setting.change_password')}: </label>
 		<div class="flex items-center justify-between">
 			<input
 				type="password"

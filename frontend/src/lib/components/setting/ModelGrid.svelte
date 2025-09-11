@@ -2,6 +2,7 @@
 	import { DeleteModel, useModels } from '$lib/api/model';
 	import { Trash } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
+	import CheckDelete from './CheckDelete.svelte';
 
 	const { mutate: deleteModel } = DeleteModel();
 	const { isLoading, data } = useModels();
@@ -22,14 +23,11 @@
 					{model.display_name}
 				</a>
 				<!-- TODO: mutation was supposed to be at top level -->
-				<button
-					onclick={() =>
-						deleteModel({
-							id: model.id
-						})}
-				>
-					<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
-				</button>
+				<CheckDelete
+					ondelete={deleteModel({
+						id: model.id
+					})}
+				/>
 			</div>
 		{/each}
 	</div>

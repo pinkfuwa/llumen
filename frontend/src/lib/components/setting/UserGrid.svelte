@@ -3,6 +3,7 @@
 	import { Trash } from '@lucide/svelte';
 	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { _ } from 'svelte-i18n';
+	import CheckDelete from './CheckDelete.svelte';
 
 	const { mutate: deleteUser } = DeleteUser();
 	const { isLoading, data } = useUsers();
@@ -20,14 +21,12 @@
 			>
 				{user.name}
 				{#if !$isUserDataLoading && user.id != $userData?.user_id}
-					<button
-						onclick={() =>
+					<CheckDelete
+						ondelete={() =>
 							deleteUser({
 								user_id: user.id
 							})}
-					>
-						<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
-					</button>
+					/>
 				{/if}
 			</li>
 		{/each}
