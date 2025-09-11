@@ -22,6 +22,7 @@ pub struct ToolStore {
 pub struct ToolStoreInner {
     constructor: Box<dyn ToolConstructor + Send + Sync>,
     description: &'static str,
+    prompt: &'static str,
     schema: Value,
 }
 
@@ -41,6 +42,7 @@ impl ToolStore {
             ToolStoreInner {
                 constructor: Eraser::<T>::new(),
                 description: T::DESCRIPTION,
+                prompt: T::PROMPT,
                 schema: serde_json::to_value(schema_for!(T::Input))
                     .context("Cannot generate schema for tool")?,
             },
@@ -48,14 +50,19 @@ impl ToolStore {
         Ok(())
     }
 
-    pub fn list(&self, tool_set: ToolSet) -> Vec<openrouter::Tool> {
+    pub fn list(&self, tool_set: ToolSet) -> (Vec<&'static str>, Vec<openrouter::Tool>) {
         tool_set
-            .names()
+            .toold()
             .filter_map(|name| {
-                self.tools.get(name).map(|tool| openrouter::Tool {
-                    name: name.to_string(),
-                    description: tool.description.to_owned(),
-                    schema: tool.schema.clone(),
+                self.tools.get(name).map(|tool| {
+                    (
+                        tool.prompt,
+                        openrouter::Tool {
+                            name: name.to_string(),
+                            description: tool.description.to_owned(),
+                            schema: tool.schema.clone(),
+                        },
+                    )
                 })
             })
             .collect()
@@ -64,7 +71,7 @@ impl ToolStore {
     /// Grab a tool box
     pub async fn grab(&self, chat_id: i32, tool_set: ToolSet) -> Result<ToolBox> {
         let iter = tool_set
-            .names()
+            .toold()
             .filter_map(|name| self.tools.get(name).map(|tool| (name, tool)));
 
         let mut tools = HashMap::new();
@@ -136,5 +143,17 @@ where
 
     fn default(&self) -> Box<dyn UntypedTool> {
         Box::new(T::default())
+    }
+}
+
+impl ToolBox {
+    pub fn get(&mut self, name: &str) -> Option<(&'static str, &mut Box<dyn UntypedTool>)> {
+        let Some((name, _)) = self.tools.get_key_value(name) else {
+            return None;
+        };
+        let name = *name;
+
+        let tool = self.tools.get_mut(name).unwrap();
+        Some((name, tool))
     }
 }

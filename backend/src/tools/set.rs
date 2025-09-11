@@ -1,13 +1,17 @@
+#[derive(Debug, Clone, Copy)]
 pub struct ToolSet {
     list: &'static [&'static str],
 }
 
 #[macro_export]
 macro_rules! tool_set {
-    ($T:path, $($E:path, )*) => {
-        crate::tools::ToolSet::new(&[<$T as crate::tools::Tool>::NAME, tool_set!($($E,)*)])
+    ($($E:path),*) => {
+        crate::tools::ToolSet::new(&[tool_set!(@ $($E),*)])
     };
-    () => {}
+
+    (@ $P:path, $($E:path),+) => {tool_set!(@ $P), tool_set!(@ $($E,)*)};
+    (@ $P:path) => {<$P as crate::tools::Tool>::NAME};
+    (@)=>{}
 }
 
 impl ToolSet {
@@ -15,7 +19,7 @@ impl ToolSet {
         Self { list }
     }
 
-    pub fn names(&self) -> impl Iterator<Item = &'static str> {
+    pub fn toold(&self) -> impl Iterator<Item = &'static str> {
         self.list.iter().map(|x| *x)
     }
 }

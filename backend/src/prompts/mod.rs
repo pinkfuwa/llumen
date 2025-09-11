@@ -37,6 +37,7 @@ pub struct PromptContext<E = (), P = ()> {
     pub user: UserInfo,
     pub date: UtcDateTime,
     pub chat: ChatInfo,
+    pub tools: Vec<&'static str>,
     pub extra: E,
     pub pipe: P,
 }
@@ -66,13 +67,18 @@ where
         }
     }
 
-    pub async fn render(&self, env: &PromptEnv, chat_id: i32, extra: E, pipe: P) -> Result<String> {
-        let ctx = PromptContext::new(&env.conn, chat_id, extra, pipe).await?;
+    pub async fn render(
+        &self,
+        env: &PromptEnv,
+        chat_id: i32,
+        tools: Vec<&'static str>,
+        extra: E,
+        pipe: P,
+    ) -> Result<String> {
+        let ctx = PromptContext::new(&env.conn, chat_id, tools, extra, pipe).await?;
         let res = env.env.render_str(self.template.as_ref(), ctx)?;
         Ok(res)
     }
-
-    pub async fn render_store() {}
 }
 
 impl PromptEnv {
@@ -85,7 +91,13 @@ impl PromptEnv {
 }
 
 impl<E, P> PromptContext<E, P> {
-    pub async fn new(conn: &DbConn, chat_id: i32, extra: E, pipe: P) -> Result<Self> {
+    pub async fn new(
+        conn: &DbConn,
+        chat_id: i32,
+        tools: Vec<&'static str>,
+        extra: E,
+        pipe: P,
+    ) -> Result<Self> {
         let chat = Chat::find_by_id(chat_id)
             .one(conn)
             .await?
@@ -107,6 +119,7 @@ impl<E, P> PromptContext<E, P> {
             },
             extra,
             pipe,
+            tools,
         })
     }
 }
