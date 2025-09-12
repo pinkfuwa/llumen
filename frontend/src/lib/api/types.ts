@@ -77,7 +77,8 @@ export enum ErrorKind {
 	Internal = 'internal',
 	LoginFail = 'login_fail',
 	ResourceNotFound = 'resource_not_found',
-	ApiFail = 'api_fail'
+	ApiFail = 'api_fail',
+	ToolCallFail = 'tool_call_fail'
 }
 
 export interface Error {
@@ -95,8 +96,16 @@ export interface LoginResp {
 	exp: string;
 }
 
+export enum MessageCreateReqMode {
+	Normal = 'normal',
+	Search = 'search',
+	Agent = 'agent',
+	Research = 'research'
+}
+
 export interface MessageCreateReq {
 	chat_id: number;
+	mode: MessageCreateReqMode;
 	text: string;
 }
 
@@ -131,18 +140,41 @@ export interface MessagePaginateReqRange {
 
 export enum MessagePaginateRespRole {
 	User = 'user',
-	Assistant = 'assistant',
-	Think = 'think'
+	Assistant = 'assistant'
+}
+
+export type MessagePaginateRespChunkKind =
+	| { t: 'text'; c: MessagePaginateRespChunkKindText }
+	| { t: 'reasoning'; c: MessagePaginateRespChunkKindReasoning }
+	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall };
+
+export interface MessagePaginateRespChunk {
+	id: number;
+	kind: MessagePaginateRespChunkKind;
 }
 
 export interface MessagePaginateRespList {
 	id: number;
-	text: string;
 	role: MessagePaginateRespRole;
+	chunks: MessagePaginateRespChunk[];
 }
 
 export interface MessagePaginateResp {
 	list: MessagePaginateRespList[];
+}
+
+export interface MessagePaginateRespChunkKindReasoning {
+	context: string;
+}
+
+export interface MessagePaginateRespChunkKindText {
+	context: string;
+}
+
+export interface MessagePaginateRespChunkKindToolCall {
+	name: string;
+	args: string;
+	context: string;
 }
 
 export interface MessageWriteReq {
@@ -252,23 +284,41 @@ export enum SseRespEndKind {
 	Error = 'error'
 }
 
-export interface SseRespEnd {
+export interface SseRespChunkEnd {
 	id: number;
 	kind: SseRespEndKind;
 }
 
-export interface SseRespLast {
+export interface SseRespLastMessage {
 	id: number;
 	version: number;
 }
 
+export interface SseRespMessageEnd {
+	id: number;
+	kind: SseRespEndKind;
+}
+
 export interface SseRespToken {
-	text: string;
+	content: string;
+}
+
+export interface SseRespToolCall {
+	name: string;
+	args: string;
+}
+
+export interface SseRespToolCallEnd {
+	chunk_id: number;
+	name: string;
+	args: string;
+	content: string;
 }
 
 export interface SseRespUserMessage {
-	id: number;
-	text: string;
+	message_id: number;
+	chunk_id: number;
+	content: string;
 }
 
 export interface UserCreateReq {
@@ -335,28 +385,12 @@ export type MessagePaginateReq =
 	| { t: 'limit'; c: MessagePaginateReqLimit }
 	| { t: 'range'; c: MessagePaginateReqRange };
 
-/**
- * `{Stream Message}` will be `Start -> [Token] -> {Stream End}`
- *
- * `{Stream End}` will be `End -> Error` if `End.kind == error`, otherwise `End`
- *
- * When connect, the respond will be `Last -> [{Stream Message} -> UserMessage]`
- *
- * When update the message, the respond will be `Last -> UserMessage(updated) -> [{Stream Message} -> UserMessage]`
- */
 export type SseResp =
-	/**
-	 * When connect to SSE, the first respond will be this
-	 *
-	 * Use this to get old message
-	 */
-	| { t: 'last'; c: SseRespLast }
-	/** token */
+	| { t: 'last_message'; c: SseRespLastMessage }
 	| { t: 'token'; c: SseRespToken }
-	/**
-	 * End of the streaming message
-	 * next token will be `Start`
-	 */
-	| { t: 'end'; c: SseRespEnd }
-	/** The message sent by user */
+	| { t: 'reasoning_token'; c: SseRespToken }
+	| { t: 'chunk_end'; c: SseRespChunkEnd }
+	| { t: 'tool_call'; c: SseRespToolCall }
+	| { t: 'tool_call_end'; c: SseRespToolCallEnd }
+	| { t: 'message_end'; c: SseRespMessageEnd }
 	| { t: 'user_message'; c: SseRespUserMessage };
