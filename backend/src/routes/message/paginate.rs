@@ -79,7 +79,7 @@ pub enum MessagePaginateRespRole {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-#[serde(tag = "t", content = "c")]
+#[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum MessagePaginateRespChunkKind {
     Text(MessagePaginateRespChunkKindText),
     Reasoning(MessagePaginateRespChunkKindReasoning),
