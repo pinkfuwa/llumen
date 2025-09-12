@@ -1,10 +1,10 @@
 <script>
-	import { codeToHtml, getThemeName, getThemeStyle } from './shiki';
+	import { codeToHtml, getThemeStyle } from './shiki';
 	import { isLightTheme } from '$lib/preference';
+	import Monochrome from './Monochrome.svelte';
 
-	let { lang = 'typescript', text = '', monochrome = false } = $props();
+	let { lang = 'bash', text = '', monochrome = false } = $props();
 
-	let themeName = $derived(getThemeName($isLightTheme));
 	let themeStyle = $derived(getThemeStyle($isLightTheme));
 </script>
 
@@ -13,23 +13,14 @@
 	style={themeStyle}
 >
 	{#if monochrome}
-		<pre class="shiki {themeName}" style={themeStyle}><code
-				>{#each text.split('\n') as line}<div class="line min-h-6"><span>{line}</span
-						></div>{/each}</code
-			></pre>
+		<Monochrome {text} />
 	{:else}
 		{#await codeToHtml(text, { lang, isLight: $isLightTheme })}
-			<pre class="shiki {themeName}" style={themeStyle}><code
-					>{#each text.split('\n') as line}<div class="line min-h-6"><span>{line}</span
-							></div>{/each}</code
-				></pre>
+			<Monochrome {text} />
 		{:then value}
 			{@html value}
 		{:catch}
-			<pre class="shiki {themeName}" style={themeStyle}><code
-					>{#each text.split('\n') as line}<div class="line min-h-6"><span>{line}</span
-							></div>{/each}</code
-				></pre>
+			<Monochrome {text} />
 		{/await}
 	{/if}
 </div>

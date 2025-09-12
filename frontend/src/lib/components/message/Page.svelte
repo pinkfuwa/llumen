@@ -43,7 +43,7 @@
 					<Result content={'# abc'} />
 				</ToolBox> -->
 				<Root source={msg.text} />
-				<ResponseEdit />
+				<ResponseEdit content={msg.text} />
 			</ResponseBox>
 		{/if}
 	{:else}
