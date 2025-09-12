@@ -9,7 +9,6 @@ pub struct Model {
     pub id: i32,
     pub chat_id: i32,
     pub kind: crate::MessageKind,
-    pub text: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -136,7 +136,6 @@ pub async fn route(
                     MessageKind::Assistant => MessagePaginateRespRole::Assistant,
                     MessageKind::Reasoning => MessagePaginateRespRole::Think,
                     MessageKind::System => return None,
-                    MessageKind::Hidden => return None,
                 },
             })
         })
