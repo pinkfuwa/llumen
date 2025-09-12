@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { TokensList } from 'marked';
-	import Parser from '$lib/markdown/Parser.svelte';
+	import Parser from '$lib/components/markdown/Parser.svelte';
 	import { _ } from 'svelte-i18n';
 	import ResponseBox from './buttons/ResponseBox.svelte';
 

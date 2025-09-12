@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Root from '$lib/markdown/Root.svelte';
+	import Root from '../../markdown/Root.svelte';
 	import { SquarePen, Check, X } from '@lucide/svelte';
 	import FileGroup from '../../buttons/FileGroup.svelte';
 	let { content = $bindable(''), files = $bindable([] as Array<{ name: string }>) } = $props();

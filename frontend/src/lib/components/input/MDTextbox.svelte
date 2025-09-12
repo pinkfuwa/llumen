@@ -7,7 +7,7 @@
 		onsubmit = undefined as undefined | (() => void)
 	} = $props();
 
-	import { default as Markdown } from '$lib/markdown/Root.svelte';
+	import { default as Markdown } from '$lib/components/markdown/Root.svelte';
 	import { submitOnEnter } from '$lib/preference';
 	import { onStartTyping } from '@sv-use/core';
 	import { get } from 'svelte/store';
