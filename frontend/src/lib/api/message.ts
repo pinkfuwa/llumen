@@ -76,7 +76,9 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 export function useMessage(chat_id: number): InfiniteQueryResult<MessagePaginateRespList> {
 	return CreateInfiniteQuery({
 		key: ['messagePaginate', chat_id.toString()],
-		fetcher: new MessageFetcher(chat_id)
+		fetcher: new MessageFetcher(chat_id),
+		staleTime: Infinity,
+		revalidateOnFocus: false
 	});
 }
 

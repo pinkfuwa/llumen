@@ -6,14 +6,8 @@
 		type MessagePaginateRespChunkKindText,
 		type MessagePaginateRespList
 	} from '$lib/api/types';
-	import Root from '../markdown/Root.svelte';
-	import Assitant from './buttons/Assitant.svelte';
-	import Reasoning from './buttons/Reasoning.svelte';
 	import ResponseBox from './buttons/ResponseBox.svelte';
 	import ResponseEdit from './buttons/ResponseEdit.svelte';
-	import Result from './buttons/Result.svelte';
-	import Tool from './buttons/Tool.svelte';
-	import ToolBox from './buttons/ToolBox.svelte';
 	import User from './buttons/User.svelte';
 	import Chunks from './Chunks.svelte';
 
