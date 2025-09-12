@@ -1,7 +1,13 @@
 <script lang="ts">
 	import type { PageEntry } from '$lib/api/state';
-	import { MessagePaginateRespRole as Role, type MessagePaginateRespList } from '$lib/api/types';
+	import {
+		MessagePaginateRespRole as Role,
+		type MessagePaginateRespChunk,
+		type MessagePaginateRespChunkKindText,
+		type MessagePaginateRespList
+	} from '$lib/api/types';
 	import Root from '../markdown/Root.svelte';
+	import Assitant from './buttons/Assitant.svelte';
 	import Reasoning from './buttons/Reasoning.svelte';
 	import ResponseBox from './buttons/ResponseBox.svelte';
 	import ResponseEdit from './buttons/ResponseEdit.svelte';
@@ -9,41 +15,31 @@
 	import Tool from './buttons/Tool.svelte';
 	import ToolBox from './buttons/ToolBox.svelte';
 	import User from './buttons/User.svelte';
+	import Chunks from './Chunks.svelte';
 
 	let div = $state<HTMLElement | null>(null);
 
 	const { entry }: { entry: PageEntry<MessagePaginateRespList> } = $props();
 	const data = entry.data;
 
-	const mergedData = $derived.by(() => {
-		let result: Array<MessagePaginateRespList & { reasoning?: string }> = [];
-		for (const entry of $data) {
-			if (entry.role == Role.User) result.push(entry);
-			else if (entry.role == Role.Assistant) result.push(entry);
-			else if (entry.role == Role.Think) result.at(-1)!.reasoning = entry.text;
-		}
-		return result;
-	});
-
 	$effect(() => entry.target.set(div));
+
+	function getRespFromChunks(chunks: MessagePaginateRespChunk[]) {
+		return chunks
+			.filter((x) => x.kind.t == 'text')
+			.map((x) => x.kind.c)
+			.join('\n');
+	}
 </script>
 
 <div class="mt-2 flex flex-col-reverse space-y-2" bind:this={div}>
-	{#each mergedData as msg}
+	{#each $data as msg}
 		{#if msg.role == Role.User}
-			<User content={msg.text} />
-		{:else if msg.role == Role.Assistant && msg.text.length != 0}
+			<User content={(msg.chunks[0].kind.c as MessagePaginateRespChunkKindText).context} />
+		{:else if msg.role == Role.Assistant}
 			<ResponseBox>
-				{#if msg.reasoning != undefined}
-					<Reasoning content={msg.reasoning} />
-				{/if}
-				<!-- <Reasoning content="Reasoning content" />
-				<ToolBox>
-					<Tool content={'{\n   "Arg": 1\n}'} />
-					<Result content={'# abc'} />
-				</ToolBox> -->
-				<Root source={msg.text} />
-				<ResponseEdit content={msg.text} />
+				<Chunks chunks={msg.chunks} />
+				<ResponseEdit content={getRespFromChunks(msg.chunks)} />
 			</ResponseBox>
 		{/if}
 	{:else}

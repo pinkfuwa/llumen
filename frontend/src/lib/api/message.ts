@@ -14,6 +14,7 @@ import type { MutationResult } from './state/mutate';
 import {
 	MessagePaginateReqOrder,
 	MessagePaginateRespRole,
+	SseRespEndKind,
 	type MessageCreateReq,
 	type MessageCreateResp,
 	type MessagePaginateReq,
@@ -24,6 +25,7 @@ import {
 } from './types';
 import { MarkdownPatcher, type UIUpdater } from '$lib/components/markdown/patcher';
 import { globalCache } from './state/cache';
+import { onDestroy } from 'svelte';
 
 class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 	chatId: number;
@@ -92,87 +94,30 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 				key: ['messagePaginate', param.chat_id.toString()],
 				data: {
 					id: data.id,
-					text: param.text,
-					role: MessagePaginateRespRole.User
+					role: MessagePaginateRespRole.User,
+					chunks: [{ id: data.id, kind: { t: 'text', c: { context: param.text } } }]
 				}
 			});
 		}
 	});
 }
 
-export function handleServerSideMessage(chatId: number, streamingUI: UIUpdater) {
-	let patcher = new MarkdownPatcher(streamingUI);
-	const handlers: {
-		[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c']) => void;
-	} = {
-		last(data) {
-			// data.version
-			RevalidateInfiniteQueryData({
-				key: ['messagePaginate', chatId.toString()],
-				predicate: (entry) => data.id <= entry.id
-			});
-		},
-		token(data) {
-			streamingUI.tick();
-			patcher.feed(data.text);
-		},
-		end(data) {
-			// TODO: fix bug
-			// consider following case
-			// 1. user send message
-			// 2. client got empty message with pagination API, thus ignored by display
-			// 3. sse flush streaming message, creating a new message
-			// 4. client got message update with pagination API, thus that message is not ignored
-			// => Display two duplicate message
-			//
-			// There are two violation lead to this:
-			// 1. SetInfiniteQueryData should **correct** local data to the state of remote
-			// 2. Page of each InfiniteQuery should not overflow
-			SetInfiniteQueryData<MessagePaginateRespList>({
-				key: ['messagePaginate', chatId.toString()],
-				data: {
-					id: data.id,
-					text: patcher.content,
-					role: MessagePaginateRespRole.Assistant
-				}
-			});
-			patcher.reset();
-		},
-		user_message(data) {
-			streamingUI.tick();
+let SSEHandlers: {
+	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
+} = {
+	last_message: [],
+	token: [],
+	reasoning_token: [],
+	chunk_end: [],
+	tool_call: [],
+	tool_call_end: [],
+	message_end: [],
+	user_message: []
+} satisfies {
+	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
+};
 
-			// RemoveInfiniteQueryData<MessagePaginateRespList>({
-			// 	key: ['messagePaginate', chatId.toString()],
-			// 	predicate(entry) {
-			// 		return data.id <= entry.id;
-			// 	}
-			// });
-
-			// SetInfiniteQueryData<MessagePaginateRespList>({
-			// 	key: ['messagePaginate', chatId.toString()],
-			// 	data: {
-			// 		id: data.id,
-			// 		text: data.text,
-			// 		role: MessagePaginateRespRole.User
-			// 	}
-			// });
-
-			// TODO: fix bug
-			// consider case when creating chatroom
-			// 1. create chat
-			// 2. setup Status handle for SSE
-			// 3. setup SSE
-			// 4. recieve user_message event
-			// 5. append user message
-			// 6. because status handle, it append user message again
-			// 7. you got two message with same id!
-			RevalidateInfiniteQueryData({
-				key: ['messagePaginate', chatId.toString()],
-				predicate: (entry) => data.id <= entry.id
-			});
-		}
-	};
-
+export function startSSE(chatId: number) {
 	CreateEventQuery<SseResp, SseReq>({
 		path: 'chat/sse',
 		key: ['messageEvent', chatId.toString()],
@@ -180,7 +125,26 @@ export function handleServerSideMessage(chatId: number, streamingUI: UIUpdater) 
 			id: chatId
 		},
 		onEvent: (res: SseResp) => {
-			handlers[res.t](res.c as any);
+			SSEHandlers[res.t].forEach((handler) => handler(res.c as any));
+			// if (res.t == 'chunk_end' && res.c.kind == SseRespEndKind.Complete) {
+			// 	SSEHandlers['message_end'].forEach((handler) => handler(res.c as any));
+			// }
+			console.log(res);
+		}
+	});
+}
+
+export function addSSEHandler<T extends SseResp['t']>(
+	event: T,
+	handler: (data: Extract<SseResp, { t: T }>['c']) => void
+) {
+	SSEHandlers[event].push(handler as any);
+
+	onDestroy(() => {
+		console.log('remove handler for', event);
+		const index = SSEHandlers[event].indexOf(handler as any);
+		if (index !== -1) {
+			SSEHandlers[event].splice(index, 1);
 		}
 	});
 }

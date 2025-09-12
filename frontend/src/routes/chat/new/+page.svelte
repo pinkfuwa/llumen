@@ -4,6 +4,7 @@
 	import { MessageInput, Copyright } from '$lib/components';
 	import { goto } from '$app/navigation';
 	import { _ } from 'svelte-i18n';
+	import { MessageCreateReqMode as Mode } from '$lib/api/types';
 	import { titleGrad } from '$lib/preference';
 
 	let { mutate } = createRoom();
@@ -11,7 +12,7 @@
 	let content = $state('');
 	let modelId = $state<number | null>(null);
 	let files = $state([]);
-	let mode = $state(0 as 0);
+	let mode = $state(Mode.Normal);
 </script>
 
 <svelte:head>

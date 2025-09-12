@@ -10,9 +10,10 @@
 	import { _ } from 'svelte-i18n';
 	import StopBtn from './StopBtn.svelte';
 	import { afterNavigate } from '$app/navigation';
+	import { MessageCreateReqMode as Mode } from '$lib/api/types';
 
 	let {
-		mode = $bindable(0 as 0 | 1 | 2),
+		mode = $bindable(Mode.Normal),
 		files = $bindable([] as Array<File>),
 		modelId = $bindable<number | null>(null),
 		content = $bindable(''),
@@ -76,7 +77,7 @@
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex grow items-center space-x-1">
 			<ModelBtn bind:value={modelId} {above} disabled={selectionDisabled} />
-			<SearchBtn bind:value={mode} disabled={selectionDisabled} />
+			<SearchBtn bind:value={mode} />
 			<UploadBtn bind:files />
 		</div>
 		{#if content.length != 0}
