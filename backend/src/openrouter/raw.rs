@@ -263,20 +263,21 @@ pub struct Delta {
 #[derive(Debug, Clone, Deserialize)]
 pub struct ToolCall {
     pub index: i64,
-    pub id: String,
+    pub id: Option<String>,
     pub function: ToolFunctionResp,
     pub r#type: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ToolFunctionResp {
-    pub arguments: String,
-    pub name: String,
+    pub arguments: Option<String>,
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CompletionResponse {
-    pub output: Vec<OutputMessage>,
+    pub output: Option<Vec<OutputMessage>>,
+    pub error: Option<ErrorInfo>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -290,4 +291,15 @@ pub struct OutputMessage {
 pub struct OutputContent {
     pub r#type: Option<String>,
     pub text: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ErrorResp {
+    pub error: ErrorInfo,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ErrorInfo {
+    pub message: String,
+    pub code: Option<i32>,
 }

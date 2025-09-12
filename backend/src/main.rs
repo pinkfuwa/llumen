@@ -79,7 +79,9 @@ async fn main() {
     let sse = SseContext::new(conn.clone());
     let prompt = PromptEnv::new(conn.clone());
     let openrouter = Openrouter::new();
-    let tools = ToolStore::new();
+    let mut tools = ToolStore::new(conn.clone());
+
+    tools.add_tool::<tools::wttr::Wttr>().unwrap();
 
     let state = Arc::new(AppState {
         conn,
