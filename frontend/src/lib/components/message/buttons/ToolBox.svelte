@@ -9,16 +9,8 @@
 </script>
 
 <button onclick={() => (open = !open)} class="w-full text-left">
-	<div
-		class="w-full border-l-6 border-primary py-1 pr-6 pl-4"
-		in:slide={{ duration: 180, axis: 'y' }}
-		out:slide={{ duration: 180, axis: 'y' }}
-	>
-		<div
-			class="mb-2 flex items-center"
-			in:slide={{ duration: 180, axis: 'y' }}
-			out:slide={{ duration: 180, axis: 'y' }}
-		>
+	<div class="w-full border-l-6 border-primary py-1 pr-6 pl-4">
+		<div class="mb-2 flex items-center">
 			<ToolCase class="mr-2" />
 			{#if !open}
 				<span class="mr-1"> Calling </span>
@@ -28,7 +20,7 @@
 			</span>
 		</div>
 		{#if open}
-			<div>
+			<div in:slide={{ duration: 180, axis: 'y' }} out:slide={{ duration: 180, axis: 'y' }}>
 				{@render children()}
 			</div>
 		{/if}

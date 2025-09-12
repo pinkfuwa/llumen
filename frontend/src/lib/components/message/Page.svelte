@@ -21,8 +21,9 @@
 	function getRespFromChunks(chunks: MessagePaginateRespChunk[]) {
 		return chunks
 			.filter((x) => x.kind.t == 'text')
-			.map((x) => x.kind.c)
-			.join('\n');
+			.map((x) => x.kind.c.context)
+			.join('\n')
+			.trim();
 	}
 </script>
 

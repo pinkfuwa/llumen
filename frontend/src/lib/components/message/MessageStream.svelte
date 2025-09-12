@@ -95,7 +95,7 @@
 </script>
 
 <ResponseBox>
-	<Chunks {chunks} monochrome />
+	<Chunks {chunks} />
 
 	{#if tokens.length != 0}
 		<AssitantStream list={tokens} />

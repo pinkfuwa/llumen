@@ -8,6 +8,9 @@
 	import { get } from 'svelte/store';
 	import Warning from '$lib/components/setting/Warning.svelte';
 	import type { UserPreference } from '$lib/api/types';
+	import { clearCache } from '$lib/api/state';
+	import { token } from '$lib/store';
+	import { goto } from '$app/navigation';
 
 	let func = $state<'checkPwd' | 'setting'>('setting');
 	let password = $state('');
@@ -100,7 +103,11 @@
 		message="Enter new password"
 		onsubmit={(password) => {
 			message = 'error updating password';
-			mutate({ password });
+			mutate({ password }, () => {
+				token.set(undefined);
+				clearCache();
+				goto('/login');
+			});
 		}}
 		oncancal={() => {
 			func = 'setting';
