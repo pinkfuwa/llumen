@@ -124,10 +124,27 @@ impl StreamCompletion {
                         return None;
                     }
                     e => {
-                        tracing::error!(
-                            "Stream error: {}, maybe openrouter returned Error (such as \"No endpoints found that support tool use.\")",
-                            e
-                        );
+                        if let reqwest_eventsource::Error::InvalidStatusCode(code, res) = e {
+                            return match res
+                                .json::<raw::ErrorResp>()
+                                .await
+                                .context("Stream Error, cannot capture error message")
+                            {
+                                Ok(error) => Some(Err(anyhow!(
+                                    "Openrouter return status code {}, message: {}",
+                                    code,
+                                    error.error.message
+                                ))),
+                                Err(x) => Some(Err(anyhow!(
+                                    "Openrouter return status code {}, cannot parse error message: {}",
+                                    code,
+                                    x
+                                ))),
+                            };
+                        }
+
+                        tracing::error!("Stream error: {}", e);
+
                         return Some(Err(e.into()));
                     }
                 },
