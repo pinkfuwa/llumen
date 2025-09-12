@@ -19,6 +19,7 @@
 		},
 		reset() {
 			tokensList = [];
+			isStreaming.set(false);
 		},
 		append(tokens) {
 			tokensList.push(tokens);

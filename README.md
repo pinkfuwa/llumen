@@ -21,22 +21,32 @@ Its design goal is simplicity: you only need a single OpenRouter API key to use 
 ![chatroom](./screenshots/chatroom.png)
 ![setting](./screenshots/dark-setting.png)
 
-## Quickstart: Docker
+## Quickstart
 
 > [!TIP]
 > Use [reasoning-proxy](https://github.com/Eason0729/reasoning-proxy) to unlock advance feature with normal openai endpoint
+
+### Docker (Recommended)
 
 - The repository includes a multi-stage `Dockerfile` that builds the frontend and the backend and produces a small image that serves static files and runs the server.
 - Example: build and run the container (binds port 80 by default).
 
 ```bash
-docker build -f docker/Dockerfile -t llumen .
 docker run -it --rm \
   -e API_KEY="<YOUR_OPENROUTER_API_KEY>" \
   -p 80:80 \
   -v "$(pwd)/data:/data" \
-  llumen
+  docker pull ghcr.io/pinkfuwa/llumen:latest
 ```
+
+### Without docker
+
+> [!TIP]
+> prebuild-binary is not up to dated
+
+We Also provided prebuild binary, download it and extract.
+
+TODO:
 
 ## Environment variables
 

@@ -1,15 +1,17 @@
 import type { Highlighter, BundledLanguage, BundledTheme } from './shiki.bundle';
 
-let highlighter: Highlighter | null = null;
+let highlighter: Promise<Highlighter> | undefined;
+let loadLangPromises = new Map<string, Promise<void>>();
 
 async function getHighlighter() {
-	if (highlighter != null) return highlighter;
-	const shiki = await import('./shiki.bundle');
-
-	highlighter = await shiki.createHighlighter({
-		themes: [],
-		langs: []
-	});
+	if (highlighter == undefined) {
+		highlighter = import('./shiki.bundle').then((x) =>
+			x.createHighlighter({
+				themes: ['github-light', 'github-dark'],
+				langs: []
+			})
+		);
+	}
 
 	return highlighter;
 }
@@ -27,6 +29,14 @@ export async function codeToHtml(
 	options: { isLight: boolean; lang: string }
 ): Promise<string> {
 	const highlighterInstance = await getHighlighter();
+
+	let loadLangPromise = loadLangPromises.get(options.lang);
+	if (loadLangPromise === undefined) {
+		loadLangPromise = highlighterInstance.loadLanguage(options.lang as BundledLanguage);
+		loadLangPromises.set(options.lang, loadLangPromise);
+	}
+
+	await loadLangPromise;
 
 	const theme = options.isLight ? 'github-light' : 'github-dark';
 
