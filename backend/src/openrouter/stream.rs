@@ -74,6 +74,7 @@ impl StreamCompletion {
         }
 
         if let Some(reason) = choice.finish_reason {
+            self.source.close();
             return match reason {
                 raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
                 raw::FinishReason::Length => StreamCompletionResp::ResponseToken(content),
