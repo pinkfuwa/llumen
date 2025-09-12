@@ -15,7 +15,7 @@ use crate::{
     middlewares::auth::UserId,
     openrouter::{self, StreamCompletionResp},
     prompts::{self, PromptStore},
-    sse::{BufferChunk, EndKind, Publisher},
+    sse::{AssistantMessage, BufferChunk, EndKind, Publisher},
     tools::{self, ToolBox},
 };
 
@@ -111,45 +111,66 @@ pub async fn route(
 
     tokio::spawn(async move {
         puber
-            .scope(|puber| {
-                handle_sse(
+            .scope(|puber| async move {
+                let assistant = puber
+                    .new_assistant_message()
+                    .await
+                    .raw_kind(ErrorKind::Internal)?;
+                let mut buffer_chunk = None;
+
+                let res = handle_sse(
                     app.clone(),
                     req.chat_id,
+                    &assistant,
+                    &mut buffer_chunk,
                     model,
                     system_prompt,
                     tools,
                     &mut tool_box,
                     puber,
                 )
+                .await;
+                let kind = match res {
+                    Ok(kind) => kind,
+                    Err(err) => {
+                        puber.raw_token(Err(err));
+
+                        EndKind::Error
+                    }
+                };
+                if let Some(bc) = buffer_chunk {
+                    bc.end_buffer_chunk(kind)
+                        .await
+                        .raw_kind(ErrorKind::Internal)?;
+                }
+                assistant
+                    .end_message(kind)
+                    .await
+                    .raw_kind(ErrorKind::Internal)?;
+
+                app.tools
+                    .put_back(tool_box)
+                    .await
+                    .raw_kind(ErrorKind::Internal)?;
+                Ok(())
             })
             .await;
-        let res = app
-            .tools
-            .put_back(tool_box)
-            .await
-            .raw_kind(ErrorKind::Internal);
-        if let Err(err) = res {
-            puber.raw_token(Err(err));
-        }
     });
 
     Ok(Json(MessageCreateResp { id: msg_id }))
 }
 
-async fn handle_sse(
+async fn handle_sse<'a>(
     app: Arc<AppState>,
     chat_id: i32,
+    assistant: &'a AssistantMessage<'a>,
+    buffer_chunk: &mut Option<BufferChunk<'a, 'a>>,
     model: ModelConfig,
     system_prompt: String,
     tools: Vec<openrouter::Tool>,
     tool_box: &mut ToolBox,
     puber: &Publisher,
-) -> Result<(), Error> {
-    let assistant = puber
-        .new_assistant_message()
-        .await
-        .raw_kind(ErrorKind::Internal)?;
-
+) -> Result<EndKind, Error> {
     let mut tool_calls: Vec<openrouter::MessageToolCall> = vec![];
 
     loop {
@@ -191,19 +212,11 @@ async fn handle_sse(
             .await
             .raw_kind(ErrorKind::ApiFail)?;
 
-        let mut buffer_chunk: Option<BufferChunk<'_, '_>> = None;
         loop {
             select! {
                 biased;
                 _ = puber.on_halt() => {
-                    if let Some(bc) = buffer_chunk {
-                        bc.end_buffer_chunk(EndKind::Complete)
-                            .await
-                            .raw_kind(ErrorKind::Internal)?;
-                    }
-
-                    assistant.end_message(EndKind::Halt).await.raw_kind(ErrorKind::Internal)?;
-                    return Ok(());
+                    return Ok(EndKind::Halt);
                 }
 
                 token = completion.next() => {
@@ -214,17 +227,17 @@ async fn handle_sse(
                                     continue;
                                 }
 
-                                match buffer_chunk {
-                                    Some(bc) if bc.kind() != ChunkKind::Reasoning => {
+                                match buffer_chunk.take_if(|bc| bc.kind() != ChunkKind::Reasoning) {
+                                    Some(bc) => {
                                         bc.end_buffer_chunk(EndKind::Complete)
                                             .await
                                             .raw_kind(ErrorKind::Internal)?;
                                         yield_now().await;
-                                        buffer_chunk =
+                                        *buffer_chunk =
                                             Some(assistant.new_buffer_chunk(ChunkKind::Reasoning).await);
                                     }
-                                    None => {
-                                        buffer_chunk =
+                                    None if buffer_chunk.is_none() => {
+                                        *buffer_chunk =
                                             Some(assistant.new_buffer_chunk(ChunkKind::Reasoning).await);
                                     }
                                     _ => {}
@@ -241,16 +254,16 @@ async fn handle_sse(
                                     continue;
                                 }
 
-                                match buffer_chunk {
-                                    Some(bc) if bc.kind() != ChunkKind::Text => {
+                                match buffer_chunk.take_if(|bc|bc.kind() != ChunkKind::Text) {
+                                    Some(bc) => {
                                         bc.end_buffer_chunk(EndKind::Complete)
                                             .await
                                             .raw_kind(ErrorKind::Internal)?;
                                         yield_now().await;
-                                        buffer_chunk = Some(assistant.new_buffer_chunk(ChunkKind::Text).await);
+                                        *buffer_chunk = Some(assistant.new_buffer_chunk(ChunkKind::Text).await);
                                     }
-                                    None => {
-                                        buffer_chunk = Some(assistant.new_buffer_chunk(ChunkKind::Text).await);
+                                    None if buffer_chunk.is_none() => {
+                                        *buffer_chunk = Some(assistant.new_buffer_chunk(ChunkKind::Text).await);
                                     }
                                     _ => {}
                                 }
@@ -279,9 +292,6 @@ async fn handle_sse(
                         None => break,
                     }
                 }
-
-
-
             };
         }
         if let Some(bc) = buffer_chunk.take() {
@@ -294,7 +304,7 @@ async fn handle_sse(
         }
     }
 
-    Ok(())
+    Ok(EndKind::Complete)
 }
 
 async fn get_message(
