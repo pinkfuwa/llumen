@@ -5,8 +5,16 @@ use reqwest_eventsource::{Event, EventSource};
 
 use super::{HTTP_REFERER, X_TITLE, raw};
 
+#[derive(Default)]
+struct toolCall {
+    id: String,
+    name: String,
+    args: String,
+}
+
 pub struct StreamCompletion {
     source: EventSource,
+    toolcall: Option<toolCall>,
 }
 
 impl StreamCompletion {
@@ -24,7 +32,10 @@ impl StreamCompletion {
             .json(&req);
 
         match EventSource::new(builder) {
-            Ok(source) => Ok(Self { source }),
+            Ok(source) => Ok(Self {
+                source,
+                toolcall: None,
+            }),
             Err(e) => {
                 tracing::error!("Failed to create event source: {}", e);
                 Err(anyhow!("Failed to create event source: {}", e))
@@ -45,22 +56,35 @@ impl StreamCompletion {
             return StreamCompletionResp::ReasoningToken(reasoning);
         }
 
-        tracing::trace!("Received token: {}", content);
+        if let Some(call) = delta.tool_calls.map(|x| x.into_iter().next()).flatten() {
+            if let Some(id) = call.id {
+                self.toolcall = Some(toolCall {
+                    id,
+                    ..Default::default()
+                });
+            }
+            if let Some(state) = &mut self.toolcall {
+                if let Some(name) = call.function.name {
+                    state.name.extend(name.chars());
+                }
+                if let Some(args) = call.function.arguments {
+                    state.args.extend(args.chars());
+                }
+            }
+        }
+
         if let Some(reason) = choice.finish_reason {
             return match reason {
                 raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
                 raw::FinishReason::Length => StreamCompletionResp::ResponseToken(content),
-                raw::FinishReason::ToolCalls => {
-                    let tool_calls = delta.tool_calls.map(|x| x.into_iter().next()).flatten();
-                    match tool_calls {
-                        Some(tool_call) => StreamCompletionResp::ToolCall {
-                            name: tool_call.function.name,
-                            args: tool_call.function.arguments,
-                            id: tool_call.id,
-                        },
-                        None => StreamCompletionResp::ResponseToken(content),
-                    }
-                }
+                raw::FinishReason::ToolCalls => match self.toolcall.take() {
+                    Some(call) => StreamCompletionResp::ToolCall {
+                        name: call.name,
+                        args: call.args,
+                        id: call.id,
+                    },
+                    None => StreamCompletionResp::ResponseToken(content),
+                },
             };
         }
         return StreamCompletionResp::ResponseToken(content);
@@ -100,7 +124,10 @@ impl StreamCompletion {
                         return None;
                     }
                     e => {
-                        tracing::error!("Stream error: {}", e);
+                        tracing::error!(
+                            "Stream error: {}, maybe openrouter returned Error (such as \"No endpoints found that support tool use.\")",
+                            e
+                        );
                         return Some(Err(e.into()));
                     }
                 },

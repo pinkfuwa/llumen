@@ -119,8 +119,14 @@ impl Openrouter {
             .await
             .context("Failed to parse response")?;
 
+        if let Some(error) = json.error {
+            tracing::warn!("openrouter finish with api error: {}", &error.message);
+            return Err(anyhow::anyhow!("Openrouter API error: {}", error.message));
+        }
+
         let text = json
             .output
+            .context("Malformed response")?
             .into_iter()
             .map(|msg| {
                 msg.content
@@ -235,7 +241,10 @@ impl From<Message> for raw::Message {
                 role: raw::Role::Tool,
                 tool_calls: Some(vec![raw::ToolCallReq {
                     id,
-                    function: raw::ToolFunctionResp { name, arguments },
+                    function: raw::ToolFunctionResp {
+                        name: Some(name),
+                        arguments: Some(arguments),
+                    },
                     r#type: "function".to_string(),
                 }]),
                 ..Default::default()
