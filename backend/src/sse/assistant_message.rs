@@ -38,7 +38,6 @@ impl<'a> AssistantMessage<'a> {
         inner.last_message_id = self.message_id + 1;
         self.ctx
             .raw_token(Ok(Token::MessageEnd(self.message_id, kind)));
-        inner.on_receive.notify_waiters();
         Ok(())
     }
 
