@@ -65,10 +65,10 @@ impl StreamCompletion {
             }
             if let Some(state) = &mut self.toolcall {
                 if let Some(name) = call.function.name {
-                    state.name.push_str(name);
+                    state.name.push_str(&name);
                 }
                 if let Some(args) = call.function.arguments {
-                    state.args.push_str(args);
+                    state.args.push_str(&args);
                 }
             }
         }
