@@ -1,0 +1,26 @@
+<script lang="ts">
+	import { type MessagePaginateRespChunk } from '$lib/api/types';
+	import Assitant from './buttons/Assitant.svelte';
+	import Reasoning from './buttons/Reasoning.svelte';
+	import Result from './buttons/Result.svelte';
+	import Tool from './buttons/Tool.svelte';
+	import ToolBox from './buttons/ToolBox.svelte';
+
+	let { chunks, monochrome = false }: { chunks: MessagePaginateRespChunk[]; monochrome?: boolean } =
+		$props();
+</script>
+
+{#each chunks as chunk}
+	{@const kind = chunk.kind.t}
+	{@const content = chunk.kind.c.context}
+	{#if kind == 'reasoning'}
+		<Reasoning {content} />
+	{:else if kind == 'text'}
+		<Assitant {content} {monochrome} />
+	{:else if kind == 'tool_call'}
+		<ToolBox toolname={chunk.kind.c.name}>
+			<Tool content={chunk.kind.c.args} />
+			<Result {content} />
+		</ToolBox>
+	{/if}
+{/each}

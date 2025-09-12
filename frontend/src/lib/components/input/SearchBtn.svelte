@@ -1,13 +1,15 @@
 <script lang="ts">
-	type Stage = 0 | 1 | 2;
-
-	let { value = $bindable(0) as Stage, disabled = false } = $props();
+	import { MessageCreateReqMode as Mode } from '$lib/api/types';
 	import { Tooltip } from '@svelte-plugins/tooltips';
-	import { Atom, SearchCode, ZapOff } from '@lucide/svelte';
+	import { Atom, SearchCode, ZapOff, CalendarSync } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 
+	let { value = $bindable(Mode.Normal) as Mode, disabled = false } = $props();
+
+	const modes = [Mode.Normal, Mode.Search, Mode.Agent, Mode.Research];
 	function nextStage() {
-		value = (value + 1) % 3;
+		const nextIndex = modes.indexOf(value) + 1;
+		value = modes[nextIndex % modes.length];
 	}
 </script>
 
@@ -16,14 +18,16 @@
 	class="rounded-md bg-primary p-1{disabled ? '' : ' hover:bg-hover'}"
 	aria-label="change mode"
 >
-	{#if value == 2}
+	{#if value == Mode.Research}
 		<Tooltip content={$_('chat.model_mode.deep')}>
 			<Atom class="inline-block" />
 		</Tooltip>
-	{:else if value == 1}
+	{:else if value == Mode.Search}
 		<Tooltip content={$_('chat.model_mode.search')}>
 			<SearchCode class="inline-block" />
 		</Tooltip>
+	{:else if value == Mode.Agent}
+		<CalendarSync class="inline-block" />
 	{:else}
 		<Tooltip content={$_('chat.model_mode.normal')}>
 			<ZapOff class="inline-block" />

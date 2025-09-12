@@ -5,6 +5,7 @@
 	import Copyright from '$lib/components/Copyright.svelte';
 	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
+	import { MessageCreateReqMode as Mode } from '$lib/api/types';
 	import { haltCompletion, useRoom, useRoomStreamingState } from '$lib/api/chatroom.js';
 
 	let id = $derived(Number(params.id));
@@ -14,7 +15,7 @@
 
 	let content = $state('');
 	let files = $state([]);
-	let mode = $state(0 as 0);
+	let mode = $state(Mode.Normal);
 	let title = $state<string | null>(null);
 
 	let { data: room } = $derived(useRoom(id));
@@ -42,7 +43,7 @@
 			{mode}
 			bind:files
 			onsubmit={() => {
-				mutate({ chat_id: id, text: content });
+				mutate({ chat_id: id, text: content, mode });
 				content = '';
 				isStreaming.set(true);
 			}}

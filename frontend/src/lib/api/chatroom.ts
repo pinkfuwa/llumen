@@ -14,7 +14,8 @@ import {
 	type ChatReadResp,
 	type ChatReadReq,
 	type ChatDeleteReq,
-	type ChatDeleteResp
+	type ChatDeleteResp,
+	MessageCreateReqMode
 } from './types';
 import {
 	CreateInfiniteQuery,
@@ -39,7 +40,7 @@ export interface CreateRoomRequest {
 	message: string;
 	modelId: number;
 	files: File[];
-	mode: Mode;
+	mode: MessageCreateReqMode;
 }
 
 export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateResp> {
@@ -65,20 +66,27 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 			await goto('/chat/' + encodeURIComponent(chatRes.id));
 
 			// TODO: here is a resource leak(callback should be call on next route change)
+			const roomStreamingState = globalCache.getOr(
+				['chat', 'stream', chatRes.id.toString()],
+				false
+			);
+			roomStreamingState.set(true);
+
 			const callback = once(
 				status,
 				(x) => x,
 				async () => {
 					const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
 						chat_id: chatRes.id,
-						text: param.message
+						text: param.message,
+						mode: param.mode
 					});
 					if (!res) return;
 					SetInfiniteQueryData<MessagePaginateRespList>({
 						key: ['messagePaginate', chatRes.id.toString()],
 						data: {
 							id: res.id,
-							text: param.message,
+							chunks: [{ id: res.id, kind: { t: 'text', c: { context: param.message } } }],
 							role: MessagePaginateRespRole.User
 						}
 					});

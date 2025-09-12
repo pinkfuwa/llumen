@@ -1,38 +1,44 @@
 <script lang="ts">
 	let { id }: { id: number } = $props();
 
-	import { handleServerSideMessage, useMessage } from '$lib/api/message';
+	import { addSSEHandler, startSSE, useMessage } from '$lib/api/message';
 	import Page from './Page.svelte';
-	import type { TokensList } from 'marked';
 	import MessageStream from './MessageStream.svelte';
 	import { useRoomStreamingState } from '$lib/api/chatroom';
+	import {
+		type MessagePaginateRespChunk,
+		type MessagePaginateRespList,
+		SseRespEndKind,
+		MessagePaginateRespRole
+	} from '$lib/api/types';
+	import { SetInfiniteQueryData } from '$lib/api/state';
 
 	const { data } = useMessage(id);
 
-	let tokensList = $state<Array<TokensList>>([]);
-
 	let isStreaming = $derived(useRoomStreamingState(id));
 
-	handleServerSideMessage(id, {
-		tick() {
-			isStreaming.set(true);
-		},
-		reset() {
-			tokensList = [];
-			isStreaming.set(false);
-		},
-		append(tokens) {
-			tokensList.push(tokens);
-		},
-		replace(tokens) {
-			tokensList.pop();
-			tokensList.push(tokens);
+	let chunks = $state<MessagePaginateRespChunk[]>([]);
+	startSSE(id);
+
+	addSSEHandler('message_end', (data) => {
+		if (data.kind == SseRespEndKind.Error) {
+			// TODO: handle error
+		} else {
+			SetInfiniteQueryData<MessagePaginateRespList>({
+				key: ['messagePaginate', id.toString()],
+				data: {
+					id,
+					role: MessagePaginateRespRole.Assistant,
+					chunks
+				}
+			});
 		}
+		isStreaming.set(false);
 	});
 </script>
 
 {#if $isStreaming}
-	<MessageStream list={tokensList} />
+	<MessageStream bind:chunks />
 {/if}
 
 {#each $data as page}
