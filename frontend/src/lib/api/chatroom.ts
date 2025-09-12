@@ -57,7 +57,7 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 				data: {
 					id: chatRes.id,
 					model_id: param.modelId,
-					title: 'new chat'
+					title: 'New Chat'
 				}
 			});
 
