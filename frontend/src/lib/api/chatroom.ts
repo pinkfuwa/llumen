@@ -138,7 +138,9 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 export function useRooms(): InfiniteQueryResult<ChatPaginateRespList> {
 	return CreateInfiniteQuery({
 		key: ['chatPaginate'],
-		fetcher: new ChatFetcher()
+		fetcher: new ChatFetcher(),
+		staleTime: 1000 * 60,
+		revalidateOnFocus: true
 	});
 }
 

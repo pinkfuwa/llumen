@@ -21,8 +21,17 @@ interface Page<D> {
 class Pages<D extends { id: number }> {
 	private maxSize = 16;
 	private fetcher: Fetcher<D>;
+	private staleTime?: number;
+	private revalidateOnFocus?: boolean | 'force';
 	pages: Writable<Page<D>[]> = writable([]);
-	constructor(fetcher: Fetcher<D>, id?: number | null) {
+	constructor(
+		fetcher: Fetcher<D>,
+		opt: {
+			staleTime?: number;
+			revalidateOnFocus?: boolean | 'force';
+		} = {},
+		id?: number | null
+	) {
 		this.fetcher = fetcher;
 		if (id !== undefined) {
 			const startId = id === null ? undefined : id;
@@ -107,9 +116,9 @@ class Pages<D extends { id: number }> {
 				}
 			},
 			initialData: [],
-			staleTime: 30000,
+			staleTime: this.staleTime,
 			cleanupCallback,
-			revalidateOnFocus: true
+			revalidateOnFocus: this.revalidateOnFocus
 		});
 		page.revalidate = query.revalidate;
 	}
@@ -167,6 +176,8 @@ export interface InfiniteQueryOption<D extends { id: number }> {
 	fetcher: Fetcher<D>;
 	key: string[];
 	id?: number;
+	staleTime?: number;
+	revalidateOnFocus?: boolean | 'force';
 }
 
 export interface PageEntry<D> {
@@ -183,11 +194,11 @@ export interface InfiniteQueryResult<D extends { id: number }> {
 export function CreateInfiniteQuery<D extends { id: number }>(
 	option: InfiniteQueryOption<D>
 ): InfiniteQueryResult<D> {
-	let { key, fetcher, id } = option;
+	let { key, fetcher, id, staleTime, revalidateOnFocus } = option;
 
 	const pageStore = globalCache.getOrExecute(
 		key,
-		() => new Pages<D>(fetcher, id == undefined ? null : id)
+		() => new Pages<D>(fetcher, { staleTime, revalidateOnFocus }, id == undefined ? null : id)
 	);
 
 	const pages = get(pageStore);
