@@ -12,9 +12,14 @@
 	import AssitantStream from './buttons/AssitantStream.svelte';
 	import Reasoning from './buttons/Reasoning.svelte';
 	import { MarkdownPatcher, type UIUpdater } from '../markdown/patcher';
+	import ToolBox from './buttons/ToolBox.svelte';
+	import Tool from './buttons/Tool.svelte';
 
 	let tokens = $state<TokensList[]>([]);
 	let reasoning = $state('');
+
+	let toolName = $state('');
+	let toolArg = $state('');
 
 	let { chunks = $bindable<MessagePaginateRespChunk[]>([]) } = $props();
 
@@ -60,6 +65,25 @@
 		}
 	});
 
+	addSSEHandler('tool_call', (data) => {
+		toolArg = data.args;
+		toolName = data.name;
+	});
+	addSSEHandler('tool_call_end', (data) => {
+		chunks.push({
+			id: data.chunk_id,
+			kind: {
+				t: 'tool_call',
+				c: {
+					name: toolName,
+					args: toolArg,
+					context: data.content
+				}
+			}
+		});
+		toolArg = '';
+		toolName = '';
+	});
 	addSSEHandler('reasoning_token', (data) => {
 		lastChunkType = 'reasoning';
 		reasoning += data.content;
@@ -72,11 +96,17 @@
 
 <ResponseBox>
 	<Chunks {chunks} monochrome />
+
 	{#if tokens.length != 0}
 		<AssitantStream list={tokens} />
 	{:else if reasoning.length != 0}
 		<Reasoning content={reasoning} />
+	{:else if toolName.length != 0}
+		<ToolBox toolname={toolName}>
+			<Tool content={toolArg} />
+		</ToolBox>
 	{/if}
+
 	<div class="space-y-4">
 		<hr class="mx-3 animate-pulse rounded-md bg-hover p-1 text-hover" />
 		<hr class="mx-3 animate-pulse rounded-md bg-hover p-1 text-hover" />
