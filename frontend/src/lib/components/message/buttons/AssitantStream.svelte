@@ -7,6 +7,6 @@
 
 <div class="space-y-2">
 	{#each list as tokens, i}
-		<Parser {tokens} monochrome />
+		<Parser {tokens} monochrome={i + 1 == list.length} />
 	{/each}
 </div>
