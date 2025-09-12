@@ -72,8 +72,6 @@ impl ToolStore {
 
     /// Grab a tool box
     pub async fn grab(&self, chat_id: i32, tool_set: ToolSet) -> Result<ToolBox> {
-        sea_orm::ConnectionTrait::get_database_backend(&self.conn);
-
         let iter = tool_set
             .toold()
             .filter_map(|name| self.tools.get(name).map(|tool| (name, tool)));
