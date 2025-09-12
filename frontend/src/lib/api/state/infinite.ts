@@ -130,7 +130,7 @@ class Pages<D extends { id: number }> {
 		if (pages.length == 0) return;
 
 		pages[0].data.update((x) => {
-			x.unshift(data);
+			if (data.id != x[0]?.id) x.unshift(data);
 			return x;
 		});
 	}

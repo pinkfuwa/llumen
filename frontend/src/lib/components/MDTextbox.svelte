@@ -6,7 +6,7 @@
 		disabled = false
 	} = $props();
 
-	import { default as Markdown } from '../markdown/Root.svelte';
+	import { default as Markdown } from './markdown/Root.svelte';
 	import { onStartTyping } from '@sv-use/core';
 
 	let input = $state<null | HTMLElement>(null);
