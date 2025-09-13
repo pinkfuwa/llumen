@@ -23,7 +23,9 @@ impl Tool for Wttr {
 
     async fn call(&mut self, input: Self::Input) -> anyhow::Result<Self::Output> {
         let url: Url = "https://wttr.in/".parse()?;
-        let url = url.join(input.location.trim().replace(" ", "+").as_str())?;
+        let mut url = url.join(input.location.trim().replace(" ", "+").as_str())?;
+        url.set_query(Some("format=j1"));
+
         let resp = reqwest::get(url).await?.text().await?;
         Ok(resp)
     }
