@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use axum::{Extension, Json, extract::State};
-use entity::{MessageKind, ModelConfig, message, patch::ChunkKind, prelude::*};
-use migration::Expr;
+use entity::{MessageKind, ModelConfig, chunk, message, patch::ChunkKind, prelude::*};
+use migration::{Expr, Mode};
 use sea_orm::{EntityOrSelect, QueryOrder, prelude::*};
 use serde::{Deserialize, Serialize};
 use tokio::{select, task::yield_now};
@@ -48,10 +48,23 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageCreateReq>,
 ) -> JsonResult<MessageCreateResp> {
-    let chat = Chat::find_by_id(req.chat_id)
-        .one(&app.conn)
-        .await
+    let (user, chat_with_model, msgs_with_chunks) = tokio::join!(
+        User::find_by_id(user_id).one(&app.conn),
+        Chat::find_by_id(req.chat_id)
+            .find_also_related(Model)
+            .one(&app.conn),
+        Message::find()
+            .select()
+            .filter(Expr::col(message::Column::ChatId).eq(req.chat_id))
+            .order_by_asc(message::Column::Id)
+            .find_with_related(Chunk)
+            .all(&app.conn)
+    );
+
+    let (chat, model) = chat_with_model
         .kind(ErrorKind::Internal)?
+        .into_iter()
+        .next()
         .context("The request chat is not exists")
         .kind(ErrorKind::ResourceNotFound)?;
 
@@ -62,14 +75,23 @@ pub async fn route(
         }));
     }
 
-    let model = Model::find_by_id(chat.model_id)
-        .one(&app.conn)
-        .await
+    let model = model
+        .context("The request model is not exists")
+        .kind(ErrorKind::ResourceNotFound)?;
+
+    let user = user
         .kind(ErrorKind::Internal)?
-        .context("Malformde database")
-        .kind(ErrorKind::Internal)?
+        .context("The request user is not exists")
+        .kind(ErrorKind::ResourceNotFound)?;
+
+    let msgs_with_chunks = msgs_with_chunks
+        .context("Failed to load chat history")
+        .kind(ErrorKind::Internal)?;
+    let messages = get_message(msgs_with_chunks).kind(ErrorKind::Internal)?;
+
+    let model_config = model
         .get_config()
-        .context("Malformed model config")
+        .context("Invaild model config")
         .kind(ErrorKind::Internal)?;
 
     let puber = app
@@ -95,12 +117,6 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?;
 
-    let user = User::find_by_id(user_id)
-        .one(&app.conn)
-        .await
-        .kind(ErrorKind::Internal)?
-        .context("Cannot find user")
-        .kind(ErrorKind::Internal)?;
     let system_prompt = prompts::ChatStore
         .template(user.preference.locale.as_deref())
         .await
@@ -109,52 +125,48 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?;
 
-    tokio::spawn(async move {
-        puber
-            .scope(|puber| async move {
-                let assistant = puber
-                    .new_assistant_message()
-                    .await
-                    .raw_kind(ErrorKind::Internal)?;
-                let mut buffer_chunk = None;
+    puber.spawn_scope(|puber| async move {
+        let assistant = puber
+            .new_assistant_message()
+            .await
+            .raw_kind(ErrorKind::Internal)?;
+        let mut buffer_chunk = None;
 
-                let res = handle_sse(
-                    app.clone(),
-                    req.chat_id,
-                    &assistant,
-                    &mut buffer_chunk,
-                    model,
-                    system_prompt,
-                    tools,
-                    &mut tool_box,
-                    puber,
-                )
-                .await;
-                let kind = match res {
-                    Ok(kind) => kind,
-                    Err(err) => {
-                        puber.raw_token(Err(err));
+        let res = handle_sse(
+            app.clone(),
+            &assistant,
+            &mut buffer_chunk,
+            model_config,
+            system_prompt,
+            tools,
+            &mut tool_box,
+            &puber,
+            messages,
+        )
+        .await;
+        let kind = match res {
+            Ok(kind) => kind,
+            Err(err) => {
+                puber.raw_token(Err(err));
 
-                        EndKind::Error
-                    }
-                };
-                if let Some(bc) = buffer_chunk {
-                    bc.end_buffer_chunk(kind)
-                        .await
-                        .raw_kind(ErrorKind::Internal)?;
-                }
-                assistant
-                    .end_message(kind)
-                    .await
-                    .raw_kind(ErrorKind::Internal)?;
+                EndKind::Error
+            }
+        };
+        if let Some(bc) = buffer_chunk {
+            bc.end_buffer_chunk(kind)
+                .await
+                .raw_kind(ErrorKind::Internal)?;
+        }
+        assistant
+            .end_message(kind)
+            .await
+            .raw_kind(ErrorKind::Internal)?;
 
-                app.tools
-                    .put_back(tool_box)
-                    .await
-                    .raw_kind(ErrorKind::Internal)?;
-                Ok(())
-            })
-            .await;
+        app.tools
+            .put_back(tool_box)
+            .await
+            .raw_kind(ErrorKind::Internal)?;
+        Ok(())
     });
 
     Ok(Json(MessageCreateResp { id: msg_id }))
@@ -162,7 +174,6 @@ pub async fn route(
 
 async fn handle_sse<'a>(
     app: Arc<AppState>,
-    chat_id: i32,
     assistant: &'a AssistantMessage<'a>,
     buffer_chunk: &mut Option<BufferChunk<'a, 'a>>,
     model: ModelConfig,
@@ -170,8 +181,12 @@ async fn handle_sse<'a>(
     tools: Vec<openrouter::Tool>,
     tool_box: &mut ToolBox,
     puber: &Publisher,
+    messages: Vec<openrouter::Message>,
 ) -> Result<EndKind, Error> {
     let mut tool_calls: Vec<openrouter::MessageToolCall> = vec![];
+
+    let mut systemed_messages = vec![openrouter::Message::System(system_prompt)];
+    systemed_messages.extend(messages);
 
     loop {
         for tool_call in tool_calls.drain(..) {
@@ -192,12 +207,13 @@ async fn handle_sse<'a>(
                 .raw_kind(ErrorKind::Internal)?;
         }
 
-        let messages = get_message(chat_id, &app.conn, system_prompt.clone())
-            .await
-            .raw_kind(ErrorKind::Internal)?;
         let mut completion = app
             .openrouter
-            .stream(messages.clone(), model.clone().into(), tools.clone())
+            .stream(
+                systemed_messages.clone(),
+                model.clone().into(),
+                tools.clone(),
+            )
             .await
             .raw_kind(ErrorKind::ApiFail)?;
 
@@ -296,21 +312,11 @@ async fn handle_sse<'a>(
     Ok(EndKind::Complete)
 }
 
-async fn get_message(
-    chat_id: i32,
-    conn: &DbConn,
-    system_prompt: String,
+fn get_message(
+    messages_with_chunks: Vec<(message::Model, Vec<chunk::Model>)>,
 ) -> Result<Vec<openrouter::Message>> {
-    let res = Message::find()
-        .select()
-        .filter(Expr::col(message::Column::ChatId).eq(chat_id))
-        .order_by_asc(message::Column::Id)
-        .find_with_related(Chunk)
-        .all(conn)
-        .await?;
-
-    let mut messages = vec![openrouter::Message::System(system_prompt)];
-    for (message, chunks) in res {
+    let mut messages = vec![];
+    for (message, chunks) in messages_with_chunks {
         match message.kind {
             MessageKind::Hidden => continue,
             MessageKind::User => messages.extend(

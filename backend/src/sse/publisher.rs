@@ -21,6 +21,18 @@ pub struct Publisher {
 }
 
 impl Publisher {
+    pub fn spawn_scope<T, F, FA>(self, func: FA)
+    where
+        F: Future<Output = Result<T, Error>> + Send + 'static,
+        FA: FnOnce(Arc<Self>) -> F,
+        T: Send + 'static,
+        Self: Send + Sync + 'static,
+    {
+        let self_arc = Arc::new(self);
+        let fut = func(Arc::clone(&self_arc));
+        tokio::spawn(fut);
+    }
+
     pub async fn scope<'a, T, F>(&'a self, func: impl FnOnce(&'a Self) -> F) -> Option<T>
     where
         F: Future<Output = Result<T, Error>>,
