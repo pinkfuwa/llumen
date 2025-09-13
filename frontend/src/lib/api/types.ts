@@ -4,6 +4,7 @@
 
 export interface ChatCreateReq {
 	model_id: number;
+	title: string;
 }
 
 export interface ChatCreateResp {
@@ -68,6 +69,15 @@ export interface ChatReadReq {
 export interface ChatReadResp {
 	model_id?: number;
 	title: string;
+}
+
+export interface ChatUpdateReq {
+	chat_id: number;
+	title?: string;
+}
+
+export interface ChatUpdateResp {
+	updated: boolean;
 }
 
 export enum ErrorKind {

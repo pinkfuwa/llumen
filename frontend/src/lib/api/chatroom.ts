@@ -15,7 +15,9 @@ import {
 	type ChatReadReq,
 	type ChatDeleteReq,
 	type ChatDeleteResp,
-	MessageCreateReqMode
+	MessageCreateReqMode,
+	type ChatUpdateReq,
+	type ChatUpdateResp
 } from './types';
 import {
 	CreateInfiniteQuery,
@@ -46,8 +48,10 @@ export interface CreateRoomRequest {
 export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateResp> {
 	return CreateRawMutation({
 		mutator: async (param) => {
+			const defaultTitle = param.message.trim().slice(0, 20).replaceAll('\n', ' ') || 'New Chat';
 			let chatRes = await APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
-				model_id: param.modelId
+				model_id: param.modelId,
+				title: defaultTitle
 			});
 
 			if (!chatRes) return;
@@ -57,7 +61,7 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 				data: {
 					id: chatRes.id,
 					model_id: param.modelId,
-					title: 'new chat'
+					title: defaultTitle
 				}
 			});
 
@@ -140,7 +144,7 @@ export function useRooms(): InfiniteQueryResult<ChatPaginateRespList> {
 		key: ['chatPaginate'],
 		fetcher: new ChatFetcher(),
 		staleTime: 1000 * 60,
-		revalidateOnFocus: true
+		revalidateOnFocus: 'force'
 	});
 }
 
@@ -171,4 +175,10 @@ export function deleteRoom(): MutationResult<ChatDeleteReq, ChatDeleteResp> {
 
 export function useRoomStreamingState(id: number): Writable<boolean> {
 	return globalCache.getOr(['chat', 'stream', id.toString()], false);
+}
+
+export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
+	return CreateMutation({
+		path: 'chat/update'
+	});
 }

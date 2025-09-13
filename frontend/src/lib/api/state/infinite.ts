@@ -32,6 +32,8 @@ class Pages<D extends { id: number }> {
 		} = {},
 		id?: number | null
 	) {
+		this.staleTime = opt.staleTime;
+		this.revalidateOnFocus = opt.revalidateOnFocus;
 		this.fetcher = fetcher;
 		if (id !== undefined) {
 			const startId = id === null ? undefined : id;

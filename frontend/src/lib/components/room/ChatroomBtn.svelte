@@ -5,7 +5,8 @@
 		name = $bindable('Default chatroom title'),
 		id,
 		selected = false,
-		ondelete = () => {}
+		ondelete = () => {},
+		onupdate = ((newName: string) => {}) as (newName: string) => void
 	} = $props();
 
 	let checked = $state(false);
@@ -19,7 +20,12 @@
 	role="listitem"
 >
 	{#if selected}
-		<form class="grow overflow-hidden p-1.5">
+		<form
+			class="grow overflow-hidden p-1.5"
+			onsubmit={() => {
+				onupdate(name);
+			}}
+		>
 			<input class="editor w-full truncate pr-1 group-hover:text-clip" bind:value={name} />
 		</form>
 	{:else}
