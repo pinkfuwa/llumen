@@ -91,7 +91,7 @@ pub async fn route(
 
     let model_config = model
         .get_config()
-        .context("Invaild model config")
+        .context("Invalid model config")
         .kind(ErrorKind::Internal)?;
 
     let puber = app
