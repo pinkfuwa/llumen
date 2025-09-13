@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { deleteRoom } from '$lib/api/chatroom';
+	import { deleteRoom, updateRoom } from '$lib/api/chatroom';
 	import type { PageEntry } from '$lib/api/state';
 	import { type ChatPaginateRespList } from '$lib/api/types';
 	import { dispatchError } from '$lib/error';
@@ -15,6 +15,9 @@
 
 	const data = entry.data;
 
+	const { mutate: update } = updateRoom();
+	const { mutate: delete_ } = deleteRoom();
+
 	$effect(() => entry.target.set(li));
 </script>
 
@@ -25,7 +28,8 @@
 			id={room.id}
 			selected={room.id == currentRoom}
 			ondelete={() =>
-				deleteRoom().mutate({ id: room.id }, (resp) => {
+				// TODO: delete is reserved keyword
+				delete_({ id: room.id }, (resp) => {
 					if (!resp.deleted) {
 						dispatchError('network', 'Fail to delete');
 						return;
@@ -36,6 +40,22 @@
 					});
 					if (room.id == currentRoom) goto('/chat/new');
 				})}
+			onupdate={(newTitle) =>
+				update(
+					{
+						chat_id: room.id,
+						title: newTitle
+					},
+					(res) => {
+						if (res.updated) {
+							data.update((list) => {
+								const idx = list.findIndex((x) => x.id == room.id);
+								if (idx != -1) list[idx].title = newTitle;
+								return list;
+							});
+						}
+					}
+				)}
 		/>
 	{:else}
 		<div class="h-1"></div>

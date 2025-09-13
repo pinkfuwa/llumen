@@ -3,8 +3,6 @@ import {
 	CreateEventQuery,
 	CreateInfiniteQuery,
 	CreateMutation,
-	RemoveInfiniteQueryData,
-	RevalidateInfiniteQueryData,
 	SetInfiniteQueryData,
 	type Fetcher,
 	type InfiniteQueryResult
@@ -14,7 +12,6 @@ import type { MutationResult } from './state/mutate';
 import {
 	MessagePaginateReqOrder,
 	MessagePaginateRespRole,
-	SseRespEndKind,
 	type MessageCreateReq,
 	type MessageCreateResp,
 	type MessagePaginateReq,
@@ -23,7 +20,6 @@ import {
 	type SseReq,
 	type SseResp
 } from './types';
-import { MarkdownPatcher, type UIUpdater } from '$lib/components/markdown/patcher';
 import { globalCache } from './state/cache';
 import { onDestroy } from 'svelte';
 

@@ -3,4 +3,6 @@
 	let { content }: { content: string } = $props();
 </script>
 
-<Code lang="json" text={content} />
+{#if content.trim().length != 0}
+	<Code lang="json" text={content} />
+{/if}
