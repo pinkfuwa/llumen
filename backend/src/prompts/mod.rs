@@ -1,4 +1,5 @@
 mod chat;
+mod title_gen;
 
 use std::{marker::PhantomData, sync::Arc};
 
@@ -10,7 +11,7 @@ use serde::Serialize;
 use time::{UtcDateTime, format_description::well_known::Rfc2822};
 
 pub use chat::ChatStore;
-pub use chat::TitleGenStore;
+pub use title_gen::TitleGenStore;
 
 pub trait PromptStore {
     type Source;

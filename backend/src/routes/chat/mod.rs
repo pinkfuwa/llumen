@@ -4,7 +4,7 @@ mod halt;
 mod paginate;
 mod read;
 mod sse;
-mod update;
+mod write;
 
 use std::sync::Arc;
 
@@ -20,5 +20,5 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/read", post(read::route))
         .route("/create", post(create::route))
         .route("/halt", post(halt::route))
-        .route("/update", post(update::route))
+        .route("/write", post(write::route))
 }

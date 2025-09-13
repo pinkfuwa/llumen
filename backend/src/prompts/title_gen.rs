@@ -1,8 +1,8 @@
 use crate::prompts::{PromptStore, PromptTemplate};
 
-pub struct ChatStore;
+pub struct TitleGenStore;
 
-impl PromptStore for ChatStore {
+impl PromptStore for TitleGenStore {
     type Source = &'static str;
     type Extra = ();
     type Pipe = ();
@@ -14,11 +14,11 @@ impl PromptStore for ChatStore {
         let template = match locale {
             Some("zh-tw") => include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../prompts/normal/zh-tw.md"
+                "/../prompts/title_gen/zh-tw.md"
             )),
             Some("en") | _ => include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../prompts/normal/en.md"
+                "/../prompts/title_gen/en.md"
             )),
         };
 

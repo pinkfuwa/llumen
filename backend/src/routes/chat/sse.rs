@@ -44,7 +44,13 @@ pub enum SseResp {
 
     UserMessage(SseRespUserMessage),
 
-    ChangeTitle(String),
+    ChangeTitle(SseRespUserTitle),
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespUserTitle {
+    pub title: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -174,7 +180,7 @@ pub async fn route(
                         content,
                     })
                 }
-                Token::ChangeTitle(title) => SseResp::ChangeTitle(title),
+                Token::ChangeTitle(title) => SseResp::ChangeTitle(SseRespUserTitle { title }),
             })
         })
         .map(|x| Event::default().json_data(JsonUnion::from(x)));

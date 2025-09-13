@@ -6,7 +6,7 @@ use reqwest_eventsource::{Event, EventSource};
 use super::{HTTP_REFERER, X_TITLE, raw};
 
 #[derive(Default)]
-struct toolCall {
+struct ToolCall {
     id: String,
     name: String,
     args: String,
@@ -14,7 +14,7 @@ struct toolCall {
 
 pub struct StreamCompletion {
     source: EventSource,
-    toolcall: Option<toolCall>,
+    toolcall: Option<ToolCall>,
 }
 
 impl StreamCompletion {
@@ -58,7 +58,7 @@ impl StreamCompletion {
 
         if let Some(call) = delta.tool_calls.map(|x| x.into_iter().next()).flatten() {
             if let Some(id) = call.id {
-                self.toolcall = Some(toolCall {
+                self.toolcall = Some(ToolCall {
                     id,
                     ..Default::default()
                 });
@@ -151,6 +151,12 @@ impl StreamCompletion {
                 _ => return None,
             }
         }
+    }
+}
+
+impl Drop for StreamCompletion {
+    fn drop(&mut self) {
+        self.source.close();
     }
 }
 

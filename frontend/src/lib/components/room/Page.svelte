@@ -22,11 +22,13 @@
 
 	$effect(() => entry.target.set(li));
 
-	addSSEHandler('change_title', (newTitle) => {
+	addSSEHandler('change_title', (resp) => {
 		if (get(data).some((x) => x.id == currentRoom)) {
 			data.update((list) => {
 				const idx = list.findIndex((x) => x.id == currentRoom);
-				list[idx].title = newTitle;
+				if (idx !== -1) {
+					list[idx].title = resp.title;
+				}
 				return list;
 			});
 		}
@@ -59,7 +61,7 @@
 						title: newTitle
 					},
 					(res) => {
-						if (res.updated) {
+						if (res.wrote) {
 							data.update((list) => {
 								const idx = list.findIndex((x) => x.id == room.id);
 								if (idx != -1) list[idx].title = newTitle;

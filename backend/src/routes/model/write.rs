@@ -19,6 +19,7 @@ pub struct ModelWriteReq {
 #[typeshare]
 pub struct ModelWriteResp {
     display_name: String,
+    wrote: bool,
 }
 
 pub async fn route(
@@ -37,12 +38,17 @@ pub async fn route(
         })?
         .display_name;
 
-    model::Entity::update_many()
+    let result = model::Entity::update_many()
         .col_expr(model::Column::Config, config.into())
         .filter(model::Column::Id.eq(req.id))
         .exec(&app.conn)
         .await
         .kind(ErrorKind::ResourceNotFound)?;
 
-    Ok(Json(ModelWriteResp { display_name }))
+    let wrote = result.rows_affected > 0;
+
+    Ok(Json(ModelWriteResp {
+        display_name,
+        wrote,
+    }))
 }

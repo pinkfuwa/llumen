@@ -1,4 +1,3 @@
-import type { Mode } from './model';
 import { goto } from '$app/navigation';
 import {
 	type ChatCreateReq,
@@ -176,6 +175,6 @@ export function useRoomStreamingState(id: number): Writable<boolean> {
 
 export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
 	return CreateMutation({
-		path: 'chat/update'
+		path: 'chat/write'
 	});
 }
