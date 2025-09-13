@@ -32,7 +32,7 @@ impl MigrationTrait for Migration {
                             .on_update(ForeignKeyAction::Cascade)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
-                    .col(string(Chat::Title))
+                    .col(string_null(Chat::Title))
                     .to_owned(),
             )
             .await?;

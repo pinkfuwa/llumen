@@ -57,7 +57,8 @@ pub struct ChatPaginateResp {
 pub struct ChatPaginateRespList {
     pub id: i32,
     pub model_id: i32,
-    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 }
 
 pub async fn route(

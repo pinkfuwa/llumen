@@ -10,6 +10,7 @@ use serde::Serialize;
 use time::{UtcDateTime, format_description::well_known::Rfc2822};
 
 pub use chat::ChatStore;
+pub use chat::TitleGenStore;
 
 pub trait PromptStore {
     type Source;
@@ -51,7 +52,7 @@ pub struct UserInfo {
 #[derive(Debug, Clone, Serialize)]
 pub struct ChatInfo {
     pub id: i32,
-    pub title: String,
+    pub title: Option<String>,
 }
 
 impl<T, E, P> PromptTemplate<T, E, P>

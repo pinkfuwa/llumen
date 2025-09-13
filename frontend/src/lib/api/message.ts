@@ -110,7 +110,8 @@ let SSEHandlers: {
 	tool_call: [],
 	tool_call_end: [],
 	message_end: [],
-	user_message: []
+	user_message: [],
+	change_title: []
 } satisfies {
 	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
 };
@@ -124,10 +125,6 @@ export function startSSE(chatId: number) {
 		},
 		onEvent: (res: SseResp) => {
 			SSEHandlers[res.t].forEach((handler) => handler(res.c as any));
-			// if (res.t == 'chunk_end' && res.c.kind == SseRespEndKind.Complete) {
-			// 	SSEHandlers['message_end'].forEach((handler) => handler(res.c as any));
-			// }
-			console.log(res);
 		}
 	});
 }
@@ -139,7 +136,6 @@ export function addSSEHandler<T extends SseResp['t']>(
 	SSEHandlers[event].push(handler as any);
 
 	onDestroy(() => {
-		console.log('remove handler for', event);
 		const index = SSEHandlers[event].indexOf(handler as any);
 		if (index !== -1) {
 			SSEHandlers[event].splice(index, 1);

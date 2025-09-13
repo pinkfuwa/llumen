@@ -28,9 +28,7 @@ pub async fn route(
     let chat_id = Chat::insert(chat::ActiveModel {
         owner_id: Set(user_id),
         model_id: Set(req.model_id),
-        // FIXME:
-        // change to auto-gen title
-        title: Set("New Chat".to_owned()),
+        title: Set(None),
         ..Default::default()
     })
     .exec(&app.conn)

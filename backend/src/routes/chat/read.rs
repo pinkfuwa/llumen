@@ -19,7 +19,8 @@ pub struct ChatReadReq {
 pub struct ChatReadResp {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_id: Option<i32>,
-    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 }
 
 pub async fn route(

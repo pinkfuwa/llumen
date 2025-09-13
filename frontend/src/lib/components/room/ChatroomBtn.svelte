@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { Trash2, OctagonX } from '@lucide/svelte';
+	import { _ } from 'svelte-i18n';
 
 	let {
-		name = $bindable('Default chatroom title'),
+		name = $bindable($_('chat.default_title')),
 		id,
 		selected = false,
 		ondelete = () => {},

@@ -103,6 +103,9 @@ pub enum Token {
     ToolCall(&'static str, String),
     /// name, args, context, id
     ToolCallEnd(&'static str, String, String, i32),
+
+    // change title
+    ChangeTitle(String),
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]

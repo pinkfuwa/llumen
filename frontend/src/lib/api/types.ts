@@ -4,7 +4,6 @@
 
 export interface ChatCreateReq {
 	model_id: number;
-	title: string;
 }
 
 export interface ChatCreateResp {
@@ -55,7 +54,7 @@ export interface ChatPaginateReqRange {
 export interface ChatPaginateRespList {
 	id: number;
 	model_id: number;
-	title: string;
+	title?: string;
 }
 
 export interface ChatPaginateResp {
@@ -68,7 +67,7 @@ export interface ChatReadReq {
 
 export interface ChatReadResp {
 	model_id?: number;
-	title: string;
+	title?: string;
 }
 
 export interface ChatUpdateReq {
@@ -403,4 +402,5 @@ export type SseResp =
 	| { t: 'tool_call'; c: SseRespToolCall }
 	| { t: 'tool_call_end'; c: SseRespToolCallEnd }
 	| { t: 'message_end'; c: SseRespMessageEnd }
-	| { t: 'user_message'; c: SseRespUserMessage };
+	| { t: 'user_message'; c: SseRespUserMessage }
+	| { t: 'change_title'; c: string };

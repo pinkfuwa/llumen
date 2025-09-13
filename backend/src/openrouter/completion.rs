@@ -94,6 +94,7 @@ impl Openrouter {
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
             top_p: model.top_p,
+            stream: false,
             ..self.default_req.clone()
         };
 
@@ -124,28 +125,15 @@ impl Openrouter {
             return Err(anyhow::anyhow!("Openrouter API error: {}", error.message));
         }
 
-        let text = json
-            .output
-            .context("Malformed response")?
+        let choice = json
+            .choices
+            .unwrap_or(Vec::new())
             .into_iter()
-            .map(|msg| {
-                msg.content
-                    .into_iter()
-                    .filter_map(|part| {
-                        if let Some(kind) = part.r#type {
-                            if kind.contains("text") {
-                                return part.text;
-                            }
-                        }
-                        None
-                    })
-                    .collect::<Vec<_>>()
-                    .join("")
-            })
-            .collect::<Vec<_>>()
-            .join("");
+            .next()
+            .context("Malformed response")?;
 
-        // TODO: calculate price and token usage
+        let text = choice.message.content;
+
         Ok(ChatCompletion {
             price: 0.0,
             token: 0,

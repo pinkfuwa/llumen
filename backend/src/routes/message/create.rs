@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use axum::{Extension, Json, extract::State};
 use entity::{MessageKind, ModelConfig, message, patch::ChunkKind, prelude::*};
 use migration::Expr;
-use sea_orm::{EntityOrSelect, QueryOrder, prelude::*};
+use sea_orm::{ActiveValue, EntityOrSelect, IntoActiveModel, QueryOrder, prelude::*};
 use serde::{Deserialize, Serialize};
 use tokio::{select, task::yield_now};
 use typeshare::typeshare;
@@ -15,7 +15,7 @@ use crate::{
     middlewares::auth::UserId,
     openrouter::{self, StreamCompletionResp},
     prompts::{self, PromptStore},
-    sse::{AssistantMessage, BufferChunk, EndKind, Publisher},
+    sse::{self, AssistantMessage, BufferChunk, EndKind, Publisher},
     tools::{self, ToolBox},
 };
 
@@ -123,7 +123,7 @@ pub async fn route(
                     req.chat_id,
                     &assistant,
                     &mut buffer_chunk,
-                    model,
+                    &model,
                     system_prompt,
                     tools,
                     &mut tool_box,
@@ -148,6 +148,17 @@ pub async fn route(
                     .await
                     .raw_kind(ErrorKind::Internal)?;
 
+                if let Ok(title) =
+                    generate_title(app.clone(), req.chat_id, &user.preference, &model).await
+                {
+                    let mut chat = chat.into_active_model();
+                    chat.title = ActiveValue::set(Some(title.clone()));
+                    if chat.update(&app.conn).await.is_ok() {
+                        puber.raw_token(Ok(sse::Token::ChangeTitle(title)));
+                        tracing::info!("Chat {} title updated", req.chat_id);
+                    }
+                }
+
                 app.tools
                     .put_back(tool_box)
                     .await
@@ -160,12 +171,38 @@ pub async fn route(
     Ok(Json(MessageCreateResp { id: msg_id }))
 }
 
+static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\''];
+
+async fn generate_title(
+    app: Arc<AppState>,
+    chat_id: i32,
+    preference: &entity::UserPreference,
+    model: &ModelConfig,
+) -> Result<String> {
+    let system_prompt = prompts::TitleGenStore
+        .template(preference.locale.as_deref())
+        .await?
+        .render(&app.prompt, chat_id, vec![], (), ())
+        .await?;
+
+    let messages = get_message(chat_id, &app.conn, system_prompt).await?;
+
+    let completion = app
+        .openrouter
+        .complete(messages, model.clone().into())
+        .await?;
+
+    let title = completion.response.trim_matches(&TRIMS[..]);
+
+    Ok(title.to_string())
+}
+
 async fn handle_sse<'a>(
     app: Arc<AppState>,
     chat_id: i32,
     assistant: &'a AssistantMessage<'a>,
     buffer_chunk: &mut Option<BufferChunk<'a, 'a>>,
-    model: ModelConfig,
+    model: &'a ModelConfig,
     system_prompt: String,
     tools: Vec<openrouter::Tool>,
     tool_box: &mut ToolBox,

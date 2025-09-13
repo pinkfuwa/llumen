@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { deleteRoom, updateRoom } from '$lib/api/chatroom';
+	import { addSSEHandler } from '$lib/api/message';
 	import type { PageEntry } from '$lib/api/state';
 	import { type ChatPaginateRespList } from '$lib/api/types';
 	import { dispatchError } from '$lib/error';
+	import { get } from 'svelte/store';
 	import ChatroomBtn from './ChatroomBtn.svelte';
 
 	const {
@@ -19,6 +21,16 @@
 	const { mutate: delete_ } = deleteRoom();
 
 	$effect(() => entry.target.set(li));
+
+	addSSEHandler('change_title', (newTitle) => {
+		if (get(data).some((x) => x.id == currentRoom)) {
+			data.update((list) => {
+				const idx = list.findIndex((x) => x.id == currentRoom);
+				list[idx].title = newTitle;
+				return list;
+			});
+		}
+	});
 </script>
 
 <li bind:this={li} class="space-y-1">

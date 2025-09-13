@@ -43,6 +43,8 @@ pub enum SseResp {
     MessageEnd(SseRespMessageEnd),
 
     UserMessage(SseRespUserMessage),
+
+    ChangeTitle(String),
 }
 
 #[derive(Debug, Serialize)]
@@ -172,6 +174,7 @@ pub async fn route(
                         content,
                     })
                 }
+                Token::ChangeTitle(title) => SseResp::ChangeTitle(title),
             })
         })
         .map(|x| Event::default().json_data(JsonUnion::from(x)));
