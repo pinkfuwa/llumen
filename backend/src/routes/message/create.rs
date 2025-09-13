@@ -205,6 +205,7 @@ async fn handle_sse<'a>(
             select! {
                 biased;
                 _ = puber.on_halt() => {
+                    completion.close();
                     return Ok(EndKind::Halt);
                 }
 
