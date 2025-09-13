@@ -49,6 +49,7 @@
 		"new": "新聊天室",
 		"assistant.response": "回答",
 		"error.no_output": "模型沒有回應，請再試一次",
-		"stop_first": "暫停目前的對話以輸入訊息"
+		"stop_first": "暫停目前的對話以輸入訊息",
+		"default_title": "新聊天室"
 	}
 }

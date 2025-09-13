@@ -48,10 +48,8 @@ export interface CreateRoomRequest {
 export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateResp> {
 	return CreateRawMutation({
 		mutator: async (param) => {
-			const defaultTitle = param.message.trim().slice(0, 20).replaceAll('\n', ' ') || 'New Chat';
 			let chatRes = await APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
-				model_id: param.modelId,
-				title: defaultTitle
+				model_id: param.modelId
 			});
 
 			if (!chatRes) return;
@@ -60,8 +58,7 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 				key: ['chatPaginate'],
 				data: {
 					id: chatRes.id,
-					model_id: param.modelId,
-					title: defaultTitle
+					model_id: param.modelId
 				}
 			});
 

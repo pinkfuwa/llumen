@@ -275,22 +275,25 @@ pub struct ToolFunctionResp {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct FullChoice {
+    pub index: i64,
+    pub finish_reason: Option<FinishReason>,
+    // logprobs aren't supported in most of providers
+    pub logprobs: Option<f64>,
+    pub message: OutputMessage,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct CompletionResponse {
-    pub output: Option<Vec<OutputMessage>>,
+    pub choices: Option<Vec<FullChoice>>,
     pub error: Option<ErrorInfo>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct OutputMessage {
-    pub r#type: String,
     pub role: String,
-    pub content: Vec<OutputContent>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct OutputContent {
-    pub r#type: Option<String>,
-    pub text: Option<String>,
+    pub content: String,
+    pub reasoning: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
