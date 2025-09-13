@@ -10,4 +10,8 @@
 	let { href = '', title = undefined, children } = $props();
 </script>
 
-<a {href} {title}>{@render children?.()}</a>
+<span class="pb-1">
+	<a {href} {title} target="_blank" class="border-b border-outline py-[1px]"
+		>{@render children?.()}</a
+	>
+</span>

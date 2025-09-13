@@ -50,6 +50,7 @@
 		"assistant.response": "Answer",
 		"error.no_output": "No response from model, please try again.",
 		"stop_first": "stop the current responding to type new message.",
-		"default_title": "New Chat"
+		"default_title": "New Chat",
+		"reasoning": "Show reasoning steps"
 	}
 }

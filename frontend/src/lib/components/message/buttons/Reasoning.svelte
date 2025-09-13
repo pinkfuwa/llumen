@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Brain } from '@lucide/svelte';
+	import { _ } from 'svelte-i18n';
 	import { slide } from 'svelte/transition';
 	const { content }: { content: string } = $props();
 
@@ -13,7 +14,8 @@
 	class="w-full border-l-6 border-primary py-1 pl-4 text-left"
 >
 	<div class="flex items-center">
-		<Brain class="mr-2" /> Reasoning{#if !showReasoning}...{/if}
+		<Brain class="mr-2" />
+		{$_('chat.reasoning')}
 	</div>
 	{#if showReasoning}
 		<div
