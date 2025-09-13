@@ -16,7 +16,7 @@ pub trait Tool: Serialize + DeserializeOwned + Default + Send + 'static {
 }
 
 pub trait UntypedTool: Send {
-    fn call<'a>(&'a mut self, input: Value) -> BoxFuture<'a, Result<Value>>;
+    fn call<'a>(&'a mut self, input: &'a str) -> BoxFuture<'a, Result<Value>>;
     fn se(&self) -> Result<String>;
 }
 
@@ -24,9 +24,9 @@ impl<T> UntypedTool for T
 where
     T: Tool,
 {
-    fn call<'a>(&'a mut self, input: Value) -> BoxFuture<'a, Result<Value>> {
+    fn call<'a>(&'a mut self, input: &'a str) -> BoxFuture<'a, Result<Value>> {
         async {
-            Ok(Tool::call(self, serde_json::from_value(input)?)
+            Ok(Tool::call(self, serde_json::from_str(input)?)
                 .await
                 .map(|output| serde_json::to_value(output))??)
         }

@@ -180,27 +180,16 @@ async fn handle_sse<'a>(
             };
 
             assistant.start_tool_call(name, tool_call.arguments.clone());
-            let args = serde_json::to_value(tool_call.arguments.clone())
-                .context("Malform input arguments")
+            let output = tool
+                .call(&tool_call.arguments)
+                .await
                 .raw_kind(ErrorKind::ToolCallFail);
-            match args {
-                Ok(args) => {
-                    let output = tool.call(args).await.raw_kind(ErrorKind::ToolCallFail);
-                    let content = serde_json::to_string(&JsonUnion::from(output))
-                        .raw_kind(ErrorKind::Internal)?;
-                    assistant
-                        .end_tool_call(name, tool_call.arguments, content, tool_call.id)
-                        .await
-                        .raw_kind(ErrorKind::Internal)?;
-                }
-                Err(err) => {
-                    let content = serde_json::to_string(&err).raw_kind(ErrorKind::Internal)?;
-                    assistant
-                        .end_tool_call(name, tool_call.arguments, content, tool_call.id)
-                        .await
-                        .raw_kind(ErrorKind::Internal)?;
-                }
-            }
+            let content =
+                serde_json::to_string(&JsonUnion::from(output)).raw_kind(ErrorKind::Internal)?;
+            assistant
+                .end_tool_call(name, tool_call.arguments, content, tool_call.id)
+                .await
+                .raw_kind(ErrorKind::Internal)?;
         }
 
         let messages = get_message(chat_id, &app.conn, system_prompt.clone())

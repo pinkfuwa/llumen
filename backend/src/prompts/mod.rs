@@ -7,7 +7,7 @@ use entity::prelude::*;
 use minijinja::Environment;
 use sea_orm::{DbConn, EntityTrait};
 use serde::Serialize;
-use time::UtcDateTime;
+use time::{UtcDateTime, format_description::well_known::Rfc2822};
 
 pub use chat::ChatStore;
 
@@ -35,7 +35,7 @@ pub struct PromptEnv {
 #[derive(Debug, Clone, Serialize)]
 pub struct PromptContext<E = (), P = ()> {
     pub user: UserInfo,
-    pub date: UtcDateTime,
+    pub date: String,
     pub chat: ChatInfo,
     pub tools: Vec<&'static str>,
     pub extra: E,
@@ -112,7 +112,7 @@ impl<E, P> PromptContext<E, P> {
                 locale: user.preference.locale.unwrap_or("en_us".to_owned()),
                 name: user.name,
             },
-            date: UtcDateTime::now(),
+            date: UtcDateTime::now().format(&Rfc2822)?,
             chat: ChatInfo {
                 id: chat_id,
                 title: chat.title,
