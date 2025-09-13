@@ -18,7 +18,7 @@ pub struct ChatUpdateReq {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct ChatUpdateResp {
-    pub updated: bool,
+    pub wrote: bool,
 }
 
 pub async fn route(
@@ -28,10 +28,11 @@ pub async fn route(
 ) -> JsonResult<ChatUpdateResp> {
     // TODO: sync Mode with remote
 
-    let title = req.title.ok_or(Error {
-        error: ErrorKind::MalformedRequest,
-        reason: "title is required".to_string(),
-    })?;
+    if req.title.is_none() {
+        return Ok(Json(ChatUpdateResp { wrote: false }));
+    }
+
+    let title = req.title.unwrap();
 
     let res = chat::Entity::update_many()
         .col_expr(chat::Column::Title, title.into())
@@ -45,6 +46,6 @@ pub async fn route(
         .kind(ErrorKind::Internal)?;
 
     Ok(Json(ChatUpdateResp {
-        updated: res.rows_affected > 0,
+        wrote: res.rows_affected > 0,
     }))
 }

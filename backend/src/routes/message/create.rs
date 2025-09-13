@@ -171,6 +171,8 @@ pub async fn route(
     Ok(Json(MessageCreateResp { id: msg_id }))
 }
 
+// These characters are commonly found as leading or trailing artifacts in model-generated titles,
+// such as extra whitespace, quotes, or formatting marks. We trim them to clean up the output.
 static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\''];
 
 async fn generate_title(

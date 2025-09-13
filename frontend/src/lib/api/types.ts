@@ -76,7 +76,7 @@ export interface ChatUpdateReq {
 }
 
 export interface ChatUpdateResp {
-	updated: boolean;
+	wrote: boolean;
 }
 
 export enum ErrorKind {
@@ -270,6 +270,7 @@ export interface ModelWriteReq {
 
 export interface ModelWriteResp {
 	display_name: string;
+	wrote: boolean;
 }
 
 export interface RenewReq {
@@ -328,6 +329,10 @@ export interface SseRespUserMessage {
 	message_id: number;
 	chunk_id: number;
 	content: string;
+}
+
+export interface SseRespUserTitle {
+	title: string;
 }
 
 export interface UserCreateReq {
@@ -403,4 +408,4 @@ export type SseResp =
 	| { t: 'tool_call_end'; c: SseRespToolCallEnd }
 	| { t: 'message_end'; c: SseRespMessageEnd }
 	| { t: 'user_message'; c: SseRespUserMessage }
-	| { t: 'change_title'; c: string };
+	| { t: 'change_title'; c: SseRespUserTitle };
