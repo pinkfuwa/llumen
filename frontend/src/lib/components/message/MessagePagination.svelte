@@ -33,6 +33,7 @@
 				}
 			});
 		}
+		chunks = [];
 		isStreaming.set(false);
 	});
 </script>

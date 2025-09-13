@@ -22,7 +22,7 @@
 			out:slide={{ duration: 180, axis: 'y' }}
 		>
 			{#each lines as line}
-				<p>{line}</p>
+				<p class="whitespace-pre-wrap">{line}</p>
 			{/each}
 		</div>
 	{/if}
