@@ -5,6 +5,9 @@ pub struct ToolSet {
 
 #[macro_export]
 macro_rules! tool_set {
+    () => {
+        crate::tools::ToolSet::new(&[])
+    };
     ($($E:path),*) => {
         crate::tools::ToolSet::new(&[tool_set!(@ $($E),*)])
     };
