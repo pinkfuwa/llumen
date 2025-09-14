@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use axum::{Extension, Json, extract::State};
-use entity::{MessageKind, ModelConfig, message, patch::ChunkKind, prelude::*};
+use entity::{MessageKind, message, patch::ChunkKind, prelude::*};
 use migration::Expr;
 use sea_orm::{ActiveValue, EntityOrSelect, IntoActiveModel, QueryOrder, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -27,7 +27,7 @@ pub struct MessageCreateReq {
     pub text: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[typeshare]
 #[serde(rename_all = "snake_case")]
 pub enum MessageCreateReqMode {
@@ -108,6 +108,12 @@ pub async fn route(
         .render(&app.prompt, req.chat_id, tool_prompts, (), ())
         .await
         .kind(ErrorKind::Internal)?;
+    let title_gen_model: openrouter::Model = model.into();
+    let mut stream_model = title_gen_model.clone();
+
+    if req.mode == MessageCreateReqMode::Search {
+        stream_model.online = true;
+    }
 
     tokio::spawn(async move {
         puber
@@ -123,7 +129,7 @@ pub async fn route(
                     req.chat_id,
                     &assistant,
                     &mut buffer_chunk,
-                    &model,
+                    &stream_model,
                     system_prompt,
                     tools,
                     &mut tool_box,
@@ -148,8 +154,10 @@ pub async fn route(
                     .await
                     .raw_kind(ErrorKind::Internal)?;
 
+                // TODO: We should generate title with fix params
                 if let Ok(title) =
-                    generate_title(app.clone(), req.chat_id, &user.preference, &model).await
+                    generate_title(app.clone(), req.chat_id, &user.preference, &title_gen_model)
+                        .await
                 {
                     let mut chat = chat.into_active_model();
                     chat.title = ActiveValue::set(Some(title.clone()));
@@ -179,7 +187,7 @@ async fn generate_title(
     app: Arc<AppState>,
     chat_id: i32,
     preference: &entity::UserPreference,
-    model: &ModelConfig,
+    model: &openrouter::Model,
 ) -> Result<String> {
     let system_prompt = prompts::TitleGenStore
         .template(preference.locale.as_deref())
@@ -204,7 +212,7 @@ async fn handle_sse<'a>(
     chat_id: i32,
     assistant: &'a AssistantMessage<'a>,
     buffer_chunk: &mut Option<BufferChunk<'a, 'a>>,
-    model: &'a ModelConfig,
+    model: &'a openrouter::Model,
     system_prompt: String,
     tools: Vec<openrouter::Tool>,
     tool_box: &mut ToolBox,
@@ -236,7 +244,7 @@ async fn handle_sse<'a>(
             .raw_kind(ErrorKind::Internal)?;
         let mut completion = app
             .openrouter
-            .stream(messages.clone(), model.clone().into(), tools.clone())
+            .stream(messages.clone(), model, tools.clone())
             .await
             .raw_kind(ErrorKind::ApiFail)?;
 
