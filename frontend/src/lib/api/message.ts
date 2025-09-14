@@ -22,6 +22,7 @@ import {
 } from './types';
 import { globalCache } from './state/cache';
 import { onDestroy } from 'svelte';
+import { dev } from '$app/environment';
 
 class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 	chatId: number;
@@ -124,7 +125,8 @@ export function startSSE(chatId: number) {
 			id: chatId
 		},
 		onEvent: (res: SseResp) => {
-			console.log('SSE Event:', res);
+			if (dev) console.log('SSE Event:', res);
+
 			SSEHandlers[res.t].forEach((handler) => handler(res.c as any));
 		}
 	});
