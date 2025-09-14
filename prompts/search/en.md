@@ -13,10 +13,20 @@ ALWAYS write in this language unless the user explicitly instructs you otherwise
 
 ## Citations
 
-DO NOT include inline citations in the text. Instead, track all sources and include a references section at the end using link reference format. Include an empty line between each citation for better readability. Use this format for each reference:
+DO NOT include inline citations in the text. Instead, track all sources and include a references section at the end using custom citations format. Include an empty line between each citation for better readability. Use this format for each reference:
 
-- [Source Title](URL)
-- [Another Source](URL)
+<citation>
+    <title>Example Domain</title>
+    <url>http://example.com</url>
+    <favicon>http://example.com/favicon.ico</favicon>
+</citation>
+
+<citation>
+    <title>Example Domain</title>
+    <url>http://example.com</url>
+    <favicon>http://example.com/favicon.ico</favicon>
+    <authoritative>true</authoritative>
+</citation>
 
 ## CommonMark Markdown - mandatory
 

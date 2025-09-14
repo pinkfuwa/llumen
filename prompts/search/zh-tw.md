@@ -15,8 +15,18 @@
 
 請勿在正文中包含內聯引用。相反，追蹤所有來源並在文件末尾使用連結參考格式包含參考資料區塊。每個引用之間留一個空行以提升可讀性。每個參考請使用下列格式：
 
-- [Source Title](URL)
-- [Another Source](URL)
+<citation>
+    <title>Example Domain</title>
+    <url>http://example.com</url>
+    <favicon>http://example.com/favicon.ico</favicon>
+</citation>
+
+<citation>
+    <title>Example Domain</title>
+    <url>http://example.com</url>
+    <favicon>http://example.com/favicon.ico</favicon>
+    <authoritative>true</authoritative>
+</citation>
 
 ## CommonMark Markdown - mandatory
 
