@@ -47,7 +47,7 @@ impl Openrouter {
     pub fn stream(
         &self,
         messages: Vec<Message>,
-        model: Model,
+        model: &Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
         tracing::info!("start streaming with model {}", &model.id);
