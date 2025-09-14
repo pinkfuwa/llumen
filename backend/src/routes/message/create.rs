@@ -101,13 +101,22 @@ pub async fn route(
         .kind(ErrorKind::Internal)?
         .context("Cannot find user")
         .kind(ErrorKind::Internal)?;
-    let system_prompt = prompts::ChatStore
-        .template(user.preference.locale.as_deref())
-        .await
-        .kind(ErrorKind::Internal)?
-        .render(&app.prompt, req.chat_id, tool_prompts, (), ())
-        .await
-        .kind(ErrorKind::Internal)?;
+    let system_prompt = match req.mode {
+        MessageCreateReqMode::Search => prompts::SearchStore
+            .template(user.preference.locale.as_deref())
+            .await
+            .kind(ErrorKind::Internal)?
+            .render(&app.prompt, req.chat_id, tool_prompts, (), ())
+            .await
+            .kind(ErrorKind::Internal)?,
+        _ => prompts::ChatStore
+            .template(user.preference.locale.as_deref())
+            .await
+            .kind(ErrorKind::Internal)?
+            .render(&app.prompt, req.chat_id, tool_prompts, (), ())
+            .await
+            .kind(ErrorKind::Internal)?,
+    };
     let title_gen_model: openrouter::Model = model.into();
     let mut stream_model = title_gen_model.clone();
 
@@ -155,15 +164,17 @@ pub async fn route(
                     .raw_kind(ErrorKind::Internal)?;
 
                 // TODO: We should generate title with fix params
-                if let Ok(title) =
-                    generate_title(app.clone(), req.chat_id, &user.preference, &title_gen_model)
-                        .await
-                {
-                    let mut chat = chat.into_active_model();
-                    chat.title = ActiveValue::set(Some(title.clone()));
-                    if chat.update(&app.conn).await.is_ok() {
-                        puber.raw_token(Ok(sse::Token::ChangeTitle(title)));
-                        tracing::info!("Chat {} title updated", req.chat_id);
+                if chat.title.is_none() {
+                    if let Ok(title) =
+                        generate_title(app.clone(), req.chat_id, &user.preference, &title_gen_model)
+                            .await
+                    {
+                        let mut chat = chat.into_active_model();
+                        chat.title = ActiveValue::set(Some(title.clone()));
+                        if chat.update(&app.conn).await.is_ok() {
+                            tracing::info!("Chat {} title updated to \"{}\"", req.chat_id, &title);
+                            puber.raw_token(Ok(sse::Token::ChangeTitle(title)));
+                        }
                     }
                 }
 
