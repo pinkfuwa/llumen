@@ -124,6 +124,7 @@ export function startSSE(chatId: number) {
 			id: chatId
 		},
 		onEvent: (res: SseResp) => {
+			console.log('SSE Event:', res);
 			SSEHandlers[res.t].forEach((handler) => handler(res.c as any));
 		}
 	});

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Trash } from '@lucide/svelte';
+	import { Trash, TriangleAlert } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 
 	let { ondelete }: { ondelete: () => void } = $props();
@@ -13,5 +13,9 @@
 	}}
 	onmouseleave={() => (checked = false)}
 >
-	<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
+	{#if checked}
+		<TriangleAlert class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
+	{:else}
+		<Trash class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
+	{/if}
 </button>
