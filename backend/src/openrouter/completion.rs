@@ -17,6 +17,16 @@ pub struct Model {
     pub online: bool,
 }
 
+impl Model {
+    pub fn get_model_id(&self) -> String {
+        let mut id = self.id.clone();
+        if self.online {
+            id.push_str(":online");
+        }
+        return id;
+    }
+}
+
 pub struct Openrouter {
     api_key: String,
     chat_completion_endpoint: String,
@@ -46,7 +56,7 @@ impl Openrouter {
     }
     pub fn stream(
         &self,
-        messages: Vec<Message>,
+        mut messages: Vec<Message>,
         model: &Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
@@ -57,11 +67,14 @@ impl Openrouter {
             false => Some(tools.into_iter().map(|t| t.into()).collect()),
         };
 
-        let model_suffix = if model.online { ":online" } else { "" };
+        // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
+        if matches!(messages.last(), Some(Message::Assistant(_))) {
+            messages.push(Message::User("".to_string()));
+        }
 
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.id.to_string() + model_suffix,
+            model: model.get_model_id(),
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
@@ -79,17 +92,25 @@ impl Openrouter {
             req,
         )
     }
-    pub async fn complete(&self, messages: Vec<Message>, model: Model) -> Result<ChatCompletion> {
+    pub async fn complete(
+        &self,
+        mut messages: Vec<Message>,
+        model: Model,
+    ) -> Result<ChatCompletion> {
         tracing::info!("start completion with model {}", &model.id);
 
         if model.online {
             tracing::warn!("Online models should not be used in non-streaming completions.");
         }
-        let model_suffix = if model.online { ":online" } else { "" };
+
+        // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
+        if matches!(messages.last(), Some(Message::Assistant(_))) {
+            messages.push(Message::User("".to_string()));
+        }
 
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.id + model_suffix,
+            model: model.get_model_id(),
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
