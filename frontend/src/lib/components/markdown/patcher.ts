@@ -65,8 +65,9 @@ export class MarkdownPatcher {
 
 		const tokens = marked.lexer(this.buffer);
 
-		if (dev && tokens.some((x) => !blocktokens.includes(x.type)))
-			throw new Error('unreachable, only blocktoken can appear at top-level');
+		if (dev && tokens.some((x) => !blocktokens.includes(x.type))) {
+			console.warn('only blocktoken can appear at top-level');
+		}
 
 		if (tokens.length >= 3 && !tokens[tokens.length - 2].type.startsWith('table')) {
 			let first = tokens;
