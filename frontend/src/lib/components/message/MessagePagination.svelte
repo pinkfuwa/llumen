@@ -21,18 +21,14 @@
 	startSSE(id);
 
 	addSSEHandler('message_end', (data) => {
-		if (data.kind == SseRespEndKind.Error) {
-			// TODO: handle error
-		} else {
-			SetInfiniteQueryData<MessagePaginateRespList>({
-				key: ['messagePaginate', id.toString()],
-				data: {
-					id,
-					role: MessagePaginateRespRole.Assistant,
-					chunks
-				}
-			});
-		}
+		SetInfiniteQueryData<MessagePaginateRespList>({
+			key: ['messagePaginate', id.toString()],
+			data: {
+				id,
+				role: MessagePaginateRespRole.Assistant,
+				chunks
+			}
+		});
 		isStreaming.set(false);
 	});
 </script>
