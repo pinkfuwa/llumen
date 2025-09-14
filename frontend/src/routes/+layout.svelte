@@ -8,6 +8,7 @@
 	import initLatex from '$lib/components/markdown/latex';
 	import { initPreference } from '$lib';
 	import { initAuth } from '$lib/api/auth';
+	import initCitation from '$lib/components/markdown/citation';
 
 	let { children } = $props();
 
@@ -16,6 +17,7 @@
 
 	initPreference();
 	initLatex();
+	initCitation();
 </script>
 
 {#if !$isLoading}

@@ -11,6 +11,10 @@
 	} = $props();
 
 	let checked = $state(false);
+
+	$effect(() => {
+		if (name.trim().length == 0) name = $_('chat.default_title');
+	});
 </script>
 
 <div
