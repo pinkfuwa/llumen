@@ -21,6 +21,7 @@ import TableRow from './TableRow.svelte';
 import Text from './Text.svelte';
 import LatexSpan from './LatexSpan.svelte';
 import Latex from './Latex.svelte';
+import Citation from './Citation.svelte';
 
 export const renderers = {
 	heading: Heading,
@@ -47,5 +48,6 @@ export const renderers = {
 	code: Code,
 	br: Br,
 	inlineKatex: LatexSpan,
-	blockKatex: Latex
+	blockKatex: Latex,
+	citation: Citation
 };
