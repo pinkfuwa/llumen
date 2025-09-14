@@ -75,8 +75,8 @@
 			kind: {
 				t: 'tool_call',
 				c: {
-					name: toolName,
-					args: toolArg,
+					name: data.name,
+					args: data.args,
 					context: data.content
 				}
 			}
