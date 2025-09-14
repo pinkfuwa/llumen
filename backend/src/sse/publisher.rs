@@ -1,4 +1,7 @@
-use std::{collections::hash_map::Entry, sync::Arc};
+use std::{
+    collections::hash_map::Entry,
+    sync::{Arc, Mutex},
+};
 
 use anyhow::{Result, bail};
 use entity::{MessageKind, chunk, message, patch::ChunkKind, prelude::*};
@@ -7,9 +10,12 @@ use sea_orm::{ActiveValue::Set, TransactionTrait, prelude::*};
 use tokio::sync::{Notify, RwLock, broadcast};
 
 use crate::{
+    config,
     errors::*,
     sse::{AssistantMessage, SseContext, SseInner, Token},
 };
+
+use super::buffer::Buffer;
 
 #[derive(Debug)]
 pub struct Publisher {
@@ -18,6 +24,7 @@ pub struct Publisher {
     pub(super) inner: Arc<RwLock<SseInner>>,
     pub(super) on_halt: Arc<Notify>,
     pub(super) conn: DbConn,
+    pub(super) buffer: Mutex<Buffer<Result<Token, Error>>>,
 }
 
 impl Publisher {
@@ -79,7 +86,22 @@ impl Publisher {
     }
 
     pub fn raw_token(&self, t: Result<Token, Error>) {
-        self.channel.send(t).ok();
+        let mut new_token = Some(t);
+        let mut chan_len = self.channel.len();
+        let mut buffer = self.buffer.lock().unwrap();
+        while chan_len < config::MAX_SSE_BUF {
+            if let Some(token) = buffer.pop() {
+                chan_len += 1;
+                self.channel.send(token).ok();
+            } else if let Some(token) = new_token.take() {
+                self.channel.send(token).ok();
+            } else {
+                break;
+            }
+        }
+        if let Some(token) = new_token {
+            buffer.push(token);
+        }
     }
 
     pub async fn new_assistant_message<'a>(&'a self) -> Result<AssistantMessage<'a>> {
@@ -113,6 +135,7 @@ impl Publisher {
                     on_halt,
                     conn: ctx.conn.clone(),
                     chat_id,
+                    buffer: Mutex::new(Buffer::default()),
                 })
             }
             Entry::Vacant(entry) => {
@@ -127,8 +150,18 @@ impl Publisher {
                     on_halt,
                     conn: ctx.conn.clone(),
                     chat_id,
+                    buffer: Mutex::new(Buffer::default()),
                 })
             }
+        }
+    }
+}
+
+impl Drop for Publisher {
+    fn drop(&mut self) {
+        let mut buffer = self.buffer.lock().unwrap();
+        while let Some(token) = buffer.pop() {
+            self.channel.send(token).ok();
         }
     }
 }

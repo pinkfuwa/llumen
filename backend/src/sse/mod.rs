@@ -1,4 +1,5 @@
 mod assistant_message;
+mod buffer;
 mod context;
 mod publisher;
 mod subscriber;

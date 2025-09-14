@@ -6,7 +6,7 @@ use sea_orm::{DbConn, EntityTrait, QueryOrder};
 use serde::Serialize;
 use tokio::sync::{Mutex, Notify, RwLock, broadcast};
 
-use super::subscriber::Subscriber;
+use super::{buffer, subscriber::Subscriber};
 use crate::{config::MAX_SSE_BUF, errors::Error, sse::Publisher};
 
 #[derive(Debug, Clone)]
@@ -113,4 +113,20 @@ pub enum EndKind {
     Complete,
     Halt,
     Error,
+}
+
+impl buffer::Mergeable for Token {
+    fn merge(self, other: Self) -> (Self, Option<Self>) {
+        match (self, other) {
+            (Token::Token(mut a), Token::Token(b)) => {
+                a.push_str(&b);
+                (Token::Token(a), None)
+            }
+            (Token::ReasoningToken(mut a), Token::ReasoningToken(b)) => {
+                a.push_str(&b);
+                (Token::ReasoningToken(a), None)
+            }
+            (a, b) => (a, Some(b)),
+        }
+    }
 }

@@ -215,6 +215,9 @@ async fn generate_title(
 
     let title = completion.response.trim_matches(&TRIMS[..]);
 
+    if title.len() == 0 {
+        anyhow::bail!("Empty title generated");
+    }
     Ok(title.to_string())
 }
 
