@@ -37,9 +37,13 @@ const flushThreshold = 9;
 
 export class MarkdownPatcher {
 	updater: UIUpdater;
+	lastRenderTime: number = 0;
+	// content that's not rendered yet
 	buffer: string = '';
+	// content of last chunk
+	lastChunk: string = '';
+	// total content
 	content: string = '';
-	lastFlush: number = 0;
 	constructor(updater: UIUpdater) {
 		this.updater = updater;
 	}
@@ -56,14 +60,17 @@ export class MarkdownPatcher {
 		return weight;
 	}
 	feed(data: string) {
-		this.buffer += data;
 		this.content += data;
-		this.lastFlush += data.length;
+		this.buffer += data;
 
+		if (this.lastRenderTime + 25 < Date.now()) return;
 		if (this.flushWeight < flushThreshold) return;
-		else this.lastFlush = 0;
 
-		const tokens = marked.lexer(this.buffer);
+		this.lastRenderTime = Date.now();
+		this.lastChunk += this.buffer;
+		this.buffer = '';
+
+		const tokens = marked.lexer(this.lastChunk);
 
 		if (dev && tokens.some((x) => !blocktokens.includes(x.type))) {
 			console.warn('only blocktoken can appear at top-level');
@@ -75,7 +82,7 @@ export class MarkdownPatcher {
 			let second: TokensList = [first.pop()!] as any;
 			second.links = first.links;
 
-			this.buffer = second[0].raw;
+			this.lastChunk = second[0].raw;
 
 			this.updater.replace(first);
 			this.updater.append(second);
@@ -85,7 +92,7 @@ export class MarkdownPatcher {
 	}
 	reset() {
 		this.updater.reset();
-		this.buffer = '';
+		this.lastChunk = '';
 		this.content = '';
 	}
 }
