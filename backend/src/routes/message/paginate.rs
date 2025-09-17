@@ -181,7 +181,7 @@ pub async fn route(
                 MessageKind::User => MessagePaginateRespRole::User,
                 MessageKind::Assistant => MessagePaginateRespRole::Assistant,
                 MessageKind::Hidden => return None,
-                MessageKind::DeepResearch => todo!(),
+                MessageKind::DeepResearch => todo!("Handle DeepResearch message kind"),
             };
             let chunks: Result<_, Json<Error>> = chunks
                 .into_iter()
@@ -209,7 +209,7 @@ pub async fn route(
                                     },
                                 )
                             }
-                            _ => todo!(),
+                            _ => todo!("Handle other chunk kinds: Error, Report, Plan, Step"),
                         },
                     })
                 })

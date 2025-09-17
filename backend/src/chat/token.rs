@@ -1,11 +1,27 @@
+use crate::openrouter::{self, StreamCompletionResp};
+
 use super::channel::Mergeable;
-use entity::chunk;
+use entity::{ChunkKind, chunk};
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+struct ToolCallInfo {
+    name: String,
+    id: String,
+    input: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    output: Option<String>,
+}
 
 #[derive(Debug, Clone)]
 pub enum Token {
     User(String),
     Message(String),
-    Tool { name: String, args: String },
+    Tool {
+        name: String,
+        args: String,
+        id: String,
+    },
     ToolResult(String),
     Reasoning(String),
     Empty,
@@ -13,24 +29,77 @@ pub enum Token {
     Step(String),
     Report(String),
     Error(String),
+    Complete {
+        message_id: i32,
+        chunk_ids: Vec<i32>,
+    },
 }
 
 impl Mergeable for Token {
     fn merge(self, other: Self) -> (Self, Option<Self>) {
-        todo!()
+        match (self, other) {
+            (Token::User(s1), Token::User(s2)) => (Token::User(s1 + &s2), None),
+            (Token::Message(s1), Token::Message(s2)) => (Token::Message(s1 + &s2), None),
+            (Token::Tool { name, args, id }, Token::ToolResult(res)) => {
+                let mut tool_call_info = ToolCallInfo {
+                    name,
+                    id,
+                    input: args,
+                    output: Some(res),
+                };
+                let content = serde_json::to_string(&tool_call_info).unwrap();
+                (Token::ToolResult(content), None)
+            }
+            (Token::Reasoning(s1), Token::Reasoning(s2)) => (Token::Reasoning(s1 + &s2), None),
+            (Token::Plan(s1), Token::Plan(s2)) => (Token::Plan(s1 + &s2), None),
+            (Token::Step(s1), Token::Step(s2)) => (Token::Step(s1 + &s2), None),
+            (Token::Report(s1), Token::Report(s2)) => (Token::Report(s1 + &s2), None),
+            (Token::Error(s1), Token::Error(s2)) => (Token::Error(s1 + &s2), None),
+            (s1, s2) => (s1, Some(s2)),
+        }
     }
+
     fn len(&self) -> usize {
-        todo!()
+        match self {
+            Token::User(s)
+            | Token::Message(s)
+            | Token::Reasoning(s)
+            | Token::Plan(s)
+            | Token::Step(s)
+            | Token::Report(s)
+            | Token::Error(s) => s.len(),
+            Token::Tool { .. } | Token::ToolResult(_) | Token::Empty | Token::Complete { .. } => 0,
+        }
     }
+
     fn split_end(&self, split: usize) -> Option<Self> {
-        todo!()
+        match self {
+            Token::User(s) => Some(Token::User(s[split..].to_string())),
+            Token::Message(s) => Some(Token::Message(s[split..].to_string())),
+            Token::Reasoning(s) => Some(Token::Reasoning(s[split..].to_string())),
+            Token::Plan(s) => Some(Token::Plan(s[split..].to_string())),
+            Token::Step(s) => Some(Token::Step(s[split..].to_string())),
+            Token::Report(s) => Some(Token::Report(s[split..].to_string())),
+            Token::Error(s) => Some(Token::Error(s[split..].to_string())),
+            _ => None,
+        }
     }
+
     fn split_start(&self, split: usize) -> Self {
-        todo!()
+        match self {
+            Token::User(s) => Token::User(s[..split].to_string()),
+            Token::Message(s) => Token::Message(s[..split].to_string()),
+            Token::Reasoning(s) => Token::Reasoning(s[..split].to_string()),
+            Token::Plan(s) => Token::Plan(s[..split].to_string()),
+            Token::Step(s) => Token::Step(s[..split].to_string()),
+            Token::Report(s) => Token::Report(s[..split].to_string()),
+            Token::Error(s) => Token::Error(s[..split].to_string()),
+            _ => self.clone(),
+        }
     }
 }
 
-struct TokenIterator<I>
+struct TokenChunkIterator<I>
 where
     I: Iterator<Item = Token>,
 {
@@ -38,14 +107,84 @@ where
     buffer: Option<Token>,
 }
 
-impl<I> Iterator for TokenIterator<I>
+impl<I> Iterator for TokenChunkIterator<I>
 where
     I: Iterator<Item = Token>,
 {
     type Item = chunk::ActiveModel;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        loop {
+            let token = self.buffer.take().or_else(|| self.iter.next());
+            if token.is_none() {
+                return None;
+            }
+            let mut token = token.unwrap();
+
+            loop {
+                let next_token = self.iter.next();
+                if next_token.is_none() {
+                    self.buffer = Some(token.clone());
+                    break;
+                }
+                let (merged_token, remaining) = token.merge(next_token.unwrap());
+                token = merged_token;
+                if let Some(remaining) = remaining {
+                    self.buffer = Some(remaining);
+                    break;
+                }
+            }
+
+            let chunk = match token {
+                Token::User(content) => Some(chunk::ActiveModel {
+                    kind: sea_orm::Set(ChunkKind::Text),
+                    content: sea_orm::Set(content),
+                    ..Default::default()
+                }),
+                Token::Message(content) => Some(chunk::ActiveModel {
+                    kind: sea_orm::Set(ChunkKind::Text),
+                    content: sea_orm::Set(content),
+                    ..Default::default()
+                }),
+                Token::Tool { name, args, id } => {
+                    let tool_call_info = ToolCallInfo {
+                        name,
+                        id,
+                        input: args,
+                        output: None,
+                    };
+                    let content = serde_json::to_string(&tool_call_info).unwrap();
+                    Some(chunk::ActiveModel {
+                        kind: sea_orm::Set(ChunkKind::ToolCall),
+                        content: sea_orm::Set(content),
+                        ..Default::default()
+                    })
+                }
+                Token::ToolResult(result) => Some(chunk::ActiveModel {
+                    kind: sea_orm::Set(ChunkKind::Error),
+                    content: sea_orm::Set("ToolResult not followed by tool call".to_string()),
+                    ..Default::default()
+                }),
+                Token::Reasoning(content) => Some(chunk::ActiveModel {
+                    kind: sea_orm::Set(ChunkKind::Reasoning),
+                    content: sea_orm::Set(content),
+                    ..Default::default()
+                }),
+                Token::Error(content) => Some(chunk::ActiveModel {
+                    kind: sea_orm::Set(ChunkKind::Error),
+                    content: sea_orm::Set(content),
+                    ..Default::default()
+                }),
+                Token::Plan(_) => continue,
+                Token::Step(_) => continue,
+                Token::Report(_) => continue,
+                Token::Empty => continue,
+                Token::Complete { .. } => continue,
+            };
+            if chunk.is_some() {
+                return chunk;
+            }
+        }
     }
 }
 
@@ -53,9 +192,20 @@ impl Token {
     pub fn into_chunks<I: Iterator<Item = Self>>(
         tokens: I,
     ) -> impl Iterator<Item = chunk::ActiveModel> {
-        return TokenIterator {
+        return TokenChunkIterator {
             iter: tokens,
             buffer: None,
         };
+    }
+}
+
+impl From<openrouter::StreamCompletionResp> for Token {
+    fn from(resp: openrouter::StreamCompletionResp) -> Self {
+        match resp {
+            StreamCompletionResp::ReasoningToken(reasoning) => Token::Reasoning(reasoning),
+            StreamCompletionResp::ResponseToken(content) => Token::Message(content),
+            StreamCompletionResp::ToolCall { name, args, id } => Token::Tool { name, args, id },
+            _ => Token::Empty,
+        }
     }
 }

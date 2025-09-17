@@ -5,6 +5,7 @@ use anyhow::{Context as _, Result};
 
 use entity::ChunkKind;
 use entity::MessageKind;
+use futures_util::StreamExt;
 use futures_util::future::BoxFuture;
 
 use crate::chat::context::CompletionContext;
@@ -23,9 +24,7 @@ pub trait PipelineInner {
         ctx: &PipelineContext,
         completion_ctx: &CompletionContext,
     ) -> Result<openrouter::Model>;
-    fn solve_tool(
-        tool_call: openrouter::ToolCall,
-    ) -> BoxFuture<'static, Result<String, anyhow::Error>> {
+    fn solve_tool(name: &str, arg: &str) -> BoxFuture<'static, Result<String, anyhow::Error>> {
         Box::pin(async move {
             Err(anyhow::anyhow!(
                 "Tool calls are not supported in this pipeline"
@@ -69,7 +68,7 @@ impl<P: PipelineInner> ChatPipeline<P> {
                 MessageKind::Assistant => {
                     messages.extend(helper::chunks_to_message(chunks.clone().into_iter()))
                 }
-                MessageKind::DeepResearch => todo!(),
+                MessageKind::DeepResearch => todo!("Handle DeepResearch message kind"),
             };
         }
 
@@ -85,13 +84,11 @@ impl<P: PipelineInner> ChatPipeline<P> {
             pipeline: PhantomData,
         })
     }
-    async fn report_error(&mut self, err: impl ToString) {
+    fn report_error(&mut self, err: impl ToString) {
         // TODO: report_error can have fail due to publisher halted, we chould at least log it.
-        self.completion_ctx
-            .add_token(Token::Error(err.to_string()))
-            .await;
+        self.completion_ctx.add_token(Token::Error(err.to_string()));
     }
-    async fn process_one(&mut self) -> Result<(), anyhow::Error> {
+    async fn process(&mut self) -> Result<(), anyhow::Error> {
         loop {
             let mut message = self.messages.clone();
             message.extend(helper::active_chunks_to_message(
@@ -104,19 +101,35 @@ impl<P: PipelineInner> ChatPipeline<P> {
                 .stream(message, &self.model, self.tools.clone())
                 .await?;
 
-            let token_stream = helper::to_token_stream(&mut res);
-
-            let halt = self.completion_ctx.put_stream(token_stream).await?;
+            let halt = self
+                .completion_ctx
+                .put_stream((&mut res).map(|resp| resp.map(Into::into)))
+                .await?;
             tracing::debug!("stream ended: {:?}", halt);
 
-            match res.stop_reason.clone().context("stream didn't stop")? {
+            let result = res.get_result()?;
+
+            self.completion_ctx
+                .update_usage(result.usage.cost as f32, result.usage.token as i32);
+
+            let tokens = result.responses.into_iter().map(Into::into);
+            let chunks = Token::into_chunks(tokens);
+
+            self.completion_ctx.new_chunks.extend(chunks);
+
+            match result.stop_reason {
                 FinishReason::Length => return Err(anyhow::anyhow!("The response is too long")),
                 FinishReason::ToolCalls => {
-                    let tool_call = res
+                    let tool_call = result
                         .toolcall
-                        .clone()
                         .context("No tool calls found, but finish reason is tool_calls")?;
-                    P::solve_tool(tool_call).await?;
+                    let result = P::solve_tool(&tool_call.name, &tool_call.args).await?;
+                    let last_chunk = self
+                        .completion_ctx
+                        .new_chunks
+                        .last_mut()
+                        .context("No tool chunks found")?;
+                    todo!("update last chunk")
                 }
                 _ => {}
             };
@@ -134,8 +147,8 @@ impl<P: PipelineInner + Send> super::Pipeline for ChatPipeline<P> {
                 .await
                 .context("Failed to create chat pipeline")?;
 
-            if let Err(err) = pipeline.process_one().await {
-                pipeline.report_error(err).await;
+            if let Err(err) = pipeline.process().await {
+                pipeline.report_error(err);
             }
 
             Ok(())

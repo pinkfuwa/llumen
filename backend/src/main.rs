@@ -71,11 +71,14 @@ async fn main() {
     )
     .expect("Cannot parse paseto key");
 
+    let pipeline =
+        Arc::new(PipelineContext::new(conn.clone()).expect("Failed to create pipeline context"));
+
     let state = Arc::new(AppState {
         conn,
         key,
         hasher: Hasher::default(),
-        pipeline: todo!(),
+        pipeline,
     });
 
     let var_name = Router::new();

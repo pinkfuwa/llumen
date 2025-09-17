@@ -25,7 +25,7 @@ pub struct Prompt {
 }
 
 impl Prompt {
-    pub fn new(env: Environment<'static>) -> Self {
+    pub fn new() -> Self {
         todo!("Add prompt template");
     }
 }

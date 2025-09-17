@@ -15,16 +15,24 @@ pub struct ToolCall {
 }
 
 #[derive(Default, Clone)]
-struct Usage {
-    token: i64,
-    cost: f64,
+pub struct Usage {
+    pub token: i64,
+    pub cost: f64,
 }
 
 pub struct StreamCompletion {
     source: EventSource,
+    toolcall: Option<ToolCall>,
+    usage: Usage,
+    stop_reason: Option<raw::FinishReason>,
+    responses: Vec<StreamCompletionResp>,
+}
+
+pub struct StreamResult {
     pub toolcall: Option<ToolCall>,
     pub usage: Usage,
-    pub stop_reason: Option<raw::FinishReason>,
+    pub stop_reason: raw::FinishReason,
+    pub responses: Vec<StreamCompletionResp>,
 }
 
 impl StreamCompletion {
@@ -47,6 +55,7 @@ impl StreamCompletion {
                 toolcall: None,
                 usage: Usage::default(),
                 stop_reason: None,
+                responses: vec![],
             }),
             Err(e) => {
                 tracing::error!("Failed to create event source: {}", e);
@@ -65,7 +74,7 @@ impl StreamCompletion {
         let content = delta.content.unwrap_or("".to_string());
 
         if let Some(reasoning) = delta.reasoning {
-            return StreamCompletionResp::ReasoningToken(reasoning);
+            return StreamCompletionResp::ResponseToken(reasoning);
         }
 
         if let Some(call) = delta.tool_calls.map(|x| x.into_iter().next()).flatten() {
@@ -119,7 +128,9 @@ impl StreamCompletion {
             .next()
             .ok_or(anyhow!("No returned choices in completion"))?;
 
-        Ok(self.handle_choice(choice))
+        let resp = self.handle_choice(choice);
+        self.responses.push(resp.clone());
+        Ok(resp)
     }
 
     async fn handle_error(&self, err: reqwest_eventsource::Error) -> anyhow::Error {
@@ -169,6 +180,15 @@ impl StreamCompletion {
             }
         }
     }
+
+    pub fn get_result(self) -> Result<StreamResult> {
+        Ok(StreamResult {
+            toolcall: self.toolcall.clone(),
+            usage: self.usage.clone(),
+            stop_reason: self.stop_reason.clone().context("Stream not finished")?,
+            responses: self.responses.clone(),
+        })
+    }
 }
 
 impl Stream for StreamCompletion {
@@ -189,6 +209,7 @@ impl Drop for StreamCompletion {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum StreamCompletionResp {
     ReasoningToken(String),
     ResponseToken(String),
