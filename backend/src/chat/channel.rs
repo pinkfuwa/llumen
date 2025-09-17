@@ -8,7 +8,7 @@ use std::{
     task,
 };
 
-use futures_util::{FutureExt, Stream, pin_mut};
+use futures_util::{FutureExt, Stream};
 use tokio::sync::watch;
 
 pub type LockedMap<K, V> = Arc<Mutex<HashMap<K, Weak<V>>>>;
@@ -24,6 +24,7 @@ impl<S: Mergeable + Clone> Context<S> {
             map: Arc::new(Mutex::new(HashMap::new())),
         }
     }
+    // FIXME: halt is not immediate
     pub fn stop(&self, id: i32) {
         let map = self.map.lock().unwrap();
         if let Some(inner) = map.get(&id).and_then(|w| w.upgrade()) {
@@ -137,6 +138,7 @@ pub trait SplitCollection {
 }
 
 impl<T: Mergeable> SplitCollection for Vec<T> {
+    // type Item = T;
     fn slice(&self, from: &Cursor, to: &Cursor) -> Vec<T> {
         let mut result = self[from.index..=to.index].to_vec();
         if let Some(first) = result.first_mut() {
@@ -186,13 +188,7 @@ impl<S: Mergeable + Clone> Inner<S> {
 }
 
 impl<S: Mergeable + Clone> Publisher<S> {
-    /// Error when the channel is closed
-    pub fn publish(&mut self, item: S) -> Result<(), ()> {
-        if self.flag.load(atomic::Ordering::Acquire) {
-            self.flag.store(false, atomic::Ordering::Release);
-            return Err(());
-        }
-
+    pub fn publish_force(&mut self, item: S) {
         let mut buffer = self.buffer.lock().unwrap();
         if let Some(last) = buffer.last_mut() {
             let (new_last, rest) = last.clone().merge(item);
@@ -211,6 +207,15 @@ impl<S: Mergeable + Clone> Publisher<S> {
         let offset = buffer.last().map(|s| s.len()).unwrap_or(0);
         let cursor = Cursor::new(index, offset);
         self.sender.send(cursor).ok();
+    }
+    /// Error when the channel is closed
+    pub fn publish(&mut self, item: S) -> Result<(), ()> {
+        if self.flag.load(atomic::Ordering::Acquire) {
+            self.flag.store(false, atomic::Ordering::Release);
+            return Err(());
+        }
+
+        self.publish_force(item);
 
         Ok(())
     }

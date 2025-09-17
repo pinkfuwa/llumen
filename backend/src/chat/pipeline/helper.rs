@@ -22,27 +22,14 @@ pub(super) fn active_chunks_to_message(
     let mut results = vec![];
     for chunk in chunks {
         match chunk.kind.unwrap() {
-            entity::ChunkKind::Text => todo!(),
-            entity::ChunkKind::Reasoning => todo!(),
-            entity::ChunkKind::ToolCall => todo!(),
-            entity::ChunkKind::Error => todo!(),
-            entity::ChunkKind::Report => todo!(),
-            entity::ChunkKind::Plan => todo!(),
-            entity::ChunkKind::Step => todo!(),
+            entity::ChunkKind::Text => todo!("Convert to openrouter::Message::Assistant"),
+            entity::ChunkKind::Reasoning => todo!("Decide how to handle reasoning chunks"),
+            entity::ChunkKind::ToolCall => todo!("Convert to openrouter::Message::ToolCall"),
+            entity::ChunkKind::Error => todo!("Decide how to handle error chunks"),
+            entity::ChunkKind::Report => todo!("Decide how to handle report chunks"),
+            entity::ChunkKind::Plan => todo!("Decide how to handle plan chunks"),
+            entity::ChunkKind::Step => todo!("Decide how to handle step chunks"),
         }
     }
     results
-}
-
-pub(super) fn to_token_stream<E>(
-    stream: impl Stream<Item = Result<StreamCompletionResp, E>>,
-) -> impl Stream<Item = Result<Token, E>> {
-    stream.map(|res| {
-        res.map(|resp| match resp {
-            StreamCompletionResp::ReasoningToken(reasoning) => Token::Reasoning(reasoning),
-            StreamCompletionResp::ResponseToken(content) => Token::Message(content),
-            StreamCompletionResp::ToolCall { name, args, id } => Token::Tool { name, args },
-            _ => Token::Empty,
-        })
-    })
 }

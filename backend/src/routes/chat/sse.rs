@@ -1,6 +1,5 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::chat::Token;
 use axum::{
     Extension, Json,
     extract::State,
@@ -10,12 +9,12 @@ use axum::{
     },
 };
 use entity::prelude::*;
-use futures_util::{Stream, StreamExt};
-use sea_orm::EntityTrait;
+use futures_util::{Stream, StreamExt, stream};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId};
+use crate::{AppState, chat::Token, errors::*, middlewares::auth::UserId};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -62,7 +61,7 @@ pub struct SseRespUserTitle {
 #[typeshare]
 pub struct SseRespLastMessage {
     pub id: i32,
-    pub version: u32,
+    pub version: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -74,7 +73,6 @@ pub struct SseRespToken {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct SseRespChunkEnd {
-    pub id: i32,
     pub kind: SseRespEndKind,
 }
 
@@ -138,16 +136,44 @@ pub async fn route(
         }));
     }
 
-    let st = pipeline
-        .subscribe(req.id)
-        .map(|x| SseResp::from(x))
-        .map(|x| todo!("We need a stateful mapper"));
+    let stream = pipeline.subscribe(req.id);
 
-    Ok(Sse::new(st).keep_alive(KeepAlive::new().interval(Duration::from_secs(10))))
-}
+    let last_message = Message::find()
+        .filter(entity::message::Column::ChatId.eq(req.id))
+        .order_by_desc(entity::message::Column::Id)
+        .one(&app.conn)
+        .await
+        .kind(ErrorKind::Internal)?;
 
-impl From<Token> for SseResp {
-    fn from(value: Token) -> Self {
-        todo!()
-    }
+    let initial_event = if let Some(last_message) = last_message {
+        let event = SseResp::LastMessage(SseRespLastMessage {
+            id: last_message.id,
+            // FIXME: change version when revalidate is needed
+            version: last_message.id,
+        });
+        let event = Event::default().json_data(event).unwrap();
+        Some(Ok(event))
+    } else {
+        None
+    };
+
+    let st = stream::iter(initial_event).chain(stream.map(|token| {
+        let event = match token {
+            Token::Message(content) => SseResp::Token(SseRespToken { content }),
+            Token::Reasoning(content) => SseResp::ReasoningToken(SseRespToken { content }),
+            Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
+            Token::Complete { message_id, .. } => SseResp::MessageEnd(SseRespMessageEnd {
+                id: message_id,
+                kind: SseRespEndKind::Complete,
+            }),
+            _ => return Ok(Event::default()), // Ignore other tokens for now
+        };
+        Ok(Event::default().json_data(event).unwrap())
+    }));
+
+    Ok(Sse::new(st).keep_alive(
+        KeepAlive::new()
+            .interval(Duration::from_secs(10))
+            .text("keep-alive"),
+    ))
 }
