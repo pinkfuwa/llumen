@@ -5,16 +5,13 @@ pub struct ToolSet {
 
 #[macro_export]
 macro_rules! tool_set {
-    () => {
-        crate::tools::ToolSet::new(&[])
-    };
     ($($E:path),*) => {
-        crate::tools::ToolSet::new(&[tool_set!(@ $($E),*)])
+        crate::tools::ToolSet::new(tool_set!(@ [] $($E),*))
     };
 
-    (@ $P:path, $($E:path),+) => {tool_set!(@ $P), tool_set!(@ $($E,)*)};
-    (@ $P:path) => {<$P as crate::tools::Tool>::NAME};
-    (@)=>{}
+    (@ [$($T:tt)*] $P:path, $($E:path),+) => {tool_set!(@ [$($T)* <$P as crate::tools::Tool>::NAME,] $($E),+)};
+    (@ [$($T:tt)*] $P:path) => {tool_set!(@ [$($T)* <$P as crate::tools::Tool>::NAME,])};
+    (@ [$($T:tt)*]) => {&[$($T)*]};
 }
 
 impl ToolSet {
