@@ -54,6 +54,8 @@ pub enum Message {
     Id,
     ChatId,
     Kind,
+    Price,
+    TokenCount,
 }
 
 #[derive(DeriveIden)]

@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use crate::chat::Token;
 use axum::{
     Extension, Json,
     extract::State,
@@ -14,12 +15,7 @@ use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{
-    AppState,
-    errors::*,
-    middlewares::auth::UserId,
-    sse::{EndKind, Token},
-};
+use crate::{AppState, errors::*, middlewares::auth::UserId};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -45,6 +41,15 @@ pub enum SseResp {
     UserMessage(SseRespUserMessage),
 
     ChangeTitle(SseRespUserTitle),
+
+    Usage(SseRespUsage),
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespUsage {
+    token: u32,
+    price: f32,
 }
 
 #[derive(Debug, Serialize)]
@@ -118,6 +123,7 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<SseReq>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, axum::Error>>>, Json<Error>> {
+    let pipeline = app.pipeline.clone();
     let res = Chat::find_by_id(req.id)
         .one(&app.conn)
         .await
@@ -132,57 +138,16 @@ pub async fn route(
         }));
     }
 
-    let sub = app
-        .sse
+    let st = pipeline
         .subscribe(req.id)
-        .await
-        .kind(ErrorKind::MalformedRequest)?;
-    let st = sub
-        .map(|x| {
-            x.map(|v| match v {
-                Token::LastMessage(id, version) => {
-                    SseResp::LastMessage(SseRespLastMessage { id, version })
-                }
-                Token::Token(content) => SseResp::Token(SseRespToken { content }),
-                Token::ReasoningToken(content) => SseResp::ReasoningToken(SseRespToken { content }),
-                Token::ChunkEnd(id, end_kind) => SseResp::ChunkEnd(SseRespChunkEnd {
-                    id,
-                    kind: match end_kind {
-                        EndKind::Complete => SseRespEndKind::Complete,
-                        EndKind::Halt => SseRespEndKind::Halt,
-                        EndKind::Error => SseRespEndKind::Error,
-                    },
-                }),
-                Token::MessageEnd(id, end_kind) => SseResp::MessageEnd(SseRespMessageEnd {
-                    id,
-                    kind: match end_kind {
-                        EndKind::Complete => SseRespEndKind::Complete,
-                        EndKind::Halt => SseRespEndKind::Halt,
-                        EndKind::Error => SseRespEndKind::Error,
-                    },
-                }),
-                Token::UserMessage(message_id, chunk_id, content) => {
-                    SseResp::UserMessage(SseRespUserMessage {
-                        message_id,
-                        chunk_id,
-                        content,
-                    })
-                }
-                Token::ToolCall(name, args) => SseResp::ToolCall(SseRespToolCall {
-                    name: name.to_owned(),
-                    args,
-                }),
-                Token::ToolCallEnd(name, args, content, chunk_id) => {
-                    SseResp::ToolCallEnd(SseRespToolCallEnd {
-                        chunk_id,
-                        name: name.to_owned(),
-                        args,
-                        content,
-                    })
-                }
-                Token::ChangeTitle(title) => SseResp::ChangeTitle(SseRespUserTitle { title }),
-            })
-        })
-        .map(|x| Event::default().json_data(JsonUnion::from(x)));
+        .map(|x| SseResp::from(x))
+        .map(|x| todo!("We need a stateful mapper"));
+
     Ok(Sse::new(st).keep_alive(KeepAlive::new().interval(Duration::from_secs(10))))
+}
+
+impl From<Token> for SseResp {
+    fn from(value: Token) -> Self {
+        todo!()
+    }
 }

@@ -9,6 +9,7 @@ pub enum MessageKind {
     Hidden = 0,
     User = 1,
     Assistant = 2,
+    DeepResearch = 3,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
@@ -17,6 +18,10 @@ pub enum ChunkKind {
     Text = 0,
     Reasoning = 1,
     ToolCall = 2,
+    Error = 3,
+    Report = 4,
+    Plan = 5,
+    Step = 6,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -34,6 +39,9 @@ impl crate::entities::model::Model {
     pub fn check_config(config: &str) -> Result<ModelConfig, String> {
         let config = toml::from_str::<ModelConfig>(config).map_err(|e| e.to_string())?;
 
+        if config.model_id.contains(":online") {
+            return Err("\"online\" suffix are not allowed, see https://openrouter.ai/docs/faq#what-are-model-variants".to_string());
+        }
         config.parameter.check().map_err(|x| x.to_owned())?;
 
         Ok(config)
