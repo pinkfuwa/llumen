@@ -60,6 +60,8 @@ pub struct MessagePaginateRespList {
     pub id: i32,
     pub role: MessagePaginateRespRole,
     pub chunks: Vec<MessagePaginateRespChunk>,
+    pub token: u32,
+    pub price: f32,
 }
 
 #[derive(Debug, Serialize)]
@@ -84,7 +86,9 @@ pub enum MessagePaginateRespChunkKind {
     Text(MessagePaginateRespChunkKindText),
     Reasoning(MessagePaginateRespChunkKindReasoning),
     ToolCall(MessagePaginateRespChunkKindToolCall),
+    Usage(MessagePaginateRespChunkKindUsage),
 }
+
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct MessagePaginateRespChunkKindText {
@@ -103,6 +107,13 @@ pub struct MessagePaginateRespChunkKindToolCall {
     pub name: String,
     pub args: String,
     pub context: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindUsage {
+    pub token: i32,
+    pub price: f64,
 }
 
 pub async fn route(
@@ -170,6 +181,7 @@ pub async fn route(
                 MessageKind::User => MessagePaginateRespRole::User,
                 MessageKind::Assistant => MessagePaginateRespRole::Assistant,
                 MessageKind::Hidden => return None,
+                MessageKind::DeepResearch => todo!(),
             };
             let chunks: Result<_, Json<Error>> = chunks
                 .into_iter()
@@ -197,6 +209,7 @@ pub async fn route(
                                     },
                                 )
                             }
+                            _ => todo!(),
                         },
                     })
                 })
@@ -206,6 +219,8 @@ pub async fn route(
                 id: message.id,
                 role,
                 chunks,
+                token: message.token_count as u32,
+                price: message.price,
             }))
         })
         .collect::<Result<_, _>>()?;

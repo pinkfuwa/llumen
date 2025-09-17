@@ -1,25 +1,23 @@
+mod chat;
 mod config;
 mod errors;
 mod middlewares;
 mod openrouter;
 mod prompts;
 mod routes;
-mod sse;
-mod tools;
 mod utils;
 
 use std::sync::Arc;
 
-use crate::{openrouter::Openrouter, prompts::PromptEnv, tools::ToolStore};
 use anyhow::Context;
 use axum::{Router, middleware};
+use chat::PipelineContext;
 use dotenv::var;
 use entity::prelude::*;
 use middlewares::cache_control::CacheControlLayer;
 use migration::MigratorTrait;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};
-use sse::SseContext;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
@@ -33,11 +31,8 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
-    pub sse: SseContext,
-    pub prompt: PromptEnv,
     pub hasher: Hasher,
-    pub openrouter: Openrouter,
-    pub tools: ToolStore,
+    pub pipeline: Arc<PipelineContext>,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -76,21 +71,11 @@ async fn main() {
     )
     .expect("Cannot parse paseto key");
 
-    let sse = SseContext::new(conn.clone());
-    let prompt = PromptEnv::new(conn.clone());
-    let openrouter = Openrouter::new();
-    let mut tools = ToolStore::new(conn.clone());
-
-    tools.add_tool::<tools::wttr::Wttr>().unwrap();
-
     let state = Arc::new(AppState {
         conn,
         key,
-        sse,
         hasher: Hasher::default(),
-        openrouter,
-        prompt,
-        tools,
+        pipeline: todo!(),
     });
 
     let var_name = Router::new();

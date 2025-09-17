@@ -2,13 +2,15 @@
 
 use sea_orm::entity::prelude::*;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "message")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub chat_id: i32,
     pub kind: crate::MessageKind,
+    pub price: f32,
+    pub token_count: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -35,6 +35,8 @@ pub async fn route(
         }));
     }
 
-    app.sse.halt(req.id).await;
+    // TODO: return error when not streaming
+    app.pipeline.halt_completion(req.id);
+
     Ok(Json(ChatHaltResp {}))
 }
