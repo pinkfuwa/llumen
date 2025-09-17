@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::Context as _;
+use anyhow::{Context as _, bail};
 use entity::{ChunkKind, MessageKind, chat, chunk, message, model, user};
 use futures_util::{Stream, StreamExt};
 use sea_orm::{
@@ -117,6 +117,7 @@ impl CompletionContext {
 
         let message = message::ActiveModel {
             chat_id: ActiveValue::Set(chat.id),
+            kind: ActiveValue::Set(MessageKind::Assistant),
             ..Default::default()
         }
         .insert(db)
@@ -222,14 +223,16 @@ impl CompletionContext {
     }
 
     /// Saves the completion to the database.
-    pub async fn save(mut self, err: Option<String>) -> Result<(), anyhow::Error> {
-        let mut chunks = Vec::new();
-
+    pub async fn save<E>(mut self, err: Option<E>) -> Result<(), anyhow::Error>
+    where
+        E: ToString,
+    {
         if let Some(err) = err {
-            chunks.push(error_chunk(err));
+            self.new_chunks.push(error_chunk(err.to_string()));
         }
         if let Err(e) = self.generate_title().await {
-            chunks.push(error_chunk(format!("Failed to generate title: {}", e)));
+            self.new_chunks
+                .push(error_chunk(format!("Failed to generate title: {}", e)));
         }
 
         let db = &self.ctx.db;
@@ -240,6 +243,16 @@ impl CompletionContext {
         self.message.update(db).await?;
 
         let chunks_affected = self.new_chunks.len();
+
+        self.new_chunks = self
+            .new_chunks
+            .into_iter()
+            .map(|mut c| {
+                c.message_id = ActiveValue::Set(message_id);
+                c
+            })
+            .collect();
+
         let last_insert_id = chunk::Entity::insert_many(self.new_chunks)
             .exec(db)
             .await?

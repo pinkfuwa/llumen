@@ -92,6 +92,7 @@
 		lastChunkType = 'assitant';
 		patcher.feed(data.content);
 	});
+	addSSEHandler('usage', (data) => {});
 </script>
 
 <ResponseBox>

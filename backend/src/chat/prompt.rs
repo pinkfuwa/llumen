@@ -26,7 +26,9 @@ pub struct Prompt {
 
 impl Prompt {
     pub fn new() -> Self {
-        todo!("Add prompt template");
+        let mut env = Environment::new();
+        // TODO: Add prompt template
+        Self { env }
     }
 }
 

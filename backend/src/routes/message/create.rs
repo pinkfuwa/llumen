@@ -1,6 +1,12 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
+use entity::MessageKind;
+use sea_orm::{
+    ActiveModelTrait,
+    ActiveValue::{self, Set},
+    EntityTrait,
+};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -40,6 +46,25 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageCreateReq>,
 ) -> JsonResult<MessageCreateResp> {
+    let user_msg = entity::message::ActiveModel {
+        chat_id: ActiveValue::Set(req.chat_id),
+        kind: ActiveValue::Set(MessageKind::User),
+        ..Default::default()
+    }
+    .insert(&app.conn)
+    .await
+    .raw_kind(ErrorKind::Internal)?;
+
+    entity::chunk::ActiveModel {
+        message_id: Set(user_msg.id),
+        content: Set(req.text),
+        kind: Set(entity::ChunkKind::Text),
+        ..Default::default()
+    }
+    .insert(&app.conn)
+    .await
+    .raw_kind(ErrorKind::Internal)?;
+
     let completion_ctx = app
         .pipeline
         .get_completion_context(user_id, req.chat_id)

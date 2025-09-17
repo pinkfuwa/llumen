@@ -112,7 +112,8 @@ let SSEHandlers: {
 	tool_call_end: [],
 	message_end: [],
 	user_message: [],
-	change_title: []
+	change_title: [],
+	usage: []
 } satisfies {
 	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
 };
