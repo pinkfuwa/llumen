@@ -82,7 +82,8 @@ async fn main() {
     let mut tools = ToolStore::new(conn.clone());
 
     tools.add_tool::<tools::wttr::Wttr>().unwrap();
-
+    tools.add_tool::<tools::nearbyplace::NearByPlace>().unwrap();
+    
     let state = Arc::new(AppState {
         conn,
         key,
