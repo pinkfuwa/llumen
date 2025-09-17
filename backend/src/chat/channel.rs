@@ -82,6 +82,7 @@ pub struct Subscriber<S: Mergeable> {
     rx: watch::Receiver<Cursor>,
 }
 
+#[derive(Debug)]
 pub struct Publisher<S: Mergeable> {
     sender: watch::Sender<Cursor>,
     flag: Arc<AtomicBool>,

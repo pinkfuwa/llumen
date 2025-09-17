@@ -1,11 +1,9 @@
 use entity::chunk;
-use futures_util::{Stream, StreamExt};
-use openrouter::StreamCompletionResp;
 use sea_orm::IntoActiveModel;
 
 use crate::{
-    chat::{context, token::Token},
-    openrouter,
+    chat::token::ToolCallInfo,
+    openrouter::{self, MessageToolCall},
 };
 
 /// Convert **assitant** chunks to openrouter messages
@@ -21,15 +19,30 @@ pub(super) fn active_chunks_to_message(
 ) -> Vec<crate::openrouter::Message> {
     let mut results = vec![];
     for chunk in chunks {
-        match chunk.kind.unwrap() {
-            entity::ChunkKind::Text => todo!("Convert to openrouter::Message::Assistant"),
-            entity::ChunkKind::Reasoning => todo!("Decide how to handle reasoning chunks"),
-            entity::ChunkKind::ToolCall => todo!("Convert to openrouter::Message::ToolCall"),
-            entity::ChunkKind::Error => todo!("Decide how to handle error chunks"),
-            entity::ChunkKind::Report => todo!("Decide how to handle report chunks"),
-            entity::ChunkKind::Plan => todo!("Decide how to handle plan chunks"),
-            entity::ChunkKind::Step => todo!("Decide how to handle step chunks"),
+        if chunk.content.is_not_set() {
+            continue;
         }
+        let content = chunk.content.unwrap();
+        match chunk.kind.unwrap() {
+            entity::ChunkKind::Text => results.push(openrouter::Message::Assistant(content)),
+            entity::ChunkKind::ToolCall => {
+                let info: ToolCallInfo = serde_json::from_str(&content).unwrap();
+                results.push(openrouter::Message::ToolCall(MessageToolCall {
+                    id: info.id.clone(),
+                    name: info.name,
+                    arguments: info.input,
+                }));
+                if let Some(output) = info.output {
+                    results.push(openrouter::Message::ToolResult(
+                        openrouter::MessageToolResult {
+                            id: info.id,
+                            content: output,
+                        },
+                    ));
+                }
+            }
+            _ => continue,
+        };
     }
     results
 }

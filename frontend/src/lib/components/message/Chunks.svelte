@@ -2,6 +2,7 @@
 	import { type MessagePaginateRespChunk } from '$lib/api/types';
 	import Assitant from './buttons/Assitant.svelte';
 	import Reasoning from './buttons/Reasoning.svelte';
+	import ResponseError from './buttons/ResponseError.svelte';
 	import Result from './buttons/Result.svelte';
 	import Tool from './buttons/Tool.svelte';
 	import ToolBox from './buttons/ToolBox.svelte';
@@ -22,5 +23,7 @@
 			<Tool content={chunk.kind.c.args} />
 			<Result {content} />
 		</ToolBox>
+	{:else if kind == 'error'}
+		<ResponseError {content} />
 	{/if}
 {/each}

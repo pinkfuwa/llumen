@@ -24,23 +24,35 @@
 	</div>
 {:else}
 	<div class="relative">
-		<button
-			class="min-w-[200px] items-center rounded-md {open
-				? 'bg-hover'
-				: 'bg-primary'} flex justify-between py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono{disabled
-				? ''
-				: ' hover:bg-hover'}"
-			onclick={() => {
-				open = !open;
-			}}
-			{disabled}
-			aria-label="open model selection"
-		>
-			<span>
-				{$data.list.find((x) => x.id == value)?.display_name}
+		{#if disabled}
+			<span
+				class="flex min-w-[200px] items-center justify-between rounded-md bg-primary py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono{disabled
+					? ''
+					: ' hover:bg-hover'}"
+			>
+				<span>
+					{$data.list.find((x) => x.id == value)?.display_name}
+				</span>
 			</span>
-			<ChevronDown class="inline-block" />
-		</button>
+		{:else}
+			<button
+				class="min-w-[200px] items-center rounded-md {open
+					? 'bg-hover'
+					: 'bg-primary'} flex justify-between py-[calc(0.25rem+1px)] pr-1 pl-3 text-left font-mono{disabled
+					? ''
+					: ' hover:bg-hover'}"
+				onclick={() => {
+					open = !open;
+				}}
+				aria-label="open model selection"
+			>
+				<span>
+					{$data.list.find((x) => x.id == value)?.display_name}
+				</span>
+				<ChevronDown class="inline-block" />
+			</button>
+		{/if}
+
 		{#if open}
 			<ul
 				class="absolute z-5 min-w-[calc(100%+1rem)] space-x-4 rounded-md border border-outline bg-light p-2 font-mono{above

@@ -165,6 +165,7 @@ impl StreamCompletion {
             match self.source.next().await? {
                 Ok(Event::Open) => continue,
                 Ok(Event::Message(e)) if &e.data != "[DONE]" => {
+                    tracing::debug!("Received data: {}", &e.data);
                     return Some(self.handle_data(&e.data));
                 }
                 Err(e) => {
@@ -198,7 +199,8 @@ impl Stream for StreamCompletion {
         mut self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<Self::Item>> {
-        let fut = self.next();
+        let this = &mut *self;
+        let fut = StreamCompletion::next(this);
         Box::pin(fut).poll_unpin(cx)
     }
 }

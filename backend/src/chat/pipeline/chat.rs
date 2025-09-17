@@ -7,10 +7,12 @@ use entity::ChunkKind;
 use entity::MessageKind;
 use futures_util::StreamExt;
 use futures_util::future::BoxFuture;
+use sea_orm::ActiveValue;
 
 use crate::chat::context::CompletionContext;
 use crate::chat::context::PipelineContext;
 use crate::chat::token::Token;
+use crate::chat::token::ToolCallInfo;
 use crate::openrouter::{self, FinishReason};
 
 use super::helper;
@@ -84,56 +86,72 @@ impl<P: PipelineInner> ChatPipeline<P> {
             pipeline: PhantomData,
         })
     }
-    fn report_error(&mut self, err: impl ToString) {
-        // TODO: report_error can have fail due to publisher halted, we chould at least log it.
-        self.completion_ctx.add_token(Token::Error(err.to_string()));
+    fn update_tool_result(&mut self, output: String) -> Result<()> {
+        let last_chunk = self
+            .completion_ctx
+            .new_chunks
+            .last_mut()
+            .context("No tool chunks found")?;
+
+        debug_assert!(matches!(last_chunk.kind.as_ref(), ChunkKind::ToolCall));
+
+        let content = last_chunk.content.take().unwrap();
+
+        let mut info: ToolCallInfo =
+            serde_json::from_str(&content).context("Failed to parse tool call info")?;
+
+        info.output = Some(output);
+
+        last_chunk.content = ActiveValue::set(
+            serde_json::to_string(&info).context("Failed to serialize tool call info")?,
+        );
+
+        Ok(())
     }
     async fn process(&mut self) -> Result<(), anyhow::Error> {
-        loop {
-            let mut message = self.messages.clone();
-            message.extend(helper::active_chunks_to_message(
-                self.completion_ctx.new_chunks.clone().into_iter(),
-            ));
+        let mut message = self.messages.clone();
+        message.extend(helper::active_chunks_to_message(
+            self.completion_ctx.new_chunks.clone().into_iter(),
+        ));
 
-            let mut res = self
-                .ctx
-                .openrouter
-                .stream(message, &self.model, self.tools.clone())
-                .await?;
+        let mut res = self
+            .ctx
+            .openrouter
+            .stream(message, &self.model, self.tools.clone())
+            .await?;
 
-            let halt = self
-                .completion_ctx
-                .put_stream((&mut res).map(|resp| resp.map(Into::into)))
-                .await?;
-            tracing::debug!("stream ended: {:?}", halt);
+        let halt = self
+            .completion_ctx
+            .put_stream((&mut res).map(|resp| resp.map(Into::into)))
+            .await?;
 
-            let result = res.get_result()?;
+        tracing::debug!("stream ended: {:?}", halt);
 
-            self.completion_ctx
-                .update_usage(result.usage.cost as f32, result.usage.token as i32);
+        let result = res.get_result()?;
 
-            let tokens = result.responses.into_iter().map(Into::into);
-            let chunks = Token::into_chunks(tokens);
+        self.completion_ctx
+            .update_usage(result.usage.cost as f32, result.usage.token as i32);
 
-            self.completion_ctx.new_chunks.extend(chunks);
+        let tokens = result.responses.into_iter().map(Into::into);
+        let chunks = Token::into_chunks(tokens.into_iter());
 
-            match result.stop_reason {
-                FinishReason::Length => return Err(anyhow::anyhow!("The response is too long")),
-                FinishReason::ToolCalls => {
-                    let tool_call = result
-                        .toolcall
-                        .context("No tool calls found, but finish reason is tool_calls")?;
-                    let result = P::solve_tool(&tool_call.name, &tool_call.args).await?;
-                    let last_chunk = self
-                        .completion_ctx
-                        .new_chunks
-                        .last_mut()
-                        .context("No tool chunks found")?;
-                    todo!("update last chunk")
-                }
-                _ => {}
-            };
-        }
+        self.completion_ctx.new_chunks.extend(chunks.into_iter());
+
+        match result.stop_reason {
+            FinishReason::Length => return Err(anyhow::anyhow!("The response is too long")),
+            FinishReason::ToolCalls => {
+                let tool_call = result
+                    .toolcall
+                    .context("No tool calls found, but finish reason is tool_calls")?;
+
+                let result = P::solve_tool(&tool_call.name, &tool_call.args).await?;
+
+                self.update_tool_result(result)?;
+
+                return Box::pin(self.process()).await;
+            }
+            FinishReason::Stop => return Ok(()),
+        };
     }
 }
 
@@ -147,9 +165,8 @@ impl<P: PipelineInner + Send> super::Pipeline for ChatPipeline<P> {
                 .await
                 .context("Failed to create chat pipeline")?;
 
-            if let Err(err) = pipeline.process().await {
-                pipeline.report_error(err);
-            }
+            let err = pipeline.process().await.err();
+            pipeline.completion_ctx.save(err).await?;
 
             Ok(())
         })

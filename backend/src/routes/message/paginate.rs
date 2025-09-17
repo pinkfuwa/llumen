@@ -86,7 +86,7 @@ pub enum MessagePaginateRespChunkKind {
     Text(MessagePaginateRespChunkKindText),
     Reasoning(MessagePaginateRespChunkKindReasoning),
     ToolCall(MessagePaginateRespChunkKindToolCall),
-    Usage(MessagePaginateRespChunkKindUsage),
+    Error(MessagePaginateRespChunkKindError),
 }
 
 #[derive(Debug, Serialize)]
@@ -111,9 +111,8 @@ pub struct MessagePaginateRespChunkKindToolCall {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct MessagePaginateRespChunkKindUsage {
-    pub token: i32,
-    pub price: f64,
+pub struct MessagePaginateRespChunkKindError {
+    pub context: String,
 }
 
 pub async fn route(
@@ -209,7 +208,12 @@ pub async fn route(
                                     },
                                 )
                             }
-                            _ => todo!("Handle other chunk kinds: Error, Report, Plan, Step"),
+                            ChunkKind::Error => MessagePaginateRespChunkKind::Error(
+                                MessagePaginateRespChunkKindError {
+                                    context: chunk.content,
+                                },
+                            ),
+                            _ => todo!("Handle other chunk kinds"),
                         },
                     })
                 })

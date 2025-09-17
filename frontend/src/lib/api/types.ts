@@ -95,6 +95,10 @@ export interface Error {
 	reason: string;
 }
 
+export interface ImageProxyRequest {
+	url: string;
+}
+
 export interface LoginReq {
 	username: string;
 	password: string;
@@ -155,7 +159,8 @@ export enum MessagePaginateRespRole {
 export type MessagePaginateRespChunkKind =
 	| { t: 'text'; c: MessagePaginateRespChunkKindText }
 	| { t: 'reasoning'; c: MessagePaginateRespChunkKindReasoning }
-	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall };
+	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall }
+	| { t: 'error'; c: MessagePaginateRespChunkKindError };
 
 export interface MessagePaginateRespChunk {
 	id: number;
@@ -166,10 +171,16 @@ export interface MessagePaginateRespList {
 	id: number;
 	role: MessagePaginateRespRole;
 	chunks: MessagePaginateRespChunk[];
+	token: number;
+	price: number;
 }
 
 export interface MessagePaginateResp {
 	list: MessagePaginateRespList[];
+}
+
+export interface MessagePaginateRespChunkKindError {
+	context: string;
 }
 
 export interface MessagePaginateRespChunkKindReasoning {
@@ -295,7 +306,6 @@ export enum SseRespEndKind {
 }
 
 export interface SseRespChunkEnd {
-	id: number;
 	kind: SseRespEndKind;
 }
 
@@ -323,6 +333,11 @@ export interface SseRespToolCallEnd {
 	name: string;
 	args: string;
 	content: string;
+}
+
+export interface SseRespUsage {
+	token: number;
+	price: number;
 }
 
 export interface SseRespUserMessage {
@@ -408,4 +423,5 @@ export type SseResp =
 	| { t: 'tool_call_end'; c: SseRespToolCallEnd }
 	| { t: 'message_end'; c: SseRespMessageEnd }
 	| { t: 'user_message'; c: SseRespUserMessage }
-	| { t: 'change_title'; c: SseRespUserTitle };
+	| { t: 'change_title'; c: SseRespUserTitle }
+	| { t: 'usage'; c: SseRespUsage };
