@@ -161,7 +161,7 @@ pub async fn route(
 
     let st = stream::iter(initial_event).chain(stream.map(|token| {
         let event = match token {
-            Token::Message(content) => SseResp::Token(SseRespToken { content }),
+            Token::Assitant(content) => SseResp::Token(SseRespToken { content }),
             Token::Reasoning(content) => SseResp::ReasoningToken(SseRespToken { content }),
             Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
             Token::Complete { message_id, .. } => SseResp::MessageEnd(SseRespMessageEnd {

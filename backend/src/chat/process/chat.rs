@@ -10,22 +10,16 @@ use futures_util::future::BoxFuture;
 use sea_orm::ActiveValue;
 
 use crate::chat::context::CompletionContext;
-use crate::chat::context::PipelineContext;
+use crate::chat::context::Context;
 use crate::chat::token::Token;
 use crate::chat::token::ToolCallInfo;
 use crate::openrouter::{self, FinishReason};
 
 use super::helper;
 
-pub trait PipelineInner {
-    fn get_system_prompt(
-        ctx: &PipelineContext,
-        completion_ctx: &CompletionContext,
-    ) -> Result<String>;
-    fn get_model(
-        ctx: &PipelineContext,
-        completion_ctx: &CompletionContext,
-    ) -> Result<openrouter::Model>;
+pub trait ChatInner {
+    fn get_system_prompt(ctx: &Context, completion_ctx: &CompletionContext) -> Result<String>;
+    fn get_model(ctx: &Context, completion_ctx: &CompletionContext) -> Result<openrouter::Model>;
     fn solve_tool(name: &str, arg: &str) -> BoxFuture<'static, Result<String, anyhow::Error>> {
         Box::pin(async move {
             Err(anyhow::anyhow!(
@@ -34,15 +28,15 @@ pub trait PipelineInner {
         })
     }
     fn get_tools(
-        ctx: &PipelineContext,
+        ctx: &Context,
         completion_ctx: &CompletionContext,
     ) -> Result<Vec<openrouter::Tool>> {
         Ok(vec![])
     }
 }
 
-pub struct ChatPipeline<P: PipelineInner> {
-    ctx: Arc<PipelineContext>,
+pub struct ChatPipeline<P: ChatInner> {
+    ctx: Arc<Context>,
     completion_ctx: CompletionContext,
     messages: Vec<openrouter::Message>,
     model: openrouter::Model,
@@ -50,8 +44,8 @@ pub struct ChatPipeline<P: PipelineInner> {
     pipeline: PhantomData<P>,
 }
 
-impl<P: PipelineInner> ChatPipeline<P> {
-    async fn new(ctx: Arc<PipelineContext>, completion_ctx: CompletionContext) -> Result<Self> {
+impl<P: ChatInner> ChatPipeline<P> {
+    async fn new(ctx: Arc<Context>, completion_ctx: CompletionContext) -> Result<Self> {
         let system_prompt = P::get_system_prompt(&ctx, &completion_ctx)?;
 
         let mut messages = vec![openrouter::Message::System(system_prompt)];
@@ -155,9 +149,9 @@ impl<P: PipelineInner> ChatPipeline<P> {
     }
 }
 
-impl<P: PipelineInner + Send> super::Pipeline for ChatPipeline<P> {
+impl<P: ChatInner + Send> super::Pipeline for ChatPipeline<P> {
     fn process(
-        ctx: Arc<PipelineContext>,
+        ctx: Arc<Context>,
         completion_ctx: CompletionContext,
     ) -> BoxFuture<'static, anyhow::Result<()>> {
         Box::pin(async move {
