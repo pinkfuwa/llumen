@@ -12,8 +12,6 @@ use entity::prelude::*;
 use futures_util::{Stream, StreamExt, stream};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
-use tokio_stream::wrappers::ReceiverStream;
 use typeshare::typeshare;
 
 use crate::{AppState, chat::Token, errors::*, middlewares::auth::UserId};
@@ -29,20 +27,13 @@ pub struct SseReq {
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum SseResp {
     LastMessage(SseRespLastMessage),
-
     Token(SseRespToken),
     ReasoningToken(SseRespToken),
-    ChunkEnd(SseRespChunkEnd),
-
     ToolCall(SseRespToolCall),
     ToolCallEnd(SseRespToolCallEnd),
-
     MessageEnd(SseRespMessageEnd),
-
     UserMessage(SseRespUserMessage),
-
     ChangeTitle(SseRespUserTitle),
-
     Usage(SseRespUsage),
 }
 
@@ -82,7 +73,9 @@ pub struct SseRespChunkEnd {
 #[typeshare]
 pub struct SseRespMessageEnd {
     pub id: i32,
-    pub kind: SseRespEndKind,
+    pub chunk_ids: Vec<i32>,
+    pub token_count: i32,
+    pub cost: f32,
 }
 
 #[derive(Debug, Serialize)]
@@ -112,9 +105,6 @@ pub struct SseRespToolCall {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct SseRespToolCallEnd {
-    pub chunk_id: i32,
-    pub name: String,
-    pub args: String,
     pub content: String,
 }
 
@@ -164,10 +154,18 @@ pub async fn route(
             Token::Assitant(content) => SseResp::Token(SseRespToken { content }),
             Token::Reasoning(content) => SseResp::ReasoningToken(SseRespToken { content }),
             Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
-            Token::Complete { message_id, .. } => SseResp::MessageEnd(SseRespMessageEnd {
+            Token::Complete {
+                message_id,
+                chunk_ids,
+                token,
+                cost,
+            } => SseResp::MessageEnd(SseRespMessageEnd {
                 id: message_id,
-                kind: SseRespEndKind::Complete,
+                chunk_ids,
+                token_count: token,
+                cost,
             }),
+            Token::ToolResult(content) => SseResp::ToolCallEnd(SseRespToolCallEnd { content }),
             _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())
