@@ -265,6 +265,7 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
+ "tokio-stream",
  "toml",
  "tower",
  "tower-http",
@@ -3251,6 +3252,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

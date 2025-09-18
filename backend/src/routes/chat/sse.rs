@@ -12,6 +12,8 @@ use entity::prelude::*;
 use futures_util::{Stream, StreamExt, stream};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
 use typeshare::typeshare;
 
 use crate::{AppState, chat::Token, errors::*, middlewares::auth::UserId};
@@ -136,7 +138,7 @@ pub async fn route(
         }));
     }
 
-    let stream = pipeline.subscribe(req.id);
+    let stream = pipeline.clone().subscribe(req.id);
 
     let last_message = Message::find()
         .filter(entity::message::Column::ChatId.eq(req.id))
@@ -166,7 +168,7 @@ pub async fn route(
                 id: message_id,
                 kind: SseRespEndKind::Complete,
             }),
-            _ => return Ok(Event::default()), // Ignore other tokens for now
+            _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())
     }));

@@ -165,7 +165,6 @@ impl StreamCompletion {
             match self.source.next().await? {
                 Ok(Event::Open) => continue,
                 Ok(Event::Message(e)) if &e.data != "[DONE]" => {
-                    tracing::debug!("Received data: {}", &e.data);
                     return Some(self.handle_data(&e.data));
                 }
                 Err(e) => {

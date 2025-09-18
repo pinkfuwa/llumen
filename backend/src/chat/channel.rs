@@ -1,24 +1,84 @@
 use std::{
+    cmp,
     collections::HashMap,
-    pin::Pin,
+    fmt::Debug,
     sync::{
         Arc, Mutex, Weak,
         atomic::{self, AtomicBool},
     },
-    task,
 };
 
-use futures_util::{FutureExt, Stream};
-use tokio::sync::watch;
+use futures_util::Stream;
+use tokio::sync::{mpsc, watch};
+use tokio_stream::wrappers::ReceiverStream;
 
-pub type LockedMap<K, V> = Arc<Mutex<HashMap<K, Weak<V>>>>;
-pub type LockedVec<S> = Arc<Mutex<Vec<S>>>;
-
-pub struct Context<S: Mergeable> {
-    map: LockedMap<i32, Inner<S>>,
+pub trait Mergeable
+where
+    Self: Sized + Clone,
+{
+    fn merge(&mut self, other: Self) -> Option<Self>;
+    fn len(&self) -> usize;
+    /// get a split part from the end
+    fn split_end(&self, split: usize) -> Option<Self>;
+    /// get a split part from the start
+    fn split_start(&self, split: usize) -> Self;
 }
 
-impl<S: Mergeable + Clone> Context<S> {
+pub type LockedMap<K, V> = Mutex<HashMap<K, Weak<V>>>;
+pub type LockedVec<S> = Mutex<Vec<S>>;
+
+pub struct Inner<S: Mergeable + Clone> {
+    buffer: LockedVec<S>,
+    sender: watch::Sender<Cursor>,
+    flag: AtomicBool,
+}
+
+impl<S: Mergeable + Clone + Send> Default for Inner<S> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<S: Mergeable + Clone + Send> Inner<S> {
+    pub fn new() -> Self {
+        let (tx, _) = watch::channel(Cursor {
+            index: 0,
+            offset: 0,
+        });
+        Self {
+            buffer: Mutex::new(Vec::new()),
+            sender: tx,
+            flag: AtomicBool::new(false),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Cursor {
+    index: usize,
+    offset: usize,
+}
+
+impl cmp::PartialOrd for Cursor {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        match self.index.cmp(&other.index) {
+            cmp::Ordering::Equal => Some(self.offset.cmp(&other.offset)),
+            ord => Some(ord),
+        }
+    }
+}
+
+impl Cursor {
+    pub fn new(index: usize, offset: usize) -> Self {
+        Self { index, offset }
+    }
+}
+
+pub struct Context<S: Mergeable> {
+    map: Arc<LockedMap<i32, Inner<S>>>,
+}
+
+impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
     pub fn new() -> Self {
         Self {
             map: Arc::new(Mutex::new(HashMap::new())),
@@ -46,155 +106,61 @@ impl<S: Mergeable + Clone> Context<S> {
             }
         }
     }
-    pub fn subscribe(&self, id: i32) -> Subscriber<S> {
-        self.get_inner(id).subscribe()
-    }
-    pub fn publish(&self, id: i32) -> Publisher<S> {
-        self.remove_weak();
-        self.get_inner(id).publish()
-    }
-}
 
-pub struct Inner<S: Mergeable + Clone> {
-    buffer: LockedVec<S>,
-    last_signal: (
-        Mutex<Option<watch::Sender<Cursor>>>,
-        watch::Receiver<Cursor>,
-    ),
-    flag: Arc<AtomicBool>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Cursor {
-    index: usize,
-    offset: usize,
-}
-
-impl Cursor {
-    pub fn new(index: usize, offset: usize) -> Self {
-        Self { index, offset }
-    }
-}
-
-pub struct Subscriber<S: Mergeable> {
-    cursor: Cursor,
-    buffer: LockedVec<S>,
-    rx: watch::Receiver<Cursor>,
-}
-
-#[derive(Debug)]
-pub struct Publisher<S: Mergeable> {
-    sender: watch::Sender<Cursor>,
-    flag: Arc<AtomicBool>,
-    buffer: LockedVec<S>,
-}
-
-pub trait Mergeable
-where
-    Self: Sized + Clone,
-{
-    fn merge(self, other: Self) -> (Self, Option<Self>);
-    fn len(&self) -> usize;
-    /// get a split part from the end
-    fn split_end(&self, split: usize) -> Option<Self>;
-    /// get a split part from the start
-    fn split_start(&self, split: usize) -> Self;
-}
-
-impl Mergeable for String {
-    fn merge(self, other: Self) -> (Self, Option<Self>) {
-        let mut s = self;
-        s.push_str(&other);
-        match s.len() > 4096 {
-            true => {
-                let rest = s.split_off(2048);
-                (s, Some(rest))
-            }
-            false => (s, None),
-        }
-    }
-
-    fn len(&self) -> usize {
-        self.len()
-    }
-
-    fn split_end(&self, split: usize) -> Option<Self> {
-        if self.len() < split {
-            None
-        } else {
-            Some(self[self.len() - split..].to_owned())
-        }
-    }
-
-    fn split_start(&self, split: usize) -> Self {
-        match self.len() <= split {
-            true => self.clone(),
-            false => self[..split].to_owned(),
-        }
-    }
-}
-
-pub trait SplitCollection {
-    fn slice(&self, from: &Cursor, to: &Cursor) -> Self;
-}
-
-impl<T: Mergeable> SplitCollection for Vec<T> {
-    // type Item = T;
-    fn slice(&self, from: &Cursor, to: &Cursor) -> Vec<T> {
-        let mut result = self[from.index..=to.index].to_vec();
-        if let Some(first) = result.first_mut() {
-            *first = first
-                .split_end(from.offset)
-                .unwrap_or_else(|| first.clone());
-        }
-        if let Some(last) = result.last_mut() {
-            *last = last.split_start(to.offset);
-        }
-        return result;
-    }
-}
-
-impl<S: Mergeable + Clone> Default for Inner<S> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<S: Mergeable + Clone> Inner<S> {
-    pub fn new() -> Self {
-        let (tx, rx) = watch::channel(Cursor {
-            index: 0,
-            offset: 0,
-        });
-        Self {
-            buffer: Arc::new(Mutex::new(Vec::new())),
-            last_signal: (Mutex::new(Some(tx)), rx),
-            flag: Arc::new(AtomicBool::new(false)),
-        }
-    }
-    pub fn subscribe(&self) -> Subscriber<S> {
+    fn get_subscriber(&self, id: i32) -> Subscriber<S> {
+        let inner = self.get_inner(id);
+        let receiver = inner.sender.subscribe();
         Subscriber {
-            cursor: Cursor::new(0, 0),
-            buffer: self.buffer.clone(),
-            rx: self.last_signal.1.clone(),
+            from: Cursor::new(0, 0),
+            to: Cursor::new(0, 0),
+            inner,
+            receiver,
+            ended: false,
         }
     }
-    pub fn publish(&self) -> Publisher<S> {
+    pub fn subscribe(self: Arc<Self>, id: i32) -> impl Stream<Item = S> {
+        let mut subscriber = self.get_subscriber(id);
+        let (tx, rx) = mpsc::channel::<S>(1);
+
+        tokio::spawn(async move {
+            loop {
+                match subscriber.recv().await {
+                    Some(item) => {
+                        if tx.send(item).await.is_err() {
+                            break;
+                        }
+                    }
+                    None => {
+                        subscriber = self.get_subscriber(id);
+                    }
+                }
+            }
+        });
+
+        ReceiverStream::new(rx)
+    }
+    pub fn publish(self: Arc<Self>, id: i32) -> Publisher<S> {
+        self.remove_weak();
+        let inner = self.get_inner(id);
         Publisher {
-            sender: self.last_signal.0.lock().unwrap().take().unwrap(),
-            flag: self.flag.clone(),
-            buffer: self.buffer.clone(),
+            inner,
+            ctx: self,
+            id,
         }
     }
 }
 
-impl<S: Mergeable + Clone> Publisher<S> {
+pub struct Publisher<S: Mergeable> {
+    inner: Arc<Inner<S>>,
+    ctx: Arc<Context<S>>,
+    id: i32,
+}
+
+impl<S: Mergeable + Clone + Debug> Publisher<S> {
     pub fn publish_force(&mut self, item: S) {
-        let mut buffer = self.buffer.lock().unwrap();
+        let mut buffer = self.inner.buffer.lock().unwrap();
         if let Some(last) = buffer.last_mut() {
-            let (new_last, rest) = last.clone().merge(item);
-            *last = new_last;
-            if let Some(rest) = rest {
+            if let Some(rest) = last.merge(item) {
                 buffer.push(rest);
             }
         } else {
@@ -207,12 +173,12 @@ impl<S: Mergeable + Clone> Publisher<S> {
         };
         let offset = buffer.last().map(|s| s.len()).unwrap_or(0);
         let cursor = Cursor::new(index, offset);
-        self.sender.send(cursor).ok();
+        self.inner.sender.send_replace(cursor);
     }
     /// Error when the channel is closed
     pub fn publish(&mut self, item: S) -> Result<(), ()> {
-        if self.flag.load(atomic::Ordering::Acquire) {
-            self.flag.store(false, atomic::Ordering::Release);
+        if self.inner.flag.load(atomic::Ordering::Acquire) {
+            self.inner.flag.store(false, atomic::Ordering::Release);
             return Err(());
         }
 
@@ -222,86 +188,82 @@ impl<S: Mergeable + Clone> Publisher<S> {
     }
 }
 
-impl<S: Mergeable + Clone> Subscriber<S> {
-    async fn recv(&mut self) -> Option<Vec<S>> {
-        while let Ok(_) = self.rx.changed().await {
-            let new_cursor = self.rx.borrow().to_owned();
-            if new_cursor == self.cursor {
-                continue;
-            }
-
-            let buffer = self.buffer.lock().unwrap();
-            let items = buffer.slice(&self.cursor, &new_cursor);
-
-            self.cursor = new_cursor;
-
-            return Some(items);
-        }
-
-        let buffer = self.buffer.lock().unwrap();
-        let mut items = buffer[self.cursor.index..].to_vec();
-        if let Some(last) = items.last_mut() {
-            if let Some(new_last) = last.split_end(self.cursor.offset) {
-                *last = new_last;
-            }
-        }
-
-        if items.is_empty() {
-            return None;
-        }
-
-        return Some(items);
-    }
-    pub fn flatten(self) -> StreamSubscriber<S>
-    where
-        S: Send,
-    {
-        StreamSubscriber {
-            inner: self,
-            buffer: Vec::new(),
-        }
+impl<S: Mergeable> Drop for Publisher<S> {
+    fn drop(&mut self) {
+        let sender = self.inner.sender.clone();
+        tokio::spawn(async move {
+            sender.closed().await;
+        });
+        self.ctx.map.lock().unwrap().remove(&self.id);
     }
 }
 
-pub struct StreamSubscriber<S>
+pub struct Subscriber<S>
 where
     S: Mergeable + Clone + Send + 'static,
 {
-    inner: Subscriber<S>,
-    buffer: Vec<S>,
+    from: Cursor,
+    to: Cursor,
+    receiver: watch::Receiver<Cursor>,
+    inner: Arc<Inner<S>>,
+    ended: bool,
 }
 
-impl<S> Stream for StreamSubscriber<S>
+impl<S> Subscriber<S>
 where
-    S: Mergeable + Clone + Send + 'static + Unpin,
+    S: Mergeable + Clone + Send,
 {
-    type Item = S;
-
-    fn poll_next(
-        self: Pin<&mut Self>,
-        cx: &mut task::Context<'_>,
-    ) -> task::Poll<Option<Self::Item>> {
-        let this = self.get_mut();
-        let buffer = &mut this.buffer;
-        let inner = &mut this.inner;
-
-        if let Some(item) = buffer.pop() {
-            return task::Poll::Ready(Some(item));
+    /// skip all None
+    fn advance_cursor(&self, shared_buffer: &[S]) -> (Cursor, Option<S>) {
+        if self.from == self.to {
+            return (self.to.clone(), None);
         }
+        let from_index = self.from.index;
+        let from_offset = self.from.offset;
 
-        let fut = inner.recv();
-        let results = futures_util::ready!(Box::pin(fut).poll_unpin(cx));
-        match results {
-            Some(mut items) => {
-                items.reverse();
-                if let Some(item) = items.pop() {
-                    *buffer = items;
-                    task::Poll::Ready(Some(item))
-                } else {
-                    task::Poll::Ready(None)
-                }
+        match from_index.cmp(&self.to.index) {
+            cmp::Ordering::Equal => (
+                self.to.clone(),
+                shared_buffer[from_index]
+                    .split_end(from_offset)
+                    .map(|x| x.split_start(self.to.offset - from_offset)),
+            ),
+            cmp::Ordering::Less if from_offset == 0 => (
+                Cursor::new(from_index + 1, 0),
+                Some(shared_buffer[from_index].clone()),
+            ),
+            cmp::Ordering::Less => (
+                Cursor::new(from_index + 1, 0),
+                shared_buffer[from_index].split_end(from_offset),
+            ),
+            cmp::Ordering::Greater => panic!("from_index should not be greater than to_index"),
+        }
+    }
+    async fn recv(&mut self) -> Option<S> {
+        loop {
+            {
+                let update = self.receiver.borrow_and_update();
+                self.to = *update;
             }
-            None => task::Poll::Ready(None),
+
+            let (new_cursor, item) = {
+                let shared_buffer = self.inner.buffer.lock().unwrap();
+                self.advance_cursor(&shared_buffer)
+            };
+
+            self.from = new_cursor;
+
+            if item.is_some() {
+                return item;
+            }
+
+            if self.ended {
+                return None;
+            }
+
+            if self.receiver.changed().await.is_err() {
+                self.ended = true;
+            }
         }
     }
 }
