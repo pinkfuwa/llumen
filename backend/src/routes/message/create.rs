@@ -82,6 +82,8 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?;
 
+    tracing::debug!("MessageCreateReqMode: {:?}", req.mode);
+
     let tool_set = match req.mode {
         MessageCreateReqMode::Normal => tools::NORMAL,
         MessageCreateReqMode::Search => tools::SEARCH,
