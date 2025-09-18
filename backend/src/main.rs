@@ -9,9 +9,9 @@ mod utils;
 
 use std::sync::Arc;
 
-use anyhow::Context;
+use anyhow::Context as _;
 use axum::{Router, middleware};
-use chat::PipelineContext;
+use chat::Context;
 use dotenv::var;
 use entity::prelude::*;
 use middlewares::cache_control::CacheControlLayer;
@@ -32,7 +32,7 @@ pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
     pub hasher: Hasher,
-    pub pipeline: Arc<PipelineContext>,
+    pub pipeline: Arc<Context>,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -71,8 +71,7 @@ async fn main() {
     )
     .expect("Cannot parse paseto key");
 
-    let pipeline =
-        Arc::new(PipelineContext::new(conn.clone()).expect("Failed to create pipeline context"));
+    let pipeline = Arc::new(Context::new(conn.clone()).expect("Failed to create pipeline context"));
 
     let state = Arc::new(AppState {
         conn,

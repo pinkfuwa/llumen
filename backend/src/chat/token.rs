@@ -16,7 +16,7 @@ pub struct ToolCallInfo {
 #[derive(Debug, Clone)]
 pub enum Token {
     User(String),
-    Message(String),
+    Assitant(String),
     Tool {
         name: String,
         args: String,
@@ -38,7 +38,7 @@ pub enum Token {
 impl Mergeable for Token {
     fn merge(&mut self, other: Self) -> Option<Self> {
         match (self, other) {
-            (Token::Message(s1), Token::Message(s2)) => {
+            (Token::Assitant(s1), Token::Assitant(s2)) => {
                 s1.push_str(&s2);
                 None
             }
@@ -53,7 +53,7 @@ impl Mergeable for Token {
     fn len(&self) -> usize {
         match self {
             Token::User(s)
-            | Token::Message(s)
+            | Token::Assitant(s)
             | Token::Reasoning(s)
             | Token::Plan(s)
             | Token::Step(s)
@@ -69,7 +69,7 @@ impl Mergeable for Token {
     fn split_end(&self, split: usize) -> Option<Self> {
         match self {
             Token::User(s) => Some(Token::User(s[split..].to_string())),
-            Token::Message(s) => Some(Token::Message(s[split..].to_string())),
+            Token::Assitant(s) => Some(Token::Assitant(s[split..].to_string())),
             Token::Reasoning(s) => Some(Token::Reasoning(s[split..].to_string())),
             Token::Plan(s) => Some(Token::Plan(s[split..].to_string())),
             Token::Step(s) => Some(Token::Step(s[split..].to_string())),
@@ -82,7 +82,7 @@ impl Mergeable for Token {
     fn split_start(&self, split: usize) -> Self {
         match self {
             Token::User(s) => Token::User(s[..split].to_string()),
-            Token::Message(s) => Token::Message(s[..split].to_string()),
+            Token::Assitant(s) => Token::Assitant(s[..split].to_string()),
             Token::Reasoning(s) => Token::Reasoning(s[..split].to_string()),
             Token::Plan(s) => Token::Plan(s[..split].to_string()),
             Token::Step(s) => Token::Step(s[..split].to_string()),
@@ -108,7 +108,7 @@ fn into_chunk(token: Token) -> Option<chunk::ActiveModel> {
             content: sea_orm::Set(content),
             ..Default::default()
         }),
-        Token::Message(content) => Some(chunk::ActiveModel {
+        Token::Assitant(content) => Some(chunk::ActiveModel {
             kind: sea_orm::Set(ChunkKind::Text),
             content: sea_orm::Set(content),
             ..Default::default()
@@ -193,7 +193,7 @@ impl From<openrouter::StreamCompletionResp> for Token {
     fn from(resp: openrouter::StreamCompletionResp) -> Self {
         match resp {
             StreamCompletionResp::ReasoningToken(reasoning) => Token::Reasoning(reasoning),
-            StreamCompletionResp::ResponseToken(content) => Token::Message(content),
+            StreamCompletionResp::ResponseToken(content) => Token::Assitant(content),
             StreamCompletionResp::ToolCall { name, args, id } => Token::Tool { name, args, id },
             _ => Token::Empty,
         }

@@ -1,4 +1,4 @@
-use super::pipeline::chat::ChatPipeline;
+use super::process::chat::ChatPipeline;
 
 mod normal;
 

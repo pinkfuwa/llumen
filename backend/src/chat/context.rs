@@ -23,14 +23,14 @@ pub enum StreamEndReason {
 
 /// The global context for the chat system.
 /// It holds the database connection, the OpenRouter client, and the channel context.
-pub struct PipelineContext {
+pub struct Context {
     pub(super) db: DatabaseConnection,
     pub(super) openrouter: openrouter::Openrouter,
     pub(super) channel: Arc<channel::Context<Token>>,
     pub(super) prompt: Prompt,
 }
 
-impl PipelineContext {
+impl Context {
     // TODO: put API Key in main
     pub fn new(db: DatabaseConnection) -> Result<Self, anyhow::Error> {
         Ok(Self {
@@ -84,16 +84,12 @@ pub struct CompletionContext {
     /// The publisher for the completion's tokens.
     publisher: Publisher<Token>,
     /// The global context.
-    ctx: Arc<PipelineContext>,
+    ctx: Arc<Context>,
 }
 
 impl CompletionContext {
     /// Creates a new completion context.
-    pub async fn new(
-        ctx: Arc<PipelineContext>,
-        user_id: i32,
-        chat_id: i32,
-    ) -> Result<Self, anyhow::Error> {
+    pub async fn new(ctx: Arc<Context>, user_id: i32, chat_id: i32) -> Result<Self, anyhow::Error> {
         let db = &ctx.db;
         let user = user::Entity::find_by_id(user_id)
             .one(db)

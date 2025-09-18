@@ -1,12 +1,12 @@
 mod channel;
 mod context;
-mod pipeline;
-mod pipelines;
+mod process;
+mod processes;
 mod prompt;
 mod token;
 
-pub use context::{CompletionContext, PipelineContext};
+pub use context::{CompletionContext, Context};
 
-pub use pipeline::Pipeline;
-pub use pipelines::NormalPipeline;
+pub use process::Pipeline;
+pub use processes::NormalPipeline;
 pub use token::Token;

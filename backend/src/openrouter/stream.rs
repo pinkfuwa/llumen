@@ -74,7 +74,7 @@ impl StreamCompletion {
         let content = delta.content.unwrap_or("".to_string());
 
         if let Some(reasoning) = delta.reasoning {
-            return StreamCompletionResp::ResponseToken(reasoning);
+            return StreamCompletionResp::ReasoningToken(reasoning);
         }
 
         if let Some(call) = delta.tool_calls.map(|x| x.into_iter().next()).flatten() {
