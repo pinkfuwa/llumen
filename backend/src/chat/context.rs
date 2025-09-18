@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context as _, bail};
+use anyhow::Context as _;
 use entity::{ChunkKind, MessageKind, chat, chunk, message, model, user};
 use futures_util::{Stream, StreamExt};
 use sea_orm::{
@@ -26,7 +26,7 @@ pub enum StreamEndReason {
 pub struct PipelineContext {
     pub(super) db: DatabaseConnection,
     pub(super) openrouter: openrouter::Openrouter,
-    pub(super) channel: channel::Context<Token>,
+    pub(super) channel: Arc<channel::Context<Token>>,
     pub(super) prompt: Prompt,
 }
 
@@ -36,7 +36,7 @@ impl PipelineContext {
         Ok(Self {
             db,
             openrouter: openrouter::Openrouter::new(),
-            channel: channel::Context::new(),
+            channel: Arc::new(channel::Context::new()),
             prompt: Prompt::new(),
         })
     }
@@ -51,8 +51,8 @@ impl PipelineContext {
     pub fn halt_completion(&self, chat_id: i32) {
         self.channel.stop(chat_id)
     }
-    pub fn subscribe(self: Arc<Self>, chat_id: i32) -> impl Stream<Item = Token> {
-        self.channel.subscribe(chat_id).flatten()
+    pub fn subscribe(self: Arc<Self>, chat_id: i32) -> impl Stream<Item = Token> + 'static {
+        self.channel.clone().subscribe(chat_id)
     }
 }
 
@@ -129,7 +129,7 @@ impl CompletionContext {
             message: message.into_active_model(),
             messages_with_chunks,
             user,
-            publisher: ctx.channel.publish(chat_id),
+            publisher: ctx.channel.clone().publish(chat_id),
             new_chunks: Vec::new(),
             ctx,
         })
@@ -163,9 +163,7 @@ impl CompletionContext {
                         return Ok(StreamEndReason::Halt);
                     }
                 }
-                Err(e) => {
-                    return Err(e);
-                }
+                Err(e) => return Err(e),
             }
         }
         Ok(StreamEndReason::Exhausted)

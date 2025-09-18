@@ -36,26 +36,17 @@ pub enum Token {
 }
 
 impl Mergeable for Token {
-    fn merge(self, other: Self) -> (Self, Option<Self>) {
+    fn merge(&mut self, other: Self) -> Option<Self> {
         match (self, other) {
-            (Token::User(s1), Token::User(s2)) => (Token::User(s1 + &s2), None),
-            (Token::Message(s1), Token::Message(s2)) => (Token::Message(s1 + &s2), None),
-            (Token::Tool { name, args, id }, Token::ToolResult(res)) => {
-                let tool_call_info = ToolCallInfo {
-                    name,
-                    id,
-                    input: args,
-                    output: Some(res),
-                };
-                let content = serde_json::to_string(&tool_call_info).unwrap();
-                (Token::ToolResult(content), None)
+            (Token::Message(s1), Token::Message(s2)) => {
+                s1.push_str(&s2);
+                None
             }
-            (Token::Reasoning(s1), Token::Reasoning(s2)) => (Token::Reasoning(s1 + &s2), None),
-            (Token::Plan(s1), Token::Plan(s2)) => (Token::Plan(s1 + &s2), None),
-            (Token::Step(s1), Token::Step(s2)) => (Token::Step(s1 + &s2), None),
-            (Token::Report(s1), Token::Report(s2)) => (Token::Report(s1 + &s2), None),
-            (Token::Error(s1), Token::Error(s2)) => (Token::Error(s1 + &s2), None),
-            (s1, s2) => (s1, Some(s2)),
+            (Token::Reasoning(s1), Token::Reasoning(s2)) => {
+                s1.push_str(&s2);
+                None
+            }
+            (_, other) => Some(other),
         }
     }
 
@@ -68,7 +59,10 @@ impl Mergeable for Token {
             | Token::Step(s)
             | Token::Report(s)
             | Token::Error(s) => s.len(),
-            Token::Tool { .. } | Token::ToolResult(_) | Token::Empty | Token::Complete { .. } => 0,
+            Token::Tool { .. }
+            | Token::ToolResult { .. }
+            | Token::Empty
+            | Token::Complete { .. } => 1,
         }
     }
 
@@ -162,7 +156,7 @@ where
         if self.buffer.is_none() {
             return None;
         }
-        let current = self.buffer.take().unwrap();
+        let mut current = self.buffer.take().unwrap();
 
         let next = self.iter.next();
         if next.is_none() {
@@ -170,16 +164,16 @@ where
         }
         let next = next.unwrap();
 
-        let (merged_token, remaining) = current.merge(next);
+        let remaining = current.merge(next);
+
+        // FIXME: special case => merge tool result with tool call
 
         if remaining.is_some() {
             self.buffer = remaining;
-            return into_chunk(merged_token)
-                .map(Some)
-                .unwrap_or_else(|| self.next());
+            return into_chunk(current).map(Some).unwrap_or_else(|| self.next());
         }
 
-        self.buffer = Some(merged_token);
+        self.buffer = Some(current);
         self.next()
     }
 }
