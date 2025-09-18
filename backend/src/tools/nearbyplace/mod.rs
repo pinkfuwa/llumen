@@ -21,6 +21,7 @@ impl Tool for NearByPlace {
     you can use this api to find some types of places.
     Then you can use the result to answer user questions such as 'What are some good restaurants near me?' or 'Find me a nearby hotel'.
     keywords can be: restaurant, hotel, museum, park, bank, pub, hospital, bus_station, arena, supermarket.
+    radius is in meters, default to 5000 meters, max 50000 meters
     ";
     const PROMPT: &str = "use `nearbyplace` to get nearby place info when user request";
 
@@ -46,7 +47,7 @@ impl Tool for NearByPlace {
             .post(url)
             .header("Content-Type", "application/json")
             .header("X-Goog-Api-Key", api_key)
-            .header("X-Goog-FieldMask", "places.displayName,places.formattedAddress,places.addressDescriptor,places.priceLevel,places.rating,places.currentOpeningHours")
+            .header("X-Goog-FieldMask", "places.displayName,places.formattedAddress,places.priceLevel,places.rating,places.currentOpeningHours")
             .json(&body)
             .send()
             .await?

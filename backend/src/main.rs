@@ -83,6 +83,10 @@ async fn main() {
 
     tools.add_tool::<tools::wttr::Wttr>().unwrap();
     tools.add_tool::<tools::nearbyplace::NearByPlace>().unwrap();
+    tools.add_tool::<tools::mail::RecentMail>().unwrap();
+    tools.add_tool::<tools::mail::ReplyMail>().unwrap();
+    tools.add_tool::<tools::mail::SendMail>().unwrap();
+    tools.add_tool::<tools::mail::GetMailContent>().unwrap();
     
     let state = Arc::new(AppState {
         conn,
