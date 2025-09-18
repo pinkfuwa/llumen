@@ -233,6 +233,21 @@ impl CompletionContext {
 
         let message_id = self.message.id.clone().unwrap();
 
+        let token_count = self
+            .message
+            .token_count
+            .clone()
+            .try_as_ref()
+            .copied()
+            .unwrap_or(0);
+        let cost = self
+            .message
+            .price
+            .clone()
+            .try_as_ref()
+            .copied()
+            .unwrap_or(0.0);
+
         self.chat.update(db).await?;
         self.message.update(db).await?;
 
@@ -257,6 +272,8 @@ impl CompletionContext {
         self.publisher.publish_force(Token::Complete {
             message_id,
             chunk_ids,
+            cost,
+            token: token_count,
         });
 
         Ok(())

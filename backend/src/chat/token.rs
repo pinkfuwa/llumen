@@ -32,6 +32,8 @@ pub enum Token {
     Complete {
         message_id: i32,
         chunk_ids: Vec<i32>,
+        cost: f32,
+        token: i32,
     },
 }
 
