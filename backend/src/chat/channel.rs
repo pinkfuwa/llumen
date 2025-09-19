@@ -26,10 +26,11 @@ where
 
 pub type LockedMap<K, V> = Mutex<HashMap<K, Weak<V>>>;
 pub type LockedVec<S> = Mutex<Vec<S>>;
+pub type LockedOption<T> = Mutex<Option<T>>;
 
 pub struct Inner<S: Mergeable + Clone> {
     buffer: LockedVec<S>,
-    sender: watch::Sender<Cursor>,
+    sender: LockedOption<watch::Sender<Cursor>>,
     flag: AtomicBool,
 }
 
@@ -47,7 +48,7 @@ impl<S: Mergeable + Clone + Send> Inner<S> {
         });
         Self {
             buffer: Mutex::new(Vec::new()),
-            sender: tx,
+            sender: Mutex::new(Some(tx)),
             flag: AtomicBool::new(false),
         }
     }
@@ -109,7 +110,7 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
 
     fn get_subscriber(&self, id: i32) -> Subscriber<S> {
         let inner = self.get_inner(id);
-        let receiver = inner.sender.subscribe();
+        let receiver = inner.sender.lock().unwrap().as_ref().unwrap().subscribe();
         Subscriber {
             from: Cursor::new(0, 0),
             to: Cursor::new(0, 0),
@@ -176,7 +177,13 @@ impl<S: Mergeable + Clone + Debug> Publisher<S> {
         };
         let offset = buffer.last().map(|s| s.len()).unwrap_or(0);
         let cursor = Cursor::new(index, offset);
-        self.inner.sender.send_replace(cursor);
+        self.inner
+            .sender
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .send_replace(cursor);
     }
     /// Error when the channel is closed
     pub fn publish(&mut self, item: S) -> Result<(), ()> {
@@ -193,10 +200,8 @@ impl<S: Mergeable + Clone + Debug> Publisher<S> {
 
 impl<S: Mergeable> Drop for Publisher<S> {
     fn drop(&mut self) {
-        let sender = self.inner.sender.clone();
-        tokio::spawn(async move {
-            sender.closed().await;
-        });
+        let sender = self.inner.sender.lock().unwrap().take();
+        drop(sender);
         self.ctx.map.lock().unwrap().remove(&self.id);
     }
 }
