@@ -45,12 +45,12 @@
 </script>
 
 <div
-	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-light p-2 shadow-xl shadow-hover md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
+	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
 	bind:this={container}
 >
 	{#if dropZone.isOver && editable}
 		<div
-			class="absolute top-0 -left-0 flex h-full w-full items-center justify-center rounded-lg bg-light text-2xl"
+			class="absolute top-0 -left-0 flex h-full w-full items-center justify-center rounded-lg bg-primary text-2xl"
 		>
 			Upload File
 		</div>

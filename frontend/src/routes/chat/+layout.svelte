@@ -5,11 +5,11 @@
 	let addition = $derived(params.id != undefined);
 </script>
 
-<div class="flex h-screen flex-row">
+<div class="flex h-screen flex-row bg-chat-bg">
 	<div class="shrink-0 overflow-hidden">
 		<Sidebar {addition} currentRoom={Number(params.id)} />
 	</div>
-	<div class="h-screen w-full min-w-0 grow">
+	<div class="h-screen grow">
 		{@render children()}
 	</div>
 </div>
