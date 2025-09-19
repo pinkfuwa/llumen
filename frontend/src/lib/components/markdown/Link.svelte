@@ -11,7 +11,7 @@
 </script>
 
 <span class="pb-1">
-	<a {href} {title} target="_blank" class="border-b border-outline py-[1px]"
+	<a {href} {title} target="_blank" class="border-b border-outline p-0.5 rounded-xs hover:bg-primary hover:text-text-hover duration-150"
 		>{@render children?.()}</a
 	>
 </span>

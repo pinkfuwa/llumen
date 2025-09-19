@@ -1,3 +1,5 @@
+import type { ThemeConfig } from "flowbite-svelte";
+
 export type Theme = 'light' | 'dark' | 'orange' | 'blue' | 'custom';
 
 type PartialRecord<K extends keyof any, T> = {
@@ -60,7 +62,7 @@ export async function setTheme(theme: Theme) {
 		.map(([name, val]) => `--color-${name}: ${val};`)
 		.join('');
 
-	window.document.body.style.cssText = style;
+	// window.document.body.style.cssText = style;
 }
 
 export function isLightTheme(theme: Theme) {
@@ -73,3 +75,12 @@ export function getTitleGrad(theme: Theme) {
 	if (theme == 'light') return 'from-slate-700 to-sky-500';
 	return 'from-dark to-blue-600';
 }
+
+
+// TODO:
+// consider move theme to a separate file
+export const flowbite_theme: ThemeConfig = {
+	button: {
+		base:"cursor-pointer duration-200",
+	}
+};

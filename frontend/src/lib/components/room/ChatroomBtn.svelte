@@ -18,7 +18,8 @@
 </script>
 
 <div
-	class="group flex rounded-sm text-base {selected ? 'bg-hover' : 'hover:bg-hover'} items-center"
+	class="group flex items-center rounded-sm text-base hover:bg-primary duration-150"
+	class:bg-primary={selected}
 	onmouseleave={() => {
 		checked = false;
 	}}
