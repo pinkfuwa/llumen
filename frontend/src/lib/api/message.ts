@@ -88,6 +88,7 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 				data: {
 					id: data.id,
 					role: MessagePaginateRespRole.User,
+					// TODO: fix chunk ID
 					chunks: [{ id: data.id, kind: { t: 'text', c: { content: param.text } } }],
 					token: 0,
 					price: 0
