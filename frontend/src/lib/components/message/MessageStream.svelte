@@ -118,7 +118,8 @@
 			});
 		}
 
-		console.log('chunk_ids: ', data.chunk_ids);
+		// FIXME: chunk_ids is empty
+		// console.log('chunk_ids: ', data.chunk_ids);
 		let chunk_ids = data.chunk_ids.toReversed();
 		SetInfiniteQueryData<MessagePaginateRespList>({
 			key: ['messagePaginate', chat_id.toString()],

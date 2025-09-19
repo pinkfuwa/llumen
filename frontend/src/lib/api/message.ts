@@ -83,12 +83,6 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 	return CreateMutation({
 		path: 'message/create',
 		onSuccess: (data, param) => {
-			const roomStreamingState = globalCache.getOr(
-				['chat', 'stream', param.chat_id.toString()],
-				false
-			);
-			roomStreamingState.set(true);
-
 			SetInfiniteQueryData<MessagePaginateRespList>({
 				key: ['messagePaginate', param.chat_id.toString()],
 				data: {

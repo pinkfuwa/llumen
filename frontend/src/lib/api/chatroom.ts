@@ -90,7 +90,7 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 							role: MessagePaginateRespRole.User,
 							token: 0,
 							price: 0
-						}
+						} as MessagePaginateRespList
 					});
 				}
 			);
