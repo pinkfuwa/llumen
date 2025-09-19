@@ -53,6 +53,12 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			if (!chatRes) return;
 
+			const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
+				chat_id: chatRes.id,
+				text: param.message,
+				mode: param.mode
+			});
+
 			SetInfiniteQueryData<ChatPaginateRespList>({
 				key: ['chatPaginate'],
 				data: {
@@ -60,8 +66,6 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 					model_id: param.modelId
 				}
 			});
-
-			const status = GetEventQueryStatus(['messageEvent', chatRes.id.toString()]);
 
 			await goto('/chat/' + encodeURIComponent(chatRes.id));
 
@@ -72,28 +76,17 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 			);
 			roomStreamingState.set(true);
 
-			const callback = once(
-				status,
-				(x) => x,
-				async () => {
-					const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
-						chat_id: chatRes.id,
-						text: param.message,
-						mode: param.mode
-					});
-					if (!res) return;
-					SetInfiniteQueryData<MessagePaginateRespList>({
-						key: ['messagePaginate', chatRes.id.toString()],
-						data: {
-							id: res.id,
-							chunks: [{ id: res.id, kind: { t: 'text', c: { content: param.message } } }],
-							role: MessagePaginateRespRole.User,
-							token: 0,
-							price: 0
-						} as MessagePaginateRespList
-					});
-				}
-			);
+			if (!res) return;
+			SetInfiniteQueryData<MessagePaginateRespList>({
+				key: ['messagePaginate', chatRes.id.toString()],
+				data: {
+					id: res.id,
+					chunks: [{ id: res.id, kind: { t: 'text', c: { content: param.message } } }],
+					role: MessagePaginateRespRole.User,
+					token: 0,
+					price: 0
+				} as MessagePaginateRespList
+			});
 
 			return chatRes;
 		}
