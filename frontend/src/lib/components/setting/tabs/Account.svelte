@@ -44,11 +44,7 @@
 			onchange={() => mutatePreference({ theme: themeData })}
 			disabled={$isPending}
 		>
-			<option value="light">Modern Light</option>
-			<option value="dark">Modern Dark</option>
-			<option value="orange">Orange Light</option>
-			<option value="blue">Blue Dark</option>
-			<!-- <option value="custom">Custom Color</option> -->
+			<option value="light">Llumen</option>
 		</select>
 	</div>
 
