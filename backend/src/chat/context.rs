@@ -140,11 +140,11 @@ impl CompletionContext {
     }
 
     /// Adds a token to the completion context and publishes it to the channel.
-    pub fn add_token(&mut self, token: Token) -> Result<(), ()> {
+    pub(super) fn add_token(&mut self, token: Token) -> Result<(), ()> {
         self.publisher.publish(token)
     }
 
-    pub fn add_token_force(&mut self, token: Token) {
+    pub(super) fn add_token_force(&mut self, token: Token) {
         self.publisher.publish_force(token)
     }
 
@@ -222,11 +222,15 @@ impl CompletionContext {
         E: ToString,
     {
         if let Some(err) = err {
-            self.new_chunks.push(error_chunk(err.to_string()));
+            let err = err.to_string();
+            self.new_chunks.push(error_chunk(err.clone()));
+            self.add_token_force(Token::Error(err));
         }
-        if let Err(e) = self.generate_title().await {
+        if let Err(err) = self.generate_title().await {
+            let err = err.to_string();
             self.new_chunks
-                .push(error_chunk(format!("Failed to generate title: {}", e)));
+                .push(error_chunk(format!("Failed to generate title: {}", err)));
+            self.add_token_force(Token::Error(err));
         }
 
         let db = &self.ctx.db;
