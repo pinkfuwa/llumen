@@ -95,10 +95,6 @@ export interface Error {
 	reason: string;
 }
 
-export interface ImageProxyRequest {
-	url: string;
-}
-
 export interface LoginReq {
 	username: string;
 	password: string;
@@ -309,14 +305,15 @@ export interface SseRespChunkEnd {
 	kind: SseRespEndKind;
 }
 
-export interface SseRespLastMessage {
-	id: number;
-	version: number;
-}
-
 export interface SseRespMessageEnd {
 	id: number;
-	kind: SseRespEndKind;
+	chunk_ids: number[];
+	token_count: number;
+	cost: number;
+}
+
+export interface SseRespReasoning {
+	content: string;
 }
 
 export interface SseRespToken {
@@ -328,10 +325,7 @@ export interface SseRespToolCall {
 	args: string;
 }
 
-export interface SseRespToolCallEnd {
-	chunk_id: number;
-	name: string;
-	args: string;
+export interface SseRespToolResult {
 	content: string;
 }
 
@@ -340,7 +334,7 @@ export interface SseRespUsage {
 	price: number;
 }
 
-export interface SseRespUserMessage {
+export interface SseRespUser {
 	message_id: number;
 	chunk_id: number;
 	content: string;
@@ -348,6 +342,10 @@ export interface SseRespUserMessage {
 
 export interface SseRespUserTitle {
 	title: string;
+}
+
+export interface SseRespVersion {
+	version: number;
 }
 
 export interface UserCreateReq {
@@ -415,13 +413,12 @@ export type MessagePaginateReq =
 	| { t: 'range'; c: MessagePaginateReqRange };
 
 export type SseResp =
-	| { t: 'last_message'; c: SseRespLastMessage }
+	| { t: 'version'; c: SseRespVersion }
 	| { t: 'token'; c: SseRespToken }
-	| { t: 'reasoning_token'; c: SseRespToken }
-	| { t: 'chunk_end'; c: SseRespChunkEnd }
+	| { t: 'reasoning'; c: SseRespReasoning }
 	| { t: 'tool_call'; c: SseRespToolCall }
-	| { t: 'tool_call_end'; c: SseRespToolCallEnd }
+	| { t: 'tool_result'; c: SseRespToolResult }
 	| { t: 'message_end'; c: SseRespMessageEnd }
-	| { t: 'user_message'; c: SseRespUserMessage }
+	| { t: 'user'; c: SseRespUser }
 	| { t: 'change_title'; c: SseRespUserTitle }
 	| { t: 'usage'; c: SseRespUsage };
