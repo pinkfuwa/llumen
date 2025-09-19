@@ -10,7 +10,7 @@
 
 <div class="flex justify-center">
 	<div class="relative justify-center overflow-x-auto rounded-md border border-outline">
-		<table class="divide-y divide-gray-200 bg-background text-dark">
+		<table class="divide-y divide-gray-200 bg-component-bg">
 			{@render children?.()}
 		</table>
 	</div>

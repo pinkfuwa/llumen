@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ArrowLeft, Bot } from '@lucide/svelte';
 	import type { MouseEventHandler } from 'svelte/elements';
+	import Button from '$lib/ui/Button.svelte';
 
 	let { onclick = (() => {}) as MouseEventHandler<HTMLButtonElement> } = $props();
 </script>
@@ -10,7 +11,7 @@
 		<Bot class="mx-2 h-6 w-6" />
 		<a href="https://github.com/pinkfuwa/llumen" target="_blank">llumen</a>
 	</div>
-	<button class="rounded-lg p-3 text-dark hover:bg-hover" {onclick}>
+	<Button class="rounded-lg p-3 " onclick={onclick}>
 		<ArrowLeft />
-	</button>
+	</Button>
 </div>

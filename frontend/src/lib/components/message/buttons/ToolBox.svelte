@@ -9,13 +9,13 @@
 </script>
 
 <button onclick={() => (open = !open)} class="w-full text-left">
-	<div class="w-full border-l-6 border-primary py-1 pr-6 pl-4">
+	<div class="w-full border-l-6 border-outline py-1 pr-6 pl-4">
 		<div class="mb-2 flex items-center">
 			<ToolCase class="mr-2" />
 			{#if !open}
 				<span class="mr-1"> Calling </span>
 			{/if}
-			<span class="rounded-md bg-background px-2 py-[2px]">
+			<span class="rounded-md bg-primary px-2 py-[2px]">
 				{toolname}
 			</span>
 		</div>
