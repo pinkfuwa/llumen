@@ -66,26 +66,26 @@ pub async fn route(
     .raw_kind(ErrorKind::Internal)?;
     txn.commit().await.raw_kind(ErrorKind::Internal)?;
 
-    let completion_ctx = app
-        .pipeline
-        .get_completion_context(user_id, req.chat_id)
-        .await
-        .raw_kind(ErrorKind::Internal)?;
+    let closure = async move {
+        let completion_ctx = app
+            .pipeline
+            .get_completion_context(user_id, req.chat_id)
+            .await?;
 
-    let msg_id = completion_ctx.get_message_id();
+        match req.mode {
+            MessageCreateReqMode::Search => {
+                Search::process(app.pipeline.clone(), completion_ctx).await?
+            }
+            _ => Normal::process(app.pipeline.clone(), completion_ctx).await?,
+        };
 
-    match req.mode {
-        MessageCreateReqMode::Search => {
-            Search::process(app.pipeline.clone(), completion_ctx)
-                .await
-                .raw_kind(ErrorKind::Internal)?;
+        Ok::<(), anyhow::Error>(())
+    };
+    tokio::spawn(async move {
+        if let Err(e) = closure.await {
+            tracing::error!("Failed to process message: {:?}", e);
         }
-        _ => {
-            Normal::process(app.pipeline.clone(), completion_ctx)
-                .await
-                .raw_kind(ErrorKind::Internal)?;
-        }
-    }
+    });
 
-    Ok(Json(MessageCreateResp { id: msg_id }))
+    Ok(Json(MessageCreateResp { id: user_msg.id }))
 }
