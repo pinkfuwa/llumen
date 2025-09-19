@@ -86,8 +86,10 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 						key: ['messagePaginate', chatRes.id.toString()],
 						data: {
 							id: res.id,
-							chunks: [{ id: res.id, kind: { t: 'text', c: { context: param.message } } }],
-							role: MessagePaginateRespRole.User
+							chunks: [{ id: res.id, kind: { t: 'text', c: { content: param.message } } }],
+							role: MessagePaginateRespRole.User,
+							token: 0,
+							price: 0
 						}
 					});
 				}

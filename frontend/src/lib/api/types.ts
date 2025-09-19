@@ -176,21 +176,21 @@ export interface MessagePaginateResp {
 }
 
 export interface MessagePaginateRespChunkKindError {
-	context: string;
+	content: string;
 }
 
 export interface MessagePaginateRespChunkKindReasoning {
-	context: string;
+	content: string;
 }
 
 export interface MessagePaginateRespChunkKindText {
-	context: string;
+	content: string;
 }
 
 export interface MessagePaginateRespChunkKindToolCall {
 	name: string;
 	args: string;
-	context: string;
+	content: string;
 }
 
 export interface MessageWriteReq {
@@ -295,17 +295,11 @@ export interface SseReq {
 	id: number;
 }
 
-export enum SseRespEndKind {
-	Complete = 'complete',
-	Halt = 'halt',
-	Error = 'error'
+export interface SseRespError {
+	content: string;
 }
 
-export interface SseRespChunkEnd {
-	kind: SseRespEndKind;
-}
-
-export interface SseRespMessageEnd {
+export interface SseRespMessageComplete {
 	id: number;
 	chunk_ids: number[];
 	token_count: number;
@@ -314,6 +308,10 @@ export interface SseRespMessageEnd {
 
 export interface SseRespReasoning {
 	content: string;
+}
+
+export interface SseRespTitle {
+	title: string;
 }
 
 export interface SseRespToken {
@@ -329,19 +327,10 @@ export interface SseRespToolResult {
 	content: string;
 }
 
-export interface SseRespUsage {
-	token: number;
-	price: number;
-}
-
 export interface SseRespUser {
 	message_id: number;
 	chunk_id: number;
 	content: string;
-}
-
-export interface SseRespUserTitle {
-	title: string;
 }
 
 export interface SseRespVersion {
@@ -418,7 +407,13 @@ export type SseResp =
 	| { t: 'reasoning'; c: SseRespReasoning }
 	| { t: 'tool_call'; c: SseRespToolCall }
 	| { t: 'tool_result'; c: SseRespToolResult }
-	| { t: 'message_end'; c: SseRespMessageEnd }
+	| { t: 'complete'; c: SseRespMessageComplete }
 	| { t: 'user'; c: SseRespUser }
-	| { t: 'change_title'; c: SseRespUserTitle }
-	| { t: 'usage'; c: SseRespUsage };
+	| { t: 'title'; c: SseRespTitle }
+	| { t: 'error'; c: SseRespError };
+
+export enum SseRespEndKind {
+	Complete = 'complete',
+	Halt = 'halt',
+	Error = 'error'
+}

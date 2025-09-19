@@ -125,6 +125,9 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         tokio::spawn(async move {
             loop {
                 match subscriber.recv().await {
+                    Some(item) if item.len() == 0 => {
+                        continue;
+                    }
                     Some(item) => {
                         if tx.send(item).await.is_err() {
                             break;
@@ -251,6 +254,12 @@ where
                 self.advance_cursor(&shared_buffer)
             };
 
+            tracing::trace!(
+                "recv: from: {:?}, to: {:?}, new_cursor: {:?}",
+                self.from,
+                self.to,
+                new_cursor
+            );
             self.from = new_cursor;
 
             if item.is_some() {

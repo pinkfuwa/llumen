@@ -31,23 +31,10 @@ pub enum SseResp {
     Reasoning(SseRespReasoning),
     ToolCall(SseRespToolCall),
     ToolResult(SseRespToolResult),
-    MessageEnd(SseRespMessageEnd),
+    Complete(SseRespMessageComplete),
     User(SseRespUser),
-    ChangeTitle(SseRespUserTitle),
-    Usage(SseRespUsage),
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespUsage {
-    token: u32,
-    price: f32,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespUserTitle {
-    pub title: String,
+    Title(SseRespTitle),
+    Error(SseRespError),
 }
 
 #[derive(Debug, Serialize)]
@@ -70,26 +57,24 @@ pub struct SseRespReasoning {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespChunkEnd {
-    pub kind: SseRespEndKind,
+pub struct SseRespToolCall {
+    pub name: String,
+    pub args: String,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespMessageEnd {
+pub struct SseRespToolResult {
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespMessageComplete {
     pub id: i32,
     pub chunk_ids: Vec<i32>,
     pub token_count: i32,
     pub cost: f32,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-#[serde(rename_all = "snake_case")]
-pub enum SseRespEndKind {
-    Complete,
-    Halt,
-    Error,
 }
 
 #[derive(Debug, Serialize)]
@@ -102,15 +87,23 @@ pub struct SseRespUser {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespToolCall {
-    pub name: String,
-    pub args: String,
+pub struct SseRespTitle {
+    pub title: String,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespToolResult {
+pub struct SseRespError {
     pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+#[serde(rename_all = "snake_case")]
+pub enum SseRespEndKind {
+    Complete,
+    Halt,
+    Error,
 }
 
 pub async fn route(
@@ -163,13 +156,14 @@ pub async fn route(
                 chunk_ids,
                 token,
                 cost,
-            } => SseResp::MessageEnd(SseRespMessageEnd {
+            } => SseResp::Complete(SseRespMessageComplete {
                 id: message_id,
                 chunk_ids,
                 token_count: token,
                 cost,
             }),
             Token::ToolResult(content) => SseResp::ToolResult(SseRespToolResult { content }),
+            Token::Error(content) => SseResp::Error(SseRespError { content }),
             _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())

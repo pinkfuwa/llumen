@@ -7,6 +7,7 @@ use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
     ModelTrait, QueryFilter,
 };
+use tokio::join;
 
 use super::{
     channel::{self, Publisher},
@@ -91,18 +92,17 @@ impl CompletionContext {
     /// Creates a new completion context.
     pub async fn new(ctx: Arc<Context>, user_id: i32, chat_id: i32) -> Result<Self, anyhow::Error> {
         let db = &ctx.db;
-        let user = user::Entity::find_by_id(user_id)
-            .one(db)
-            .await?
-            .ok_or_else(|| anyhow::anyhow!("User not found"))?;
 
-        let (chat, model) = chat::Entity::find_by_id(chat_id)
-            .filter(chat::Column::OwnerId.eq(user_id))
-            .find_also_related(model::Entity)
-            .one(db)
-            .await?
-            .ok_or_else(|| anyhow::anyhow!("Chat not found"))?;
+        let (user, chat_and_model) = join!(
+            user::Entity::find_by_id(user_id).one(db),
+            chat::Entity::find_by_id(chat_id)
+                .filter(chat::Column::OwnerId.eq(user_id))
+                .find_also_related(model::Entity)
+                .one(db)
+        );
 
+        let user = user?.ok_or_else(|| anyhow::anyhow!("User not found"))?;
+        let (chat, model) = chat_and_model?.ok_or_else(|| anyhow::anyhow!("Chat not found"))?;
         let model = model.ok_or_else(|| anyhow::anyhow!("Model not found"))?;
 
         let messages_with_chunks = chat
@@ -226,16 +226,28 @@ impl CompletionContext {
             self.new_chunks.push(error_chunk(err.clone()));
             self.add_token_force(Token::Error(err));
         }
-        if let Err(err) = self.generate_title().await {
-            let err = err.to_string();
-            self.new_chunks
-                .push(error_chunk(format!("Failed to generate title: {}", err)));
-            self.add_token_force(Token::Error(err));
-        }
 
         let db = &self.ctx.db;
-
         let message_id = self.message.id.clone().unwrap();
+
+        let new_chunks = std::mem::take(&mut self.new_chunks);
+
+        let new_chunks = new_chunks
+            .into_iter()
+            .map(|mut c| {
+                c.message_id = ActiveValue::Set(message_id);
+                c
+            })
+            .collect::<Vec<_>>();
+
+        let chunks_affected = self.new_chunks.len();
+
+        let last_insert_id = chunk::Entity::insert_many(new_chunks)
+            .exec(db)
+            .await?
+            .last_insert_id;
+        let chunk_ids =
+            (last_insert_id - chunks_affected as i32 + 1..=last_insert_id).collect::<Vec<_>>();
 
         let token_count = self
             .message
@@ -252,33 +264,24 @@ impl CompletionContext {
             .copied()
             .unwrap_or(0.0);
 
-        self.chat.update(db).await?;
-        self.message.update(db).await?;
-
-        let chunks_affected = self.new_chunks.len();
-
-        self.new_chunks = self
-            .new_chunks
-            .into_iter()
-            .map(|mut c| {
-                c.message_id = ActiveValue::Set(message_id);
-                c
-            })
-            .collect();
-
-        let last_insert_id = chunk::Entity::insert_many(self.new_chunks)
-            .exec(db)
-            .await?
-            .last_insert_id;
-        let chunk_ids =
-            (last_insert_id - chunks_affected as i32 + 1..=last_insert_id).collect::<Vec<_>>();
-
+        tracing::trace!("publish complete token");
         self.publisher.publish_force(Token::Complete {
             message_id,
             chunk_ids,
             cost,
             token: token_count,
         });
+        // FIXME: control token at end will be missing.
+        self.publisher.publish_force(Token::Empty);
+
+        if let Err(err) = self.generate_title().await {
+            tracing::error!("failed to generate title: {}", err);
+        }
+
+        let db = &self.ctx.db;
+
+        self.chat.update(db).await?;
+        self.message.update(db).await?;
 
         Ok(())
     }
