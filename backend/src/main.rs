@@ -3,7 +3,6 @@ mod config;
 mod errors;
 mod middlewares;
 mod openrouter;
-mod prompts;
 mod routes;
 mod utils;
 

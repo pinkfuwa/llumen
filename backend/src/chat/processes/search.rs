@@ -9,7 +9,7 @@ pub struct Inner;
 impl ChatInner for Inner {
     fn get_system_prompt(ctx: &Context, completion_ctx: &CompletionContext) -> Result<String> {
         ctx.prompt
-            .render(PromptKind::Normal, completion_ctx)
+            .render(PromptKind::Search, completion_ctx)
             .context("Failed to render system prompt")
     }
 
@@ -18,6 +18,9 @@ impl ChatInner for Inner {
             .model
             .get_config()
             .context("Failed to get model config")?;
-        Ok(model.into())
+        let mut model: openrouter::Model = model.into();
+        model.online = true;
+
+        Ok(model)
     }
 }
