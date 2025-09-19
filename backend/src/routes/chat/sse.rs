@@ -26,13 +26,13 @@ pub struct SseReq {
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum SseResp {
-    LastMessage(SseRespLastMessage),
+    Version(SseRespVersion),
     Token(SseRespToken),
-    ReasoningToken(SseRespToken),
+    Reasoning(SseRespReasoning),
     ToolCall(SseRespToolCall),
-    ToolCallEnd(SseRespToolCallEnd),
+    ToolResult(SseRespToolResult),
     MessageEnd(SseRespMessageEnd),
-    UserMessage(SseRespUserMessage),
+    User(SseRespUser),
     ChangeTitle(SseRespUserTitle),
     Usage(SseRespUsage),
 }
@@ -52,14 +52,19 @@ pub struct SseRespUserTitle {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespLastMessage {
-    pub id: i32,
+pub struct SseRespVersion {
     pub version: i32,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct SseRespToken {
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespReasoning {
     pub content: String,
 }
 
@@ -89,7 +94,7 @@ pub enum SseRespEndKind {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespUserMessage {
+pub struct SseRespUser {
     pub message_id: i32,
     pub chunk_id: i32,
     pub content: String,
@@ -104,7 +109,7 @@ pub struct SseRespToolCall {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespToolCallEnd {
+pub struct SseRespToolResult {
     pub content: String,
 }
 
@@ -138,8 +143,7 @@ pub async fn route(
         .kind(ErrorKind::Internal)?;
 
     let initial_event = if let Some(last_message) = last_message {
-        let event = SseResp::LastMessage(SseRespLastMessage {
-            id: last_message.id,
+        let event = SseResp::Version(SseRespVersion {
             // FIXME: change version when revalidate is needed
             version: last_message.id,
         });
@@ -152,7 +156,7 @@ pub async fn route(
     let st = stream::iter(initial_event).chain(stream.map(|token| {
         let event = match token {
             Token::Assitant(content) => SseResp::Token(SseRespToken { content }),
-            Token::Reasoning(content) => SseResp::ReasoningToken(SseRespToken { content }),
+            Token::Reasoning(content) => SseResp::Reasoning(SseRespReasoning { content }),
             Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
             Token::Complete {
                 message_id,
@@ -165,7 +169,7 @@ pub async fn route(
                 token_count: token,
                 cost,
             }),
-            Token::ToolResult(content) => SseResp::ToolCallEnd(SseRespToolCallEnd { content }),
+            Token::ToolResult(content) => SseResp::ToolResult(SseRespToolResult { content }),
             _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())
