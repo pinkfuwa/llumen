@@ -47,6 +47,7 @@ features = ["release_max_level_debug"]
 
 [dependencies.time]
 version = "0.3.41"
+features = ["macros"]
 
 [dependencies.tower-http]
 version = "0.6.6"

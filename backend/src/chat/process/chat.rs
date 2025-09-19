@@ -121,7 +121,9 @@ impl<P: ChatInner> ChatPipeline<P> {
 
         tracing::debug!("stream ended: {:?}", halt);
 
-        let result = res.get_result()?;
+        let result = res
+            .get_result()
+            .map_err(|_| anyhow::anyhow!("The stream was halted"))?;
 
         self.completion_ctx
             .update_usage(result.usage.cost as f32, result.usage.token as i32);

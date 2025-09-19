@@ -42,6 +42,7 @@
 	const patcher = new MarkdownPatcher(updater);
 
 	addSSEHandler('reasoning', (data) => {
+		isStreaming.set(true);
 		reasoning += data.content;
 		if (lastChunkType == 'token') {
 			chunks.push({
@@ -55,8 +56,8 @@
 		lastChunkType = 'reasoning';
 	});
 	addSSEHandler('token', (data) => {
+		isStreaming.set(true);
 		patcher.feed(data.content);
-		console.log('recieve: ', data.content);
 		if (lastChunkType == 'reasoning') {
 			chunks.push({
 				kind: {
@@ -107,7 +108,6 @@
 					c: { content: reasoning }
 				}
 			});
-			reasoning = '';
 		}
 		if (lastChunkType == 'token') {
 			chunks.push({
@@ -116,8 +116,8 @@
 					c: { content: patcher.content }
 				}
 			});
-			patcher.reset();
 		}
+
 		console.log('chunk_ids: ', data.chunk_ids);
 		let chunk_ids = data.chunk_ids.toReversed();
 		SetInfiniteQueryData<MessagePaginateRespList>({
@@ -131,6 +131,9 @@
 			}
 		});
 		isStreaming.set(false);
+		chunks = [];
+		reasoning = '';
+		patcher.reset();
 	});
 </script>
 

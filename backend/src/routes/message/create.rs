@@ -12,7 +12,7 @@ use typeshare::typeshare;
 
 use crate::{
     AppState,
-    chat::{NormalPipeline, Pipeline},
+    chat::{Normal, Pipeline, Search},
     errors::*,
     middlewares::auth::UserId,
 };
@@ -74,9 +74,18 @@ pub async fn route(
 
     let msg_id = completion_ctx.get_message_id();
 
-    NormalPipeline::process(app.pipeline.clone(), completion_ctx)
-        .await
-        .raw_kind(ErrorKind::Internal)?;
+    match req.mode {
+        MessageCreateReqMode::Search => {
+            Search::process(app.pipeline.clone(), completion_ctx)
+                .await
+                .raw_kind(ErrorKind::Internal)?;
+        }
+        _ => {
+            Normal::process(app.pipeline.clone(), completion_ctx)
+                .await
+                .raw_kind(ErrorKind::Internal)?;
+        }
+    }
 
     Ok(Json(MessageCreateResp { id: msg_id }))
 }

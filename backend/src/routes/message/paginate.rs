@@ -182,6 +182,9 @@ pub async fn route(
                 MessageKind::Hidden => return None,
                 MessageKind::DeepResearch => todo!("Handle DeepResearch message kind"),
             };
+            if chunks.is_empty() {
+                return None;
+            }
             let chunks: Result<_, Json<Error>> = chunks
                 .into_iter()
                 .map(|chunk| {
