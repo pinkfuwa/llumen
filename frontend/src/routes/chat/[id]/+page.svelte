@@ -40,7 +40,7 @@
 			selectionDisabled
 			bind:content
 			modelId={$room?.model_id}
-			{mode}
+			bind:mode
 			bind:files
 			onsubmit={() => {
 				mutate({ chat_id: id, text: content, mode });
