@@ -28,6 +28,8 @@ impl Prompt {
     pub fn new() -> Self {
         let mut env = Environment::new();
         // TODO: Add prompt template
+        env.add_template("title", include_str!("../../../prompts/title_gen/en.md"))
+            .unwrap();
         Self { env }
     }
 }

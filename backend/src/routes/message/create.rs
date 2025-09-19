@@ -5,7 +5,7 @@ use entity::MessageKind;
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{self, Set},
-    EntityTrait,
+    TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -46,24 +46,25 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageCreateReq>,
 ) -> JsonResult<MessageCreateResp> {
+    let txn = app.conn.begin().await.raw_kind(ErrorKind::Internal)?;
     let user_msg = entity::message::ActiveModel {
-        chat_id: ActiveValue::Set(req.chat_id),
-        kind: ActiveValue::Set(MessageKind::User),
+        chat_id: Set(req.chat_id),
+        kind: Set(MessageKind::User),
         ..Default::default()
     }
-    .insert(&app.conn)
+    .insert(&txn)
     .await
     .raw_kind(ErrorKind::Internal)?;
-
     entity::chunk::ActiveModel {
         message_id: Set(user_msg.id),
         content: Set(req.text),
         kind: Set(entity::ChunkKind::Text),
         ..Default::default()
     }
-    .insert(&app.conn)
+    .insert(&txn)
     .await
     .raw_kind(ErrorKind::Internal)?;
+    txn.commit().await.raw_kind(ErrorKind::Internal)?;
 
     let completion_ctx = app
         .pipeline

@@ -94,7 +94,9 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 				data: {
 					id: data.id,
 					role: MessagePaginateRespRole.User,
-					chunks: [{ id: data.id, kind: { t: 'text', c: { context: param.text } } }]
+					chunks: [{ id: data.id, kind: { t: 'text', c: { content: param.text } } }],
+					token: 0,
+					price: 0
 				}
 			});
 		}
@@ -104,16 +106,15 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 let SSEHandlers: {
 	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
 } = {
-	last_message: [],
 	token: [],
-	reasoning_token: [],
-	chunk_end: [],
+	reasoning: [],
+	complete: [],
 	tool_call: [],
-	tool_call_end: [],
-	message_end: [],
-	user_message: [],
-	change_title: [],
-	usage: []
+	tool_result: [],
+	user: [],
+	title: [],
+	error: [],
+	version: []
 } satisfies {
 	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
 };
