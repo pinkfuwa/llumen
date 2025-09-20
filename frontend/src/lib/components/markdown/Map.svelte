@@ -49,7 +49,7 @@
 
 	const mapOptions = {
 		center: { lat: central_latidude, lng: central_longtitude },
-		zoom: 8
+		zoom: 13
 	};
 
 	const selectedMarkerId = writable<number | null>(null);
