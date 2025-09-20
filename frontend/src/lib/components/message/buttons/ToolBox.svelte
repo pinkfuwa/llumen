@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ToolCase } from '@lucide/svelte';
+	import { Accordion } from 'bits-ui';
 	import { _ } from 'svelte-i18n';
 	import { slide } from 'svelte/transition';
 
@@ -8,21 +9,33 @@
 	let open = $state(false);
 </script>
 
-<button onclick={() => (open = !open)} class="w-full text-left">
-	<div class="w-full border-l-6 border-outline py-1 pr-6 pl-4">
-		<div class="mb-2 flex items-center">
-			<ToolCase class="mr-2" />
-			{#if !open}
-				<span class="mr-1"> Calling </span>
-			{/if}
-			<span class="rounded-md bg-primary px-2 py-[2px]">
-				{toolname}
-			</span>
-		</div>
-		{#if open}
-			<div in:slide={{ duration: 180, axis: 'y' }} out:slide={{ duration: 180, axis: 'y' }}>
-				{@render children()}
-			</div>
-		{/if}
-	</div>
-</button>
+<Accordion.Root type="multiple">
+	<Accordion.Item>
+		<Accordion.Header>
+			<Accordion.Trigger
+				class="flex flex-row flex-nowrap rounded p-2 duration-150 hover:bg-primary hover:text-text-hover"
+			>
+				<ToolCase class="mr-2" />
+				{#if !open}
+					<span class="mr-1"> Calling </span>
+				{/if}
+				<span class="rounded-md bg-primary px-2 py-[2px] text-text-hover">
+					{toolname}
+				</span>
+			</Accordion.Trigger>
+		</Accordion.Header>
+		<Accordion.Content
+			class="
+				py-2
+				slide-out-to-start-2
+				fade-in
+				fade-out
+				slide-in-from-top-2
+				data-[state=close]:animate-out
+				data-[state=open]:animate-in
+			"
+		>
+			{@render children()}
+		</Accordion.Content>
+	</Accordion.Item>
+</Accordion.Root>
