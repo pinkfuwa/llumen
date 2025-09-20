@@ -2,6 +2,7 @@
 	import Root from '../../markdown/Root.svelte';
 	import { SquarePen, Check, X } from '@lucide/svelte';
 	import FileGroup from '../../buttons/FileGroup.svelte';
+	import { Button } from 'bits-ui';
 	let { content = $bindable(''), files = $bindable([] as Array<{ name: string }>) } = $props();
 
 	let editable = $state(false);
@@ -28,31 +29,33 @@
 			{/if}
 		</div>
 		<div
-			class="flex justify-end {editable
+			class="flex justify-end mt-1 {editable
 				? 'opacity-100'
 				: 'opacity-0'} group-hover/files:opacity-100"
 		>
 			{#if editable}
-				<button
+				<Button.Root
+					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
 					onclick={() => {
 						editable = !editable;
 					}}
 				>
-					<X class="m-[1px] h-10 w-10 rounded-lg bg-background p-2 hover:bg-hover" />
-				</button>
+					<X />
+				</Button.Root>
 			{/if}
-			<button
+			<Button.Root
+				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
 				onclick={() => {
 					editable = !editable;
 				}}
 				aria-label="edit user message"
 			>
 				{#if editable}
-					<Check class="m-[1px] h-10 w-10 rounded-lg bg-background p-2 hover:bg-hover" />
+					<Check />
 				{:else}
-					<SquarePen class="m-[1px] h-10 w-10 rounded-lg p-2 hover:bg-hover" />
+					<SquarePen />
 				{/if}
-			</button>
+			</Button.Root>
 		</div>
 	</div>
 </div>
