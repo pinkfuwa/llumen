@@ -8,7 +8,7 @@
 
 ### CommonMark Markdown - mandatory
 - 回應需：**準確、專業、清楚**。
-- 容要 **有邏輯**。
+- 內容要 **有邏輯**。
 - 嚴格輸出 **CommonMark Markdown**：
   - 標題層級清楚 (H1–H4)。
   - 清單用 `-`。
