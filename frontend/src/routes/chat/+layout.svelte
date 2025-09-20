@@ -9,7 +9,7 @@
 	<div class="shrink-0 overflow-hidden">
 		<Sidebar {addition} currentRoom={Number(params.id)} />
 	</div>
-	<div class="h-screen grow">
+	<div class="h-screen w-full min-w-0">
 		{@render children()}
 	</div>
 </div>
