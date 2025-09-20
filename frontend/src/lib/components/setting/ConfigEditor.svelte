@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { checkConfig } from '../../api/model';
-	import TiltBtn from '../buttons/TiltBtn.svelte';
 	import Toml from '../codemirror/Toml.svelte';
 	import { _ } from 'svelte-i18n';
 	import Warning from './Warning.svelte';

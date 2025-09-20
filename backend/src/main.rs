@@ -87,6 +87,7 @@ async fn main() {
     tools.add_tool::<tools::mail::ReplyMail>().unwrap();
     tools.add_tool::<tools::mail::SendMail>().unwrap();
     tools.add_tool::<tools::mail::GetMailContent>().unwrap();
+    tools.add_tool::<tools::rss::RssSearch>().unwrap();
     
     let state = Arc::new(AppState {
         conn,
