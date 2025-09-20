@@ -111,6 +111,13 @@ pub async fn route(
             .render(&app.prompt, req.chat_id, tool_prompts, (), ())
             .await
             .kind(ErrorKind::Internal)?,
+        MessageCreateReqMode::Agent => prompts::AgentStore
+            .template(user.preference.locale.as_deref())
+            .await
+            .kind(ErrorKind::Internal)?
+            .render(&app.prompt, req.chat_id, tool_prompts, (), ())
+            .await
+            .kind(ErrorKind::Internal)?,
         _ => prompts::ChatStore
             .template(user.preference.locale.as_deref())
             .await
