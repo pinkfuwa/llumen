@@ -23,7 +23,6 @@ import {
 	CreateMutation,
 	CreateQuery,
 	CreateRawMutation,
-	GetEventQueryStatus,
 	SetInfiniteQueryData,
 	type Fetcher,
 	type InfiniteQueryResult,

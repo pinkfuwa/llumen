@@ -118,9 +118,9 @@ class Pages<D extends { id: number }> {
 				}
 			},
 			initialData: [],
-			staleTime: this.staleTime,
+			staleTime: Infinity,
 			cleanupCallback,
-			revalidateOnFocus: this.revalidateOnFocus
+			revalidateOnFocus: false
 		});
 		page.revalidate = query.revalidate;
 	}
@@ -186,7 +186,7 @@ export interface PageEntry<D> {
 	target: Writable<HTMLElement | null>;
 	data: Writable<D[]>;
 	no: number;
-	revalidate: () => void;
+	// revalidate: () => void;
 }
 
 export interface InfiniteQueryResult<D extends { id: number }> {
@@ -210,6 +210,7 @@ export function CreateInfiniteQuery<D extends { id: number }>(
 }
 
 export function SetInfiniteQueryData<D extends { id: number }>(option: { data: D; key: string[] }) {
+	console.log('SetInfiniteQueryData', option);
 	let { key, data } = option;
 
 	const pageStore = globalCache.get<Pages<D>>(key);
