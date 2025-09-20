@@ -15,7 +15,7 @@
 	}
 </script>
 
-<Button onclick={nextStage} class="aspect-square p-1" {disabled} aria-label="change mode">
+<Button onclick={nextStage} class="aspect-square h-full" {disabled} aria-label="change mode">
 	{#if value == Mode.Research}
 		<Tooltip content={$_('chat.model_mode.deep')}>
 			<Atom class="inline-block" />

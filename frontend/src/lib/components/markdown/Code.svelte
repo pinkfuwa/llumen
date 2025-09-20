@@ -13,12 +13,18 @@
 	<div class="group/codeblock relative">
 		{#if text.split('\n').length > 1}
 			<button
-				class="absolute top-0 right-0 z-10 m-1 hidden group-hover/codeblock:block"
+				class="absolute top-0 right-0 m-1 opacity-0 duration-150 group-hover/codeblock:opacity-100"
 				onclick={() => copy(text)}
 			>
-				<ClipboardCopy class="h-10 w-10 rounded-md bg-primary p-2 hover:bg-hover" />
+				<ClipboardCopy
+					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
+				/>
+			</button>
+			<Code {lang} {text} {monochrome} />
+		{:else}
+			<button onclick={() => copy(text)} class="cursor-pointer">
+				<Code {lang} {text} {monochrome} />
 			</button>
 		{/if}
-		<Code {lang} {text} {monochrome} />
 	</div>
 {/if}

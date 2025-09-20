@@ -4,6 +4,6 @@
 	let { onclick = (() => {}) as MouseEventHandler<HTMLButtonElement> } = $props();
 </script>
 
-<button class="mr-[-5px] rounded-md p-[6px] hover:bg-hover" {onclick}>
+<button class="-mr-2 rounded-md p-2 hover:bg-primary hover:text-text-hover duration-150" {onclick}>
 	<Square class="inline-block h-5 w-5" />
 </button>
