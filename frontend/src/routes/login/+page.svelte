@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
+	import Input from '$lib/ui/Input.svelte';
 
 	let username = $state('');
 	let password = $state('');
@@ -56,30 +57,14 @@
 	<div class="min-w-lg items-center rounded-lg p-6">
 		<form class="grid grid-rows-3 gap-4" onsubmit={handleSubmit} inert={$isPending}>
 			<div>
-				<label for="username" class="mb-3 block min-w-8 text-sm font-medium text-text">
+				<Input id="username" type="text" placeholder="admin" bind:value={username} required>
 					{$_('login.username')}
-				</label>
-				<input
-					type="text"
-					placeholder="admin"
-					id="username"
-					class="block w-full rounded-lg border border-outline bg-input p-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-outline focus:outline-none"
-					bind:value={username}
-					required
-				/>
+				</Input>
 			</div>
 			<div>
-				<label for="password" class="mb-3 block min-w-8 text-sm font-medium text-text">
+				<Input type="password" placeholder="P@88w0rd" id="password" bind:value={password!} required>
 					{$_('login.password')}
-				</label>
-				<input
-					type="password"
-					placeholder="P@88w0rd"
-					id="password"
-					class="block w-full rounded-lg border border-outline bg-input p-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-outline focus:outline-none"
-					bind:value={password!}
-					required
-				/>
+				</Input>
 			</div>
 
 			<Button type="submit" class="mt-4 text-lg" {disabled}>
