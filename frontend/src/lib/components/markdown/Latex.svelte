@@ -14,6 +14,8 @@
 	);
 </script>
 
-<div class="overflow-x-auto rounded-md px-2 py-[7px] font-mono">
-	{@html rawHTML}
+<div class="flex justify-center overflow-x-auto">
+	<div class="rounded-md border border-outline p-4">
+		{@html rawHTML}
+	</div>
 </div>

@@ -45,7 +45,7 @@
 </script>
 
 <div
-	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
+	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-120 lg:w-150 xl:w-200"
 	bind:this={container}
 >
 	{#if dropZone.isOver && editable}
