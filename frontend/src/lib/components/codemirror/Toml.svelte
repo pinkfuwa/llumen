@@ -42,7 +42,7 @@
 </script>
 
 <div
-	class="border-radius-md flex max-h-[480px] min-h-[200px] w-full flex-col overflow-auto rounded-md border border-outline p-2"
+	class="border-radius-md rounded-md border border-outline p-2"
 	style={themeStyle}
 >
 	{#if !loaded}
