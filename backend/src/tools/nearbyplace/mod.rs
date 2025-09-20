@@ -21,7 +21,7 @@ impl Tool for NearByPlace {
     you can use this api to find some types of places, it would return the position, and use the <map> tag to show the location on map.
     Then you can use the result to answer user questions such as 'What are some good restaurants near me?' or 'Find me a nearby hotel'.
     keywords can be: restaurant, hotel, museum, park, bank, pub, hospital, bus_station, arena, supermarket.
-    radius is in meters, default to 5000 meters, max 50000 meters
+    radius is in meters, default to 1000 meters, max 50000 meters
     ";
     const PROMPT: &str = "use `nearbyplace` to get nearby place info when user request";
     
@@ -30,14 +30,14 @@ impl Tool for NearByPlace {
         let api_key = var("GOOGLE_MAP_API_KEY").unwrap_or("".to_owned());
         let body = serde_json::json!({
             "includedTypes": [input.keyword],
-            "maxResultCount": 10,
+            "maxResultCount": 5,
             "locationRestriction": {
                 "circle": {
                     "center": {
                         "latitude": 24.7944222,
                         "longitude": 120.988158
                     },
-                    "radius": std::cmp::min(input.radius.unwrap_or(5000), 50000) // default to 10000 meters, max 50000
+                    "radius": std::cmp::min(input.radius.unwrap_or(1000), 50000) // default to 10000 meters, max 50000
                 }
             }
         });
