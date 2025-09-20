@@ -14,6 +14,6 @@
 	);
 </script>
 
-<span class="rounded-md bg-background px-2 py-[7px] font-mono hover:bg-hover">
+<span class="rounded-md p-2">
 	{@html rawHTML}
 </span>
