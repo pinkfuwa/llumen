@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Brain } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
-	import { slide } from 'svelte/transition';
+	import { Accordion } from 'bits-ui';
+	import Root from '$lib/components/markdown/Root.svelte';
 	const { content }: { content: string } = $props();
 
 	let showReasoning = $state(false);
@@ -9,23 +10,32 @@
 	let lines = $derived(content.split('\n'));
 </script>
 
-<button
-	onclick={() => (showReasoning = !showReasoning)}
-	class="w-full border-l-6 border-primary py-1 pl-4 text-left"
->
-	<div class="flex items-center">
-		<Brain class="mr-2" />
-		{$_('chat.reasoning')}
-	</div>
-	{#if showReasoning}
-		<div
-			class="mt-1"
-			in:slide={{ duration: 180, axis: 'y' }}
-			out:slide={{ duration: 180, axis: 'y' }}
+<Accordion.Root type="multiple">
+	<Accordion.Item>
+		<Accordion.Header>
+			<Accordion.Trigger
+				class="flex flex-row flex-nowrap rounded p-2 duration-150 hover:bg-primary hover:text-text-hover"
+			>
+				<Brain class="mr-2" />
+				<span>
+					{$_('chat.reasoning')}
+				</span>
+			</Accordion.Trigger>
+		</Accordion.Header>
+		<Accordion.Content
+			class="
+				py-2
+				slide-out-to-start-2
+				fade-in
+				fade-out
+				slide-in-from-top-2
+				data-[state=close]:animate-out
+				data-[state=open]:animate-in
+			"
 		>
 			{#each lines as line}
 				<p class="whitespace-pre-wrap">{line}</p>
 			{/each}
-		</div>
-	{/if}
-</button>
+		</Accordion.Content>
+	</Accordion.Item>
+</Accordion.Root>
