@@ -30,7 +30,7 @@
 			class="fixed inset-0 z-50 backdrop-blur-md fade-in-100 fade-out-0 data-[state=closed]:animate-out data-[state=open]:animate-in"
 		/>
 		<Dialog.Content
-			class="fixed inset-0 z-50 m-auto flex h-fit min-h-1/2 rounded-xl border border-outline bg-popup-bg p-3 font-mono fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:w-5/7 lg:w-1/2 xl:2/5"
+			class="fixed inset-0 z-50 m-auto flex h-fit min-h-1/2 rounded-xl border border-outline bg-popup-bg p-3 font-mono fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:w-5/7 lg:w-3/5 xl:2/5"
 		>
 			<Dialog.Close
 				class="focus-visible:ring-foreground absolute top-5 right-5 rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden active:scale-[0.98]"
@@ -42,7 +42,7 @@
 			</Dialog.Close>
 
 			<Tabs.Root bind:value class="flex w-full flex-row">
-				<Tabs.List class="flex flex-col space-y-4 border-r-2 border-outline pr-2 text-xl">
+				<Tabs.List class="flex flex-col w-70 space-y-2 border-r-2 border-outline pr-2 text-xl">
 					<Tabs.Trigger
 						value="account"
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
@@ -82,7 +82,7 @@
 						<Star class="mr-2 inline-block h-5 w-5" /> {$_('setting.github_star')}</a
 					>
 				</Tabs.List>
-				<div class="flex flex-1 justify-center p-3">
+				<div class="flex flex-1 justify-center p-3 w-full min-w-0">
 					<Tabs.Content value="account">
 						<Dialog.Title class="pb-6 text-center text-xl">
 							{$_('setting.account_settings')}
@@ -106,7 +106,7 @@
 
 						<OpenrouterNew bind:value />
 					</Tabs.Content>
-					<Tabs.Content value="openrouter_edit">
+					<Tabs.Content value="openrouter_edit" class="w-auto overflow-auto">
 						<Dialog.Title class="pb-6 text-center text-xl">
 							{$_('setting.edit_model')}
 						</Dialog.Title>

@@ -37,7 +37,6 @@ const flushThreshold = 9;
 
 export class MarkdownPatcher {
 	updater: UIUpdater;
-	lastRenderTime: number = 0;
 	// content that's not rendered yet
 	buffer: string = '';
 	// content of last chunk
@@ -63,10 +62,8 @@ export class MarkdownPatcher {
 		this.content += data;
 		this.buffer += data;
 
-		if (this.lastRenderTime + 25 < Date.now()) return;
 		if (this.flushWeight < flushThreshold) return;
 
-		this.lastRenderTime = Date.now();
 		this.lastChunk += this.buffer;
 		this.buffer = '';
 

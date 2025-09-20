@@ -74,6 +74,9 @@ importers:
       marked-shiki:
         specifier: ^1.2.0
         version: 1.2.0(marked@16.1.1)(shiki@3.8.1)
+      opencc-js:
+        specifier: ^1.0.5
+        version: 1.0.5
       prettier:
         specifier: ^3.4.2
         version: 3.6.2
@@ -1326,6 +1329,9 @@ packages:
 
   oniguruma-to-es@4.3.3:
     resolution: {integrity: sha512-rPiZhzC3wXwE59YQMRDodUwwT9FZ9nNBwQQfsd1wfdtlKEyCdRV0avrTcSZ5xlIvGRVPd/cx6ZN45ECmS39xvg==}
+
+  opencc-js@1.0.5:
+    resolution: {integrity: sha512-LD+1SoNnZdlRwtYTjnQdFrSVCAaYpuDqL5CkmOaHOkKoKh7mFxUicLTRVNLU5C+Jmi1vXQ3QL4jWdgSaa4sKjg==}
 
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
@@ -2839,6 +2845,8 @@ snapshots:
       oniguruma-parser: 0.12.1
       regex: 6.0.1
       regex-recursion: 6.0.2
+
+  opencc-js@1.0.5: {}
 
   parse5@7.3.0:
     dependencies:
