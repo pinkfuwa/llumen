@@ -39,14 +39,6 @@
   --color-component-bg: var(--color-white);
 }
 
-
-@layer components {
-  button {
-    cursor: pointer;
-  }
-}
-
-
 .nobar {
   -ms-overflow-style: none;
   /* Internet Explorer 10+ */

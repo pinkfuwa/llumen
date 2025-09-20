@@ -10,7 +10,7 @@
 	let { mutate } = createRoom();
 
 	let content = $state('');
-	let modelId = $state<number | null>(null);
+	let modelId = $state<number | undefined>(undefined);
 	let files = $state([]);
 	let mode = $state(Mode.Normal);
 </script>
