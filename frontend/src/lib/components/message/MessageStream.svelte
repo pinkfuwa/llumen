@@ -90,6 +90,7 @@
 	});
 	addSSEHandler('token', (data) => {
 		lastChunkType = 'assitant';
+		console.log('recv!');
 		patcher.feed(data.content);
 	});
 </script>

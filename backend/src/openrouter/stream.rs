@@ -102,13 +102,12 @@ impl StreamCompletion {
 
         let resp = serde_json::from_str::<raw::CompletionResp>(data).context("Parse error")?;
 
-        let choice = resp
-            .choices
-            .into_iter()
-            .next()
-            .ok_or(anyhow!("No returned choices in completion"))?;
+        let choice = resp.choices.into_iter().next();
 
-        Ok(self.handle_choice(choice))
+        match choice {
+            None => return Ok(StreamCompletionResp::ResponseToken("".to_string())),
+            Some(c) => return Ok(self.handle_choice(c)),
+        }
     }
 
     pub async fn next(&mut self) -> Option<Result<StreamCompletionResp>> {
@@ -125,20 +124,19 @@ impl StreamCompletion {
                     }
                     e => {
                         if let reqwest_eventsource::Error::InvalidStatusCode(code, res) = e {
-                            return match res
-                                .json::<raw::ErrorResp>()
-                                .await
-                                .context("Stream Error, cannot capture error message")
-                            {
+                            let text = res.text().await.unwrap_or_default();
+                            let res = serde_json::from_str::<raw::ErrorResp>(&text);
+                            return match res {
                                 Ok(error) => Some(Err(anyhow!(
                                     "Openrouter return status code {}, message: {}",
                                     code,
                                     error.error.message
                                 ))),
                                 Err(x) => Some(Err(anyhow!(
-                                    "Openrouter return status code {}, cannot parse error message: {}",
+                                    "Openrouter return status code {}, cannot parse error message: {}, text: {}",
                                     code,
-                                    x
+                                    x,
+                                    text
                                 ))),
                             };
                         }
