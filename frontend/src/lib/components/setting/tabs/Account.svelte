@@ -11,6 +11,8 @@
 	import { clearCache } from '$lib/api/state';
 	import { token } from '$lib/store';
 	import { goto } from '$app/navigation';
+	import Select from '$lib/ui/Select.svelte';
+	import Input from '$lib/ui/Input.svelte';
 
 	let func = $state<'checkPwd' | 'setting'>('setting');
 	let password = $state('');
@@ -40,7 +42,7 @@
 		<select
 			id="theme"
 			bind:value={themeData}
-			class="mx-1 rounded-md p-1 text-right hover:bg-hover"
+			class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
 			onchange={() => mutatePreference({ theme: themeData })}
 			disabled={$isPending}
 		>
@@ -53,7 +55,7 @@
 		<select
 			id="lang"
 			bind:value={localeData}
-			class="mx-1 rounded-md p-1 text-right hover:bg-hover"
+			class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
 			onchange={() => mutatePreference({ locale: localeData })}
 			disabled={$isPending}
 		>
@@ -67,7 +69,7 @@
 		<select
 			id="enter"
 			bind:value={submitOnEnterData}
-			class="mx-1 rounded-md p-1 text-right hover:bg-hover"
+			class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
 			onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}
 			disabled={$isPending}
 		>
@@ -76,23 +78,27 @@
 		</select>
 	</div>
 
-	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="password" class="grow">{$_('setting.change_password')}: </label>
-		<div class="flex items-center justify-between">
-			<input
-				type="password"
-				id="password"
-				class="rounded-md border border-outline p-1 text-right"
-				bind:value={password}
-				placeholder={$_('setting.old_password')}
-			/>
+	<div class="mb-4 border-b border-outline pb-2 text-lg">
+		<form class="flex flex-row items-end justify-between">
+			<div class="flex flex-col">
+				<Input
+					type="password"
+					id="password"
+					class="rounded-md border border-outline p-1 text-right"
+					bind:value={password}
+					placeholder={$_('setting.old_password')}
+				>
+					{$_('setting.change_password')}:
+				</Input>
+			</div>
 			<button
-				class="mx-1 rounded-md p-1 hover:bg-hover"
+				type="submit"
+				class="mx-1 rounded-md p-1 duration-150 hover:bg-primary hover:text-text-hover"
 				onclick={() => {
 					if (password.length > 0) func = 'checkPwd';
 				}}><CheckLine /></button
 			>
-		</div>
+		</form>
 	</div>
 {:else}
 	<CheckPwd
