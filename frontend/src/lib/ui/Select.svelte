@@ -29,7 +29,6 @@
 		}
 		return fallback;
 	});
-	$inspect(selected);
 
 	function autoScrollDelay(tick: number) {
 		const maxDelay = 200;
@@ -57,9 +56,9 @@
             text-nowrap
             text-text
             duration-150
+            not-disabled:cursor-pointer
             not-disabled:hover:bg-primary
-            not-disabled:hover:text-text-hover
-			not-disabled:cursor-pointer
+			not-disabled:hover:text-text-hover
             focus:ring-4
             focus:ring-outline
             focus:outline-none
@@ -112,8 +111,8 @@
 							h-10
 							w-full
 							items-center
-							py-3
 							px-2
+							py-3
 							text-sm
 							outline-hidden
 							select-none
