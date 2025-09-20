@@ -6,6 +6,7 @@
 	import Warning from './Warning.svelte';
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
+	import Button from '$lib/ui/Button.svelte';
 
 	let { value = $bindable(''), children } = $props();
 
@@ -26,8 +27,8 @@
 />
 
 <div class="mt-3 flex items-center justify-start space-x-2">
-	<TiltBtn
-		class="rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
+	<Button
+		class="px-3 py-2"
 		onclick={() =>
 			mutate(
 				{
@@ -42,7 +43,7 @@
 			)}
 	>
 		{$_('setting.check_syntax')}
-	</TiltBtn>
+	</Button>
 	{@render children()}
 	{#if configChecked}
 		<div
