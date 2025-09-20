@@ -15,7 +15,7 @@
 	let {
 		mode = $bindable(Mode.Normal),
 		files = $bindable([] as Array<File>),
-		modelId = $bindable<number | null>(null),
+		modelId = $bindable<number | undefined>(undefined),
 		content = $bindable(''),
 		onsubmit = undefined as undefined | (() => void),
 		oncancel = undefined as undefined | (() => void),
@@ -75,7 +75,7 @@
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
-		<div class="flex grow items-center space-x-1">
+		<div class="flex grow items-center space-x-2 h-11">
 			<ModelBtn bind:value={modelId} {above} disabled={selectionDisabled} />
 			<SearchBtn bind:value={mode} />
 			<UploadBtn bind:files />
