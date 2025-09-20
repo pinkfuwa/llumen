@@ -15,7 +15,7 @@
 	let {
 		mode = $bindable(Mode.Normal),
 		files = $bindable([] as Array<File>),
-		modelId = $bindable<number | undefined>(undefined),
+		modelId = $bindable<string | undefined>(undefined),
 		content = $bindable(''),
 		onsubmit = undefined as undefined | (() => void),
 		oncancel = undefined as undefined | (() => void),

@@ -10,7 +10,7 @@
 	let { mutate } = createRoom();
 
 	let content = $state('');
-	let modelId = $state<number | undefined>(undefined);
+	let modelId = $state<string | undefined>(undefined);
 	let files = $state([]);
 	let mode = $state(Mode.Normal);
 </script>
@@ -37,7 +37,7 @@
 			mutate(
 				{
 					message: content,
-					modelId,
+					modelId: parseInt(modelId),
 					files,
 					mode
 				},

@@ -3,23 +3,22 @@
 	import { useModels } from '$lib/api/model';
 	import Select from '$lib/ui/Select.svelte';
 	import { number } from 'svelte-i18n';
-	let { value = $bindable<number | undefined>(), above = false, disabled = false } = $props();
+	let { value = $bindable<string | undefined>(), above = false, disabled = false } = $props();
 
 	let { data } = useModels();
-	let selected: string | undefined = $state(undefined);
 
 	$effect(() => {
+		$inspect(value);
 		if (!disabled && $data) {
 			let lastModel = $data?.list.at(-1);
-			if (lastModel && value == undefined) selected = `${lastModel.id}`;
+			if (lastModel && value == undefined) {
+				value = `${lastModel.id}`;
+			} else if (value != undefined) {
+				value = `${value}`;
+			}
 		}
 	});
 
-	$effect(() => {
-		if (selected) {
-			value = parseInt(selected);
-		}
-	});
 	let select_data = $derived(
 		$data?.list.map((x) => ({
 			value: `${x.id}`,
@@ -39,7 +38,7 @@
 	<Select
 		data={select_data}
 		fallback="Select Model"
-		bind:selected
+		bind:selected={value}
 		{disabled}
 		class="w-52"
 		popupClass="w-52"
