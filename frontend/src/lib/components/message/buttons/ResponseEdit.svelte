@@ -21,6 +21,6 @@
 		</div>
 	</div>
 	<button onclick={() => copy(content)} aria-label="copy response">
-		<ClipboardCopy class="h-10 w-10 rounded-lg p-2 hover:bg-hover" />
+		<ClipboardCopy class="h-10 w-10 rounded-lg p-2 hover:bg-primary hover:text-text-hover duration-150" />
 	</button>
 </div>
