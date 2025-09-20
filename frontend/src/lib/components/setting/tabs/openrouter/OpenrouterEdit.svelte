@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 
-	let { params } = $props();
-	let id = $derived(Number(params.id));
+	let { id, value = $bindable() }: { id: number; value: string } = $props();
 
 	import { readModel, updateModel } from '$lib/api/model';
-	import { TiltBtn } from '$lib/components';
 	import ConfigEditor from '$lib/components/setting/ConfigEditor.svelte';
+	import Button from '$lib/ui/Button.svelte';
 	import { _ } from 'svelte-i18n';
 
 	let config = $state('');
@@ -23,12 +22,12 @@
 {:then _}
 	{#key id}
 		<ConfigEditor bind:value={config}>
-			<TiltBtn
-				class="rounded-lg border border-outline bg-light px-5 py-2 text-dark shadow-sm hover:bg-hover"
-				onclick={() => mutate({ id, config }, () => goto('/setting/openrouter'))}
+			<Button
+				class="px-3 py-2"
+				onclick={() => mutate({ id, config }, () => (value = 'openrouter'))}
 			>
 				{saveSetting}
-			</TiltBtn>
+			</Button>
 		</ConfigEditor>
 	{/key}
 {:catch}

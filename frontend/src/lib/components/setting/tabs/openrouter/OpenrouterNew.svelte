@@ -13,7 +13,7 @@
 </script>
 
 <ConfigEditor bind:value={config}>
-	<Button class="px-3 py-2" onclick={() => mutate({ config }, () => (value = ''))}>
+	<Button class="px-3 py-2" onclick={() => mutate({ config }, () => (value = 'openrouter'))}>
 		{$_('setting.create_setting')}
 	</Button>
 </ConfigEditor>
