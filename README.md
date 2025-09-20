@@ -1,5 +1,7 @@
 # llumen
 
+繁體中文版，請參閱 [README.zh-tw.md](./README.zh-tw.md)。
+
 > [!IMPORTANT]
 > This is a fork form [llumen](https://github.com/pinkfuwa/llumen) for [hackathon](https://2025.meichuhackathon.org/)
 
