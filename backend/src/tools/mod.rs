@@ -13,6 +13,6 @@ pub mod nearbyplace;
 pub mod mail;
 
 pub const NORMAL: ToolSet = tool_set![];
-pub const SEARCH: ToolSet = tool_set![wttr::Wttr];
+pub const SEARCH: ToolSet = tool_set![];
 pub const AGENT: ToolSet = tool_set![wttr::Wttr, nearbyplace::NearByPlace, mail::RecentMail, mail::ReplyMail, mail::SendMail, mail::GetMailContent];
 pub const RESEARCH: ToolSet = tool_set![];
