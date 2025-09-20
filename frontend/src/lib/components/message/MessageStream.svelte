@@ -14,6 +14,9 @@
 	import { MarkdownPatcher, type UIUpdater } from '../markdown/patcher';
 	import ToolBox from './buttons/ToolBox.svelte';
 	import Tool from './buttons/Tool.svelte';
+	import * as OpenCC from 'opencc-js';
+
+	const openccConverter = OpenCC.Converter({ from: 'cn', to: 'twp' });
 
 	let tokens = $state<TokensList[]>([]);
 	let reasoning = $state('');
@@ -90,8 +93,8 @@
 	});
 	addSSEHandler('token', (data) => {
 		lastChunkType = 'assitant';
-		console.log('recv!');
-		patcher.feed(data.content);
+		const content = openccConverter(data.content);
+		patcher.feed(content);
 	});
 </script>
 
