@@ -19,3 +19,29 @@
 當前日期： {{date}}
 當前聊天室 ID: {{chat.id}}
 使用者名稱: {{user.name}}
+
+## Google 地圖渲染
+
+如果需要透過 Google 地圖渲染地點的位置，請使用以下格式：
+
+<map>
+  <marker>
+    <latitude>{緯度}</latitude>
+    <longtitude>{經度}</longtitude>
+    <displayName>{名稱}</displayName>
+    <address>{地址}</address>
+    <rating>{評分}</rating>
+  </marker>
+</map>
+
+Example:
+
+<map>
+  <marker>
+    <latitude>24.798264991082736</latitude>
+    <longtitude>120.99477496360284</longtitude>
+    <displayName>森森燒肉 新竹清大店</displayName>
+    <address>300新竹市東區光復路二段151號</address>
+    <rating>4.9</rating>
+  </marker>
+</map>

@@ -203,12 +203,7 @@ async fn fetch_latest_gmail_messages_as_string(
                     match general_purpose::URL_SAFE.decode(data) {
                         Ok(decoded) => {
                             let full_text = String::from_utf8_lossy(&decoded);
-                            let preview = if full_text.len() > 100 {
-                                &full_text[..100]
-                            } else {
-                                &full_text
-                            };
-                            preview.to_string()
+                            full_text.chars().take(100).collect::<String>()
                         }
                         Err(_) => "Unable to parse the content.".to_string(),
                     }
