@@ -18,7 +18,7 @@
 	let mode = $state(Mode.Normal);
 	let title = $state<string | null>(null);
 
-	let { data: room } = $derived(useRoom(id));
+	let { data: room } = $derived(id == undefined ? useRoom(id) : { data: undefined });
 
 	let isStreaming = $derived(useRoomStreamingState(id));
 </script>
