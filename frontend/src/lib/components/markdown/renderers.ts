@@ -22,6 +22,7 @@ import Text from './Text.svelte';
 import LatexSpan from './LatexSpan.svelte';
 import Latex from './Latex.svelte';
 import Citation from './Citation.svelte';
+import Map from './Map.svelte';
 
 export const renderers = {
 	heading: Heading,
@@ -49,5 +50,6 @@ export const renderers = {
 	br: Br,
 	inlineKatex: LatexSpan,
 	blockKatex: Latex,
-	citation: Citation
+	citation: Citation,
+	map: Map
 };
