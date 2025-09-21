@@ -1,55 +1,33 @@
 <script lang="ts">
-	import { CheckLine } from '@lucide/svelte';
+	import { Tabs } from 'bits-ui';
 	import { _ } from 'svelte-i18n';
-	import UserGrid from '$lib/components/setting/UserGrid.svelte';
-	import CheckPwd from '$lib/components/setting/CheckPwd.svelte';
-	import { CreateUser } from '$lib/api/user';
+	import UserGrid from '../UserGrid.svelte';
+	import AdminCreateUser from './admin/AdminCreateUser.svelte';
 
-	let func = $state<'general' | 'retypePwd' | 'notify'>('general');
-	let username = $state('');
-
-	let { mutate: createUserMutate } = CreateUser();
+	let value = $state('users');
 </script>
 
-{#if func == 'notify'}
-	<div class="font-semibold">
-		user <span class="rounded-md bg-hover p-2">{username}</span> created
+<Tabs.Root bind:value class="flex w-full flex-col">
+	<Tabs.List class="mb-4 flex w-full flex-row justify-around border-b-2 border-outline text-lg">
+		<Tabs.Trigger
+			value="users"
+			class="w-full rounded-t-md px-3 py-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
+		>
+			{$_('setting.admin.users')}
+		</Tabs.Trigger>
+		<Tabs.Trigger
+			value="create"
+			class="w-full rounded-t-md px-3 py-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
+		>
+			{$_('setting.admin.create')}
+		</Tabs.Trigger>
+	</Tabs.List>
+	<div class="w-full min-w-0 justify-center">
+		<Tabs.Content value="users">
+			<UserGrid />
+		</Tabs.Content>
+		<Tabs.Content value="create">
+			<AdminCreateUser />
+		</Tabs.Content>
 	</div>
-{:else if func == 'retypePwd'}
-	<CheckPwd
-		message={`Type password for ${username}`}
-		onsubmit={(password) => {
-			createUserMutate(
-				{
-					username,
-					password
-				},
-				() => {
-					func = 'notify';
-				}
-			);
-		}}
-		oncancal={() => (func = 'general')}
-	/>
-{:else}
-	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="name">{$_('setting.create_user')}: </label>
-		<div class="flex items-center justify-between">
-			<input
-				type="text"
-				id="name"
-				class="rounded-md border border-outline p-1"
-				bind:value={username}
-				placeholder={$_('setting.username')}
-			/>
-			<button
-				class="mx-1 rounded-md p-1 hover:bg-hover"
-				onclick={() => {
-					if (username.length != 0) func = 'retypePwd';
-				}}><CheckLine /></button
-			>
-		</div>
-	</div>
-
-	<UserGrid />
-{/if}
+</Tabs.Root>
