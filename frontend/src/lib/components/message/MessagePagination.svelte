@@ -8,7 +8,6 @@
 	import {
 		type MessagePaginateRespChunk,
 		type MessagePaginateRespList,
-		SseRespEndKind,
 		MessagePaginateRespRole
 	} from '$lib/api/types';
 	import { SetInfiniteQueryData } from '$lib/api/state';
@@ -24,12 +23,13 @@
 		SetInfiniteQueryData<MessagePaginateRespList>({
 			key: ['messagePaginate', id.toString()],
 			data: {
-				id,
+				id: data.id,
 				role: MessagePaginateRespRole.Assistant,
 				chunks
 			}
 		});
 		isStreaming.set(false);
+		chunks = [];
 	});
 </script>
 

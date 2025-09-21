@@ -82,7 +82,13 @@ async fn main() {
     let mut tools = ToolStore::new(conn.clone());
 
     tools.add_tool::<tools::wttr::Wttr>().unwrap();
-
+    tools.add_tool::<tools::nearbyplace::NearByPlace>().unwrap();
+    tools.add_tool::<tools::mail::RecentMail>().unwrap();
+    tools.add_tool::<tools::mail::ReplyMail>().unwrap();
+    tools.add_tool::<tools::mail::SendMail>().unwrap();
+    tools.add_tool::<tools::mail::GetMailContent>().unwrap();
+    tools.add_tool::<tools::rss::RssSearch>().unwrap();
+    
     let state = Arc::new(AppState {
         conn,
         key,
