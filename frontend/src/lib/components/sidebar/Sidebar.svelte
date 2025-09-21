@@ -6,10 +6,10 @@
 	} = $props();
 
 	import { slide } from 'svelte/transition';
-	import SettingBtn from './SettingBtn.svelte';
 	import CollapseBtn from './CollapseBtn.svelte';
 	import CollapseHeader from './CollapseHeader.svelte';
 	import RoomPagination from '../room/RoomPagination.svelte';
+	import Setting from '../setting/Setting.svelte';
 </script>
 
 {#if collapsed}
@@ -18,7 +18,7 @@
 	<header
 		in:slide={{ duration: 180, axis: 'x' }}
 		out:slide={{ duration: 180, axis: 'x' }}
-		class="flex h-screen w-64 flex-col justify-between overflow-x-hidden border-r border-outline bg-background p-5 text-nowrap lg:w-80 xl:w-100"
+		class="flex h-screen w-64 flex-col justify-between overflow-x-hidden border-r border-outline bg-sidebar-bg p-5 text-nowrap lg:w-80 xl:w-100"
 	>
 		<div>
 			<div class="mb-4 border-b border-outline pb-1">
@@ -28,7 +28,7 @@
 			<RoomPagination {addition} {currentRoom} />
 		</div>
 		<div class="mt-4 border-t border-outline pt-4">
-			<SettingBtn />
+			<Setting />
 		</div>
 	</header>
 {/if}

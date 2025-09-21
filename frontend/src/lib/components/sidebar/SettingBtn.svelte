@@ -1,17 +1,20 @@
 <script lang="ts">
 	import { useUser } from '$lib/api/user';
 	import { Settings } from '@lucide/svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import { Dialog } from 'bits-ui';
 
+	let { value = $bindable() } = $props();
 	let { data, isLoading } = useUser();
 </script>
 
-<a
-	class="flex w-full items-center justify-between rounded-lg border border-outline bg-light px-3 py-2 select-none hover:bg-hover"
-	href="/setting/account"
+<Dialog.Trigger
+	onclick={() => (value = 'account')}
+	class="flex w-full items-center justify-between rounded-lg border border-outline px-3 py-2 text-center text-sm font-medium text-text duration-150 hover:bg-primary hover:text-text-hover focus:ring-4 focus:ring-outline focus:outline-none  "
 >
-	<span class="font-medium text-dark"
+	<span class="font-medium"
 		>{#if $isLoading}
 			loading{:else}{$data!.username}{/if}</span
 	>
-	<Settings class="hover:text-dark" />
-</a>
+	<Settings />
+</Dialog.Trigger>

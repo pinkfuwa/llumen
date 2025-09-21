@@ -265,7 +265,7 @@ pub struct ToolCall {
     pub index: i64,
     pub id: Option<String>,
     pub function: ToolFunctionResp,
-    pub r#type: String,
+    pub r#type: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

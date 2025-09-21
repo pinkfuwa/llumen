@@ -1,24 +1,69 @@
 @import 'tailwindcss';
+@import "tw-animate-css";
+
 @theme {
-	--color-light: white;
-	--color-dark: black;
-	--color-background: #f8f8f8;
-	--color-outline: #ccc;
-	--color-hover: #d6d6d6;
-	--color-primary: #ebebeb;
+  --color-light: yellow;
+  --color-dark: yellow;
+  --color-background: yellow;
+  --color-hover: yellow;
+
+  --color-primary-50: yellow;
+  --color-primary-100: yellow;
+  --color-primary-200: yellow;
+  --color-primary-300: yellow;
+  --color-primary-400: yellow;
+  --color-primary-500: yellow;
+  --color-primary-600: yellow;
+  --color-primary-700: yellow;
+  --color-primary-800: yellow;
+  --color-primary-900: yellow;
+  --color-primary-950: yellow;
+}
+
+@theme {
+
+
+  --color-secondary: #fdbea9;
+  --color-primary: #ef7722;
+  --color-outline: var(--color-primary);
+  --color-text: var(--color-black);
+  --color-text-hover: var(--color-white);
+  --color-input: var(--color-white);
+
+  --color-login-bg: var(--color-gray-50);
+  --color-chat-bg: var(--color-gray-50);
+  --color-sidebar-bg: var(--color-white);
+  --color-chat-input-bg: var(--color-white);
+  --color-user-bg: var(--color-secondary);
+  --color-popup-bg: var(--color-white);
+  --color-component-bg: var(--color-white);
 }
 
 .nobar {
-	-ms-overflow-style: none; /* Internet Explorer 10+ */
-	scrollbar-width: none; /* Firefox, Safari 18.2+, Chromium 121+ */
+  -ms-overflow-style: none;
+  /* Internet Explorer 10+ */
+  scrollbar-width: none;
+  /* Firefox, Safari 18.2+, Chromium 121+ */
 }
+
 .nobar::-webkit-scrollbar {
-	display: none; /* Older Safari and Chromium */
+  display: none;
+  /* Older Safari and Chromium */
 }
 
 .editor:focus-visible {
-	outline: none;
+  outline: none;
 }
+
 .editor::-webkit-scrollbar {
-	display: none;
+  display: none;
+}
+
+
+@layer base {
+
+  /* disable chrome cancel button */
+  input[type="search"]::-webkit-search-cancel-button {
+    display: none;
+  }
 }

@@ -3,7 +3,9 @@
 	import { Trash } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import CheckDelete from './CheckDelete.svelte';
+	import { Button } from 'bits-ui';
 
+	let { id = $bindable(), value = $bindable() }: { id?: number; value: string } = $props();
 	const { mutate: deleteModel } = DeleteModel();
 	const { isLoading, data } = useModels();
 </script>
@@ -12,21 +14,25 @@
 	<div class="mb-4 flex items-center justify-center p-6 text-lg">Loading models...</div>
 {:else if $data != undefined}
 	<div class="grid max-h-[50vh] grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg lg:grid-cols-2">
-		{#each $data.list as model}
+		{#each $data.list as model (model.id)}
 			<div
-				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline px-2 py-1"
+				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline px-3 py-2 text-text hover:bg-primary hover:text-text-hover"
 			>
-				<a
-					class="flex h-full grow items-center rounded-md pl-2 hover:bg-hover"
-					href={'/setting/openrouter/' + encodeURIComponent(model.id)}
+				<Button.Root
+					class="h-full w-full text-left"
+					onclick={() => {
+						id = model.id;
+						value = 'openrouter_edit';
+					}}
 				>
 					{model.display_name}
-				</a>
+				</Button.Root>
 				<!-- TODO: mutation was supposed to be at top level -->
 				<CheckDelete
-					ondelete={deleteModel({
-						id: model.id
-					})}
+					ondelete={() =>
+						deleteModel({
+							id: model.id
+						})}
 				/>
 			</div>
 		{/each}
