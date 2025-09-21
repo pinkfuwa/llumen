@@ -152,8 +152,9 @@
 			</ToolBox>
 		{/if}
 
-	<div class="space-y-4">
-		<hr class="mx-3 animate-pulse rounded-md bg-primary p-1 border-primary" />
-		<hr class="mx-3 animate-pulse rounded-md bg-primary p-1 border-primary" />
-	</div>
-</ResponseBox>
+		<div class="space-y-4">
+			<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+			<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+		</div>
+	</ResponseBox>
+{/if}

@@ -9,7 +9,6 @@
 	import { initPreference } from '$lib';
 	import { initAuth } from '$lib/api/auth';
 	import initCitation from '$lib/components/markdown/citation';
-	import initMap from '$lib/components/markdown/map';
 
 	let { children } = $props();
 
@@ -19,7 +18,6 @@
 	initPreference();
 	initLatex();
 	initCitation();
-	initMap();
 </script>
 
 {#if !$isLoading}
