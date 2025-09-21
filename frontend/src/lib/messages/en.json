@@ -1,5 +1,20 @@
 {
 	"setting": {
+		"account": {
+			"general": "General",
+			"password": "Password",
+			"error_sync_preference": "Error syncing preference",
+			"error_updating_password": "Error updating password",
+			"enter_new_password": "Enter new password"
+		},
+		"admin": {
+			"users": "Users",
+			"create": "Create User",
+			"user_created": "User {username} created",
+			"type_password_for_user": "Type password for {username}",
+			"user": "User",
+			"created": "created"
+		},
 		"title": "settings",
 		"hello_world": "Hello, {name} from en!",
 		"setting": "Setting",

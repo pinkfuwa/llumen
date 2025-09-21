@@ -1,119 +1,34 @@
 <script lang="ts">
+	import { Tabs } from 'bits-ui';
 	import { _ } from 'svelte-i18n';
+	import AccountGeneral from './account/AccountGeneral.svelte';
+	import AccountPassword from './account/AccountPassword.svelte';
+	import Warning from '../Warning.svelte';
 
-	import { CheckLine, X } from '@lucide/svelte';
-	import { theme, locale, submitOnEnter } from '$lib/preference';
-	import CheckPwd from '$lib/components/setting/CheckPwd.svelte';
-	import { UpdateUser } from '$lib/api/user';
-	import { get } from 'svelte/store';
-	import Warning from '$lib/components/setting/Warning.svelte';
-	import type { UserPreference } from '$lib/api/types';
-	import { clearCache } from '$lib/api/state';
-	import { token } from '$lib/store';
-	import { goto } from '$app/navigation';
-	import Select from '$lib/ui/Select.svelte';
-	import Input from '$lib/ui/Input.svelte';
-
-	let func = $state<'checkPwd' | 'setting'>('setting');
-	let password = $state('');
-
-	let message = $state('');
-
-	let themeData = $state(get(theme));
-	let localeData = $state(get(locale));
-	let submitOnEnterData = $state(get(submitOnEnter));
-
-	let { mutate, isPending, isError } = UpdateUser();
-
-	function mutatePreference(preference: UserPreference) {
-		message = 'error syncing preference';
-		mutate({ preference });
-	}
+	let value = $state('general');
 </script>
 
-{#if func == 'setting'}
-	{#if $isError}
-		<Warning>
-			{message}
-		</Warning>
-	{/if}
-	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="theme" class="grow">{$_('setting.theme')}: </label>
-		<select
-			id="theme"
-			bind:value={themeData}
-			class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
-			onchange={() => mutatePreference({ theme: themeData })}
-			disabled={$isPending}
+<Tabs.Root bind:value class="flex w-full flex-col">
+	<Tabs.List class="mb-4 flex w-full flex-row justify-around border-b-2 border-outline text-lg">
+		<Tabs.Trigger
+			value="general"
+			class="w-full rounded-t-md px-3 py-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
 		>
-			<option value="light">Llumen</option>
-		</select>
-	</div>
-
-	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="lang" class="grow">{$_('setting.language')}: </label>
-		<select
-			id="lang"
-			bind:value={localeData}
-			class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
-			onchange={() => mutatePreference({ locale: localeData })}
-			disabled={$isPending}
+			{$_('setting.account.general')}
+		</Tabs.Trigger>
+		<Tabs.Trigger
+			value="password"
+			class="w-full rounded-t-md px-3 py-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
 		>
-			<option value="en">English</option>
-			<option value="zh-tw">繁體中文</option>
-		</select>
+			{$_('setting.account.password')}
+		</Tabs.Trigger>
+	</Tabs.List>
+	<div class="w-full min-w-0 justify-center">
+		<Tabs.Content value="general">
+			<AccountGeneral />
+		</Tabs.Content>
+		<Tabs.Content value="password">
+			<AccountPassword />
+		</Tabs.Content>
 	</div>
-
-	<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
-		<label for="enter" class="grow">{$_('setting.enter')}: </label>
-		<select
-			id="enter"
-			bind:value={submitOnEnterData}
-			class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
-			onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}
-			disabled={$isPending}
-		>
-			<option value="true">{$_('setting.enable')}</option>
-			<option value="false">{$_('setting.disable')}</option>
-		</select>
-	</div>
-
-	<div class="mb-4 border-b border-outline pb-2 text-lg">
-		<form class="flex flex-row items-end justify-between">
-			<div class="flex flex-col">
-				<Input
-					type="password"
-					id="password"
-					class="rounded-md border border-outline p-1 text-right"
-					bind:value={password}
-					placeholder={$_('setting.old_password')}
-				>
-					{$_('setting.change_password')}:
-				</Input>
-			</div>
-			<button
-				type="submit"
-				class="mx-1 rounded-md p-1 duration-150 hover:bg-primary hover:text-text-hover"
-				onclick={() => {
-					if (password.length > 0) func = 'checkPwd';
-				}}><CheckLine /></button
-			>
-		</form>
-	</div>
-{:else}
-	<CheckPwd
-		message="Enter new password"
-		onsubmit={(password) => {
-			message = 'error updating password';
-			mutate({ password }, () => {
-				token.set(undefined);
-				clearCache();
-				goto('/login');
-			});
-		}}
-		oncancal={() => {
-			func = 'setting';
-			password = '';
-		}}
-	></CheckPwd>
-{/if}
+</Tabs.Root>

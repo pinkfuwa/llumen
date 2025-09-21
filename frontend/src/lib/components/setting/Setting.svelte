@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
-	import { fade } from 'svelte/transition';
 	import { Star, X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 	import { token } from '$lib/store';
 	import { goto } from '$app/navigation';
 	import { clearCache } from '$lib/api/state';
-	import { Dialog, Label, Separator, Tabs } from 'bits-ui';
+	import { Dialog, Tabs } from 'bits-ui';
 	import SettingBtn from '../sidebar/SettingBtn.svelte';
 	import Account from './tabs/Account.svelte';
 	import Admin from './tabs/Admin.svelte';
@@ -82,7 +81,7 @@
 						<Star class="mr-2 inline-block h-5 w-5" /> {$_('setting.github_star')}</a
 					>
 				</Tabs.List>
-				<div class="flex w-full min-w-0 flex-1 justify-center p-3">
+				<div class="w-full min-w-0 flex-1 justify-center p-3">
 					<Tabs.Content value="account">
 						<Dialog.Title class="pb-6 text-center text-xl">
 							{$_('setting.account_settings')}

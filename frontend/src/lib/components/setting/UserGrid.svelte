@@ -14,21 +14,23 @@
 {#if $isLoading}
 	<div class="mb-4 flex items-center justify-center p-6 text-lg">Loading users...</div>
 {:else if $data != undefined}
-	<ul class="grid max-h-[50vh] grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg lg:grid-cols-2">
-		{#each $data.list as user}
-			<li
-				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
-			>
-				{user.name}
-				{#if !$isUserDataLoading && user.id != $userData?.user_id}
-					<CheckDelete
-						ondelete={() =>
-							deleteUser({
-								user_id: user.id
-							})}
-					/>
-				{/if}
-			</li>
-		{/each}
-	</ul>
+	<div>
+		<ul class="grid w-full grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg xl:grid-cols-2">
+			{#each $data.list as user}
+				<li
+					class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
+				>
+					{user.name}
+					{#if !$isUserDataLoading && user.id != $userData?.user_id}
+						<CheckDelete
+							ondelete={() =>
+								deleteUser({
+									user_id: user.id
+								})}
+						/>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+	</div>
 {/if}

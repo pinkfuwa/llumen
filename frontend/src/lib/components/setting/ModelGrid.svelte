@@ -13,7 +13,7 @@
 {#if $isLoading}
 	<div class="mb-4 flex items-center justify-center p-6 text-lg">Loading models...</div>
 {:else if $data != undefined}
-	<div class="grid max-h-[50vh] grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg lg:grid-cols-2">
+	<div class="grid max-h-[50vh] grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg xl:grid-cols-2">
 		{#each $data.list as model (model.id)}
 			<div
 				class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline px-3 py-2 text-text hover:bg-primary hover:text-text-hover"
