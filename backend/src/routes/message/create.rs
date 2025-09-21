@@ -82,6 +82,8 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?;
 
+    tracing::debug!("MessageCreateReqMode: {:?}", req.mode);
+
     let tool_set = match req.mode {
         MessageCreateReqMode::Normal => tools::NORMAL,
         MessageCreateReqMode::Search => tools::SEARCH,
@@ -103,6 +105,13 @@ pub async fn route(
         .kind(ErrorKind::Internal)?;
     let system_prompt = match req.mode {
         MessageCreateReqMode::Search => prompts::SearchStore
+            .template(user.preference.locale.as_deref())
+            .await
+            .kind(ErrorKind::Internal)?
+            .render(&app.prompt, req.chat_id, tool_prompts, (), ())
+            .await
+            .kind(ErrorKind::Internal)?,
+        MessageCreateReqMode::Agent => prompts::AgentStore
             .template(user.preference.locale.as_deref())
             .await
             .kind(ErrorKind::Internal)?

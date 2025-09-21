@@ -74,6 +74,9 @@ importers:
       marked-shiki:
         specifier: ^1.2.0
         version: 1.2.0(marked@16.1.1)(shiki@3.8.1)
+      opencc-js:
+        specifier: ^1.0.5
+        version: 1.0.5
       prettier:
         specifier: ^3.4.2
         version: 3.6.2
@@ -92,6 +95,9 @@ importers:
       svelte-check:
         specifier: ^4.0.0
         version: 4.3.0(picomatch@4.0.3)(svelte@5.36.13)(typescript@5.8.3)
+      svelte-google-maps-api:
+        specifier: ^0.1.5
+        version: 0.1.5(svelte@5.36.13)
       svelte-i18n:
         specifier: ^4.0.1
         version: 4.0.1(svelte@5.36.13)
@@ -111,6 +117,9 @@ importers:
       '@lucide/svelte':
         specifier: ^0.544.0
         version: 0.544.0(svelte@5.36.13)
+      '@types/google.maps':
+        specifier: ^3.58.1
+        version: 3.58.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -885,6 +894,9 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/google.maps@3.58.1':
+    resolution: {integrity: sha512-X9QTSvGJ0nCfMzYOnaVs/k6/4L+7F5uCS+4iUmkLEls6J9S/Phv+m/i3mDeyc49ZBgwab3EFO1HEoBY7k98EGQ==}
+
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
 
@@ -1318,6 +1330,9 @@ packages:
   oniguruma-to-es@4.3.3:
     resolution: {integrity: sha512-rPiZhzC3wXwE59YQMRDodUwwT9FZ9nNBwQQfsd1wfdtlKEyCdRV0avrTcSZ5xlIvGRVPd/cx6ZN45ECmS39xvg==}
 
+  opencc-js@1.0.5:
+    resolution: {integrity: sha512-LD+1SoNnZdlRwtYTjnQdFrSVCAaYpuDqL5CkmOaHOkKoKh7mFxUicLTRVNLU5C+Jmi1vXQ3QL4jWdgSaa4sKjg==}
+
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
 
@@ -1488,6 +1503,11 @@ packages:
     peerDependencies:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
+
+  svelte-google-maps-api@0.1.5:
+    resolution: {integrity: sha512-y9U9+4Y7EDbYvQchwno6KLtKDQBdSMEk+eCncbNFKmeIiMmQ5/ph5e6Nt9x0K2+uDVxc7V/UsC6tOjOEAFI6kA==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   svelte-i18n@4.0.1:
     resolution: {integrity: sha512-jaykGlGT5PUaaq04JWbJREvivlCnALtT+m87Kbm0fxyYHynkQaxQMnIKHLm2WeIuBRoljzwgyvz0Z6/CMwfdmQ==}
@@ -2340,6 +2360,8 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/google.maps@3.58.1': {}
+
   '@types/hast@3.0.4':
     dependencies:
       '@types/unist': 3.0.3
@@ -2824,6 +2846,8 @@ snapshots:
       regex: 6.0.1
       regex-recursion: 6.0.2
 
+  opencc-js@1.0.5: {}
+
   parse5@7.3.0:
     dependencies:
       entities: 6.0.1
@@ -2972,6 +2996,11 @@ snapshots:
       typescript: 5.8.3
     transitivePeerDependencies:
       - picomatch
+
+  svelte-google-maps-api@0.1.5(svelte@5.36.13):
+    dependencies:
+      esm-env: 1.2.2
+      svelte: 5.36.13
 
   svelte-i18n@4.0.1(svelte@5.36.13):
     dependencies:

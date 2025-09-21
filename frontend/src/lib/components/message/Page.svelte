@@ -32,10 +32,12 @@
 		{#if msg.role == Role.User}
 			<User content={(msg.chunks[0].kind.c as MessagePaginateRespChunkKindText).context} />
 		{:else if msg.role == Role.Assistant}
-			<ResponseBox>
-				<Chunks chunks={msg.chunks} />
-				<ResponseEdit content={getRespFromChunks(msg.chunks)} />
-			</ResponseBox>
+			{#if msg.chunks.length != 0}
+				<ResponseBox>
+					<Chunks chunks={msg.chunks} />
+					<ResponseEdit content={getRespFromChunks(msg.chunks)} />
+				</ResponseBox>
+			{/if}
 		{/if}
 	{:else}
 		<div class="h-1"></div>

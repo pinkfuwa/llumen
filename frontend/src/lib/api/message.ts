@@ -125,7 +125,8 @@ export function startSSE(chatId: number) {
 			id: chatId
 		},
 		onEvent: (res: SseResp) => {
-			if (dev) console.log('SSE Event:', res);
+			console.log('SSE Event:', res);
+			console.log(SSEHandlers);
 
 			SSEHandlers[res.t].forEach((handler) => handler(res.c as any));
 		}
@@ -136,9 +137,12 @@ export function addSSEHandler<T extends SseResp['t']>(
 	event: T,
 	handler: (data: Extract<SseResp, { t: T }>['c']) => void
 ) {
+	console.log('add SSE handler', event, handler);
+
 	SSEHandlers[event].push(handler as any);
 
 	onDestroy(() => {
+		console.log('remove SSE handler', event, handler);
 		const index = SSEHandlers[event].indexOf(handler as any);
 		if (index !== -1) {
 			SSEHandlers[event].splice(index, 1);

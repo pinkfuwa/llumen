@@ -1,25 +1,26 @@
 # llumen
 
-> [!WARNING]
-> The project is WIP, some feature are missing, see [roadmap](#roadmap).
+繁體中文版，請參閱 [README.zh-tw.md](./README.zh-tw.md)。
+
+> [!IMPORTANT]
+> This is a fork form [llumen](https://github.com/pinkfuwa/llumen) for [hackathon](https://2025.meichuhackathon.org/)
 
 llumen is a lightweight, self-hostable LLM chat application (frontend + backend) that aims to provide an out-of-the-box experience for self-hosting users.
 
-Its design goal is simplicity: you only need a single OpenRouter API key to use LLM features — no separate keys for OCR, embeddings, image generation, or other services.
-
 ## Highlights
 
-- Single API key requirement (OpenRouter) for model calls.
-- Very fast and high quality UI
+- Good out of box experience
+- Lighting fast and high quality UI
 - Markdown rendering with code and math support.
-- Multiple chat modes (normal, web-search-enabled).
-- Deep-research and agentic modes, including file modification (WIP).
+- Feature multiple modes for different use cases (normal, web-search-enabled, agentic).
 
-## Screenshots
+## Screenshots & Video
+
+TODO: video link
 
 ![new chat](./screenshots/new-chat.png)
 ![chatroom](./screenshots/chatroom.png)
-![setting](./screenshots/dark-setting.png)
+![setting](./screenshots/setting.png)
 
 ## Quickstart
 
@@ -44,9 +45,7 @@ docker run -it --rm \
 > [!TIP]
 > prebuild-binary is not up to dated
 
-We Also provided prebuild binary, download it and extract.
-
-TODO:
+We Also provided prebuild binary in release, download it and extract.
 
 ## Environment variables
 
@@ -60,12 +59,3 @@ TODO:
 - Backend source: `backend/` (Rust).
 - Frontend source: `frontend/` (SvelteKit).
 - Migrations: `backend/migration/`.
-
-## Roadmap
-
-Ordered by priority
-
-1. Title Generation
-2. Tool support
-3. File upload
-4. Deep research mode
