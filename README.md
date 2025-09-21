@@ -19,7 +19,7 @@ Its design goal is simplicity: you only need a single OpenRouter API key to use 
 
 ![new chat](./screenshots/new-chat.png)
 ![chatroom](./screenshots/chatroom.png)
-![setting](./screenshots/dark-setting.png)
+![setting](./screenshots/setting.png)
 
 ## Quickstart
 
@@ -60,12 +60,3 @@ TODO:
 - Backend source: `backend/` (Rust).
 - Frontend source: `frontend/` (SvelteKit).
 - Migrations: `backend/migration/`.
-
-## Roadmap
-
-Ordered by priority
-
-1. Title Generation
-2. Tool support
-3. File upload
-4. Deep research mode

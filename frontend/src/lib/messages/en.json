@@ -20,7 +20,8 @@
 		"create_setting": "Create New",
 		"github_star": "Start on Github",
 		"old_password": "Old Password",
-		"add_model": "Add New Model"
+		"add_model": "Add New Model",
+		"edit_model": "Edit Model"
 	},
 	"login": {
 		"title": "Sign in to llumen",

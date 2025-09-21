@@ -133,7 +133,6 @@ export function addSSEHandler<T extends SseResp['t']>(
 	event: T,
 	handler: (data: Extract<SseResp, { t: T }>['c']) => void
 ) {
-	console.log('Add sse event handler', event);
 	SSEHandlers[event].push(handler as any);
 
 	onDestroy(() => {

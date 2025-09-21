@@ -15,7 +15,7 @@
 	let {
 		mode = $bindable(Mode.Normal),
 		files = $bindable([] as Array<File>),
-		modelId = $bindable<number | null>(null),
+		modelId = $bindable<string | undefined>(undefined),
 		content = $bindable(''),
 		onsubmit = undefined as undefined | (() => void),
 		oncancel = undefined as undefined | (() => void),
@@ -45,12 +45,12 @@
 </script>
 
 <div
-	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-light p-2 shadow-xl shadow-hover md:w-md lg:w-[calc(30vw+300px)] xl:w-[700px]"
+	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-120 lg:w-150 xl:w-200"
 	bind:this={container}
 >
 	{#if dropZone.isOver && editable}
 		<div
-			class="absolute top-0 -left-0 flex h-full w-full items-center justify-center rounded-lg bg-light text-2xl"
+			class="absolute top-0 -left-0 flex h-full w-full items-center justify-center rounded-lg bg-primary text-2xl"
 		>
 			Upload File
 		</div>
@@ -75,7 +75,7 @@
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
-		<div class="flex grow items-center space-x-1">
+		<div class="flex grow items-center space-x-2 h-11">
 			<ModelBtn bind:value={modelId} {above} disabled={selectionDisabled} />
 			<SearchBtn bind:value={mode} />
 			<UploadBtn bind:files />

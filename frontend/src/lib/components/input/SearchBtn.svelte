@@ -3,6 +3,7 @@
 	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { Atom, SearchCode, ZapOff, CalendarSync } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
+	import Button from '$lib/ui/Button.svelte';
 
 	let { value = $bindable(Mode.Normal) as Mode, disabled = false } = $props();
 
@@ -14,11 +15,7 @@
 	}
 </script>
 
-<button
-	onclick={nextStage}
-	class="rounded-md bg-primary p-1{disabled ? '' : ' hover:bg-hover'}"
-	aria-label="change mode"
->
+<Button onclick={nextStage} class="aspect-square h-full" {disabled} aria-label="change mode">
 	{#if value == Mode.Research}
 		<Tooltip content={$_('chat.model_mode.deep')}>
 			<Atom class="inline-block" />
@@ -34,4 +31,4 @@
 			<ZapOff class="inline-block" />
 		</Tooltip>
 	{/if}
-</button>
+</Button>

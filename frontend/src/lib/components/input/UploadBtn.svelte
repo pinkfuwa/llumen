@@ -4,6 +4,7 @@
 	import { Upload } from '@lucide/svelte';
 	import { createFileDialog } from '@sv-use/core';
 	import { _ } from 'svelte-i18n';
+	import Button from '$lib/ui/Button.svelte';
 
 	const dialog = createFileDialog({
 		multiple: false,
@@ -16,12 +17,8 @@
 	});
 </script>
 
-<button
-	class="rounded-md bg-primary p-1 hover:bg-hover"
-	onclick={dialog.open}
-	aria-label="upload file"
->
+<Button class="aspect-square h-full" onclick={dialog.open} aria-label="upload file">
 	<Tooltip content={$_('chat.file')}>
 		<Upload class="inline-block" />
 	</Tooltip>
-</button>
+</Button>
