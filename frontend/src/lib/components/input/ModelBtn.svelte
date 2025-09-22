@@ -8,7 +8,7 @@
 
 	$effect(() => {
 		if (!disabled && $data) {
-			let lastModel = $data?.list.at(-1);
+			let lastModel = $data.list.at(-1);
 			if (lastModel && value == undefined) {
 				value = `${lastModel.id}`;
 			} else if (value != undefined) {

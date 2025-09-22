@@ -17,7 +17,6 @@
 	let callback: () => void | undefined;
 	let loaded = $state(false);
 
-	$inspect($isLightTheme);
 	useCodeMirrorPromise.then((useCodeMirror) => {
 		useCodeMirror.default({
 			isLightTheme: get(isLightTheme),
