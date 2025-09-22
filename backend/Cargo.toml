@@ -36,7 +36,6 @@ base64 = "0.22.1"
 schemars = "1.0.4"
 redb = "2.6.3"
 regex = "1.11.2"
-serde-xml-rs = "0.8.1"
 
 [dependencies.tokio-stream]
 version = "0.1.17"

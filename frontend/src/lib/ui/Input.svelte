@@ -18,6 +18,6 @@
 <input
 	{id}
 	bind:value
-	class={`block w-full rounded-lg border border-outline bg-input p-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-outline focus:outline-none ${className}`}
+	class={`block w-full rounded-lg border border-outline bg-input p-2.5 text-sm text-text focus:ring-2 focus:ring-outline focus:outline-none ${className}`}
 	{...attr}
 />
