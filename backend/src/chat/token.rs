@@ -25,9 +25,10 @@ pub enum Token {
     ToolResult(String),
     Reasoning(String),
     Empty,
-    Plan(String),
-    Step(String),
-    Report(String),
+    // Research = Deep Research
+    ResearchPlan(String),
+    ResearchStep(String),
+    ResearchReport(String),
     Error(String),
     Complete {
         message_id: i32,
@@ -57,9 +58,9 @@ impl Mergeable for Token {
             Token::User(s)
             | Token::Assitant(s)
             | Token::Reasoning(s)
-            | Token::Plan(s)
-            | Token::Step(s)
-            | Token::Report(s)
+            | Token::ResearchPlan(s)
+            | Token::ResearchStep(s)
+            | Token::ResearchReport(s)
             | Token::Error(s) => s.len(),
             Token::Tool { .. }
             | Token::ToolResult { .. }
@@ -73,9 +74,9 @@ impl Mergeable for Token {
             Token::User(s) => Some(Token::User(s[split..].to_string())),
             Token::Assitant(s) => Some(Token::Assitant(s[split..].to_string())),
             Token::Reasoning(s) => Some(Token::Reasoning(s[split..].to_string())),
-            Token::Plan(s) => Some(Token::Plan(s[split..].to_string())),
-            Token::Step(s) => Some(Token::Step(s[split..].to_string())),
-            Token::Report(s) => Some(Token::Report(s[split..].to_string())),
+            Token::ResearchPlan(s) => Some(Token::ResearchPlan(s[split..].to_string())),
+            Token::ResearchStep(s) => Some(Token::ResearchStep(s[split..].to_string())),
+            Token::ResearchReport(s) => Some(Token::ResearchReport(s[split..].to_string())),
             Token::Error(s) => Some(Token::Error(s[split..].to_string())),
             _ => None,
         }
@@ -86,9 +87,9 @@ impl Mergeable for Token {
             Token::User(s) => Token::User(s[..split].to_string()),
             Token::Assitant(s) => Token::Assitant(s[..split].to_string()),
             Token::Reasoning(s) => Token::Reasoning(s[..split].to_string()),
-            Token::Plan(s) => Token::Plan(s[..split].to_string()),
-            Token::Step(s) => Token::Step(s[..split].to_string()),
-            Token::Report(s) => Token::Report(s[..split].to_string()),
+            Token::ResearchPlan(s) => Token::ResearchPlan(s[..split].to_string()),
+            Token::ResearchStep(s) => Token::ResearchStep(s[..split].to_string()),
+            Token::ResearchReport(s) => Token::ResearchReport(s[..split].to_string()),
             Token::Error(s) => Token::Error(s[..split].to_string()),
             _ => self.clone(),
         }
