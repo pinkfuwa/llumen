@@ -11,6 +11,7 @@ use sea_orm::ActiveValue;
 
 use crate::chat::context::CompletionContext;
 use crate::chat::context::Context;
+use crate::chat::context::StreamEndReason;
 use crate::chat::token::Token;
 use crate::chat::token::ToolCallInfo;
 use crate::openrouter::{self, FinishReason};
@@ -119,11 +120,13 @@ impl<P: ChatInner> ChatPipeline<P> {
             .put_stream((&mut res).map(|resp| resp.map(Into::into)))
             .await?;
 
-        tracing::debug!("stream ended: {:?}", halt);
+        if matches!(halt, StreamEndReason::Halt) {
+            return Err(anyhow::anyhow!("The stream was halted"));
+        }
 
         let result = res
             .get_result()
-            .map_err(|_| anyhow::anyhow!("The stream was halted"))?;
+            .context("Provider didn't return finish_reason")?;
 
         self.completion_ctx
             .update_usage(result.usage.cost as f32, result.usage.token as i32);
