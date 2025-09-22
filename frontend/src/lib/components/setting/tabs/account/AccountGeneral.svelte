@@ -18,7 +18,7 @@
 </script>
 
 {#if $isError}
-	<Warning>{ $_('setting.account.error_sync_preference') }</Warning>
+	<Warning>{$_('setting.account.error_sync_preference')}</Warning>
 {/if}
 <div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 	<label for="theme" class="grow">{$_('setting.theme')}: </label>
@@ -30,6 +30,8 @@
 		disabled={$isPending}
 	>
 		<option value="light">Llumen</option>
+		<option value="dark">Sun set</option>
+		<option value="blue">Ocean</option>
 	</select>
 </div>
 
