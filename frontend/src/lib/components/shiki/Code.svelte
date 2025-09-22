@@ -2,6 +2,7 @@
 	import { codeToHtml, getThemeStyle } from './shiki';
 	import { isLightTheme } from '$lib/preference';
 	import Monochrome from './Monochrome.svelte';
+	import { get } from 'svelte/store';
 
 	let { lang = 'bash', text = '', monochrome = false } = $props();
 

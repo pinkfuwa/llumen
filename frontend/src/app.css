@@ -2,27 +2,8 @@
 @import 'tw-animate-css';
 
 @theme {
-	--color-light: yellow;
-	--color-dark: yellow;
-	--color-background: yellow;
-	--color-hover: yellow;
-
-	--color-primary-50: yellow;
-	--color-primary-100: yellow;
-	--color-primary-200: yellow;
-	--color-primary-300: yellow;
-	--color-primary-400: yellow;
-	--color-primary-500: yellow;
-	--color-primary-600: yellow;
-	--color-primary-700: yellow;
-	--color-primary-800: yellow;
-	--color-primary-900: yellow;
-	--color-primary-950: yellow;
-}
-
-@theme {
-	--color-secondary: #fdbea9;
 	--color-primary: #ef7722;
+	--color-secondary: #fdbea9;
 	--color-outline: var(--color-primary);
 	--color-text: var(--color-black);
 	--color-text-hover: var(--color-white);
@@ -35,6 +16,47 @@
 	--color-user-bg: var(--color-secondary);
 	--color-popup-bg: var(--color-white);
 	--color-component-bg: var(--color-white);
+}
+
+/* Dark Theme ------------------------------------------------------------ */
+[data-theme='dark'] {
+	--color-primary: var(--color-orange-600); /* main UI surface */
+	--color-secondary: var(--color-amber-300); /* optional accent (fallback to orange) */
+	--color-outline: #ccc; /* borders, focus rings */
+	--color-text: var(--color-white);
+	--color-text-hover: var(--color-white);
+	--color-input: var(--color-stone-700);
+
+	--color-login-bg: var(--color-gray-50);
+	--color-chat-bg: var(--color-black);
+	--color-sidebar-bg: var(--color-stone-700);
+	--color-chat-input-bg: var(--color-stone-700);
+	--color-user-bg: var(--color-stone-700);
+	--color-popup-bg: var(--color-stone-800);
+	--color-component-bg: var(--color-stone-700);
+}
+
+/* Blue Theme ------------------------------------------------------------ */
+[data-theme='blue'] {
+	--color-primary: #1378d6; /* main UI surface */
+	--color-secondary: #12395c; /* optional accent (darker blue) */
+	--color-outline: #ccc; /* borders, focus rings */
+	--color-text: var(--color-white); /* default text */
+	--color-text-hover: var(--color-black); /* text on hover */
+	--color-input: var(--color-slate-700);
+
+	--color-login-bg: var(--color-gray-50);
+	--color-chat-bg: var(--color-black);
+	--color-sidebar-bg: var(--color-slate-700);
+	--color-chat-input-bg: var(--color-slate-700);
+	--color-user-bg: var(--color-slate-700);
+	--color-popup-bg: var(--color-slate-800);
+	--color-component-bg: var(--color-slate-700);
+
+	--color-background: #0d2840; /* page background */
+
+	--color-light: #12395c; /* deep blue used for light text */
+	--color-dark: white;
 }
 
 .nobar {

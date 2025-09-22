@@ -21,7 +21,7 @@
 </script>
 
 {#if !$isLoading}
-	<div class="h-full w-full bg-white text-black dark:bg-gray-700">
+	<div class="h-full w-full bg-white text-text">
 		{@render children()}
 		<ErrorMessage />
 		{#if $copyCounter != 0}

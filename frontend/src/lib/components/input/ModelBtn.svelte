@@ -8,7 +8,6 @@
 	let { data } = useModels();
 
 	$effect(() => {
-		$inspect(value);
 		if (!disabled && $data) {
 			let lastModel = $data?.list.at(-1);
 			if (lastModel && value == undefined) {

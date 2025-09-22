@@ -29,10 +29,10 @@
 			class="fixed inset-0 z-50 backdrop-blur-md fade-in-100 fade-out-0 data-[state=closed]:animate-out data-[state=open]:animate-in"
 		/>
 		<Dialog.Content
-			class="md:6/7 fixed inset-0 z-50 m-auto flex rounded-xl border border-outline bg-popup-bg p-3 font-mono fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:w-5/7 lg:h-5/7 lg:w-3/5 xl:h-5/6"
+			class="md:6/7 fixed inset-0 z-50 m-auto flex rounded-xl border border-outline bg-popup-bg p-3 font-mono text-text fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:w-5/7 lg:h-5/7 lg:w-3/5 xl:h-5/6"
 		>
 			<Dialog.Close
-				class="focus-visible:ring-foreground absolute top-5 right-5 rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden active:scale-[0.98]"
+				class="focus-visible:ring-foreground focus-visible:ring-offset-background absolute top-5 right-5 rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.98]"
 			>
 				<div>
 					<X class="text-foreground size-5" />

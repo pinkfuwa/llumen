@@ -18,7 +18,7 @@
 </script>
 
 <form
-	class="mb-4 flex items-center justify-between space-x-2 border-b border-outline pb-2 text-lg"
+	class="mb-4 items-center justify-between space-x-2 border-b border-outline pb-2 text-lg"
 	onsubmit={() => {
 		if (matched) onsubmit(password);
 		else {
@@ -27,30 +27,32 @@
 		}
 	}}
 >
-	<div>
+	<div class="mb-2 flex justify-center">
 		{message}
 	</div>
 
-	<div class="flex grow flex-col">
-		<input
-			type="password"
-			class="mb-1 rounded-md border border-outline p-1"
-			bind:value={password}
-		/>
-		<input
-			type="password"
-			class="rounded-md border border-outline p-1"
-			bind:value={passwordCheck}
-		/>
-	</div>
-	<button class="mx-1 rounded-md p-1 hover:bg-hover{matched ? '' : ' hidden'}" type="submit">
-		<CheckLine />
-	</button>
-	{#if !matched}
-		<button class="mx-1 rounded-md p-1 hover:bg-hover" onclick={oncancal}>
-			<X />
+	<div class="flex grow flex-row">
+		<div>
+			<input
+				type="password"
+				class="mb-1 w-full rounded-md border border-outline p-1"
+				bind:value={password}
+			/>
+			<input
+				type="password"
+				class="w-full rounded-md border border-outline p-1"
+				bind:value={passwordCheck}
+			/>
+		</div>
+		<button class="mx-1 rounded-md p-1 hover:bg-hover{matched ? '' : ' hidden'}" type="submit">
+			<CheckLine />
 		</button>
-	{/if}
+		{#if !matched}
+			<button class="hover:bg-hover mx-1 rounded-md p-1" onclick={oncancal}>
+				<X />
+			</button>
+		{/if}
+	</div>
 </form>
 
 {#if bounceKey != 0}
