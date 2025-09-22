@@ -1,15 +1,16 @@
 # support cross compiling only on x86_64 host
-# you should manifest resulting image for both x86_64 and aarch64(incorrect
+# you should manifest resulting image for both x86_64 and aarch64
 FROM --platform=$BUILDPLATFORM node:22-slim AS frontend-builder
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV CI=true
 
 RUN corepack enable
 COPY ./frontend /app
 WORKDIR /app
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm run build
 
 FROM --platform=$BUILDPLATFORM rust:1.89.0-slim-trixie AS backend-builder
@@ -51,6 +52,13 @@ FROM alpine AS ca
 FROM scratch
 
 ARG TARGETPLATFORM
+
+LABEL org.opencontainers.image.title="llumen"
+LABEL org.opencontainers.image.description="A lightweight, self-hostable LLM chat application."
+LABEL org.opencontainers.image.url="https://github.com/pinkfuwa/llumen"
+LABEL org.opencontainers.image.source="https://github.com/pinkfuwa/llumen"
+LABEL org.opencontainers.image.authors="eason0729, kaiyohugo"
+LABEL org.opencontainers.image.vendor="llumen"
 
 WORKDIR /static
 WORKDIR /data
