@@ -27,7 +27,7 @@
 	--color-text-hover: var(--color-white);
 	--color-input: var(--color-stone-700);
 
-	--color-login-bg: var(--color-gray-50);
+	--color-login-bg: var(--color-black);
 	--color-chat-bg: var(--color-black);
 	--color-sidebar-bg: var(--color-stone-700);
 	--color-chat-input-bg: var(--color-stone-700);
@@ -45,7 +45,7 @@
 	--color-text-hover: var(--color-black); /* text on hover */
 	--color-input: var(--color-slate-700);
 
-	--color-login-bg: var(--color-gray-50);
+	--color-login-bg: var(--color-black);
 	--color-chat-bg: var(--color-black);
 	--color-sidebar-bg: var(--color-slate-700);
 	--color-chat-input-bg: var(--color-slate-700);

@@ -145,7 +145,7 @@
 		{#if tokens.length != 0}
 			<AssitantStream list={tokens} />
 		{:else if reasoning.length != 0}
-			<Reasoning content={reasoning} />
+			<Reasoning content={reasoning} open />
 		{:else if toolName.length != 0}
 			<ToolBox toolname={toolName}>
 				<Tool content={toolArg} />
