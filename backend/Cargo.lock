@@ -728,6 +728,7 @@ name = "entity"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "reqwest",
  "sea-orm",
  "serde",
  "serde_json",
@@ -2164,6 +2165,7 @@ dependencies = [
  "base64",
  "bytes",
  "encoding_rs",
+ "futures-channel",
  "futures-core",
  "futures-util",
  "h2",

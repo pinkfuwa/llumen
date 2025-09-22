@@ -8,13 +8,7 @@ display_name="GPT-OSS 20B"
 # don't put "online" suffix.
 model_id="openai/gpt-oss-20b:free"
 
-[capability]
-# allow user to upload image, the model need to support it
-# set to false to disallow upload despite its support
-image = false
-audio = false
-# available option: Native, Text, Mistral, Disabled
-ocr = "Native"
+# For more settings, see https://github.com/pinkfuwa/llumen
 "#;
 
 use pasetors::keys::Generate;

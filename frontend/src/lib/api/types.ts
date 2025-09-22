@@ -199,39 +199,12 @@ export interface MessageWriteReq {
 	text: string;
 }
 
-export enum OcrEngine {
-	Native = 'Native',
-	Text = 'Text',
-	Mistral = 'Mistral',
-	Disabled = 'Disabled'
-}
-
-export interface ModelCapability {
-	image?: boolean;
-	audio?: boolean;
-	ocr?: OcrEngine;
-}
-
 export interface ModelCheckReq {
 	config: string;
 }
 
 export interface ModelCheckResp {
 	reason?: string;
-}
-
-export interface ModelParameter {
-	temperature?: number;
-	repeat_penalty?: number;
-	top_k?: number;
-	top_p?: number;
-}
-
-export interface ModelConfig {
-	display_name: string;
-	model_id: string;
-	capability?: ModelCapability;
-	parameter?: ModelParameter;
 }
 
 export interface ModelCreateReq {
@@ -254,6 +227,9 @@ export interface ModelDeleteResp {
 export interface ModelList {
 	id: number;
 	display_name: string;
+	image_input: boolean;
+	audio_input: boolean;
+	other_file_input: boolean;
 }
 
 export interface ModelListReq {}

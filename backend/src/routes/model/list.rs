@@ -19,6 +19,9 @@ pub struct ModelListResp {
 pub struct ModelList {
     pub id: i32,
     pub display_name: String,
+    pub image_input: bool,
+    pub audio_input: bool,
+    pub other_file_input: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -37,9 +40,13 @@ pub async fn route(
     let list = models
         .into_iter()
         .filter_map(|m| {
+            let config = m.get_config()?;
             Some(ModelList {
                 id: m.id,
-                display_name: m.get_config()?.display_name,
+                image_input: config.is_image_capable(),
+                audio_input: config.is_audio_capable(),
+                other_file_input: config.is_other_file_capable(),
+                display_name: config.display_name,
             })
         })
         .collect::<Vec<_>>();

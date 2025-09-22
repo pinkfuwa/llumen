@@ -10,7 +10,7 @@
 		"format": "prettier --write .",
 		"format-ffi": "prettier --write src/lib/api/types.ts",
 		"lint": "prettier --check .",
-		"codegen-shiki": "node shiki-codegen.js"
+		"codegen-shiki": "node codegen/shiki-codegen.js"
 	},
 	"dependencies": {
 		"@codemirror/commands": "^6.8.1",
