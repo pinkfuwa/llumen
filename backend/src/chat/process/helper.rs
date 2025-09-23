@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::Context;
 use entity::{FileHandle, chunk};
 use sea_orm::IntoActiveModel;
 

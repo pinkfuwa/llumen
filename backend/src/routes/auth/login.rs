@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use axum::{Json, extract::State};
 use entity::{prelude::*, user};
@@ -43,6 +43,11 @@ pub async fn route(
     }
 
     let mut claim = Claims::new().kind(ErrorKind::Internal)?;
+
+    let expiration = Duration::from_secs(60 * 60 * 24 * 7);
+    claim
+        .set_expires_in(&expiration)
+        .kind(ErrorKind::Internal)?;
 
     // safety:
     // "uid" is not reserve
