@@ -18,9 +18,11 @@ FROM --platform=$BUILDPLATFORM rust:1.89.0-slim-trixie AS backend-builder
 RUN apt update -y \
     && apt install -y musl-tools pkg-config make perl curl xz-utils
 
-WORKDIR /opt/zig
-RUN curl -LO https://download.opensuse.org/repositories/home:/clayrisser:/sid/Debian_Unstable/amd64/zig_0.13.0-1_amd64.deb && \
-    apt install -y ./zig_0.13.0-1_amd64.deb
+COPY ./docker/install-zig.sh /usr/local/bin/install-zig.sh
+RUN chmod +x /usr/local/bin/install-zig.sh
+RUN install-zig.sh
+
+ENV PATH="/opt/zig:$PATH"
 
 WORKDIR /
 
@@ -38,6 +40,7 @@ COPY ./prompts .
 
 WORKDIR /compiler
 COPY ./backend .
+COPY ./docker ./docker
 
 WORKDIR /compiler
 RUN --mount=type=cache,target=target
