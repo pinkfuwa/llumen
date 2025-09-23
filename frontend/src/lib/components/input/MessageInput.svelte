@@ -10,7 +10,7 @@
 	import { _ } from 'svelte-i18n';
 	import StopBtn from './StopBtn.svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { MessageCreateReqMode as Mode } from '$lib/api/types';
+	import { ChatMode as Mode } from '$lib/api/types';
 
 	let {
 		mode = $bindable(Mode.Normal),
@@ -20,7 +20,6 @@
 		onsubmit = undefined as undefined | (() => void),
 		oncancel = undefined as undefined | (() => void),
 		above = false,
-		selectionDisabled = false,
 		disabled = false
 	} = $props();
 
@@ -76,7 +75,7 @@
 	</div>
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex h-11 grow items-center space-x-2">
-			<ModelBtn bind:value={modelId} {above} disabled={selectionDisabled} />
+			<ModelBtn bind:value={modelId} {above} />
 			<ModeBtn bind:value={mode} />
 			<UploadBtn bind:files />
 		</div>

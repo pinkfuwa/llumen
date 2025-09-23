@@ -17,8 +17,14 @@
 	});
 </script>
 
+<svelte:head>
+	{#if selected && name != ''}
+		<title>{name}</title>
+	{/if}
+</svelte:head>
+
 <div
-	class="group flex items-center rounded-sm text-base hover:bg-primary duration-150"
+	class="group flex items-center rounded-sm text-base duration-150 hover:bg-primary"
 	class:bg-primary={selected}
 	onmouseleave={() => {
 		checked = false;

@@ -118,9 +118,9 @@ class Pages<D extends { id: number }> {
 				}
 			},
 			initialData: [],
-			staleTime: Infinity,
+			staleTime: this.staleTime,
 			cleanupCallback,
-			revalidateOnFocus: false
+			revalidateOnFocus: this.revalidateOnFocus
 		});
 		page.revalidate = query.revalidate;
 	}
@@ -143,6 +143,16 @@ class Pages<D extends { id: number }> {
 		pages[0].data.update((x) => {
 			if (data.id != x[0]?.id) x.unshift(data);
 			return x;
+		});
+	}
+	public updateDataById(id: number, updater: (data: D) => D) {
+		this.pages.update((pages) => {
+			pages.forEach((page) => {
+				if (get(page.data).some((d) => d.id === id)) {
+					page.data.update((data) => data.map((d) => (d.id === id ? updater(d) : d)));
+				}
+			});
+			return pages;
 		});
 	}
 	/**
@@ -212,9 +222,9 @@ export function CreateInfiniteQuery<D extends { id: number }>(
 export function SetInfiniteQueryData<D extends { id: number }>(option: { data: D; key: string[] }) {
 	let { key, data } = option;
 
-	const pageStore = globalCache.get<Pages<D>>(key);
+	const pagesStore = globalCache.get<Pages<D>>(key);
 
-	const pages = get(pageStore);
+	const pages = get(pagesStore);
 	if (pages) pages.insertData(data);
 }
 
@@ -243,4 +253,18 @@ export function RevalidateInfiniteQueryData<D extends { id: number }>(option: {
 		if (predicate == undefined) pages.revalidateAll();
 		else pages.revalidate(predicate);
 	}
+}
+
+export function UpdateInfiniteQueryDataById<D extends { id: number }>(option: {
+	updater: (data: D) => D;
+	key: string[];
+	id: number;
+}) {
+	let { key, updater, id } = option;
+
+	const pagesStore = globalCache.get<Pages<D>>(key);
+
+	const pages = get(pagesStore);
+
+	pages?.updateDataById(id, updater);
 }

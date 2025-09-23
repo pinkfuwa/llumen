@@ -36,6 +36,7 @@ pub enum Token {
         cost: f32,
         token: i32,
     },
+    Title(String),
 }
 
 impl Mergeable for Token {
@@ -65,7 +66,8 @@ impl Mergeable for Token {
             Token::Tool { .. }
             | Token::ToolResult { .. }
             | Token::Empty
-            | Token::Complete { .. } => 1,
+            | Token::Complete { .. }
+            | Token::Title { .. } => 1,
         }
     }
 

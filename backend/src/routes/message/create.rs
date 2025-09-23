@@ -2,11 +2,7 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::MessageKind;
-use sea_orm::{
-    ActiveModelTrait,
-    ActiveValue::{self, Set},
-    TransactionTrait,
-};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -15,24 +11,16 @@ use crate::{
     chat::{Normal, Pipeline, Search},
     errors::*,
     middlewares::auth::UserId,
+    utils::chat::ChatMode,
 };
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
 pub struct MessageCreateReq {
     pub chat_id: i32,
-    pub mode: MessageCreateReqMode,
+    pub model_id: i32,
+    pub mode: ChatMode,
     pub text: String,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-#[typeshare]
-#[serde(rename_all = "snake_case")]
-pub enum MessageCreateReqMode {
-    Normal,
-    Search,
-    Agent,
-    Research,
 }
 
 #[derive(Debug, Serialize)]
@@ -67,15 +55,15 @@ pub async fn route(
     txn.commit().await.raw_kind(ErrorKind::Internal)?;
 
     let closure = async move {
-        let completion_ctx = app
+        let mut completion_ctx = app
             .pipeline
-            .get_completion_context(user_id, req.chat_id)
+            .get_completion_context(user_id, req.chat_id, req.model_id)
             .await?;
 
+        completion_ctx.set_mode(req.mode.into());
+
         match req.mode {
-            MessageCreateReqMode::Search => {
-                Search::process(app.pipeline.clone(), completion_ctx).await?
-            }
+            ChatMode::Search => Search::process(app.pipeline.clone(), completion_ctx).await?,
             _ => Normal::process(app.pipeline.clone(), completion_ctx).await?,
         };
 

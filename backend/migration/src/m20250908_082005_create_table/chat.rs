@@ -15,6 +15,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(pk_auto(Chat::Id))
                     .col(integer(Chat::OwnerId))
+                    .col(integer(Chat::Mode))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-chat-owner_id-user")

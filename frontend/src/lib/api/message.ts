@@ -20,7 +20,6 @@ import {
 	type SseReq,
 	type SseResp
 } from './types';
-import { globalCache } from './state/cache';
 import { onDestroy } from 'svelte';
 import { dev } from '$app/environment';
 

@@ -12,7 +12,8 @@ export {
 	CreateInfiniteQuery,
 	RemoveInfiniteQueryData,
 	SetInfiniteQueryData,
-	RevalidateInfiniteQueryData
+	RevalidateInfiniteQueryData,
+	UpdateInfiniteQueryDataById
 } from './infinite';
 export type { InfiniteQueryResult, InfiniteQueryOption, Fetcher, PageEntry } from './infinite';
 export { CreateMockMutation, CreateMockQuery } from './mock';

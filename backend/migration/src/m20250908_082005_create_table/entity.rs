@@ -46,6 +46,7 @@ pub enum Chat {
     ModelId,
     OwnerId,
     Title,
+    Mode,
 }
 
 #[derive(DeriveIden)]
