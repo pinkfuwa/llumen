@@ -195,7 +195,10 @@ impl CompletionContext {
 
     /// Generates a title for the chat if it doesn't have one.
     async fn generate_title(&mut self) -> Result<(), anyhow::Error> {
-        if self.chat.title.is_set() {
+        if !matches!(
+            self.chat.title,
+            ActiveValue::Set(None) | ActiveValue::NotSet | ActiveValue::Unchanged(None)
+        ) {
             return Ok(());
         }
         let system_prompt = self.ctx.prompt.render(PromptKind::TitleGen, self)?;
