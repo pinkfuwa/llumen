@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use redb::{Database, TableDefinition};
 use std::sync::Mutex;
@@ -13,6 +13,10 @@ pub struct BlobDB {
 }
 
 impl BlobDB {
+    pub async fn new_from_path(path: impl AsRef<Path>) -> Result<Self, redb::Error> {
+        let db = Database::create(path)?;
+        Ok(Self::new(db))
+    }
     pub fn new(inner: Database) -> Self {
         Self {
             inner,

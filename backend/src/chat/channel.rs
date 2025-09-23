@@ -170,10 +170,9 @@ impl<S: Mergeable + Clone + Debug> Publisher<S> {
         } else {
             buffer.push(item);
         }
-        let index = if buffer.is_empty() {
-            0
-        } else {
-            buffer.len() - 1
+        let index = match buffer.is_empty() {
+            true => 0,
+            false => buffer.len() - 1,
         };
         let offset = buffer.last().map(|s| s.len()).unwrap_or(0);
         let cursor = Cursor::new(index, offset);
@@ -265,6 +264,7 @@ where
                 self.to,
                 new_cursor
             );
+
             self.from = new_cursor;
 
             if item.is_some() {

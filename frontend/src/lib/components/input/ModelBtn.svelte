@@ -2,7 +2,13 @@
 	import { LoaderCircle } from '@lucide/svelte';
 	import { useModels } from '$lib/api/model';
 	import Select from '$lib/ui/Select.svelte';
-	let { value = $bindable<string | undefined>(), above = false, disabled = false } = $props();
+	import { getSupportedFileTypes } from './fileTypes';
+	let {
+		value = $bindable<string | undefined>(),
+		above = false,
+		disabled = false,
+		filetypes = $bindable('*')
+	} = $props();
 
 	let { data } = useModels();
 
@@ -14,6 +20,13 @@
 			} else if (value != undefined) {
 				value = `${value}`;
 			}
+		}
+	});
+
+	$effect(() => {
+		let selectModelCap = $data?.list.find((x) => x.id == value);
+		if (selectModelCap != undefined) {
+			filetypes = getSupportedFileTypes(selectModelCap);
 		}
 	});
 

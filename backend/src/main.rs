@@ -22,7 +22,7 @@ use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::Level;
 use tracing_subscriber::{filter, layer::SubscriberExt, util::SubscriberInitExt};
-use utils::password_hash::Hasher;
+use utils::{blob::BlobDB, password_hash::Hasher};
 
 #[cfg(feature = "dev")]
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
@@ -31,7 +31,8 @@ pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
     pub hasher: Hasher,
-    pub pipeline: Arc<Context>,
+    pub processor: Arc<Context>,
+    pub blob: Arc<BlobDB>,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -43,9 +44,12 @@ async fn main() {
         .with(filter::Targets::new().with_target("backend", Level::TRACE))
         .init();
 
+    let api_key = var("API_KEY").expect("API_KEY is required");
+    let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/".to_string());
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
     let static_dir = var("STATIC_DIR").unwrap_or("../frontend/build".to_owned());
+    let blob_url = var("BLOB_URL").unwrap_or("./blobs.redb".to_owned());
 
     migration::migrate(&database_url)
         .await
@@ -70,13 +74,25 @@ async fn main() {
     )
     .expect("Cannot parse paseto key");
 
-    let pipeline = Arc::new(Context::new(conn.clone()).expect("Failed to create pipeline context"));
+    let openrouter = openrouter::Openrouter::new(api_key, api_base);
+
+    let blob = Arc::new(
+        BlobDB::new_from_path(blob_url)
+            .await
+            .expect("Cannot open blob db"),
+    );
+
+    let processor = Arc::new(
+        Context::new(conn.clone(), openrouter, blob.clone())
+            .expect("Failed to create pipeline context"),
+    );
 
     let state = Arc::new(AppState {
         conn,
         key,
         hasher: Hasher::default(),
-        pipeline,
+        processor,
+        blob,
     });
 
     let var_name = Router::new();
@@ -118,6 +134,8 @@ async fn main() {
                 http::header::CONTENT_TYPE,
             ])),
     );
+
+    tracing::info!("Listening on http://{}", bind_addr);
 
     let tcp = TcpListener::bind(bind_addr).await.unwrap();
     axum::serve(tcp, app).await.unwrap();

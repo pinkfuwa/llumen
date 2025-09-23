@@ -56,15 +56,15 @@ pub async fn route(
 
     let closure = async move {
         let mut completion_ctx = app
-            .pipeline
+            .processor
             .get_completion_context(user_id, req.chat_id, req.model_id)
             .await?;
 
         completion_ctx.set_mode(req.mode.into());
 
         match req.mode {
-            ChatMode::Search => Search::process(app.pipeline.clone(), completion_ctx).await?,
-            _ => Normal::process(app.pipeline.clone(), completion_ctx).await?,
+            ChatMode::Search => Search::process(app.processor.clone(), completion_ctx).await?,
+            _ => Normal::process(app.processor.clone(), completion_ctx).await?,
         };
 
         Ok::<(), anyhow::Error>(())

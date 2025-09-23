@@ -23,6 +23,8 @@ pub struct CompletionReq {
     pub tools: Option<Vec<Tool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plugins: Option<Vec<Plugin>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usage: Option<UsageReq>,
 }
 
 impl Default for CompletionReq {
@@ -42,6 +44,7 @@ impl Default for CompletionReq {
                     engine: "pdf-text".to_string(),
                 },
             }]),
+            usage: Some(UsageReq { include: true }),
         }
     }
 }
@@ -55,6 +58,11 @@ impl CompletionReq {
             );
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct UsageReq {
+    pub include: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]

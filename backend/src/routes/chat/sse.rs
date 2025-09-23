@@ -101,7 +101,7 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<SseReq>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, axum::Error>>>, Json<Error>> {
-    let pipeline = app.pipeline.clone();
+    let pipeline = app.processor.clone();
     let res = Chat::find_by_id(req.id)
         .one(&app.conn)
         .await

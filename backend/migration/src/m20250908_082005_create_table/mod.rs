@@ -9,6 +9,7 @@ mod user;
 
 mod chat;
 mod chunk;
+pub mod file;
 mod message;
 
 mod default;
@@ -36,6 +37,8 @@ impl MigrationTrait for Migration {
 
         wal::Migration.up(manager).await?;
         default::Migration.up(manager).await?;
+        file::Migration.up(manager).await?;
+
         Ok(())
     }
 
@@ -50,6 +53,7 @@ impl MigrationTrait for Migration {
         user::Migration.down(manager).await?;
         config::Migration.down(manager).await?;
         tool::Migration.down(manager).await?;
+        file::Migration.down(manager).await?;
 
         Ok(())
     }

@@ -14,7 +14,7 @@ use super::{
     prompt::Prompt,
     token::Token,
 };
-use crate::{chat::prompt::PromptKind, openrouter};
+use crate::{chat::prompt::PromptKind, openrouter, utils::blob::BlobDB};
 
 #[derive(Debug, Clone, Copy)]
 pub enum StreamEndReason {
@@ -29,16 +29,22 @@ pub struct Context {
     pub(super) openrouter: openrouter::Openrouter,
     pub(super) channel: Arc<channel::Context<Token>>,
     pub(super) prompt: Prompt,
+    pub(super) blob: Arc<BlobDB>,
 }
 
 impl Context {
     // TODO: put API Key in main
-    pub fn new(db: DatabaseConnection) -> Result<Self, anyhow::Error> {
+    pub fn new(
+        db: DatabaseConnection,
+        openrouter: openrouter::Openrouter,
+        blob: Arc<BlobDB>,
+    ) -> Result<Self, anyhow::Error> {
         Ok(Self {
             db,
-            openrouter: openrouter::Openrouter::new(),
+            openrouter,
             channel: Arc::new(channel::Context::new()),
             prompt: Prompt::new(),
+            blob,
         })
     }
 
@@ -194,7 +200,7 @@ impl CompletionContext {
         }
         let system_prompt = self.ctx.prompt.render(PromptKind::TitleGen, self)?;
 
-        let mut message = vec![openrouter::Message::System(system_prompt)];
+        let mut message = vec![openrouter::Message::System(system_prompt.clone())];
 
         message.extend(self.messages_with_chunks.iter().filter_map(|(m, chunks)| {
             // We ignore tool call or such, this is intentional.
@@ -216,13 +222,16 @@ impl CompletionContext {
             }
         }));
 
+        // Add two system prompt work surprisingly good for small model.
+        message.push(openrouter::Message::System(system_prompt));
+
         let model = self.model.get_config().context("invalid config")?;
 
         let completion = self.ctx.openrouter.complete(message, model.into()).await?;
 
         self.update_usage(completion.price as f32, completion.token as i32);
 
-        static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\''];
+        static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\'', '*'];
 
         let title = completion.response;
         let title = title.trim_matches(TRIMS);
@@ -231,6 +240,7 @@ impl CompletionContext {
 
         self.publisher
             .publish_force(Token::Title(title.to_string()));
+        self.publisher.publish_force(Token::Empty);
 
         Ok(())
     }

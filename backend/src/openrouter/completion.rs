@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use dotenv::var;
 
 use super::raw;
 use super::stream::StreamCompletion;
@@ -35,9 +34,9 @@ pub struct Openrouter {
 }
 
 impl Openrouter {
-    pub fn new() -> Self {
-        let api_key = var("API_KEY").expect("API_KEY is required");
-        let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/".to_string());
+    pub fn new(api_key: impl AsRef<str>, api_base: impl AsRef<str>) -> Self {
+        let api_base = api_base.as_ref();
+        let api_key = api_key.as_ref().to_string();
         let chat_completion_endpoint =
             format!("{}/api/v1/chat/completions", api_base.trim_end_matches('/'));
         let mut default_req = raw::CompletionReq::default();
@@ -45,6 +44,7 @@ impl Openrouter {
         if !api_base.contains("openrouter") {
             tracing::warn!("Custom API_BASE detected, disabling plugin support");
             default_req.plugins = None;
+            default_req.usage = None;
         }
 
         Self {
@@ -60,7 +60,7 @@ impl Openrouter {
         model: &Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
-        tracing::info!("start streaming with model {}", &model.id);
+        tracing::debug!("start streaming with model {}", &model.id);
 
         let tools = match tools.is_empty() {
             true => None,
@@ -97,7 +97,7 @@ impl Openrouter {
         mut messages: Vec<Message>,
         model: Model,
     ) -> Result<ChatCompletion> {
-        tracing::info!("start completion with model {}", &model.id);
+        tracing::debug!("start completion with model {}", &model.id);
 
         if model.online {
             tracing::warn!("Online models should not be used in non-streaming completions.");

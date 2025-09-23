@@ -19,6 +19,9 @@ pub struct ModelCreateReq {
 pub struct ModelCreateResp {
     pub id: i32,
     pub display_name: String,
+    pub image_input: bool,
+    pub audio_input: bool,
+    pub other_file_input: bool,
 }
 
 pub async fn route(
@@ -41,6 +44,9 @@ pub async fn route(
 
             Ok(Json(ModelCreateResp {
                 id,
+                image_input: cfg.is_image_capable(),
+                audio_input: cfg.is_audio_capable(),
+                other_file_input: cfg.is_other_file_capable(),
                 display_name: cfg.display_name,
             }))
         }

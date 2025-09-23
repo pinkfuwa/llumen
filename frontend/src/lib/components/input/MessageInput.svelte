@@ -27,15 +27,19 @@
 
 	let container = $state<HTMLElement | null>();
 
-	const dropZone = createDropZone(() => container, {
-		allowedDataTypes: '*',
-		multiple: false,
-		onDrop(files: File[] | null) {
-			if (files != null) {
-				files.forEach((f) => files.push(f));
+	let filetypes = $state('*');
+
+	const dropZone = $derived(
+		createDropZone(() => container, {
+			allowedDataTypes: filetypes,
+			multiple: false,
+			onDrop(files: File[] | null) {
+				if (files != null) {
+					files.forEach((f) => files.push(f));
+				}
 			}
-		}
-	});
+		})
+	);
 
 	afterNavigate(() => {
 		content = '';
@@ -75,9 +79,9 @@
 	</div>
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex h-11 grow items-center space-x-2">
-			<ModelBtn bind:value={modelId} {above} />
+			<ModelBtn bind:value={modelId} {above} bind:filetypes />
 			<ModeBtn bind:value={mode} />
-			<UploadBtn bind:files />
+			<UploadBtn bind:files {filetypes} />
 		</div>
 		{#if content.length != 0}
 			<MarkdownBtn bind:editable />
