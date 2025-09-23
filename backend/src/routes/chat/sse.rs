@@ -32,7 +32,6 @@ pub enum SseResp {
     ToolCall(SseRespToolCall),
     ToolResult(SseRespToolResult),
     Complete(SseRespMessageComplete),
-    User(SseRespUser),
     Title(SseRespTitle),
     Error(SseRespError),
 }
@@ -97,15 +96,6 @@ pub struct SseRespError {
     pub content: String,
 }
 
-#[derive(Debug, Serialize)]
-#[typeshare]
-#[serde(rename_all = "snake_case")]
-pub enum SseRespEndKind {
-    Complete,
-    Halt,
-    Error,
-}
-
 pub async fn route(
     State(app): State<Arc<AppState>>,
     Extension(UserId(user_id)): Extension<UserId>,
@@ -164,6 +154,7 @@ pub async fn route(
             }),
             Token::ToolResult(content) => SseResp::ToolResult(SseRespToolResult { content }),
             Token::Error(content) => SseResp::Error(SseRespError { content }),
+            Token::Title(title) => SseResp::Title(SseRespTitle { title }),
             _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())

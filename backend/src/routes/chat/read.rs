@@ -6,7 +6,7 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId};
+use crate::{AppState, errors::*, middlewares::auth::UserId, utils::chat::ChatMode};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -17,6 +17,7 @@ pub struct ChatReadReq {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct ChatReadResp {
+    pub mode: ChatMode,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_id: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -38,6 +39,7 @@ pub async fn route(
     match res {
         Some((chat, model)) => Ok(Json(ChatReadResp {
             model_id: model.map(|x| x.id),
+            mode: chat.mode.into(),
             title: chat.title,
         })),
         None => {

@@ -46,8 +46,9 @@ impl Context {
         self: &Arc<Self>,
         user_id: i32,
         chat_id: i32,
+        model_id: i32,
     ) -> impl std::future::Future<Output = Result<CompletionContext, anyhow::Error>> + '_ {
-        CompletionContext::new(self.clone(), user_id, chat_id)
+        CompletionContext::new(self.clone(), user_id, chat_id, model_id)
     }
     pub fn halt_completion(&self, chat_id: i32) {
         self.channel.stop(chat_id)
@@ -90,20 +91,25 @@ pub struct CompletionContext {
 
 impl CompletionContext {
     /// Creates a new completion context.
-    pub async fn new(ctx: Arc<Context>, user_id: i32, chat_id: i32) -> Result<Self, anyhow::Error> {
+    pub async fn new(
+        ctx: Arc<Context>,
+        user_id: i32,
+        chat_id: i32,
+        model_id: i32,
+    ) -> Result<Self, anyhow::Error> {
         let db = &ctx.db;
 
-        let (user, chat_and_model) = join!(
+        let (user, chat, model) = join!(
             user::Entity::find_by_id(user_id).one(db),
             chat::Entity::find_by_id(chat_id)
                 .filter(chat::Column::OwnerId.eq(user_id))
-                .find_also_related(model::Entity)
-                .one(db)
+                .one(db),
+            model::Entity::find_by_id(model_id).one(db)
         );
 
         let user = user?.ok_or_else(|| anyhow::anyhow!("User not found"))?;
-        let (chat, model) = chat_and_model?.ok_or_else(|| anyhow::anyhow!("Chat not found"))?;
-        let model = model.ok_or_else(|| anyhow::anyhow!("Model not found"))?;
+        let chat = chat?.ok_or_else(|| anyhow::anyhow!("Chat not found"))?;
+        let model = model?.ok_or_else(|| anyhow::anyhow!("Model not found"))?;
 
         let messages_with_chunks = chat
             .find_related(message::Entity)
@@ -129,6 +135,14 @@ impl CompletionContext {
             new_chunks: Vec::new(),
             ctx,
         })
+    }
+
+    pub fn set_mode(&mut self, mode: entity::ModeKind) {
+        self.chat.mode = ActiveValue::Set(mode);
+    }
+
+    pub fn get_mode(&self) -> entity::ModeKind {
+        self.chat.mode.clone().unwrap()
     }
 
     pub fn get_chat_id(&self) -> i32 {
@@ -208,10 +222,15 @@ impl CompletionContext {
 
         self.update_usage(completion.price as f32, completion.token as i32);
 
-        // TODO: trim the title from both ends.
-        // static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\''];
+        static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\''];
 
-        self.chat.title = ActiveValue::set(Some(completion.response));
+        let title = completion.response;
+        let title = title.trim_matches(TRIMS);
+
+        self.chat.title = ActiveValue::set(Some(title.to_string()));
+
+        self.publisher
+            .publish_force(Token::Title(title.to_string()));
 
         Ok(())
     }

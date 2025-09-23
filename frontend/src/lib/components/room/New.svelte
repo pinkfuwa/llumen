@@ -1,8 +1,7 @@
 <script>
 	import { Plus } from '@lucide/svelte';
-	import { slide } from 'svelte/transition';
 	import { _ } from 'svelte-i18n';
-	import Button  from '$lib/ui/Button.svelte';
+	import Button from '$lib/ui/Button.svelte';
 </script>
 
 <Button

@@ -14,9 +14,9 @@ import {
 	type ChatReadReq,
 	type ChatDeleteReq,
 	type ChatDeleteResp,
-	MessageCreateReqMode,
 	type ChatUpdateReq,
-	type ChatUpdateResp
+	type ChatUpdateResp,
+	ChatMode
 } from './types';
 import {
 	CreateInfiniteQuery,
@@ -35,19 +35,21 @@ import { onDestroy } from 'svelte';
 import type { MutationResult } from './state/mutate';
 import { globalCache } from './state/cache';
 import type { Writable } from 'svelte/store';
+import { UpdateInfiniteQueryDataById } from './state';
 
 export interface CreateRoomRequest {
 	message: string;
 	modelId: number;
 	files: File[];
-	mode: MessageCreateReqMode;
+	mode: ChatMode;
 }
 
 export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateResp> {
 	return CreateRawMutation({
 		mutator: async (param) => {
 			let chatRes = await APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
-				model_id: param.modelId
+				model_id: param.modelId,
+				mode: param.mode
 			});
 
 			if (!chatRes) return;
@@ -55,7 +57,8 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 			const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
 				chat_id: chatRes.id,
 				text: param.message,
-				mode: param.mode
+				mode: param.mode,
+				model_id: param.modelId
 			});
 
 			SetInfiniteQueryData<ChatPaginateRespList>({
@@ -170,5 +173,17 @@ export function useRoomStreamingState(id: number): Writable<boolean> {
 export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
 	return CreateMutation({
 		path: 'chat/write'
+	});
+}
+
+export function updateRoomTitle(id: number, title: string) {
+	console.log({ id, title });
+	UpdateInfiniteQueryDataById<ChatPaginateRespList>({
+		key: ['chatPaginate'],
+		updater: (data) => {
+			if (data.id === id) data.title = title;
+			return data;
+		},
+		id
 	});
 }

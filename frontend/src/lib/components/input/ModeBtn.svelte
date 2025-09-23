@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MessageCreateReqMode as Mode } from '$lib/api/types';
+	import { ChatMode as Mode } from '$lib/api/types';
 	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { Atom, SearchCode, ZapOff, CalendarSync } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
@@ -7,8 +7,8 @@
 
 	let { value = $bindable(Mode.Normal) as Mode, disabled = false } = $props();
 
-	// TODO: enable Mode.Agent, Mode.Research when ready
-	const modes = [Mode.Normal, Mode.Search, Mode.Agent];
+	// TODO: enable Mode.Research when ready
+	const modes = [Mode.Normal, Mode.Search];
 	function nextStage() {
 		const nextIndex = modes.indexOf(value) + 1;
 		value = modes[nextIndex % modes.length];
@@ -24,8 +24,6 @@
 		<Tooltip content={$_('chat.model_mode.search')}>
 			<SearchCode class="inline-block" />
 		</Tooltip>
-	{:else if value == Mode.Agent}
-		<CalendarSync class="inline-block" />
 	{:else}
 		<Tooltip content={$_('chat.model_mode.normal')}>
 			<ZapOff class="inline-block" />

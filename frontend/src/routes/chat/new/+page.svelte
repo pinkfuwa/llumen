@@ -4,8 +4,7 @@
 	import { MessageInput, Copyright } from '$lib/components';
 	import { goto } from '$app/navigation';
 	import { _ } from 'svelte-i18n';
-	import { MessageCreateReqMode as Mode } from '$lib/api/types';
-	import { titleGrad } from '$lib/preference';
+	import { ChatMode as Mode } from '$lib/api/types';
 
 	let { mutate } = createRoom();
 

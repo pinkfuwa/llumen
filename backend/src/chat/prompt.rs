@@ -1,11 +1,8 @@
 use minijinja::Environment;
 use serde::Serialize;
+use time::UtcDateTime;
 use time::format_description::BorrowedFormatItem;
 use time::macros::format_description;
-use time::{
-    UtcDateTime,
-    format_description::{self, well_known::Rfc2822},
-};
 
 use super::context::CompletionContext;
 

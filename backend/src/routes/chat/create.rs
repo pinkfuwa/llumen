@@ -6,12 +6,13 @@ use sea_orm::{ActiveValue::Set, EntityTrait};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId};
+use crate::{AppState, errors::*, middlewares::auth::UserId, utils::chat::ChatMode};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
 pub struct ChatCreateReq {
     pub model_id: i32,
+    pub mode: ChatMode,
 }
 
 #[derive(Debug, Serialize)]
@@ -29,6 +30,7 @@ pub async fn route(
         owner_id: Set(user_id),
         model_id: Set(req.model_id),
         title: Set(None),
+        mode: Set(req.mode.into()),
         ..Default::default()
     })
     .exec(&app.conn)

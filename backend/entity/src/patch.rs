@@ -25,6 +25,13 @@ pub enum ChunkKind {
     Plan = 5,
     Step = 6,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(rs_type = "i32", db_type = "Integer")]
+pub enum ModeKind {
+    Normal = 0,
+    Search = 1,
+    Research = 3,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 #[typeshare]

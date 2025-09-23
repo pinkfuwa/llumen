@@ -9,6 +9,7 @@ pub struct Model {
     pub id: i32,
     pub owner_id: i32,
     pub model_id: i32,
+    pub mode: crate::ModeKind,
     #[sea_orm(nullable)]
     pub title: Option<String>,
 }
