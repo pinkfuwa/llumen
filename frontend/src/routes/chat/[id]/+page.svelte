@@ -41,7 +41,7 @@
 			bind:mode
 			bind:files
 			onsubmit={() => {
-				mutate({ chat_id: id, text: content, mode: mode!, model_id: modelId! });
+				mutate({ chat_id: id, text: content, mode: mode!, model_id: modelId!, files: [] });
 				content = '';
 				isStreaming.set(true);
 			}}

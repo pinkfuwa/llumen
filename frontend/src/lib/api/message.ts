@@ -105,7 +105,6 @@ let SSEHandlers: {
 	complete: [],
 	tool_call: [],
 	tool_result: [],
-	user: [],
 	title: [],
 	error: [],
 	version: []

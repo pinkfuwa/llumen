@@ -58,7 +58,8 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 				chat_id: chatRes.id,
 				text: param.message,
 				mode: param.mode,
-				model_id: param.modelId
+				model_id: param.modelId,
+				files: []
 			});
 
 			SetInfiniteQueryData<ChatPaginateRespList>({
