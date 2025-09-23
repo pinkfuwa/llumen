@@ -36,10 +36,29 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx-chat-owner_id-id")
+                    .table(Chat::Table)
+                    .col(Chat::OwnerId)
+                    .col(Chat::Id)
+                    .to_owned(),
+            )
+            .await?;
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx-chat-owner_id-id")
+                    .table(Chat::Table)
+                    .to_owned(),
+            )
+            .await?;
         manager
             .drop_table(Table::drop().table(Chat::Table).to_owned())
             .await?;

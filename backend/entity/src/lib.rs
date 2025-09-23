@@ -1,4 +1,5 @@
 mod entities;
+mod models;
 pub mod patch;
 pub use entities::*;
 

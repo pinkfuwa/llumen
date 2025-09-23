@@ -1,16 +1,14 @@
 <script lang="ts">
-	import { ChevronDown, LoaderCircle } from '@lucide/svelte';
+	import { LoaderCircle } from '@lucide/svelte';
 	import { useModels } from '$lib/api/model';
 	import Select from '$lib/ui/Select.svelte';
-	import { number } from 'svelte-i18n';
 	let { value = $bindable<string | undefined>(), above = false, disabled = false } = $props();
 
 	let { data } = useModels();
 
 	$effect(() => {
-		$inspect(value);
 		if (!disabled && $data) {
-			let lastModel = $data?.list.at(-1);
+			let lastModel = $data.list.at(-1);
 			if (lastModel && value == undefined) {
 				value = `${lastModel.id}`;
 			} else if (value != undefined) {

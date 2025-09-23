@@ -22,7 +22,7 @@
 
 	$effect(() => entry.target.set(li));
 
-	addSSEHandler('change_title', (resp) => {
+	addSSEHandler('title', (resp) => {
 		if (get(data).some((x) => x.id == currentRoom)) {
 			data.update((list) => {
 				const idx = list.findIndex((x) => x.id == currentRoom);

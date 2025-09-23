@@ -43,28 +43,7 @@
 
 <Select.Root type="single" onValueChange={(v) => (selected = v)} items={data} {disabled}>
 	<Select.Trigger
-		class="
-            inline-flex
-			h-full
-            items-center
-            justify-between
-            rounded-lg
-            border
-            border-outline
-            px-3
-            text-center
-            text-nowrap
-            text-text
-            duration-150
-            not-disabled:cursor-pointer
-            not-disabled:hover:bg-primary
-			not-disabled:hover:text-text-hover
-            focus:ring-4
-            focus:ring-outline
-            focus:outline-none
-			disabled:cursor-not-allowed
-            {className}
-        "
+		class="inline-flex h-full items-center justify-between rounded-lg border border-outline px-3 text-center text-nowrap text-text duration-150 not-disabled:cursor-pointer not-disabled:hover:bg-primary not-disabled:hover:text-text-hover focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed {className}"
 		{disabled}
 	>
 		{selectedLabel}
@@ -75,46 +54,16 @@
 	</Select.Trigger>
 	<Select.Portal>
 		<Select.Content
-			class="
-                z-50
-				max-h-48
-				rounded-xl
-				border
-				border-outline
-				bg-input
-				outline-hidden
-				select-none
-				data-[side=bottom]:translate-y-1
-				data-[side=bottom]:slide-in-from-top-2
-				data-[side=top]:-translate-y-1
-				data-[side=top]:slide-in-from-bottom-2
-				data-[state=closed]:animate-out
-				data-[state=closed]:fade-out-0
-				data-[state=closed]:zoom-out-95
-				data-[state=open]:animate-in
-				data-[state=open]:fade-in-0
-				data-[state=open]:zoom-in-95
-				{popupClass}
-            "
+			class="z-50 max-h-48 rounded-xl border border-outline bg-input text-text outline-hidden select-none data-[side=bottom]:translate-y-1 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:-translate-y-1 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 {popupClass} "
 			sideOffset={10}
 		>
 			<Select.Viewport class="bg-clip-padding">
-				{#each data as row}
+				{#each data as row, i}
 					<Select.Item
-						class="flex
-							h-10
-							w-full
-							items-center
-							px-2
-							py-3
-							text-sm
-							outline-hidden
-							duration-150
-							select-none
-							not-disabled:cursor-pointer
-							not-disabled:hover:bg-primary
-							not-disabled:hover:text-text-hover
-							disabled:opacity-50"
+						class="flex h-10 w-full items-center px-2 py-3 text-sm outline-hidden duration-150 select-none not-disabled:cursor-pointer not-disabled:hover:bg-primary not-disabled:hover:text-text-hover disabled:opacity-50{i ==
+						0
+							? ' rounded-t-xl'
+							: ''}{i + 1 == data.length ? ' rounded-b-xl' : ''}"
 						value={row.value}
 						label={row.label}
 						disabled={row.disabled}

@@ -155,7 +155,8 @@ export enum MessagePaginateRespRole {
 export type MessagePaginateRespChunkKind =
 	| { t: 'text'; c: MessagePaginateRespChunkKindText }
 	| { t: 'reasoning'; c: MessagePaginateRespChunkKindReasoning }
-	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall };
+	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall }
+	| { t: 'error'; c: MessagePaginateRespChunkKindError };
 
 export interface MessagePaginateRespChunk {
 	id: number;
@@ -166,24 +167,30 @@ export interface MessagePaginateRespList {
 	id: number;
 	role: MessagePaginateRespRole;
 	chunks: MessagePaginateRespChunk[];
+	token: number;
+	price: number;
 }
 
 export interface MessagePaginateResp {
 	list: MessagePaginateRespList[];
 }
 
+export interface MessagePaginateRespChunkKindError {
+	content: string;
+}
+
 export interface MessagePaginateRespChunkKindReasoning {
-	context: string;
+	content: string;
 }
 
 export interface MessagePaginateRespChunkKindText {
-	context: string;
+	content: string;
 }
 
 export interface MessagePaginateRespChunkKindToolCall {
 	name: string;
 	args: string;
-	context: string;
+	content: string;
 }
 
 export interface MessageWriteReq {
@@ -192,39 +199,12 @@ export interface MessageWriteReq {
 	text: string;
 }
 
-export enum OcrEngine {
-	Native = 'Native',
-	Text = 'Text',
-	Mistral = 'Mistral',
-	Disabled = 'Disabled'
-}
-
-export interface ModelCapability {
-	image?: boolean;
-	audio?: boolean;
-	ocr?: OcrEngine;
-}
-
 export interface ModelCheckReq {
 	config: string;
 }
 
 export interface ModelCheckResp {
 	reason?: string;
-}
-
-export interface ModelParameter {
-	temperature?: number;
-	repeat_penalty?: number;
-	top_k?: number;
-	top_p?: number;
-}
-
-export interface ModelConfig {
-	display_name: string;
-	model_id: string;
-	capability?: ModelCapability;
-	parameter?: ModelParameter;
 }
 
 export interface ModelCreateReq {
@@ -247,6 +227,9 @@ export interface ModelDeleteResp {
 export interface ModelList {
 	id: number;
 	display_name: string;
+	image_input: boolean;
+	audio_input: boolean;
+	other_file_input: boolean;
 }
 
 export interface ModelListReq {}
@@ -288,25 +271,23 @@ export interface SseReq {
 	id: number;
 }
 
-export enum SseRespEndKind {
-	Complete = 'complete',
-	Halt = 'halt',
-	Error = 'error'
+export interface SseRespError {
+	content: string;
 }
 
-export interface SseRespChunkEnd {
+export interface SseRespMessageComplete {
 	id: number;
-	kind: SseRespEndKind;
+	chunk_ids: number[];
+	token_count: number;
+	cost: number;
 }
 
-export interface SseRespLastMessage {
-	id: number;
-	version: number;
+export interface SseRespReasoning {
+	content: string;
 }
 
-export interface SseRespMessageEnd {
-	id: number;
-	kind: SseRespEndKind;
+export interface SseRespTitle {
+	title: string;
 }
 
 export interface SseRespToken {
@@ -318,21 +299,18 @@ export interface SseRespToolCall {
 	args: string;
 }
 
-export interface SseRespToolCallEnd {
-	chunk_id: number;
-	name: string;
-	args: string;
+export interface SseRespToolResult {
 	content: string;
 }
 
-export interface SseRespUserMessage {
+export interface SseRespUser {
 	message_id: number;
 	chunk_id: number;
 	content: string;
 }
 
-export interface SseRespUserTitle {
-	title: string;
+export interface SseRespVersion {
+	version: number;
 }
 
 export interface UserCreateReq {
@@ -400,12 +378,18 @@ export type MessagePaginateReq =
 	| { t: 'range'; c: MessagePaginateReqRange };
 
 export type SseResp =
-	| { t: 'last_message'; c: SseRespLastMessage }
+	| { t: 'version'; c: SseRespVersion }
 	| { t: 'token'; c: SseRespToken }
-	| { t: 'reasoning_token'; c: SseRespToken }
-	| { t: 'chunk_end'; c: SseRespChunkEnd }
+	| { t: 'reasoning'; c: SseRespReasoning }
 	| { t: 'tool_call'; c: SseRespToolCall }
-	| { t: 'tool_call_end'; c: SseRespToolCallEnd }
-	| { t: 'message_end'; c: SseRespMessageEnd }
-	| { t: 'user_message'; c: SseRespUserMessage }
-	| { t: 'change_title'; c: SseRespUserTitle };
+	| { t: 'tool_result'; c: SseRespToolResult }
+	| { t: 'complete'; c: SseRespMessageComplete }
+	| { t: 'user'; c: SseRespUser }
+	| { t: 'title'; c: SseRespTitle }
+	| { t: 'error'; c: SseRespError };
+
+export enum SseRespEndKind {
+	Complete = 'complete',
+	Halt = 'halt',
+	Error = 'error'
+}

@@ -2,11 +2,6 @@
 	import type { TokensList } from 'marked';
 	import { _ } from 'svelte-i18n';
 	import ResponseBox from './buttons/ResponseBox.svelte';
-	import {
-		SseRespEndKind,
-		type MessagePaginateRespChunk,
-		type SseRespChunkEnd
-	} from '$lib/api/types';
 	import Chunks from './Chunks.svelte';
 	import { addSSEHandler } from '$lib/api/message';
 	import AssitantStream from './buttons/AssitantStream.svelte';
@@ -14,9 +9,12 @@
 	import { MarkdownPatcher, type UIUpdater } from '../markdown/patcher';
 	import ToolBox from './buttons/ToolBox.svelte';
 	import Tool from './buttons/Tool.svelte';
-	import * as OpenCC from 'opencc-js';
+	import type { PartialMessagePaginateRespChunk } from '$lib/api/patch';
+	import { MessagePaginateRespRole, type MessagePaginateRespList } from '$lib/api/types';
+	import { SetInfiniteQueryData } from '$lib/api/state';
+	import { useRoomStreamingState } from '$lib/api/chatroom';
 
-	const openccConverter = OpenCC.Converter({ from: 'cn', to: 'twp' });
+	let { chat_id, chunks = $bindable<PartialMessagePaginateRespChunk[]>([]) } = $props();
 
 	let tokens = $state<TokensList[]>([]);
 	let reasoning = $state('');
@@ -24,9 +22,9 @@
 	let toolName = $state('');
 	let toolArg = $state('');
 
-	let { chunks = $bindable<MessagePaginateRespChunk[]>([]) } = $props();
+	let isStreaming = $derived(useRoomStreamingState(chat_id));
 
-	let lastChunkType = $state<'reasoning' | 'assitant'>('reasoning');
+	let lastChunkType = $state<'reasoning' | 'token' | null>(null);
 
 	const updater: UIUpdater = {
 		reset() {
@@ -43,76 +41,118 @@
 
 	const patcher = new MarkdownPatcher(updater);
 
-	addSSEHandler('chunk_end', (data: SseRespChunkEnd) => {
-		if (data.kind == SseRespEndKind.Error) {
-			// TODO: handle error
-		} else if (lastChunkType == 'reasoning') {
-			if (reasoning.length != 0)
-				chunks.push({
-					id: data.id,
-					kind: {
-						t: 'reasoning',
-						c: { context: reasoning }
-					}
-				});
-			reasoning = '';
-		} else if (lastChunkType == 'assitant') {
+	addSSEHandler('reasoning', (data) => {
+		isStreaming.set(true);
+		reasoning += data.content;
+		if (lastChunkType == 'token') {
 			chunks.push({
-				id: data.id,
 				kind: {
 					t: 'text',
-					c: { context: patcher.content }
+					c: { content: patcher.content }
 				}
 			});
 			patcher.reset();
 		}
+		lastChunkType = 'reasoning';
+	});
+	addSSEHandler('token', (data) => {
+		isStreaming.set(true);
+		patcher.feed(data.content);
+		if (lastChunkType == 'reasoning') {
+			chunks.push({
+				kind: {
+					t: 'reasoning',
+					c: { content: reasoning }
+				}
+			});
+			reasoning = '';
+		}
+		lastChunkType = 'token';
 	});
 
 	addSSEHandler('tool_call', (data) => {
 		toolArg = data.args;
 		toolName = data.name;
 	});
-	addSSEHandler('tool_call_end', (data) => {
+	addSSEHandler('tool_result', (data) => {
 		chunks.push({
-			id: data.chunk_id,
 			kind: {
 				t: 'tool_call',
 				c: {
-					name: data.name,
-					args: data.args,
-					context: data.content
+					name: toolName,
+					args: toolArg,
+					content: data.content
 				}
 			}
 		});
 		toolArg = '';
 		toolName = '';
 	});
-	addSSEHandler('reasoning_token', (data) => {
-		lastChunkType = 'reasoning';
-		reasoning += data.content;
+
+	addSSEHandler('error', (data) => {
+		chunks.push({
+			kind: {
+				t: 'error',
+				c: {
+					content: data.content
+				}
+			}
+		});
 	});
-	addSSEHandler('token', (data) => {
-		lastChunkType = 'assitant';
-		const content = openccConverter(data.content);
-		patcher.feed(content);
+
+	addSSEHandler('complete', (data) => {
+		if (lastChunkType == 'reasoning') {
+			chunks.push({
+				kind: {
+					t: 'reasoning',
+					c: { content: reasoning }
+				}
+			});
+		}
+		if (lastChunkType == 'token') {
+			chunks.push({
+				kind: {
+					t: 'text',
+					c: { content: patcher.content }
+				}
+			});
+		}
+
+		let chunk_ids = data.chunk_ids.toReversed();
+		SetInfiniteQueryData<MessagePaginateRespList>({
+			key: ['messagePaginate', chat_id.toString()],
+			data: {
+				id: data.id,
+				role: MessagePaginateRespRole.Assistant,
+				chunks: chunks.map((x) => ({ id: chunk_ids.pop()!, ...x })),
+				price: data.cost,
+				token: data.token_count
+			}
+		});
+		isStreaming.set(false);
+		chunks = [];
+		reasoning = '';
+		patcher.reset();
 	});
 </script>
 
-<ResponseBox>
-	<Chunks {chunks} />
+{#if $isStreaming}
+	<ResponseBox>
+		<Chunks {chunks} />
 
-	{#if tokens.length != 0}
-		<AssitantStream list={tokens} />
-	{:else if reasoning.length != 0}
-		<Reasoning content={reasoning} />
-	{:else if toolName.length != 0}
-		<ToolBox toolname={toolName}>
-			<Tool content={toolArg} />
-		</ToolBox>
-	{/if}
+		{#if tokens.length != 0}
+			<AssitantStream list={tokens} />
+		{:else if reasoning.length != 0}
+			<Reasoning content={reasoning} open />
+		{:else if toolName.length != 0}
+			<ToolBox toolname={toolName}>
+				<Tool content={toolArg} />
+			</ToolBox>
+		{/if}
 
-	<div class="space-y-4">
-		<hr class="mx-3 animate-pulse rounded-md bg-primary p-1 border-primary" />
-		<hr class="mx-3 animate-pulse rounded-md bg-primary p-1 border-primary" />
-	</div>
-</ResponseBox>
+		<div class="space-y-4">
+			<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+			<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+		</div>
+	</ResponseBox>
+{/if}

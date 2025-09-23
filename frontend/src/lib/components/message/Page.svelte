@@ -21,7 +21,7 @@
 	function getRespFromChunks(chunks: MessagePaginateRespChunk[]) {
 		return chunks
 			.filter((x) => x.kind.t == 'text')
-			.map((x) => x.kind.c.context)
+			.map((x) => x.kind.c.content)
 			.join('\n')
 			.trim();
 	}
@@ -30,14 +30,12 @@
 <div class="mt-2 flex flex-col-reverse space-y-2" bind:this={div}>
 	{#each $data as msg}
 		{#if msg.role == Role.User}
-			<User content={(msg.chunks[0].kind.c as MessagePaginateRespChunkKindText).context} />
+			<User content={(msg.chunks[0].kind.c as MessagePaginateRespChunkKindText).content} />
 		{:else if msg.role == Role.Assistant}
-			{#if msg.chunks.length != 0}
-				<ResponseBox>
-					<Chunks chunks={msg.chunks} />
-					<ResponseEdit content={getRespFromChunks(msg.chunks)} />
-				</ResponseBox>
-			{/if}
+			<ResponseBox>
+				<Chunks chunks={msg.chunks} />
+				<ResponseEdit content={getRespFromChunks(msg.chunks)} token={msg.token} cost={msg.price} />
+			</ResponseBox>
 		{/if}
 	{:else}
 		<div class="h-1"></div>

@@ -9,17 +9,12 @@ use axum::{
     },
 };
 use entity::prelude::*;
-use futures_util::{Stream, StreamExt};
-use sea_orm::EntityTrait;
+use futures_util::{Stream, StreamExt, stream};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{
-    AppState,
-    errors::*,
-    middlewares::auth::UserId,
-    sse::{EndKind, Token},
-};
+use crate::{AppState, chat::Token, errors::*, middlewares::auth::UserId};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -31,33 +26,21 @@ pub struct SseReq {
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum SseResp {
-    LastMessage(SseRespLastMessage),
-
+    Version(SseRespVersion),
     Token(SseRespToken),
-    ReasoningToken(SseRespToken),
-    ChunkEnd(SseRespChunkEnd),
-
+    Reasoning(SseRespReasoning),
     ToolCall(SseRespToolCall),
-    ToolCallEnd(SseRespToolCallEnd),
-
-    MessageEnd(SseRespMessageEnd),
-
-    UserMessage(SseRespUserMessage),
-
-    ChangeTitle(SseRespUserTitle),
+    ToolResult(SseRespToolResult),
+    Complete(SseRespMessageComplete),
+    User(SseRespUser),
+    Title(SseRespTitle),
+    Error(SseRespError),
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespUserTitle {
-    pub title: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespLastMessage {
-    pub id: i32,
-    pub version: u32,
+pub struct SseRespVersion {
+    pub version: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -68,32 +51,7 @@ pub struct SseRespToken {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespChunkEnd {
-    pub id: i32,
-    pub kind: SseRespEndKind,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespMessageEnd {
-    pub id: i32,
-    pub kind: SseRespEndKind,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-#[serde(rename_all = "snake_case")]
-pub enum SseRespEndKind {
-    Complete,
-    Halt,
-    Error,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespUserMessage {
-    pub message_id: i32,
-    pub chunk_id: i32,
+pub struct SseRespReasoning {
     pub content: String,
 }
 
@@ -106,11 +64,46 @@ pub struct SseRespToolCall {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespToolCallEnd {
-    pub chunk_id: i32,
-    pub name: String,
-    pub args: String,
+pub struct SseRespToolResult {
     pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespMessageComplete {
+    pub id: i32,
+    pub chunk_ids: Vec<i32>,
+    pub token_count: i32,
+    pub cost: f32,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespUser {
+    pub message_id: i32,
+    pub chunk_id: i32,
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespTitle {
+    pub title: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespError {
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+#[serde(rename_all = "snake_case")]
+pub enum SseRespEndKind {
+    Complete,
+    Halt,
+    Error,
 }
 
 pub async fn route(
@@ -118,6 +111,7 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<SseReq>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, axum::Error>>>, Json<Error>> {
+    let pipeline = app.pipeline.clone();
     let res = Chat::find_by_id(req.id)
         .one(&app.conn)
         .await
@@ -132,57 +126,52 @@ pub async fn route(
         }));
     }
 
-    let sub = app
-        .sse
-        .subscribe(req.id)
+    let stream = pipeline.clone().subscribe(req.id);
+
+    let last_message = Message::find()
+        .filter(entity::message::Column::ChatId.eq(req.id))
+        .order_by_desc(entity::message::Column::Id)
+        .one(&app.conn)
         .await
-        .kind(ErrorKind::MalformedRequest)?;
-    let st = sub
-        .map(|x| {
-            x.map(|v| match v {
-                Token::LastMessage(id, version) => {
-                    SseResp::LastMessage(SseRespLastMessage { id, version })
-                }
-                Token::Token(content) => SseResp::Token(SseRespToken { content }),
-                Token::ReasoningToken(content) => SseResp::ReasoningToken(SseRespToken { content }),
-                Token::ChunkEnd(id, end_kind) => SseResp::ChunkEnd(SseRespChunkEnd {
-                    id,
-                    kind: match end_kind {
-                        EndKind::Complete => SseRespEndKind::Complete,
-                        EndKind::Halt => SseRespEndKind::Halt,
-                        EndKind::Error => SseRespEndKind::Error,
-                    },
-                }),
-                Token::MessageEnd(id, end_kind) => SseResp::MessageEnd(SseRespMessageEnd {
-                    id,
-                    kind: match end_kind {
-                        EndKind::Complete => SseRespEndKind::Complete,
-                        EndKind::Halt => SseRespEndKind::Halt,
-                        EndKind::Error => SseRespEndKind::Error,
-                    },
-                }),
-                Token::UserMessage(message_id, chunk_id, content) => {
-                    SseResp::UserMessage(SseRespUserMessage {
-                        message_id,
-                        chunk_id,
-                        content,
-                    })
-                }
-                Token::ToolCall(name, args) => SseResp::ToolCall(SseRespToolCall {
-                    name: name.to_owned(),
-                    args,
-                }),
-                Token::ToolCallEnd(name, args, content, chunk_id) => {
-                    SseResp::ToolCallEnd(SseRespToolCallEnd {
-                        chunk_id,
-                        name: name.to_owned(),
-                        args,
-                        content,
-                    })
-                }
-                Token::ChangeTitle(title) => SseResp::ChangeTitle(SseRespUserTitle { title }),
-            })
-        })
-        .map(|x| Event::default().json_data(JsonUnion::from(x)));
-    Ok(Sse::new(st).keep_alive(KeepAlive::new().interval(Duration::from_secs(10))))
+        .kind(ErrorKind::Internal)?;
+
+    let initial_event = if let Some(last_message) = last_message {
+        let event = SseResp::Version(SseRespVersion {
+            // FIXME: change version when revalidate is needed
+            version: last_message.id,
+        });
+        let event = Event::default().json_data(event).unwrap();
+        Some(Ok(event))
+    } else {
+        None
+    };
+
+    let st = stream::iter(initial_event).chain(stream.map(|token| {
+        let event = match token {
+            Token::Assitant(content) => SseResp::Token(SseRespToken { content }),
+            Token::Reasoning(content) => SseResp::Reasoning(SseRespReasoning { content }),
+            Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
+            Token::Complete {
+                message_id,
+                chunk_ids,
+                token,
+                cost,
+            } => SseResp::Complete(SseRespMessageComplete {
+                id: message_id,
+                chunk_ids,
+                token_count: token,
+                cost,
+            }),
+            Token::ToolResult(content) => SseResp::ToolResult(SseRespToolResult { content }),
+            Token::Error(content) => SseResp::Error(SseRespError { content }),
+            _ => return Ok(Event::default()),
+        };
+        Ok(Event::default().json_data(event).unwrap())
+    }));
+
+    Ok(Sse::new(st).keep_alive(
+        KeepAlive::new()
+            .interval(Duration::from_secs(10))
+            .text("keep-alive"),
+    ))
 }

@@ -3,12 +3,15 @@ use sea_orm::{DeriveActiveEnum, FromJsonQueryResult, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::models;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum MessageKind {
     Hidden = 0,
     User = 1,
     Assistant = 2,
+    DeepResearch = 3,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
@@ -17,6 +20,10 @@ pub enum ChunkKind {
     Text = 0,
     Reasoning = 1,
     ToolCall = 2,
+    Error = 3,
+    Report = 4,
+    Plan = 5,
+    Step = 6,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -34,6 +41,9 @@ impl crate::entities::model::Model {
     pub fn check_config(config: &str) -> Result<ModelConfig, String> {
         let config = toml::from_str::<ModelConfig>(config).map_err(|e| e.to_string())?;
 
+        if config.model_id.contains(":online") {
+            return Err("\"online\" suffix are not allowed, see https://openrouter.ai/docs/faq#what-are-model-variants".to_string());
+        }
         config.parameter.check().map_err(|x| x.to_owned())?;
 
         Ok(config)
@@ -44,7 +54,6 @@ impl crate::entities::model::Model {
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Default, Serialize)]
-#[typeshare]
 pub enum OcrEngine {
     Native,
     Text,
@@ -54,18 +63,18 @@ pub enum OcrEngine {
 }
 
 #[derive(Debug, Clone, Deserialize, Default, Serialize)]
-#[typeshare]
 pub struct ModelCapability {
-    #[serde(default)]
-    pub image: bool,
-    #[serde(default)]
-    pub audio: bool,
-    #[serde(default)]
-    pub ocr: OcrEngine,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audio: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ocr: Option<OcrEngine>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default, Serialize)]
-#[typeshare]
 pub struct ModelParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f32>,
@@ -104,7 +113,6 @@ impl ModelParameter {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[typeshare]
 pub struct ModelConfig {
     pub display_name: String,
     pub model_id: String,
@@ -116,13 +124,25 @@ pub struct ModelConfig {
 
 impl ModelConfig {
     pub fn is_image_capable(&self) -> bool {
-        self.capability.image
+        if let Some(image) = self.capability.image {
+            return image;
+        }
+        models::support_image(&self.model_id)
     }
     pub fn is_audio_capable(&self) -> bool {
-        self.capability.audio
+        if let Some(audio) = self.capability.audio {
+            return audio;
+        }
+        models::support_audio(&self.model_id)
     }
     pub fn is_other_file_capable(&self) -> bool {
-        self.capability.ocr != OcrEngine::Disabled
+        self.capability.ocr != Some(OcrEngine::Disabled)
+    }
+    pub fn is_tool_capable(&self) -> bool {
+        if let Some(tool) = self.capability.tool {
+            return tool;
+        }
+        models::support_tool(&self.model_id)
     }
 }
 

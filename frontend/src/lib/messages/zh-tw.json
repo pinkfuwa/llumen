@@ -1,5 +1,20 @@
 {
 	"setting": {
+		"account": {
+			"general": "通用",
+			"password": "密碼",
+			"error_sync_preference": "同步偏好設定時發生錯誤",
+			"error_updating_password": "更新密碼時發生錯誤",
+			"enter_new_password": "輸入新密碼"
+		},
+		"admin": {
+			"users": "使用者",
+			"create": "建立使用者",
+			"user_created": "已建立使用者 {username}",
+			"type_password_for_user": "為 {username} 輸入密碼",
+			"user": "使用者",
+			"created": "已建立"
+		},
 		"title": "設置",
 		"hello_world": "Hello, {name} from zh-tw!",
 		"setting": "設置",

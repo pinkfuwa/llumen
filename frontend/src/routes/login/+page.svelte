@@ -11,7 +11,6 @@
 
 	let { mutate, isPending, isError } = Login();
 	let disabled = $derived($isPending || username == '' || password == '');
-	$inspect(disabled);
 
 	function handleSubmit(event: Event) {
 		event.preventDefault();
