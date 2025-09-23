@@ -24,6 +24,7 @@ pub enum ErrorKind {
 }
 
 pub type JsonResult<T> = Result<Json<T>, Json<Error>>;
+pub type AppError = Json<Error>;
 
 pub trait WithKind<T> {
     fn kind(self, kind: ErrorKind) -> Result<T, Json<Error>>;

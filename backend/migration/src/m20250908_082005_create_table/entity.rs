@@ -21,6 +21,7 @@ pub enum File {
     Table,
     Id,
     ChatId,
+    MineType,
 }
 
 #[derive(DeriveIden)]
