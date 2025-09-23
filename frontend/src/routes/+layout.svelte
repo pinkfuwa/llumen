@@ -9,7 +9,6 @@
 	import { initPreference } from '$lib';
 	import { initAuth } from '$lib/api/auth';
 	import initCitation from '$lib/components/markdown/citation';
-	import initMap from '$lib/components/markdown/map';
 
 	let { children } = $props();
 
@@ -19,11 +18,10 @@
 	initPreference();
 	initLatex();
 	initCitation();
-	initMap();
 </script>
 
 {#if !$isLoading}
-	<div class="h-full w-full bg-white text-black dark:bg-gray-700">
+	<div class="h-full w-full bg-white text-text">
 		{@render children()}
 		<ErrorMessage />
 		{#if $copyCounter != 0}

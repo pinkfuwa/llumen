@@ -83,18 +83,15 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 	return CreateMutation({
 		path: 'message/create',
 		onSuccess: (data, param) => {
-			const roomStreamingState = globalCache.getOr(
-				['chat', 'stream', param.chat_id.toString()],
-				false
-			);
-			roomStreamingState.set(true);
-
 			SetInfiniteQueryData<MessagePaginateRespList>({
 				key: ['messagePaginate', param.chat_id.toString()],
 				data: {
 					id: data.id,
 					role: MessagePaginateRespRole.User,
-					chunks: [{ id: data.id, kind: { t: 'text', c: { context: param.text } } }]
+					// TODO: fix chunk ID
+					chunks: [{ id: data.id, kind: { t: 'text', c: { content: param.text } } }],
+					token: 0,
+					price: 0
 				}
 			});
 		}
@@ -104,15 +101,15 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 let SSEHandlers: {
 	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
 } = {
-	last_message: [],
 	token: [],
-	reasoning_token: [],
-	chunk_end: [],
+	reasoning: [],
+	complete: [],
 	tool_call: [],
-	tool_call_end: [],
-	message_end: [],
-	user_message: [],
-	change_title: []
+	tool_result: [],
+	user: [],
+	title: [],
+	error: [],
+	version: []
 } satisfies {
 	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
 };
@@ -125,8 +122,7 @@ export function startSSE(chatId: number) {
 			id: chatId
 		},
 		onEvent: (res: SseResp) => {
-			console.log('SSE Event:', res);
-			console.log(SSEHandlers);
+			if (dev) console.log('SSE Event:', res);
 
 			SSEHandlers[res.t].forEach((handler) => handler(res.c as any));
 		}
@@ -137,12 +133,9 @@ export function addSSEHandler<T extends SseResp['t']>(
 	event: T,
 	handler: (data: Extract<SseResp, { t: T }>['c']) => void
 ) {
-	console.log('add SSE handler', event, handler);
-
 	SSEHandlers[event].push(handler as any);
 
 	onDestroy(() => {
-		console.log('remove SSE handler', event, handler);
 		const index = SSEHandlers[event].indexOf(handler as any);
 		if (index !== -1) {
 			SSEHandlers[event].splice(index, 1);

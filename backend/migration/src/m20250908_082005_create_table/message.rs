@@ -16,6 +16,8 @@ impl MigrationTrait for Migration {
                     .col(pk_auto(Message::Id))
                     .col(integer(Message::ChatId))
                     .col(integer(Message::Kind))
+                    .col(float(Message::Price).default(0.0))
+                    .col(integer(Message::TokenCount).default(0))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-message-chat_id-chat")
@@ -43,8 +45,18 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
+            .drop_index(
+                Index::drop()
+                    .name("idx-message-chat_id")
+                    .table(Message::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
             .drop_table(Table::drop().table(Message::Table).to_owned())
             .await?;
+
         Ok(())
     }
 }

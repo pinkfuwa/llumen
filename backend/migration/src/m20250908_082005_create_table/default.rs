@@ -3,8 +3,12 @@ const PASSWORD_HASH_ENCODE: &str =
     "$argon2id$v=19$m=16,t=2,p=1$aTg5eTNyMmRzLTA$FM4qzh9B/+DdCVOiQQruGw";
 
 const DEFAULT_MODEL_CONFIG: &str = r#"
-model_id="openai/gpt-oss-20b:free"
 display_name="GPT-OSS 20B"
+# From https://openrouter.ai/models
+# don't put "online" suffix.
+model_id="openai/gpt-oss-20b:free"
+
+# For more settings, see https://github.com/pinkfuwa/llumen
 "#;
 
 use pasetors::keys::Generate;
@@ -39,7 +43,7 @@ impl MigrationTrait for Migration {
         let default_model = Query::insert()
             .into_table(Model::Table)
             .columns([Model::Config])
-            .values_panic([DEFAULT_MODEL_CONFIG.into()])
+            .values_panic([DEFAULT_MODEL_CONFIG.trim().into()])
             .to_owned();
         manager.exec_stmt(default_model).await?;
         Ok(())

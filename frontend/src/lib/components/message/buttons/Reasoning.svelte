@@ -2,10 +2,9 @@
 	import { Brain } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import { Accordion } from 'bits-ui';
-	import Root from '$lib/components/markdown/Root.svelte';
-	const { content }: { content: string } = $props();
+	const { content, open = $bindable(false) }: { content: string; open?: boolean } = $props();
 
-	let showReasoning = $state(false);
+	// TODO: set initial open state with open props
 
 	let lines = $derived(content.split('\n'));
 </script>

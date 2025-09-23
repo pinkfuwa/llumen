@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createDropZone } from '@sv-use/core';
 	import MdTextbox from './MDTextbox.svelte';
-	import SearchBtn from './SearchBtn.svelte';
+	import ModeBtn from './ModeBtn.svelte';
 	import UploadBtn from './UploadBtn.svelte';
 	import SendBtn from './SendBtn.svelte';
 	import FileGroup from '../buttons/FileGroup.svelte';
@@ -75,9 +75,9 @@
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
-		<div class="flex grow items-center space-x-2 h-11">
+		<div class="flex h-11 grow items-center space-x-2">
 			<ModelBtn bind:value={modelId} {above} disabled={selectionDisabled} />
-			<SearchBtn bind:value={mode} />
+			<ModeBtn bind:value={mode} />
 			<UploadBtn bind:files />
 		</div>
 		{#if content.length != 0}

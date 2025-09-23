@@ -3,7 +3,7 @@
 </script>
 
 <div
-	class="flex items-center rounded-lg border-l-8 border-red-500 bg-secondary font-semibold"
+	class="flex items-center rounded-lg border-l-8 border-red-500 bg-component-bg font-semibold"
 	class:p-2={thin}
 	class:p-3={!thin}
 >

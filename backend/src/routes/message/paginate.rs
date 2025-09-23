@@ -60,6 +60,8 @@ pub struct MessagePaginateRespList {
     pub id: i32,
     pub role: MessagePaginateRespRole,
     pub chunks: Vec<MessagePaginateRespChunk>,
+    pub token: u32,
+    pub price: f32,
 }
 
 #[derive(Debug, Serialize)]
@@ -84,17 +86,19 @@ pub enum MessagePaginateRespChunkKind {
     Text(MessagePaginateRespChunkKindText),
     Reasoning(MessagePaginateRespChunkKindReasoning),
     ToolCall(MessagePaginateRespChunkKindToolCall),
+    Error(MessagePaginateRespChunkKindError),
 }
+
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct MessagePaginateRespChunkKindText {
-    pub context: String,
+    pub content: String,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct MessagePaginateRespChunkKindReasoning {
-    pub context: String,
+    pub content: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -102,7 +106,13 @@ pub struct MessagePaginateRespChunkKindReasoning {
 pub struct MessagePaginateRespChunkKindToolCall {
     pub name: String,
     pub args: String,
-    pub context: String,
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindError {
+    pub content: String,
 }
 
 pub async fn route(
@@ -170,7 +180,11 @@ pub async fn route(
                 MessageKind::User => MessagePaginateRespRole::User,
                 MessageKind::Assistant => MessagePaginateRespRole::Assistant,
                 MessageKind::Hidden => return None,
+                MessageKind::DeepResearch => todo!("Handle DeepResearch message kind"),
             };
+            if chunks.is_empty() {
+                return None;
+            }
             let chunks: Result<_, Json<Error>> = chunks
                 .into_iter()
                 .map(|chunk| {
@@ -179,12 +193,12 @@ pub async fn route(
                         kind: match chunk.kind {
                             ChunkKind::Text => MessagePaginateRespChunkKind::Text(
                                 MessagePaginateRespChunkKindText {
-                                    context: chunk.content,
+                                    content: chunk.content,
                                 },
                             ),
                             ChunkKind::Reasoning => MessagePaginateRespChunkKind::Reasoning(
                                 MessagePaginateRespChunkKindReasoning {
-                                    context: chunk.content,
+                                    content: chunk.content,
                                 },
                             ),
                             ChunkKind::ToolCall => {
@@ -193,10 +207,16 @@ pub async fn route(
                                     MessagePaginateRespChunkKindToolCall {
                                         name: tool_call.name,
                                         args: tool_call.args,
-                                        context: tool_call.content,
+                                        content: tool_call.content,
                                     },
                                 )
                             }
+                            ChunkKind::Error => MessagePaginateRespChunkKind::Error(
+                                MessagePaginateRespChunkKindError {
+                                    content: chunk.content,
+                                },
+                            ),
+                            _ => todo!("Handle other chunk kinds"),
                         },
                     })
                 })
@@ -206,6 +226,8 @@ pub async fn route(
                 id: message.id,
                 role,
                 chunks,
+                token: message.token_count as u32,
+                price: message.price,
             }))
         })
         .collect::<Result<_, _>>()?;
