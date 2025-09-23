@@ -4,6 +4,7 @@ use std::sync::Arc;
 use anyhow::{Context as _, Result};
 
 use entity::ChunkKind;
+use entity::FileHandle;
 use entity::MessageKind;
 use futures_util::StreamExt;
 use futures_util::future::BoxFuture;
@@ -55,12 +56,22 @@ impl<P: ChatInner> ChatPipeline<P> {
             match message.kind {
                 MessageKind::Hidden => continue,
                 MessageKind::User => {
+                    let files = chunks
+                        .iter()
+                        .filter(|x| matches!(x.kind, ChunkKind::File))
+                        .filter_map(|x| serde_json::from_str::<FileHandle>(&x.content).ok())
+                        .collect::<Vec<_>>();
+                    let files = helper::load_files(ctx.blob.clone(), &files).await?;
+
                     let text = chunks
                         .iter()
                         .filter(|x| matches!(x.kind, ChunkKind::Text))
                         .map(|x| x.content.as_str())
                         .collect::<String>();
-                    messages.push(openrouter::Message::User(text));
+                    match files.is_empty() {
+                        true => messages.push(openrouter::Message::User(text)),
+                        false => messages.push(openrouter::Message::MultipartUser { text, files }),
+                    };
                 }
                 MessageKind::Assistant => {
                     messages.extend(helper::chunks_to_message(chunks.clone().into_iter()))

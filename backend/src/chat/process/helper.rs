@@ -1,9 +1,13 @@
-use entity::chunk;
+use std::sync::Arc;
+
+use anyhow::Context;
+use entity::{FileHandle, chunk};
 use sea_orm::IntoActiveModel;
 
 use crate::{
     chat::token::ToolCallInfo,
     openrouter::{self, MessageToolCall},
+    utils::blob::BlobDB,
 };
 
 /// Convert **assitant** chunks to openrouter messages
@@ -45,4 +49,34 @@ pub(super) fn active_chunks_to_message(
         };
     }
     results
+}
+
+pub(super) async fn load_files(
+    db: Arc<BlobDB>,
+    handles: &[FileHandle],
+) -> Result<Vec<openrouter::File>, anyhow::Error> {
+    let mut tasks = Vec::with_capacity(handles.len());
+
+    for handle in handles {
+        let id = handle.id;
+        let name = handle.name.clone();
+        let db = db.clone();
+        let handle = tokio::spawn(async move {
+            db.get(id).await.map(|data| openrouter::File {
+                name,
+                data: data.as_ref().clone(),
+            })
+        });
+        tasks.push(handle);
+    }
+
+    let mut results = Vec::with_capacity(handles.len());
+    for task in tasks {
+        match task.await? {
+            Some(it) => results.push(it),
+            None => tracing::error!("File not found"),
+        };
+    }
+
+    Ok(results)
 }

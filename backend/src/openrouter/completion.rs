@@ -171,8 +171,8 @@ pub struct ChatCompletion {
 
 #[derive(Debug, Clone)]
 pub struct File {
-    name: String,
-    data: Vec<u8>,
+    pub name: String,
+    pub data: Vec<u8>,
 }
 
 #[derive(Debug, Clone)]
@@ -189,17 +189,11 @@ pub struct MessageToolResult {
 }
 
 #[derive(Debug, Clone)]
-pub struct MessageMultipartUser {
-    pub text: String,
-    pub files: Vec<File>,
-}
-
-#[derive(Debug, Clone)]
 pub enum Message {
     System(String),
     User(String),
     Assistant(String),
-    MultipartUser(MessageMultipartUser),
+    MultipartUser { text: String, files: Vec<File> },
     ToolCall(MessageToolCall),
     ToolResult(MessageToolResult),
 }
@@ -222,7 +216,7 @@ impl From<Message> for raw::Message {
                 content: Some(msg),
                 ..Default::default()
             },
-            Message::MultipartUser(MessageMultipartUser { text, files }) => {
+            Message::MultipartUser { text, files } => {
                 let files = files
                     .into_iter()
                     .map(|f| {

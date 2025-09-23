@@ -18,6 +18,7 @@ pub enum MessageKind {
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum ChunkKind {
     Text = 0,
+    File = 7,
     Reasoning = 1,
     ToolCall = 2,
     Error = 3,
@@ -166,4 +167,10 @@ impl crate::chunk::Model {
         debug_assert_eq!(self.kind, ChunkKind::ToolCall);
         Ok(serde_json::from_str(&self.content)?)
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FileHandle {
+    pub name: String,
+    pub id: i32,
 }
