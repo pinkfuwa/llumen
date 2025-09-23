@@ -103,6 +103,10 @@ export interface Error {
 	reason: string;
 }
 
+export interface FileUploadResp {
+	id: number;
+}
+
 export interface LoginReq {
 	username: string;
 	password: string;
@@ -113,11 +117,17 @@ export interface LoginResp {
 	exp: string;
 }
 
+export interface MessageCreateReqFile {
+	id: number;
+	name: string;
+}
+
 export interface MessageCreateReq {
 	chat_id: number;
 	model_id: number;
 	mode: ChatMode;
 	text: string;
+	files: MessageCreateReqFile[];
 }
 
 export interface MessageCreateResp {
@@ -314,8 +324,14 @@ export interface SseRespUser {
 	content: string;
 }
 
+export enum LastKind {
+	User = 'User',
+	Assistant = 'Assistant'
+}
+
 export interface SseRespVersion {
 	version: number;
+	last_kind: LastKind;
 }
 
 export interface UserCreateReq {

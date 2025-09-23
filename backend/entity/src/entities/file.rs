@@ -8,6 +8,8 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub chat_id: i32,
+    pub filename: String,
+    pub mime_type: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -16,15 +18,15 @@ pub enum Relation {
         belongs_to = "super::chat::Entity",
         from = "Column::ChatId",
         to = "super::chat::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+        on_update = "SetNull",
+        on_delete = "SetNull"
     )]
-    Message,
+    Chat,
 }
 
 impl Related<super::chat::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Message.def()
+        Relation::Chat.def()
     }
 }
 

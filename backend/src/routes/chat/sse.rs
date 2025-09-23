@@ -38,8 +38,16 @@ pub enum SseResp {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
+pub enum LastKind {
+    User,
+    Assistant,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
 pub struct SseRespVersion {
     pub version: i32,
+    pub last_kind: LastKind,
 }
 
 #[derive(Debug, Serialize)]
@@ -126,9 +134,14 @@ pub async fn route(
         .kind(ErrorKind::Internal)?;
 
     let initial_event = if let Some(last_message) = last_message {
+        let last_kind = match last_message.kind {
+            entity::MessageKind::User => LastKind::User,
+            _ => LastKind::Assistant,
+        };
         let event = SseResp::Version(SseRespVersion {
             // FIXME: change version when revalidate is needed
             version: last_message.id,
+            last_kind,
         });
         let event = Event::default().json_data(event).unwrap();
         Some(Ok(event))

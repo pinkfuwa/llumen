@@ -15,6 +15,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(pk_auto(File::Id))
                     .col(integer_null(File::ChatId))
+                    .col(string_null(File::MineType))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-file-chat_id-chat")

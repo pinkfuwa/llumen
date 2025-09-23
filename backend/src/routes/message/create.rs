@@ -1,18 +1,26 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::MessageKind;
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, TransactionTrait};
+use entity::{ChunkKind, MessageKind, chunk, file::Entity as File, patch::FileHandle};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, TransactionTrait};
 use serde::{Deserialize, Serialize};
+use serde_json;
 use typeshare::typeshare;
 
 use crate::{
     AppState,
     chat::{Normal, Pipeline, Search},
-    errors::*,
+    errors::{Error, ErrorKind, JsonResult, WithKind},
     middlewares::auth::UserId,
     utils::chat::ChatMode,
 };
+
+#[derive(Debug, Deserialize)]
+#[typeshare]
+pub struct MessageCreateReqFile {
+    pub id: i32,
+    pub name: String,
+}
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -21,6 +29,7 @@ pub struct MessageCreateReq {
     pub model_id: i32,
     pub mode: ChatMode,
     pub text: String,
+    pub files: Vec<MessageCreateReqFile>,
 }
 
 #[derive(Debug, Serialize)]
@@ -43,15 +52,31 @@ pub async fn route(
     .insert(&txn)
     .await
     .raw_kind(ErrorKind::Internal)?;
-    entity::chunk::ActiveModel {
+
+    let mut chunks = vec![chunk::ActiveModel {
         message_id: Set(user_msg.id),
         content: Set(req.text),
-        kind: Set(entity::ChunkKind::Text),
+        kind: Set(ChunkKind::Text),
         ..Default::default()
-    }
-    .insert(&txn)
-    .await
-    .raw_kind(ErrorKind::Internal)?;
+    }];
+    chunks.extend(req.files.into_iter().map(|f| {
+        let file_handle = FileHandle {
+            name: f.name,
+            id: f.id,
+        };
+        chunk::ActiveModel {
+            message_id: Set(user_msg.id),
+            content: Set(serde_json::to_string(&file_handle).unwrap()),
+            kind: Set(ChunkKind::File),
+            ..Default::default()
+        }
+    }));
+
+    chunk::Entity::insert_many(chunks)
+        .exec(&txn)
+        .await
+        .raw_kind(ErrorKind::Internal)?;
+
     txn.commit().await.raw_kind(ErrorKind::Internal)?;
 
     let closure = async move {
