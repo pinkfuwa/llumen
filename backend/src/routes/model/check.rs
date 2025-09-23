@@ -21,7 +21,7 @@ pub struct ModelCheckResp {
 }
 
 pub async fn route(
-    State(app): State<Arc<AppState>>,
+    State(_): State<Arc<AppState>>,
     Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelCheckReq>,
 ) -> JsonResult<ModelCheckResp> {

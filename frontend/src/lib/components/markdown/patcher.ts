@@ -30,7 +30,8 @@ const blocktokens = [
 	'table',
 	'tablerow',
 	'tablecell',
-	'blockKatex'
+	'blockKatex',
+	'citation'
 ];
 
 const flushThreshold = 9;

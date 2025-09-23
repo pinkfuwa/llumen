@@ -24,7 +24,7 @@ pub struct ModelWriteResp {
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
+    Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelWriteReq>,
 ) -> JsonResult<ModelWriteResp> {
     let config = req.config;
