@@ -18,7 +18,7 @@ case $arch in
         ;;
 esac
 
-zig_version="0.13.0"
+zig_version="0.15.1"
 zig_tarball="zig-linux-${zig_arch}-${zig_version}.tar.xz"
 zig_url="https://ziglang.org/download/${zig_version}/${zig_tarball}"
 
