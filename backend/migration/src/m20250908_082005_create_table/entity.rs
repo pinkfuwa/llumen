@@ -20,8 +20,7 @@ pub enum Model {
 pub enum File {
     Table,
     Id,
-    MessageId,
-    Name,
+    ChatId,
 }
 
 #[derive(DeriveIden)]
