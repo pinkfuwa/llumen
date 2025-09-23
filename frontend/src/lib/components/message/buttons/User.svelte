@@ -3,6 +3,7 @@
 	import { SquarePen, Check, X } from '@lucide/svelte';
 	import FileGroup from '../../buttons/FileGroup.svelte';
 	import { Button } from 'bits-ui';
+	import { dispatchError } from '$lib/error';
 	let { content = $bindable(''), files = $bindable([] as Array<{ name: string }>) } = $props();
 
 	let editable = $state(false);
@@ -29,7 +30,7 @@
 			{/if}
 		</div>
 		<div
-			class="flex justify-end mt-1 {editable
+			class="mt-1 flex justify-end {editable
 				? 'opacity-100'
 				: 'opacity-0'} group-hover/files:opacity-100"
 		>
@@ -42,20 +43,26 @@
 				>
 					<X />
 				</Button.Root>
-			{/if}
-			<Button.Root
-				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
-				onclick={() => {
-					editable = !editable;
-				}}
-				aria-label="edit user message"
-			>
-				{#if editable}
+				<Button.Root
+					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
+					onclick={() => {
+						dispatchError('internal', 'Disabled in this version');
+					}}
+					aria-label="edit user message"
+				>
 					<Check />
-				{:else}
+				</Button.Root>
+			{:else}
+				<Button.Root
+					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
+					onclick={() => {
+						editable = !editable;
+					}}
+					aria-label="edit user message"
+				>
 					<SquarePen />
-				{/if}
-			</Button.Root>
+				</Button.Root>
+			{/if}
 		</div>
 	</div>
 </div>

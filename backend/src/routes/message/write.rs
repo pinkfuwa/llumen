@@ -23,7 +23,8 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageWriteReq>,
 ) -> JsonResult<Resp> {
-    todo!(
-        "Implement message writing logic: find the message by id, check ownership, update the message content, and save it to the database."
-    )
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "user message update is disabled".to_owned(),
+    }))
 }

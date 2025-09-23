@@ -216,6 +216,9 @@ export interface ModelCreateReq {
 export interface ModelCreateResp {
 	id: number;
 	display_name: string;
+	image_input: boolean;
+	audio_input: boolean;
+	other_file_input: boolean;
 }
 
 export interface ModelDeleteReq {
@@ -386,6 +389,5 @@ export type SseResp =
 	| { t: 'tool_call'; c: SseRespToolCall }
 	| { t: 'tool_result'; c: SseRespToolResult }
 	| { t: 'complete'; c: SseRespMessageComplete }
-	| { t: 'user'; c: SseRespUser }
 	| { t: 'title'; c: SseRespTitle }
 	| { t: 'error'; c: SseRespError };

@@ -1,7 +1,8 @@
 /target
-/db.sqlite
+/db.sqlite*
 /.env
 *.nix
 flake.nix
 .envrc
 /*.bak
+/*.redb

@@ -77,7 +77,7 @@ export function createModel(): CreateMutationResult<ModelCreateReq, ModelCreateR
 			SetQueryData<ModelListResp>({
 				key: ['models'],
 				updater: (x) => {
-					if (x != undefined) x.list = [data, ...x.list];
+					if (x != undefined) x.list = [...x.list, data];
 					return x;
 				}
 			});
