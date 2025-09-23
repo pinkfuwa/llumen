@@ -17,9 +17,8 @@ case $arch in
         exit 1
         ;;
 esac
-
 zig_version="0.15.1"
-zig_tarball="zig-linux-${zig_arch}-${zig_version}.tar.xz"
+zig_tarball="zig-${zig_arch}-linux-${zig_version}.tar.xz"
 zig_url="https://ziglang.org/download/${zig_version}/${zig_tarball}"
 
 echo "Downloading Zig from $zig_url..."
@@ -29,8 +28,8 @@ echo "Extracting Zig..."
 tar -xf "${zig_tarball}"
 
 echo "Installing Zig..."
-mkdir -p /opt/zig
-mv "zig-linux-${zig_arch}-${zig_version}/zig" /opt/zig/
-rm -rf "zig-linux-${zig_arch}-${zig_version}" "${zig_tarball}"
+mkdir -p /opt
+mv "zig-${zig_arch}-linux-${zig_version}" /opt/zig/
+rm -rf "${zig_tarball}"
 
 echo "Zig installation complete."
