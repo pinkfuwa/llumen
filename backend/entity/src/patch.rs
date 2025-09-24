@@ -167,6 +167,10 @@ impl crate::chunk::Model {
         debug_assert_eq!(self.kind, ChunkKind::ToolCall);
         Ok(serde_json::from_str(&self.content)?)
     }
+    pub fn as_file(&self) -> Result<FileHandle> {
+        debug_assert_eq!(self.kind, ChunkKind::File);
+        Ok(serde_json::from_str(&self.content)?)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

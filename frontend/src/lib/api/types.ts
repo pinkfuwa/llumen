@@ -166,6 +166,7 @@ export enum MessagePaginateRespRole {
 
 export type MessagePaginateRespChunkKind =
 	| { t: 'text'; c: MessagePaginateRespChunkKindText }
+	| { t: 'file'; c: MessagePaginateRespChunkKindFile }
 	| { t: 'reasoning'; c: MessagePaginateRespChunkKindReasoning }
 	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall }
 	| { t: 'error'; c: MessagePaginateRespChunkKindError };
@@ -189,6 +190,11 @@ export interface MessagePaginateResp {
 
 export interface MessagePaginateRespChunkKindError {
 	content: string;
+}
+
+export interface MessagePaginateRespChunkKindFile {
+	name: string;
+	id: number;
 }
 
 export interface MessagePaginateRespChunkKindReasoning {

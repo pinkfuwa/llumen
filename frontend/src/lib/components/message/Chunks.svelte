@@ -15,7 +15,7 @@
 
 {#each chunks as chunk}
 	{@const kind = chunk.kind.t}
-	{@const content = chunk.kind.c.content}
+	{@const content = 'content' in chunk.kind.c ? chunk.kind.c.content : ''}
 	{#if kind == 'reasoning'}
 		<Reasoning {content} />
 	{:else if kind == 'text'}

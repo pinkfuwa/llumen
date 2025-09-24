@@ -15,7 +15,7 @@
 
 	let modelId = $state<null | number>(null);
 	let content = $state('');
-	let files = $state([]);
+	let files: File[] = $state([]);
 	let mode = $state<Mode | null>(null);
 	let title = $state<string | null>(null);
 

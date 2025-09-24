@@ -41,7 +41,7 @@
 ></textarea>
 {#if !editable}
 	<div
-		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-y-auto pr-2 wrap-break-word"
+		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-y-auto p-4 pr-2 wrap-break-word"
 	>
 		<Markdown source={value} />
 	</div>

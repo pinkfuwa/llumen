@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { DeleteUser, useUser, useUsers } from '$lib/api/user';
 	import { Trash } from '@lucide/svelte';
-	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { _ } from 'svelte-i18n';
 	import CheckDelete from './CheckDelete.svelte';
 

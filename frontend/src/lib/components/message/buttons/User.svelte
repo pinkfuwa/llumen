@@ -4,8 +4,10 @@
 	import FileGroup from '../../buttons/FileGroup.svelte';
 	import { Button } from 'bits-ui';
 	import { dispatchError } from '$lib/error';
-	let { content = $bindable(''), files = $bindable([] as Array<{ name: string }>) } = $props();
+	let { content = $bindable(''), files = $bindable([] as Array<{ name: string; id: number }>) } =
+		$props();
 
+	// TODO: use component lib
 	let editable = $state(false);
 
 	let rows = $derived(content.split('\n').length);

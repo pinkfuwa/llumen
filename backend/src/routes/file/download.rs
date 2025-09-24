@@ -1,20 +1,23 @@
 use std::sync::Arc;
 
-use axum::Json;
 use axum::body::Bytes;
 use axum::extract::{Path, State};
 use axum::response::{IntoResponse, Response};
-use entity::file::Entity as File;
-use sea_orm::EntityTrait;
+use axum::{Extension, Json};
+use entity::file::{self, Entity as File};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::AppState;
-use crate::errors::{AppError, Error, ErrorKind, JsonResult, WithKind};
+use crate::errors::{AppError, Error, ErrorKind, WithKind};
+use crate::middlewares::auth::UserId;
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
+    Extension(UserId(user_id)): Extension<UserId>,
     Path(id): Path<i32>,
 ) -> Result<Response, AppError> {
     let file = File::find_by_id(id)
+        .filter(file::Column::OwnerId.eq(user_id))
         .one(&app.conn)
         .await
         .kind(ErrorKind::Internal)?
