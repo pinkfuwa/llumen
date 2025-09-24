@@ -1,24 +1,28 @@
 <script lang="ts">
-	let { id }: { id: number } = $props();
-
-	import { addSSEHandler, startSSE, useMessage as useMessages } from '$lib/api/message';
+	import type { ChatReadResp } from '$lib/api/types';
+	import { addSSEHandler, startSSE, useMessage } from '$lib/api/message';
 	import Page from './Page.svelte';
 	import MessageStream from './MessageStream.svelte';
 	import { updateRoomTitle } from '$lib/api/chatroom';
 
-	const { data } = useMessages(id);
+	// TODO: ChatReadResp is props drill, use globalCache
+	let { id, room }: { id: number; room: ChatReadResp | undefined } = $props();
+
+	const { data } = useMessage(id);
 
 	startSSE(id);
 
 	addSSEHandler('title', (data) => {
 		updateRoomTitle(id, data.title);
 	});
+
+	$inspect(room);
 </script>
 
 <MessageStream chat_id={id} />
 
 {#each $data as page}
 	{#key page.no}
-		<Page entry={page} />
+		<Page entry={page} roomId={id} {room} />
 	{/key}
 {/each}

@@ -2,25 +2,30 @@ import {
 	CreateEventQuery,
 	CreateInfiniteQuery,
 	CreateMutation,
+	CreateRawMutation,
+	RemoveInfiniteQueryData,
 	SetInfiniteQueryData,
 	type Fetcher,
 	type InfiniteQueryResult
 } from './state';
 import { APIFetch } from './state/errorHandle';
-import type { MutationResult } from './state/mutate';
+import type { MutationResult, RawMutationResult } from './state/mutate';
 import {
+	type MessageDeleteReq,
 	MessagePaginateReqOrder,
 	MessagePaginateRespRole,
 	type MessageCreateReq,
 	type MessageCreateResp,
 	type MessagePaginateReq,
 	type MessagePaginateResp,
+	type MessagePaginateRespChunk,
 	type MessagePaginateRespList,
 	type SseReq,
 	type SseResp
 } from './types';
 import { onDestroy } from 'svelte';
 import { dev } from '$app/environment';
+import { globalCache } from './state/cache';
 
 class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 	chatId: number;
@@ -81,13 +86,26 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 	return CreateMutation({
 		path: 'message/create',
 		onSuccess: (data, param) => {
+			let fileChunks = param.files?.map(
+				(f) =>
+					({
+						id: 0,
+						kind: { t: 'file', c: { name: f.name, id: f.id } }
+					}) as MessagePaginateRespChunk
+			);
+
+			const roomStreamingState = globalCache.getOr(
+				['chat', 'stream', param.chat_id.toString()],
+				false
+			);
+			roomStreamingState.set(true);
+
 			SetInfiniteQueryData<MessagePaginateRespList>({
 				key: ['messagePaginate', param.chat_id.toString()],
 				data: {
 					id: data.id,
 					role: MessagePaginateRespRole.User,
-					// TODO: fix chunk ID
-					chunks: [{ id: data.id, kind: { t: 'text', c: { content: param.text } } }],
+					chunks: [{ id: data.id, kind: { t: 'text', c: { content: param.text } } }, ...fileChunks],
 					token: 0,
 					price: 0
 				}
@@ -136,6 +154,30 @@ export function addSSEHandler<T extends SseResp['t']>(
 		const index = SSEHandlers[event].indexOf(handler as any);
 		if (index !== -1) {
 			SSEHandlers[event].splice(index, 1);
+		}
+	});
+}
+
+export function updateMessage(): RawMutationResult<
+	MessageCreateReq & { msgId: number },
+	MessageCreateResp
+> {
+	const { mutate: create } = createMessage();
+	return CreateRawMutation({
+		mutator: (param) => {
+			return new Promise(async (resolve, reject) => {
+				await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', {
+					id: param.msgId
+				});
+
+				RemoveInfiniteQueryData<MessagePaginateRespList>({
+					predicate(entry) {
+						return entry.id >= param.msgId;
+					},
+					key: ['messagePaginate', param.chat_id.toString()]
+				});
+				await create(param, resolve);
+			});
 		}
 	});
 }

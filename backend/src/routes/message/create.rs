@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{ChunkKind, MessageKind, chunk, file::Entity as File, patch::FileHandle};
+use entity::{ChunkKind, MessageKind, chunk, patch::FileHandle};
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -10,7 +10,7 @@ use typeshare::typeshare;
 use crate::{
     AppState,
     chat::{Normal, Pipeline, Search},
-    errors::{Error, ErrorKind, JsonResult, WithKind},
+    errors::{ErrorKind, JsonResult, WithKind},
     middlewares::auth::UserId,
     utils::chat::ChatMode,
 };

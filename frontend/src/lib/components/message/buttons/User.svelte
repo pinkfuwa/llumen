@@ -3,12 +3,15 @@
 	import { SquarePen, Check, X } from '@lucide/svelte';
 	import FileGroup from '../../buttons/FileGroup.svelte';
 	import { Button } from 'bits-ui';
-	import { dispatchError } from '$lib/error';
-	let { content = $bindable(''), files = $bindable([] as Array<{ name: string; id: number }>) } =
-		$props();
+	let {
+		content = $bindable(''),
+		files = $bindable([] as Array<{ name: string; id: number }>),
+		onupdate = (() => {}) as (text: string) => void
+	} = $props();
 
 	// TODO: use component lib
 	let editable = $state(false);
+	let editBuffer = $state('');
 
 	let rows = $derived(content.split('\n').length);
 </script>
@@ -40,16 +43,15 @@
 				<Button.Root
 					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
 					onclick={() => {
-						editable = !editable;
+						editable = false;
+						content = editBuffer;
 					}}
 				>
 					<X />
 				</Button.Root>
 				<Button.Root
 					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
-					onclick={() => {
-						dispatchError('internal', 'Disabled in this version');
-					}}
+					onclick={() => onupdate(content)}
 					aria-label="edit user message"
 				>
 					<Check />
@@ -58,7 +60,8 @@
 				<Button.Root
 					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
 					onclick={() => {
-						editable = !editable;
+						editable = true;
+						editBuffer = content;
 					}}
 					aria-label="edit user message"
 				>

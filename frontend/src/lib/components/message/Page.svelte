@@ -1,12 +1,15 @@
 <script lang="ts">
+	import { updateMessage } from '$lib/api/message';
 	import type { PageEntry } from '$lib/api/state';
 	import {
 		MessagePaginateRespRole as Role,
+		type ChatReadResp,
 		type MessagePaginateRespChunk,
 		type MessagePaginateRespChunkKindFile,
 		type MessagePaginateRespChunkKindText,
 		type MessagePaginateRespList
 	} from '$lib/api/types';
+	import { dispatchError } from '$lib/error';
 	import ResponseBox from './buttons/ResponseBox.svelte';
 	import ResponseEdit from './buttons/ResponseEdit.svelte';
 	import User from './buttons/User.svelte';
@@ -14,8 +17,15 @@
 
 	let div = $state<HTMLElement | null>(null);
 
-	const { entry }: { entry: PageEntry<MessagePaginateRespList> } = $props();
+	const {
+		entry,
+		room,
+		roomId
+	}: { entry: PageEntry<MessagePaginateRespList>; room: ChatReadResp | undefined; roomId: number } =
+		$props();
 	const data = entry.data;
+
+	let { mutate } = updateMessage();
 
 	$effect(() => entry.target.set(div));
 
@@ -32,6 +42,7 @@
 			.filter((x) => x.kind.t == 'file')
 			.map((x) => x.kind.c as MessagePaginateRespChunkKindFile);
 	}
+	// MessageCreateReqFile
 </script>
 
 <div class="mt-2 flex flex-col-reverse space-y-2" bind:this={div}>
@@ -39,7 +50,23 @@
 		{#if msg.role == Role.User}
 			{@const content = getTextFromChunks(msg.chunks)}
 			{@const files = getFileFromChunks(msg.chunks)}
-			<User {content} {files} />
+			<User
+				{content}
+				{files}
+				onupdate={(text) => {
+					if (room == undefined) return;
+					if (room.model_id == undefined) dispatchError('internal', 'select a model first');
+					else
+						mutate({
+							chat_id: roomId,
+							model_id: room.model_id,
+							mode: room.mode,
+							text,
+							files,
+							msgId: msg.id
+						});
+				}}
+			/>
 		{:else if msg.role == Role.Assistant}
 			<ResponseBox>
 				<Chunks chunks={msg.chunks} />
