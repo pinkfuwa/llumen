@@ -7,6 +7,7 @@
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { haltCompletion, useRoom, useRoomStreamingState } from '$lib/api/chatroom.js';
+	import { UploadManager } from '$lib/api/files.js';
 
 	let id = $derived(Number(params.id));
 
@@ -28,6 +29,12 @@
 	});
 
 	let isStreaming = $derived(useRoomStreamingState(id));
+
+	let uploadManager = $derived(new UploadManager(id));
+
+	$effect(() => {
+		uploadManager.retain(files);
+	});
 </script>
 
 <Copyright top />
@@ -40,10 +47,16 @@
 			modelId={$room?.model_id}
 			bind:mode
 			bind:files
-			onsubmit={() => {
-				mutate({ chat_id: id, text: content, mode: mode!, model_id: modelId!, files: [] });
+			onsubmit={async () => {
 				content = '';
 				isStreaming.set(true);
+				mutate({
+					chat_id: id,
+					text: content,
+					mode: mode!,
+					model_id: modelId!,
+					files: await uploadManager.getUploads(files)
+				});
 			}}
 			oncancel={() => {
 				halt({ id });

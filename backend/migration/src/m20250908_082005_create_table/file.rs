@@ -14,8 +14,8 @@ impl MigrationTrait for Migration {
                     .table(File::Table)
                     .if_not_exists()
                     .col(pk_auto(File::Id))
-                    .col(integer(File::ChatId))
-                    .col(integer(File::OwnerId))
+                    .col(integer_null(File::ChatId))
+                    .col(integer_null(File::OwnerId))
                     .col(string_null(File::MimeType))
                     .foreign_key(
                         ForeignKey::create()

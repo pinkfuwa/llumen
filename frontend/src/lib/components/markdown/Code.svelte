@@ -22,7 +22,7 @@
 			</button>
 			<Code {lang} {text} {monochrome} />
 		{:else}
-			<button onclick={() => copy(text)} class="cursor-pointer">
+			<button onclick={() => copy(text)} class="w-full cursor-pointer">
 				<Code {lang} {text} {monochrome} />
 			</button>
 		{/if}

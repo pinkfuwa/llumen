@@ -25,7 +25,7 @@
 </script>
 
 <textarea
-	class="editor field-sizing-content max-h-[60vh] max-w-[65vw] flex-grow resize-none rounded-md bg-input p-4 overflow-scroll{editable
+	class="editor field-sizing-content max-h-[60vh] max-w-[65vw] flex-grow resize-none rounded-md bg-input p-4 overflow-auto{editable
 		? ''
 		: ' hidden'}"
 	bind:value
