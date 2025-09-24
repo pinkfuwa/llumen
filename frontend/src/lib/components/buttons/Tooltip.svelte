@@ -10,7 +10,7 @@
 			{@render children()}
 		</Tooltip.Trigger>
 		<Tooltip.Content sideOffset={8}>
-			<div class="rounded-md bg-popup-bg p-2">
+			<div class="rounded-md bg-popup-bg p-2 text-text">
 				{text}
 			</div>
 		</Tooltip.Content>

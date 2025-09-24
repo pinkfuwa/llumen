@@ -163,7 +163,6 @@ impl StreamCompletion {
     pub async fn next(&mut self) -> Option<Result<StreamCompletionResp>> {
         loop {
             match self.source.next().await? {
-                Ok(Event::Open) => continue,
                 Ok(Event::Message(e)) if &e.data != "[DONE]" => {
                     return Some(self.handle_data(&e.data));
                 }
@@ -176,18 +175,23 @@ impl StreamCompletion {
                         e => Some(Err(self.handle_error(e).await)),
                     };
                 }
-                _ => return None,
+                _ => continue,
             }
         }
     }
 
-    pub fn get_result(self) -> Result<StreamResult> {
-        Ok(StreamResult {
-            toolcall: self.toolcall.clone(),
+    pub fn get_result(mut self) -> StreamResult {
+        if self.stop_reason.is_none() {
+            tracing::warn!("Provider didn't return finish_reason, set to Length");
+        }
+        let stop_reason = self.stop_reason.take().unwrap_or(raw::FinishReason::Length);
+
+        StreamResult {
+            toolcall: std::mem::take(&mut self.toolcall),
             usage: self.usage.clone(),
-            stop_reason: self.stop_reason.clone().context("Stream not finished")?,
-            responses: self.responses.clone(),
-        })
+            stop_reason,
+            responses: std::mem::take(&mut self.responses),
+        }
     }
 }
 

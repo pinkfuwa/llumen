@@ -135,9 +135,7 @@ impl<P: ChatInner> ChatPipeline<P> {
             return Err(anyhow::anyhow!("The stream was halted"));
         }
 
-        let result = res
-            .get_result()
-            .context("Provider didn't return finish_reason")?;
+        let result = res.get_result();
 
         self.completion_ctx
             .update_usage(result.usage.cost as f32, result.usage.token as i32);

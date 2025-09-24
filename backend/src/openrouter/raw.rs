@@ -157,10 +157,23 @@ impl MessagePart {
                 Self::text(format!("Uploaded file: {}", filename)),
                 Self::input_audio(blob, ext),
             ),
-            _ => (
-                Self::text(format!("Uploaded file: {}", filename)),
-                Self::file(filename.to_string(), blob),
-            ),
+            "txt" | "md" | "json" | "csv" | "log" => {
+                let content = String::from_utf8_lossy(&blob).to_string();
+
+                (
+                    Self::text(format!("Uploaded file: {}\n\n", filename)),
+                    Self::text(content),
+                )
+            }
+            _ => {
+                // TODO: report unknown file type to user
+                // Unknown file type is provider-specific, so provider may return error(we can't capture it)
+                tracing::warn!("Unknown file type: {}", filename);
+                (
+                    Self::text(format!("Uploaded file: {}", filename)),
+                    Self::file(filename.to_string(), blob),
+                )
+            }
         }
     }
 
