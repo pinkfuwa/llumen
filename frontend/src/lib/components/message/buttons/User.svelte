@@ -12,8 +12,9 @@
 	// TODO: use component lib
 	let editable = $state(false);
 	let editBuffer = $state('');
+	let renderHeight = $state(0);
 
-	let rows = $derived(content.split('\n').length);
+	let actualHeight = $derived(Math.max(48, renderHeight));
 </script>
 
 <div class="flex w-full justify-end px-10 lg:px-20 2xl:px-36">
@@ -27,11 +28,13 @@
 			{#if editable}
 				<textarea
 					class="editor inline field-sizing-content w-full flex-grow resize-none overflow-auto"
-					{rows}
 					bind:value={content}
+					style="height: {actualHeight}px"
 				></textarea>
 			{:else}
-				<Root source={content} />
+				<div bind:clientHeight={renderHeight}>
+					<Root source={content} />
+				</div>
 			{/if}
 		</div>
 		<div

@@ -203,7 +203,7 @@ impl CompletionContext {
         }
         let system_prompt = self.ctx.prompt.render(PromptKind::TitleGen, self)?;
 
-        let mut message = vec![openrouter::Message::System(system_prompt.clone())];
+        let mut message = vec![openrouter::Message::System(system_prompt)];
 
         message.extend(self.messages_with_chunks.iter().filter_map(|(m, chunks)| {
             // We ignore tool call or such, this is intentional.
@@ -218,15 +218,24 @@ impl CompletionContext {
 
             match m.kind {
                 MessageKind::Hidden => None,
-                MessageKind::User => Some(openrouter::Message::User(text)),
-                MessageKind::Assistant | MessageKind::DeepResearch => {
-                    Some(openrouter::Message::Assistant(text))
-                }
+                MessageKind::User => Some(openrouter::Message::User(
+                    text.chars().take(500).collect::<String>(),
+                )),
+                MessageKind::Assistant | MessageKind::DeepResearch => Some(
+                    openrouter::Message::Assistant(text.chars().take(1000).collect::<String>()),
+                ),
             }
         }));
 
-        // Add two system prompt work surprisingly good for small model.
-        message.push(openrouter::Message::System(system_prompt));
+        self.new_chunks.iter().for_each(|c| {
+            if let ChunkKind::Text | ChunkKind::Report = c.kind.clone().unwrap() {
+                if let Some(text) = c.content.try_as_ref() {
+                    message.push(openrouter::Message::Assistant(
+                        text.chars().take(1000).collect::<String>(),
+                    ));
+                }
+            }
+        });
 
         let model = self.model.get_config().context("invalid config")?;
 

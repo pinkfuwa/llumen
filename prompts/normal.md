@@ -71,8 +71,6 @@ Always format your entire response in CommonMark. Use fenced code blocks (```) w
 ---
 
 Current date: {{time}}
-Current Chat Id: {{chat_id}}
-User Name: {{username}}
 {% if chat_title != "" %}
 Current Chat Name: {{chat_title}}
 {% endif %}

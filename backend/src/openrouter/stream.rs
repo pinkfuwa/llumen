@@ -182,9 +182,9 @@ impl StreamCompletion {
 
     pub fn get_result(mut self) -> StreamResult {
         if self.stop_reason.is_none() {
-            tracing::warn!("Provider didn't return finish_reason, set to Length");
+            tracing::warn!("Provider didn't return finish_reason, set to Stop");
         }
-        let stop_reason = self.stop_reason.take().unwrap_or(raw::FinishReason::Length);
+        let stop_reason = self.stop_reason.take().unwrap_or(raw::FinishReason::Stop);
 
         StreamResult {
             toolcall: std::mem::take(&mut self.toolcall),
