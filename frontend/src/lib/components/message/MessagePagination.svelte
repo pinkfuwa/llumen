@@ -15,8 +15,6 @@
 	addSSEHandler('title', (data) => {
 		updateRoomTitle(id, data.title);
 	});
-
-	$inspect(room);
 </script>
 
 <MessageStream chat_id={id} />
