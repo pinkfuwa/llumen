@@ -84,9 +84,17 @@ pub enum MessagePaginateRespRole {
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum MessagePaginateRespChunkKind {
     Text(MessagePaginateRespChunkKindText),
+    File(MessagePaginateRespChunkKindFile),
     Reasoning(MessagePaginateRespChunkKindReasoning),
     ToolCall(MessagePaginateRespChunkKindToolCall),
     Error(MessagePaginateRespChunkKindError),
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindFile {
+    pub name: String,
+    pub id: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -191,6 +199,15 @@ pub async fn route(
                     Ok(MessagePaginateRespChunk {
                         id: chunk.id,
                         kind: match chunk.kind {
+                            ChunkKind::File => {
+                                let file = chunk.as_file().kind(ErrorKind::Internal)?;
+                                MessagePaginateRespChunkKind::File(
+                                    MessagePaginateRespChunkKindFile {
+                                        name: file.name,
+                                        id: file.id,
+                                    },
+                                )
+                            }
                             ChunkKind::Text => MessagePaginateRespChunkKind::Text(
                                 MessagePaginateRespChunkKindText {
                                     content: chunk.content,

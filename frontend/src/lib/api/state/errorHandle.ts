@@ -16,20 +16,23 @@ export async function RawAPIFetch<P = any>(
 	path: string,
 	body: P | null = null,
 	method: 'POST' | 'GET' | 'PUT' | 'UPDATE' = 'POST',
-	signal?: AbortSignal
+	signal?: AbortSignal,
+	requestPriority: 'low' | 'medium' | 'high' = 'medium'
 ): Promise<Response> {
 	let tokenVal = get(token)?.value;
 
 	if (path.startsWith('/')) throw new Error('Invalid path');
 
 	const headers: Record<string, string> = {};
-	headers['Content-Type'] = 'application/json';
+	if (!(body instanceof FormData)) headers['Content-Type'] = 'application/json';
 	if (tokenVal) headers['Authorization'] = tokenVal;
+
+	const fetchBody = body instanceof FormData ? body : JSON.stringify(body);
 
 	return fetch(apiBase + path, {
 		method,
 		headers,
-		body: body ? JSON.stringify(body) : undefined,
+		body: fetchBody,
 		signal
 	});
 }

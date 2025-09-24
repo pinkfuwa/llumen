@@ -3,6 +3,7 @@
 	import {
 		MessagePaginateRespRole as Role,
 		type MessagePaginateRespChunk,
+		type MessagePaginateRespChunkKindFile,
 		type MessagePaginateRespChunkKindText,
 		type MessagePaginateRespList
 	} from '$lib/api/types';
@@ -18,23 +19,31 @@
 
 	$effect(() => entry.target.set(div));
 
-	function getRespFromChunks(chunks: MessagePaginateRespChunk[]) {
+	function getTextFromChunks(chunks: MessagePaginateRespChunk[]) {
 		return chunks
 			.filter((x) => x.kind.t == 'text')
-			.map((x) => x.kind.c.content)
+			.map((x) => (x.kind.c as MessagePaginateRespChunkKindText).content)
 			.join('\n')
 			.trim();
+	}
+
+	function getFileFromChunks(chunks: MessagePaginateRespChunk[]): { id: number; name: string }[] {
+		return chunks
+			.filter((x) => x.kind.t == 'file')
+			.map((x) => x.kind.c as MessagePaginateRespChunkKindFile);
 	}
 </script>
 
 <div class="mt-2 flex flex-col-reverse space-y-2" bind:this={div}>
 	{#each $data as msg}
 		{#if msg.role == Role.User}
-			<User content={(msg.chunks[0].kind.c as MessagePaginateRespChunkKindText).content} />
+			{@const content = getTextFromChunks(msg.chunks)}
+			{@const files = getFileFromChunks(msg.chunks)}
+			<User {content} {files} />
 		{:else if msg.role == Role.Assistant}
 			<ResponseBox>
 				<Chunks chunks={msg.chunks} />
-				<ResponseEdit content={getRespFromChunks(msg.chunks)} token={msg.token} cost={msg.price} />
+				<ResponseEdit content={getTextFromChunks(msg.chunks)} token={msg.token} cost={msg.price} />
 			</ResponseBox>
 		{/if}
 	{:else}

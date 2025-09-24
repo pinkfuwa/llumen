@@ -73,6 +73,7 @@ COPY --from=backend-builder /app/${TARGETPLATFORM} /backend
 
 ENV STATIC_DIR="/static"
 ENV DATABASE_URL="sqlite://data/db.sqlite?mode=rwc"
+ENV BLOB_URL="/data/blobs.redb"
 ENV BIND_ADDR="0.0.0.0:80"
 ENV RUST_LOG=none,backend=debug
 

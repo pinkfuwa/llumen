@@ -8,7 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub chat_id: i32,
-    pub filename: String,
+    pub owner_id: i32,
     pub mime_type: Option<String>,
 }
 
@@ -22,11 +22,25 @@ pub enum Relation {
         on_delete = "SetNull"
     )]
     Chat,
+    #[sea_orm(
+        belongs_to = "super::user::Entity",
+        from = "Column::OwnerId",
+        to = "super::user::Column::Id",
+        on_update = "SetNull",
+        on_delete = "SetNull"
+    )]
+    User,
 }
 
 impl Related<super::chat::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Chat.def()
+    }
+}
+
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::User.def()
     }
 }
 

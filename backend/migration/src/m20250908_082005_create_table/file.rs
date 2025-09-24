@@ -14,13 +14,22 @@ impl MigrationTrait for Migration {
                     .table(File::Table)
                     .if_not_exists()
                     .col(pk_auto(File::Id))
-                    .col(integer_null(File::ChatId))
-                    .col(string_null(File::MineType))
+                    .col(integer(File::ChatId))
+                    .col(integer(File::OwnerId))
+                    .col(string_null(File::MimeType))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-file-chat_id-chat")
-                            .from(Chat::Table, File::ChatId)
+                            .from(File::Table, File::ChatId)
                             .to(Chat::Table, Chat::Id)
+                            .on_update(ForeignKeyAction::SetNull)
+                            .on_delete(ForeignKeyAction::SetNull),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-file-owner_id-user")
+                            .from(File::Table, File::OwnerId)
+                            .to(User::Table, User::Id)
                             .on_update(ForeignKeyAction::SetNull)
                             .on_delete(ForeignKeyAction::SetNull),
                     )

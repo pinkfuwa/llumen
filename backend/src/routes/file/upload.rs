@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use axum::extract::{Multipart, State};
 use axum::Json;
+use axum::extract::{Extension, Multipart, State};
 use entity::file::Entity as File;
 use sea_orm::{ActiveValue::Set, EntityTrait};
 use serde::Serialize;
 use typeshare::typeshare;
 
-use crate::{errors::*, AppState};
+use crate::{AppState, errors::*, middlewares::auth::UserId};
 
 #[derive(Debug, Serialize)]
 #[typeshare]
@@ -15,31 +15,67 @@ pub struct FileUploadResp {
     pub id: i32,
 }
 
+const FILE_FIELD: &str = "file";
+
 pub async fn route(
     State(app): State<Arc<AppState>>,
+    Extension(UserId(user_id)): Extension<UserId>,
     mut multipart: Multipart,
 ) -> JsonResult<FileUploadResp> {
-    let chat_id = multipart
+    let chat_field = multipart
         .next_field()
         .await
-        .unwrap()
-        .unwrap()
+        .kind(ErrorKind::MalformedRequest)?;
+
+    if chat_field.is_none() {
+        return Err(Json(Error {
+            error: ErrorKind::MalformedRequest,
+            reason: "missing chat_id field".into(),
+        }));
+    }
+
+    let chat_field = chat_field.unwrap();
+    let chat_id = chat_field
         .text()
         .await
-        .unwrap()
-        .parse::<i32>()
-        .unwrap();
+        .kind(ErrorKind::MalformedRequest)?
+        .trim()
+        .parse()
+        .kind(ErrorKind::MalformedRequest)?;
 
-    let field = multipart.next_field().await.unwrap().unwrap();
+    let content_field = multipart
+        .next_field()
+        .await
+        .kind(ErrorKind::MalformedRequest)?;
 
-    let filename = field.file_name().unwrap().to_string();
-    let content_type = field.content_type().map(|x| x.to_string());
-    let data = field.bytes().await.unwrap().to_vec();
+    if content_field.is_none() {
+        return Err(Json(Error {
+            error: ErrorKind::MalformedRequest,
+            reason: "missing file field".into(),
+        }));
+    }
+
+    if content_field.as_ref().unwrap().name() != Some(FILE_FIELD) {
+        return Err(Json(Error {
+            error: ErrorKind::MalformedRequest,
+            reason: "chat_id must be sent before the file part".into(),
+        }));
+    }
+
+    let content_field = content_field.unwrap();
+
+    let filename = content_field.file_name().unwrap_or("file.bin").to_string();
+    let mime_type = content_field.content_type().map(|c| c.to_string());
+
+    let data = content_field
+        .bytes()
+        .await
+        .kind(ErrorKind::MalformedRequest)?;
 
     let file = File::insert(entity::file::ActiveModel {
         chat_id: Set(chat_id),
-        filename: Set(filename),
-        mime_type: Set(content_type),
+        owner_id: Set(user_id),
+        mime_type: Set(mime_type),
         ..Default::default()
     })
     .exec(&app.conn)
@@ -47,7 +83,7 @@ pub async fn route(
     .kind(ErrorKind::Internal)?
     .last_insert_id;
 
-    app.blob.insert(file, data).unwrap();
+    app.blob.insert(file, data.to_vec()).unwrap();
 
     Ok(Json(FileUploadResp { id: file }))
 }

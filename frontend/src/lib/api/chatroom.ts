@@ -16,7 +16,8 @@ import {
 	type ChatDeleteResp,
 	type ChatUpdateReq,
 	type ChatUpdateResp,
-	ChatMode
+	ChatMode,
+	type MessageCreateReqFile
 } from './types';
 import {
 	CreateInfiniteQuery,
@@ -36,6 +37,7 @@ import type { MutationResult } from './state/mutate';
 import { globalCache } from './state/cache';
 import type { Writable } from 'svelte/store';
 import { UpdateInfiniteQueryDataById } from './state';
+import { upload } from './files';
 
 export interface CreateRoomRequest {
 	message: string;
@@ -54,30 +56,40 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			if (!chatRes) return;
 
+			let chatId = chatRes.id;
+
+			SetInfiniteQueryData<ChatPaginateRespList>({
+				key: ['chatPaginate'],
+				data: {
+					id: chatId,
+					model_id: param.modelId
+				}
+			});
+
+			const roomStreamingState = globalCache.getOr(['chat', 'stream', chatId.toString()], false);
+
+			await goto('/chat/' + encodeURIComponent(chatId));
+
+			roomStreamingState.set(true);
+
+			let files: MessageCreateReqFile[] = [];
+
+			for (const file of param.files) {
+				let id = await upload(file, chatId);
+				if (id == null) break;
+				files.push({
+					name: file.name,
+					id
+				});
+			}
+
 			const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
 				chat_id: chatRes.id,
 				text: param.message,
 				mode: param.mode,
 				model_id: param.modelId,
-				files: []
+				files
 			});
-
-			SetInfiniteQueryData<ChatPaginateRespList>({
-				key: ['chatPaginate'],
-				data: {
-					id: chatRes.id,
-					model_id: param.modelId
-				}
-			});
-
-			await goto('/chat/' + encodeURIComponent(chatRes.id));
-
-			// TODO: here is a resource leak(callback should be call on next route change)
-			const roomStreamingState = globalCache.getOr(
-				['chat', 'stream', chatRes.id.toString()],
-				false
-			);
-			roomStreamingState.set(true);
 
 			if (!res) return;
 			SetInfiniteQueryData<MessagePaginateRespList>({

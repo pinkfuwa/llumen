@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { Book, BookA } from '@lucide/svelte';
-	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { _ } from 'svelte-i18n';
+	import Tooltip from '../buttons/Tooltip.svelte';
 
 	let { editable = $bindable(true), disabled = false } = $props();
 </script>
 
-<button class="rounded-md p-1 hover:bg-hover" onclick={() => (editable = !editable)} {disabled}>
+<button class="hover:bg-hover rounded-md p-1" onclick={() => (editable = !editable)} {disabled}>
 	{#if editable}
-		<Tooltip content={$_('chat.markdown_mode.disable')}>
+		<Tooltip text={$_('chat.markdown_mode.disable')}>
 			<Book />
 		</Tooltip>
 	{:else}
-		<Tooltip content={$_('chat.markdown_mode.enable')}>
+		<Tooltip text={$_('chat.markdown_mode.enable')}>
 			<BookA />
 		</Tooltip>
 	{/if}

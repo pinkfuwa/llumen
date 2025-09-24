@@ -50,6 +50,12 @@
 <div
 	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-120 lg:w-150 xl:w-200"
 	bind:this={container}
+	onpaste={(event) => {
+		const clipboardData = event.clipboardData;
+		if (clipboardData == null) return;
+		const file = clipboardData.files[0];
+		files.push(file);
+	}}
 >
 	{#if dropZone.isOver && editable}
 		<div

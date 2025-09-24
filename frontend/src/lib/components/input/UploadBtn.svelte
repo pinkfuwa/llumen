@@ -1,10 +1,10 @@
 <script lang="ts">
 	let { files = $bindable([] as File[]), filetypes } = $props();
-	import { Tooltip } from '@svelte-plugins/tooltips';
 	import { Upload } from '@lucide/svelte';
 	import { createFileDialog } from '@sv-use/core';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
+	import Tooltip from '../buttons/Tooltip.svelte';
 
 	const dialog = $derived(
 		createFileDialog({
@@ -18,7 +18,7 @@
 </script>
 
 <Button class="aspect-square h-full" onclick={dialog.open} aria-label="upload file">
-	<Tooltip content={$_('chat.file')}>
+	<Tooltip text={$_('chat.file')}>
 		<Upload class="inline-block" />
 	</Tooltip>
 </Button>

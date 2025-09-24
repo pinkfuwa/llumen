@@ -1,12 +1,12 @@
 <script lang="ts">
 	let { id }: { id: number } = $props();
 
-	import { addSSEHandler, startSSE, useMessage } from '$lib/api/message';
+	import { addSSEHandler, startSSE, useMessage as useMessages } from '$lib/api/message';
 	import Page from './Page.svelte';
 	import MessageStream from './MessageStream.svelte';
 	import { updateRoomTitle } from '$lib/api/chatroom';
 
-	const { data } = useMessage(id);
+	const { data } = useMessages(id);
 
 	startSSE(id);
 
