@@ -134,6 +134,10 @@ export interface MessageCreateResp {
 	id: number;
 }
 
+export interface MessageDeleteReq {
+	id: number;
+}
+
 export enum MessagePaginateReqOrder {
 	/** greater than */
 	Gt = 'gt',
@@ -211,12 +215,6 @@ export interface MessagePaginateRespChunkKindToolCall {
 	content: string;
 }
 
-export interface MessageWriteReq {
-	/** message id */
-	id: number;
-	text: string;
-}
-
 export interface ModelCheckReq {
 	config: string;
 }
@@ -286,7 +284,9 @@ export interface RenewResp {
 	exp: string;
 }
 
-export interface Resp {}
+export interface Resp {
+	deleted: boolean;
+}
 
 export interface SseReq {
 	id: number;

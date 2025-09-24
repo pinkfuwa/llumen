@@ -52,9 +52,8 @@
 	bind:this={container}
 	onpaste={(event) => {
 		const clipboardData = event.clipboardData;
-		if (clipboardData == null) return;
-		const file = clipboardData.files[0];
-		files.push(file);
+		if (clipboardData == null || clipboardData.files.length == 0) return;
+		files.push(clipboardData.files[0]);
 	}}
 >
 	{#if dropZone.isOver && editable}

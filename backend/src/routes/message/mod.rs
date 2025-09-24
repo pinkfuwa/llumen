@@ -1,6 +1,6 @@
 mod create;
+mod delete;
 mod paginate;
-mod write;
 
 use std::sync::Arc;
 
@@ -11,6 +11,6 @@ use crate::AppState;
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/create", post(create::route))
-        .route("/write", post(write::route))
+        .route("/delete", post(delete::route))
         .route("/paginate", post(paginate::route))
 }

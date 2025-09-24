@@ -18,9 +18,8 @@
 	let content = $state('');
 	let files: File[] = $state([]);
 	let mode = $state<Mode | null>(null);
-	let title = $state<string | null>(null);
 
-	let { data: room } = $derived(useRoom(id));
+	let { data: room } = useRoom(id);
 
 	$effect(() => {
 		if ($room == undefined) return;
@@ -48,7 +47,6 @@
 			bind:mode
 			bind:files
 			onsubmit={async () => {
-				content = '';
 				isStreaming.set(true);
 				mutate({
 					chat_id: id,
@@ -57,6 +55,7 @@
 					model_id: modelId!,
 					files: await uploadManager.getUploads(files)
 				});
+				content = '';
 			}}
 			oncancel={() => {
 				halt({ id });
@@ -66,7 +65,7 @@
 		/>
 	</div>
 	{#key id}
-		<MessagePagination {id} />
+		<MessagePagination {id} room={$room} />
 	{/key}
 	<div class="min-h-16"></div>
 </main>

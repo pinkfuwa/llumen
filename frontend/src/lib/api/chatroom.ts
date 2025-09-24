@@ -17,7 +17,9 @@ import {
 	type ChatUpdateReq,
 	type ChatUpdateResp,
 	ChatMode,
-	type MessageCreateReqFile
+	type MessageCreateReqFile,
+	type MessagePaginateRespChunkKindFile,
+	type MessagePaginateRespChunk
 } from './types';
 import {
 	CreateInfiniteQuery,
@@ -31,8 +33,6 @@ import {
 	type RawMutationResult
 } from './state';
 import { APIFetch } from './state/errorHandle';
-import { once } from './state/helper';
-import { onDestroy } from 'svelte';
 import type { MutationResult } from './state/mutate';
 import { globalCache } from './state/cache';
 import type { Writable } from 'svelte/store';
@@ -96,11 +96,23 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 			});
 
 			if (!res) return;
+
+			let fileChunks = files.map(
+				(f) =>
+					({
+						id: 0,
+						kind: { t: 'file', c: { name: f.name, id: f.id } }
+					}) as MessagePaginateRespChunk
+			);
+
 			SetInfiniteQueryData<MessagePaginateRespList>({
 				key: ['messagePaginate', chatRes.id.toString()],
 				data: {
 					id: res.id,
-					chunks: [{ id: res.id, kind: { t: 'text', c: { content: param.message } } }],
+					chunks: [
+						{ id: res.id, kind: { t: 'text', c: { content: param.message } } },
+						...fileChunks
+					],
 					role: MessagePaginateRespRole.User,
 					token: 0,
 					price: 0
