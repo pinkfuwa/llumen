@@ -75,12 +75,16 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 			let files: MessageCreateReqFile[] = [];
 
 			for (const file of param.files) {
-				let id = await upload(file, chatId);
-				if (id == null) break;
-				files.push({
-					name: file.name,
-					id
-				});
+				try {
+					let id = await upload(file, chatId);
+					if (id == null) break;
+					files.push({
+						name: file.name,
+						id
+					});
+				} catch (e) {
+					console.warn(e);
+				}
 			}
 
 			const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {

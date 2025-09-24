@@ -16,8 +16,7 @@ export async function RawAPIFetch<P = any>(
 	path: string,
 	body: P | null = null,
 	method: 'POST' | 'GET' | 'PUT' | 'UPDATE' = 'POST',
-	signal?: AbortSignal,
-	requestPriority: 'low' | 'medium' | 'high' = 'medium'
+	signal?: AbortSignal
 ): Promise<Response> {
 	let tokenVal = get(token)?.value;
 

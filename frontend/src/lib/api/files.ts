@@ -31,14 +31,36 @@ export async function download(id: number) {
 }
 
 export class UploadManager {
-	uploads: { promise: Promise<number | null>; file: File }[] = [];
-	abortController: AbortController = new AbortController();
-	chatId: number;
+	private uploads: { promise: Promise<number | null>; file: File }[] = [];
+	private abortController: AbortController = new AbortController();
+	private chatId: number;
 	constructor(chatId: number) {
 		this.chatId = chatId;
 		onDestroy(() => {
 			this.abortController.abort();
 		});
+	}
+	async getUploads(files: File[]): Promise<{ name: string; id: number }[]> {
+		this.retain(files);
+
+		let results: { name: string; id: number }[] = [];
+		for (const upload of this.uploads) {
+			if (
+				!files.find((f) => {
+					try {
+						return f.name === upload.file.name && f.size === upload.file.size;
+					} catch (e) {
+						return false;
+					}
+				})
+			)
+				continue;
+
+			const id = await upload.promise;
+			if (id !== null) results.push({ name: upload.file.name, id });
+		}
+
+		return results;
 	}
 	retain(files: File[]) {
 		const newUploads = files

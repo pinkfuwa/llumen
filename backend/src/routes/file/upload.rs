@@ -64,7 +64,6 @@ pub async fn route(
 
     let content_field = content_field.unwrap();
 
-    let filename = content_field.file_name().unwrap_or("file.bin").to_string();
     let mime_type = content_field.content_type().map(|c| c.to_string());
 
     let data = content_field
@@ -73,8 +72,8 @@ pub async fn route(
         .kind(ErrorKind::MalformedRequest)?;
 
     let file = File::insert(entity::file::ActiveModel {
-        chat_id: Set(chat_id),
-        owner_id: Set(user_id),
+        chat_id: Set(Some(chat_id)),
+        owner_id: Set(Some(user_id)),
         mime_type: Set(mime_type),
         ..Default::default()
     })

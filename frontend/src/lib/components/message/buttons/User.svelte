@@ -17,13 +17,13 @@
 	<div class="group/files {editable ? 'w-[75%]' : 'max-w-[75%]'} wrap-break-word">
 		<div class="w-full space-y-2 rounded-md bg-user-bg p-4">
 			{#if files.length != 0}
-				<div class="mb-2 overflow-scroll border-b border-outline pb-2">
+				<div class="mb-2 overflow-auto border-b border-outline pb-2">
 					<FileGroup bind:files deletable={editable} />
 				</div>
 			{/if}
 			{#if editable}
 				<textarea
-					class="editor inline field-sizing-content w-full flex-grow resize-none overflow-scroll"
+					class="editor inline field-sizing-content w-full flex-grow resize-none overflow-auto"
 					{rows}
 					bind:value={content}
 				></textarea>
