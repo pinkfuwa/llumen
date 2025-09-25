@@ -6,7 +6,11 @@
 	let { editable = $bindable(true), disabled = false } = $props();
 </script>
 
-<button class="hover:bg-hover rounded-md p-1" onclick={() => (editable = !editable)} {disabled}>
+<button
+	class="hover:bg-hover hidden rounded-md p-1 md:block"
+	onclick={() => (editable = !editable)}
+	{disabled}
+>
 	{#if editable}
 		<Tooltip text={$_('chat.markdown_mode.disable')}>
 			<Book />

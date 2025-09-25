@@ -40,7 +40,7 @@
 
 {#if select_data == undefined}
 	<div
-		class="flex items-center justify-between truncate rounded-md border border-outline px-3 py-2 text-left font-mono"
+		class="flex min-w-0 items-center justify-between truncate rounded-md border border-outline px-3 py-2 text-left font-mono"
 	>
 		<span> Loading </span>
 		<LoaderCircle class="inline-block animate-spin" />
@@ -51,7 +51,7 @@
 		fallback="Select Model"
 		bind:selected={value}
 		{disabled}
-		class="grow sm:w-52 sm:grow-0"
+		class="grow truncate sm:grow-0 md:w-52"
 		popupClass="w-52"
 	></Select>
 {/if}
