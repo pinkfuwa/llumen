@@ -1,29 +1,40 @@
-# llumen
+<div align="center">
+  <img src="frontend/static/web-app-manifest-512x512.png" alt="Shimmy Logo" width="300" height="auto" />
+
+  # llumen
+
+  ### :zap: a lightweight, performant LLM chat application with effortless setup :rocket:
+
+  [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://www.mozilla.org/en-US/MPL/2.0/)
+  [![Rust](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://rustup.rs/)
+
+</div>
 
 llumen is a lightweight, self-hostable LLM chat application (frontend + backend) that aims to provide an out-of-the-box experience for self-hosting users.
 
-Its design goal is simplicity: you only need a single OpenRouter API key to use LLM features — no separate keys for OCR, embeddings, image generation, or other services.
+Its design goal is simplicity: you only need a single OpenRouter API key to use LLM features — no separate keys for OCR, search, embeddings, image generation, or other services.
 
-## Highlights
+## :question: Why choose llumen
 
-- Single API key requirement (OpenRouter) for model calls.
-- Very fast and high quality UI
-- Markdown rendering with code and math support.
-- Multiple chat modes (normal, web-search-enabled).
-- Deep-research and agentic modes (WIP :construction: ).
+- :handshake: We provide windows executable, docker image, linux binary
+- :ship: Single API key requirement (OpenRouter) for model calls.
+- :rocket: Very fast and high quality UI
+- :blue_book: Markdown rendering with code and math support.
+- :mag: Multiple chat modes (normal, web-search-enabled).
+- :brain: Deep-research and agentic modes (WIP :construction: ).
 
-## Screenshots
+## :star2: Screenshots
 
 ![new-chat](./screenshots/new-chat.png)
 
 TODO: video comparison
 
-## Quickstart
+## :point_right: Quickstart
 
 > [!TIP]
-> Use [reasoning-proxy](https://github.com/Eason0729/reasoning-proxy) to unlock advance feature with normal openai endpoint
+> Use [reasoning-proxy](https://github.com/Eason0729/reasoning-proxy) to unlock advance feature(search, OCR) with normal openai endpoint
 
-### Docker (Recommended)
+### :whale: Docker (Recommended)
 
 - The repository includes a multi-stage `Dockerfile` that builds the frontend and the backend and produces a small image that serves static files and runs the server.
 - Example: build and run the container (binds port 80 by default).
@@ -35,22 +46,25 @@ docker run -it --rm \
   -v "$(pwd)/data:/data" \
   ghcr.io/pinkfuwa/llumen:latest
 ```
+```
+2025-09-25T16:53:45.735807Z  INFO backend: Listening on http://0.0.0.0:8001
+```
 
-### Without docker
+### :package: Without docker
 
 > [!TIP]
 > Prebuild-binary is not up to dated, it only built on per-release basis
 
-We Also provided prebuild binary, download it and extract.
+We Also provided prebuild binary, download it and extract from [release](https://github.com/pinkfuwa/llumen/releases).
 
-## Environment variables
+## :key: Environment variables
 
 - `API_KEY` (required) — OpenRouter or equivalent provider API key.
 - `DATABASE_URL` — database connection string. Default in Docker: `sqlite://data/db.sqlite?mode=rwc`.
 - `BLOB_URL` — path for [redb](https://www.redb.org/) object storage. Default in Docker: `/data/blobs.redb`.
 - `BIND_ADDR` — address the backend binds to (default in Docker: `0.0.0.0:80`).
 
-## Where to look for more documentation
+## :book: Where to look for more documentation
 
 - Development and build-from-source steps, advanced type generation and other developer-focused docs were moved to `DEV.md`. If you want to build locally or contribute code, read `DEV.md` first.
 - Backend source: `backend/` (Rust).
