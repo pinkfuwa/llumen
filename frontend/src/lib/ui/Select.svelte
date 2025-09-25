@@ -46,10 +46,12 @@
 		class="inline-flex h-full items-center justify-between rounded-lg border border-outline px-3 text-center text-nowrap text-text duration-150 not-disabled:cursor-pointer not-disabled:hover:bg-primary not-disabled:hover:text-text-hover focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed {className}"
 		{disabled}
 	>
-		{selectedLabel}
+		<span class="flex min-w-0 grow justify-start truncate">
+			{selectedLabel}
+		</span>
 
 		{#if !disabled}
-			<ChevronDown class="inline-block" />
+			<ChevronDown class="inline-block shrink-0" />
 		{/if}
 	</Select.Trigger>
 	<Select.Portal>
