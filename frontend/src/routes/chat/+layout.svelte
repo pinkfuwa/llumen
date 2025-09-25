@@ -3,13 +3,23 @@
 	import { Sidebar } from '$lib/components';
 
 	let addition = $derived(params.id != undefined);
+	let collapsed = $state(false);
 </script>
 
-<div class="flex h-screen flex-row bg-chat-bg">
-	<div class="shrink-0 overflow-hidden">
-		<Sidebar {addition} currentRoom={Number(params.id)} />
+<div class="relative flex h-screen flex-row bg-chat-bg">
+	<div class="absolute z-20 shrink-0 overflow-hidden md:static">
+		<Sidebar {addition} currentRoom={Number(params.id)} bind:collapsed />
 	</div>
-	<div class="h-screen w-full min-w-0">
+	<div class="absolute h-screen w-full min-w-0 md:static">
 		{@render children()}
 	</div>
 </div>
+
+<!-- <div class="relative bg-chat-bg">
+	<div class="absolute z-10 w-full">
+		<Sidebar {addition} currentRoom={Number(params.id)} bind:collapsed />
+	</div>
+	<div class="absolute w-full">
+		{@render children()}
+	</div>
+</div> -->

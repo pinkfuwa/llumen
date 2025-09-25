@@ -18,7 +18,7 @@
 	<header
 		in:slide={{ duration: 180, axis: 'x' }}
 		out:slide={{ duration: 180, axis: 'x' }}
-		class="flex h-screen w-64 flex-col justify-between overflow-x-hidden border-r border-outline bg-sidebar-bg p-5 text-nowrap lg:w-80 xl:w-100"
+		class="flex h-screen w-screen flex-col justify-between overflow-x-hidden border-r border-outline bg-sidebar-bg p-5 text-nowrap md:w-64 lg:w-80 xl:w-100"
 	>
 		<div>
 			<div class="mb-4 border-b border-outline pb-1">

@@ -136,8 +136,15 @@
 	});
 
 	addSSEHandler('version', (data) => {
-		if (data.last_kind == LastKind.Assistant) isStreaming.set(false);
+		isStreaming.set(data.last_kind == LastKind.User);
 		// TODO: revalidate on version change
+	});
+
+	addSSEHandler('connect', () => {
+		isStreaming.set(false);
+		chunks = [];
+		reasoning = '';
+		patcher.reset();
 	});
 </script>
 

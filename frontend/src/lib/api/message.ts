@@ -129,6 +129,23 @@ let SSEHandlers: {
 	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
 };
 
+let SSEQueued: {
+	[key in SseResp['t']]: Array<Extract<SseResp, { t: key }>['c']>;
+} = {
+	token: [],
+	reasoning: [],
+	complete: [],
+	tool_call: [],
+	tool_result: [],
+	title: [],
+	error: [],
+	version: []
+} satisfies {
+	[key in SseResp['t']]: Array<Extract<SseResp, { t: key }>['c']>;
+};
+
+let onSSEConnect: Array<() => void> = [];
+
 export function startSSE(chatId: number) {
 	CreateEventQuery<SseResp, SseReq>({
 		path: 'chat/sse',
@@ -139,16 +156,31 @@ export function startSSE(chatId: number) {
 		onEvent: (res: SseResp) => {
 			if (dev) console.log('SSE Event:', res);
 
-			SSEHandlers[res.t].forEach((handler) => handler(res.c as any));
+			const handlers = SSEHandlers[res.t];
+
+			if (handlers.length === 0) SSEQueued[res.t].push(res.c as any);
+			else handlers.forEach((handler) => handler(res.c as any));
+		},
+		onConnected: () => {
+			if (dev) console.log('SSE Connected');
+			onSSEConnect.forEach((handler) => handler());
 		}
 	});
 }
 
 export function addSSEHandler<T extends SseResp['t']>(
-	event: T,
-	handler: (data: Extract<SseResp, { t: T }>['c']) => void
+	event: T | 'connect',
+	handler: ((data: Extract<SseResp, { t: T }>['c']) => void) | (() => void)
 ) {
+	if (event === 'connect') {
+		onSSEConnect.push(handler as () => void);
+		return;
+	}
+
 	SSEHandlers[event].push(handler as any);
+
+	SSEQueued[event].forEach((data) => handler(data as any));
+	SSEQueued[event] = [];
 
 	onDestroy(() => {
 		const index = SSEHandlers[event].indexOf(handler as any);

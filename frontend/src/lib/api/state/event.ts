@@ -10,6 +10,7 @@ export interface EventQueryOption<D, P> {
 	body?: P;
 	method?: 'POST' | 'GET' | 'PUT' | 'UPDATE';
 	onEvent: (data: D) => void;
+	onConnected?: () => void;
 	key?: string[];
 }
 
@@ -18,39 +19,70 @@ export interface EventQueryResult {
 }
 
 export function CreateEventQuery<D, P = null>(option: EventQueryOption<D, P>): EventQueryResult {
-	let { path, body, method, onEvent, key } = option;
+	const { path, body, method, onEvent, onConnected, key } = option;
 
 	const status = key ? globalCache.getOr(key, false) : writable(false);
 
 	const controller = new AbortController();
+	let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
-	onDestroy(() => controller.abort());
-	onDestroy(() => status.set(false));
-
-	(async () => {
-		// TODO: respect visibilityStateChange
-		const res = await RawAPIFetch<P>(path, body, method, controller.signal);
-		status.set(true);
-		let stream = events(res, controller.signal);
+	const connect = async () => {
 		try {
-			for await (let event of stream) {
+			const res = await RawAPIFetch<P>(path, body, method, controller.signal);
+			status.set(true);
+			if (onConnected) onConnected();
+
+			const stream = events(res, controller.signal);
+			for await (const event of stream) {
 				const data = event.data;
 
 				if (data != undefined && data.trim() != ':') {
 					const resJson = JSON.parse(data);
 					const error = getError(resJson);
-					if (error) dispatchError(error.error, error.reason);
-					else onEvent(resJson);
+					if (error) {
+						dispatchError(error.error, error.reason);
+					} else {
+						onEvent(resJson);
+					}
 				}
 			}
+
+			status.set(false);
+			if (retryTimeout) clearTimeout(retryTimeout);
+			retryTimeout = setTimeout(connect, 1000);
 		} catch (err) {
-			if (!(err instanceof DOMException && err.name == 'AbortError')) throw err;
+			status.set(false);
+			if (err instanceof DOMException && err.name === 'AbortError') {
+				return;
+			}
+			if (retryTimeout) clearTimeout(retryTimeout);
+			retryTimeout = setTimeout(connect, 5000);
 		}
-	})();
+	};
+
+	const handleOnline = () => {
+		if (retryTimeout) {
+			clearTimeout(retryTimeout);
+		}
+		connect();
+	};
+
+	window.addEventListener('online', handleOnline);
+
+	connect();
+
+	onDestroy(() => {
+		controller.abort();
+		window.removeEventListener('online', handleOnline);
+		if (retryTimeout) {
+			clearTimeout(retryTimeout);
+		}
+		status.set(false);
+	});
 
 	return { status };
 }
 
-export function GetEventQueryStatus(key: string[]) {
+export function GetEventQueryStatus(key: string[]): Readable<boolean> {
 	return globalCache.getOr(key, false);
 }
