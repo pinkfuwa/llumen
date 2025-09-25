@@ -1,46 +1,24 @@
-This document is aimed at contributors and maintainers who want to develop, build, and test llumen locally or produce production artifacts. It collects the development-oriented instructions that were moved out of `README.md`.
+This document is aimed at contributors and maintainers who want to develop, build, and test llumen locally or produce production artifacts.
 
-## Overview
+> [!WARNING]
+> The document is WIP, ~~I just list somethings here~~
 
-llumen is a two-part application:
+Some Hints:
 
-- `frontend/` — SvelteKit based SPA that provides the chat UI.
-- `backend/` — Rust (axum + sea-orm) API server which also serves the built frontend static files in production images.
-- `backend/migration` — migration CLI to manage the database schema.
-- `prompts/` — built-in prompt templates.
+1. We used to have a nix contributor, nix config is unmaintained
+2. We adopt `bits-ui` to improve animation performance, ~~sidebar performance sucks~~
+3. previous nix contributor use `nushell` for script runner(`just`), maybe we should revert that?
 
-Primary development flows:
-- Fast local frontend development (hot reload).
-- Local backend development (run using `cargo run`).
-- Coordinated development (run frontend and backend separately).
-- Produce production Docker image (recommended) or build static backend binary.
+TODO:
 
-## Prerequisites
-
-- Node.js 22+ (tested)
-- pnpm (recommended) or npm
-- Rust 1.89+ and Cargo
-- (Optional) Docker/Docker Compose for containerized builds
-- (Optional for static Linux binary) musl toolchain and system packages: `musl-tools`, `pkg-config`, `make`
-
-## Environment variables used in development
-- `API_KEY` — required for LLM provider (OpenRouter by default).
-- `DATABASE_URL` — e.g. `sqlite://data/db.sqlite?mode=rwc`. Default used in Docker is `sqlite://data/db.sqlite?mode=rwc`.
-- `BIND_ADDR` — address the backend binds to (default 0.0.0.0:80 in Docker).
-- `STATIC_DIR` — path to static frontend files (default `/static` in Docker).
-
-## Release: docker
-
-
-```
-docker build -t llumen .
-docker run -it --rm \
-  -e API_KEY="<YOUR_OPENROUTER_API_KEY>" \
-  -p 80:80 \
-  -v "$(pwd)/data:/data" \
-  llumen
-```
-
-## Scripts
-
-TODO: document `backend/justfile`
+1. Release 0.1.0
+  - Record a video
+  - Check CI working
+  - Repackage windows artifact, check if it's working
+2. Fix mobile UI
+  - `group-hover` hurt mobile UI, see copy button
+  - refactor all frontend to use `bits-ui`
+  - when user click `new chat` on mobile, close sidebar without props drilling~~(delay until refactoring)~~
+3. Fix message sync
+  - There is a small time gap in user messaging creation and halting
+4. implement new feature

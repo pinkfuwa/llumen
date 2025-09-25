@@ -46,11 +46,11 @@
 </svelte:head>
 <main class="flex h-screen flex-col items-center justify-center bg-login-bg">
 	<h2
-		class="mb-3 bg-gradient-to-r from-secondary to-primary bg-clip-text text-4xl text-transparent"
+		class="mb-3 bg-gradient-to-r from-secondary to-primary bg-clip-text px-6 text-center text-4xl text-transparent"
 	>
 		{$_('login.welcome')}
 	</h2>
-	<p class="text-md mb-3 font-serif">
+	<p class="text-md mb-3 px-6 text-center font-serif">
 		{$_('login.description')}
 	</p>
 	<div class="min-w-[80vw] items-center rounded-lg p-6 md:min-w-lg">
@@ -77,4 +77,7 @@
 			</Button>
 		</form>
 	</div>
+	<p class="block animate-pulse border-b-2 border-red-500 md:hidden">
+		llumen is not well-supported on mobile
+	</p>
 </main>

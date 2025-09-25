@@ -1,16 +1,9 @@
 <script lang="ts">
 	let { children, params } = $props();
 	import { Sidebar } from '$lib/components';
-	import { page } from '$app/state';
 
 	let addition = $derived(params.id != undefined);
 	let collapsed = $state(false);
-
-	$effect(() => {
-		if (page.route.id?.endsWith('new')) {
-			collapsed = true;
-		}
-	});
 </script>
 
 <div class="relative flex h-screen flex-row bg-chat-bg">
