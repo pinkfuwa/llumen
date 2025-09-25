@@ -92,5 +92,6 @@ export class MarkdownPatcher {
 		this.updater.reset();
 		this.lastChunk = '';
 		this.content = '';
+		this.buffer = '';
 	}
 }
