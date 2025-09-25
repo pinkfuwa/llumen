@@ -49,6 +49,6 @@ export async function APIFetch<D, P = any>(
 		if (error) dispatchError(error.error, error.reason);
 		else return resJson as D;
 	} catch (_) {
-		dispatchError('API(typeshare)');
+		dispatchError('API(typeshare)', 'maybe backend is disconnected');
 	}
 }

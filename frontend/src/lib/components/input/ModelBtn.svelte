@@ -51,7 +51,7 @@
 		fallback="Select Model"
 		bind:selected={value}
 		{disabled}
-		class="w-52"
+		class="grow sm:w-52 sm:grow-0"
 		popupClass="w-52"
 	></Select>
 {/if}

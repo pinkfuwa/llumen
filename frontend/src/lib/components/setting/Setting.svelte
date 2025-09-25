@@ -41,26 +41,31 @@
 			</Dialog.Close>
 
 			<Tabs.Root bind:value class="flex w-full flex-row">
-				<Tabs.List class="flex w-70 flex-col space-y-2 border-r-2 border-outline pr-2 text-xl">
+				<Tabs.List class="flex flex-col space-y-2 border-r-2 border-outline pr-2 text-xl md:w-70">
 					<Tabs.Trigger
 						value="account"
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
 					>
 						<CircleUser class="mr-2 inline-block h-5 w-5" />
-						{$_('setting.account_settings')}
+						<span class="hidden md:inline-block">
+							{$_('setting.account_settings')}
+						</span>
 					</Tabs.Trigger>
 					<Tabs.Trigger
 						value="admin"
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
 					>
 						<ShieldUser class="mr-2 inline-block h-5 w-5" />
-						{$_('setting.admin_settings')}
+						<span class="hidden md:inline-block">
+							{$_('setting.admin_settings')}
+						</span>
 					</Tabs.Trigger>
 					<Tabs.Trigger
 						value="openrouter"
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
 					>
-						<EthernetPort class="mr-2 inline-block h-5 w-5" /> Openrouter
+						<EthernetPort class="mr-2 inline-block h-5 w-5" />
+						<span class="hidden md:inline-block"> Openrouter </span>
 					</Tabs.Trigger>
 					<button
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
@@ -71,15 +76,16 @@
 						}}
 					>
 						<LogOut class="mr-2 inline-block h-5 w-5" />
-						{$_('setting.logout')}
+						<span class="hidden md:inline-block"> {$_('setting.logout')} </span>
 					</button>
 					<a
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
 						href="https://github.com/pinkfuwa/llumen"
 						target="_blank"
 					>
-						<Star class="mr-2 inline-block h-5 w-5" /> {$_('setting.github_star')}</a
-					>
+						<Star class="mr-2 inline-block h-5 w-5" />
+						<span class="hidden md:inline-block"> {$_('setting.github_star')} </span>
+					</a>
 				</Tabs.List>
 				<div class="w-full min-w-0 flex-1 justify-center p-3">
 					<Tabs.Content value="account">

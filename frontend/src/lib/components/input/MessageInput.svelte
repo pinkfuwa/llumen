@@ -48,7 +48,7 @@
 </script>
 
 <div
-	class="min-h-sm item relative mx-auto rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-120 lg:w-150 xl:w-200"
+	class="min-h-sm item relative mx-auto w-[80vw] rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-120 lg:w-150 xl:w-200"
 	bind:this={container}
 	onpaste={(event) => {
 		const clipboardData = event.clipboardData;
