@@ -85,3 +85,13 @@
 		display: none;
 	}
 }
+
+.katex {
+	font-weight: bold !important;
+}
+
+.katex .mord,
+.katex .mop,
+.katex .mrel {
+	font-weight: 700 !important;
+}
