@@ -53,7 +53,7 @@
 	<p class="text-md mb-3 font-serif">
 		{$_('login.description')}
 	</p>
-	<div class="min-w-lg items-center rounded-lg p-6">
+	<div class="min-w-[80vw] items-center rounded-lg p-6 md:min-w-lg">
 		<form class="grid grid-rows-3 gap-4" onsubmit={handleSubmit} inert={$isPending}>
 			<div>
 				<Input id="username" type="text" placeholder="admin" bind:value={username} required>

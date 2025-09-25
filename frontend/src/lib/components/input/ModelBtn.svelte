@@ -40,7 +40,7 @@
 
 {#if select_data == undefined}
 	<div
-		class="flex items-center justify-between rounded-md border border-outline px-3 py-2 text-left font-mono"
+		class="flex items-center justify-between truncate rounded-md border border-outline px-3 py-2 text-left font-mono"
 	>
 		<span> Loading </span>
 		<LoaderCircle class="inline-block animate-spin" />

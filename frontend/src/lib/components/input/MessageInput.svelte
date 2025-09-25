@@ -83,7 +83,7 @@
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
-		<div class="flex h-11 grow items-center space-x-2">
+		<div class="flex h-11 w-full grow items-center space-x-2">
 			<ModelBtn bind:value={modelId} {above} bind:filetypes />
 			<ModeBtn bind:value={mode} />
 			<UploadBtn bind:files {filetypes} />

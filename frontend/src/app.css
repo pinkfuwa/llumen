@@ -95,3 +95,12 @@
 .katex .mrel {
 	font-weight: 700 !important;
 }
+
+@layer utilities {
+	.h-screen {
+		height: 100svh;
+	}
+	.h-screen {
+		height: 100svh, 100vh;
+	}
+}

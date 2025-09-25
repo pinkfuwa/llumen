@@ -17,7 +17,7 @@
 	);
 </script>
 
-<Button class="aspect-square h-full" onclick={dialog.open} aria-label="upload file">
+<Button class="aspect-square h-full shrink-0" onclick={dialog.open} aria-label="upload file">
 	<Tooltip text={$_('chat.file')}>
 		<Upload class="inline-block" />
 	</Tooltip>
