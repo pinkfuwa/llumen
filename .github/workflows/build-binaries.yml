@@ -49,7 +49,7 @@ jobs:
         if: contains(matrix.target, 'musl')
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools pkg-config make perl
+          sudo apt-get install -y musl-tools pkg-config make perl binutils-mingw-w64-x86-64
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
