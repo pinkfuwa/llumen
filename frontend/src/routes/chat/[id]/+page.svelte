@@ -19,7 +19,7 @@
 	let files: File[] = $state([]);
 	let mode = $state<Mode | null>(null);
 
-	let { data: room } = useRoom(id);
+	let { data: room } = $derived(useRoom(id));
 
 	$effect(() => {
 		if ($room == undefined) return;
