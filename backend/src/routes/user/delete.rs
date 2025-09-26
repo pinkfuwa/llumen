@@ -25,12 +25,8 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<UserDeleteReq>,
 ) -> JsonResult<UserDeleteResp> {
-    let res = User::delete_by_id(req.user_id)
-        .exec(&app.conn)
-        .await
-        .kind(ErrorKind::Internal)?;
-
-    Ok(Json(UserDeleteResp {
-        deleted: res.rows_affected == 1,
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "Not available in demo".to_string(),
     }))
 }

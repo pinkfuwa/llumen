@@ -29,30 +29,8 @@ pub async fn route(
     Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelCreateReq>,
 ) -> JsonResult<ModelCreateResp> {
-    let config = req.config;
-
-    match model::Model::check_config(&config) {
-        Ok(cfg) => {
-            let id = Model::insert(model::ActiveModel {
-                config: Set(config),
-                ..Default::default()
-            })
-            .exec(&app.conn)
-            .await
-            .kind(ErrorKind::Internal)?
-            .last_insert_id;
-
-            Ok(Json(ModelCreateResp {
-                id,
-                image_input: cfg.is_image_capable(),
-                audio_input: cfg.is_audio_capable(),
-                other_file_input: cfg.is_other_file_capable(),
-                display_name: cfg.display_name,
-            }))
-        }
-        Err(reason) => Err(Json(Error {
-            error: ErrorKind::MalformedRequest,
-            reason,
-        })),
-    }
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "Not available in demo".to_string(),
+    }))
 }

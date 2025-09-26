@@ -4,7 +4,8 @@ import {
 	type QueryResult,
 	CreateMutation,
 	type CreateMutationResult,
-	SetQueryData
+	SetQueryData,
+	CreateMockQuery
 } from './state';
 
 import type {
@@ -50,11 +51,10 @@ export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp
 }
 
 export function useUser(): QueryResult<UserReadResp> {
-	return CreateQuery<UserReadReq, UserReadResp>({
-		key: ['currentUser'],
-		path: 'user/read',
-		body: {},
-		staleTime: 0
+	return CreateMockQuery({
+		user_id: 1,
+		username: 'admin',
+		preference: {}
 	});
 }
 

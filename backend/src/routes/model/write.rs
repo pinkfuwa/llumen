@@ -27,28 +27,8 @@ pub async fn route(
     Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelWriteReq>,
 ) -> JsonResult<ModelWriteResp> {
-    let config = req.config;
-
-    let display_name = model::Model::check_config(&config)
-        .map_err(|e| {
-            Json(Error {
-                error: ErrorKind::MalformedRequest,
-                reason: e,
-            })
-        })?
-        .display_name;
-
-    let result = model::Entity::update_many()
-        .col_expr(model::Column::Config, config.into())
-        .filter(model::Column::Id.eq(req.id))
-        .exec(&app.conn)
-        .await
-        .kind(ErrorKind::ResourceNotFound)?;
-
-    let wrote = result.rows_affected > 0;
-
-    Ok(Json(ModelWriteResp {
-        display_name,
-        wrote,
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "Not available in demo".to_string(),
     }))
 }
