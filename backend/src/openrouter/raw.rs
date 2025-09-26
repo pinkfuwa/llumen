@@ -30,7 +30,7 @@ pub struct CompletionReq {
 impl Default for CompletionReq {
     fn default() -> Self {
         Self {
-            model: "openai/gpt-oss-20b:free".to_string(),
+            model: "openai/gpt-oss-20b".to_string(),
             messages: vec![],
             stream: true,
             tools: None,

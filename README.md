@@ -25,9 +25,9 @@ Its design goal is simplicity: you only need a single OpenRouter API key to use 
 
 ## :star2: Screenshots
 
-![new-chat](./screenshots/new-chat.png)
+![in-chat](./screenshots/in-chat.png)
 
-TODO: video comparison
+![Demo](./screenshots/demo.gif)
 
 ## :point_right: Quickstart
 
