@@ -56,6 +56,7 @@
 					files: await uploadManager.getUploads(files)
 				});
 				content = '';
+				files = [];
 			}}
 			oncancel={() => {
 				halt({ id });
