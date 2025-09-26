@@ -6,7 +6,7 @@ const DEFAULT_MODEL_CONFIG: &str = r#"
 display_name="GPT-OSS 20B"
 # From https://openrouter.ai/models
 # don't put "online" suffix.
-model_id="openai/gpt-oss-20b:free"
+model_id="openai/gpt-oss-20b"
 
 # For more settings, see https://github.com/pinkfuwa/llumen
 "#;
