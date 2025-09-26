@@ -18,7 +18,7 @@ FROM --platform=$BUILDPLATFORM rust:1.90.0-slim-trixie AS backend-builder
 RUN apt update -y \
     && apt install -y musl-tools pkg-config make perl curl xz-utils
 
-COPY ./docker/install-zig.sh /usr/local/bin/install-zig.sh
+COPY ./package/install-zig.sh /usr/local/bin/install-zig.sh
 RUN chmod +x /usr/local/bin/install-zig.sh
 RUN install-zig.sh
 
@@ -40,7 +40,6 @@ COPY ./prompts .
 
 WORKDIR /compiler
 COPY ./backend .
-COPY ./docker ./docker
 
 WORKDIR /compiler
 RUN --mount=type=cache,target=target

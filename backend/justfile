@@ -4,7 +4,6 @@ TS_OUTPUT := "../frontend/src/lib/api/types.ts"
 
 DATABASE_URL := "sqlite://../db.sqlite?mode=rwc"
 
-
 run:
     RUST_BACKTRACE=1 RUST_LOG=debug cargo run --features dev
 

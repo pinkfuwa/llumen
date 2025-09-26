@@ -48,7 +48,11 @@ async fn main() {
     let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/".to_string());
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
-    let static_dir = var("STATIC_DIR").unwrap_or("../frontend/build".to_owned());
+    let static_dir = var("STATIC_DIR").unwrap_or(
+        option_env!("STATIC_DIR")
+            .unwrap_or("../frontend/build")
+            .to_owned(),
+    );
     let blob_url = var("BLOB_URL").unwrap_or("./blobs.redb".to_owned());
 
     migration::migrate(&database_url)
