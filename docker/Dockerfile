@@ -13,7 +13,7 @@ WORKDIR /app
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm run build
 
-FROM --platform=$BUILDPLATFORM rust:1.89.0-slim-trixie AS backend-builder
+FROM --platform=$BUILDPLATFORM rust:1.90.0-slim-trixie AS backend-builder
 
 RUN apt update -y \
     && apt install -y musl-tools pkg-config make perl curl xz-utils

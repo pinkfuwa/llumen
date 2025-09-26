@@ -5,9 +5,9 @@
 
 	let text = raw
 		.replace(/^\$\s*/gm, '')
-		.replace(/\s*\$*$/g, '')
+		.replace(/\s*\$*$/gm, '')
 		.replace(/^\\\[\s*/gm, '')
-		.replace(/\s*\\\]$/g, '');
+		.replace(/\s*\\\]$/gm, '');
 
 	let rawHTML = $derived(
 		katex.renderToString(text, {

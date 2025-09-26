@@ -13,7 +13,7 @@
 	<div class="group/codeblock relative">
 		{#if text.split('\n').length > 1}
 			<button
-				class="absolute top-0 right-0 m-1 opacity-0 duration-150 group-hover/codeblock:opacity-100"
+				class="absolute top-0 right-0 m-1 duration-150 group-hover/codeblock:visible md:invisible"
 				onclick={() => copy(text)}
 			>
 				<ClipboardCopy

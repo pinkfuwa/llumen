@@ -18,7 +18,11 @@
 </script>
 
 <div class="flex w-full justify-end px-10 lg:px-20 2xl:px-36">
-	<div class="group/files {editable ? 'w-[75%]' : 'max-w-[75%]'} wrap-break-word">
+	<div
+		class="group/files {editable
+			? 'w-full md:w-[75%]'
+			: 'max-w-full md:max-w-[75%]'} wrap-break-word"
+	>
 		<div class="w-full space-y-2 rounded-md bg-user-bg p-4">
 			{#if files.length != 0}
 				<div class="mb-2 overflow-auto border-b border-outline pb-2">
@@ -37,40 +41,34 @@
 				</div>
 			{/if}
 		</div>
-		<div
-			class="mt-1 flex justify-end {editable
-				? 'opacity-100'
-				: 'opacity-0'} group-hover/files:opacity-100"
-		>
-			{#if editable}
-				<Button.Root
-					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
-					onclick={() => {
-						editable = false;
-						content = editBuffer;
-					}}
-				>
-					<X />
-				</Button.Root>
-				<Button.Root
-					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
-					onclick={() => onupdate(content)}
-					aria-label="edit user message"
-				>
-					<Check />
-				</Button.Root>
-			{:else}
-				<Button.Root
-					class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
-					onclick={() => {
-						editable = true;
-						editBuffer = content;
-					}}
-					aria-label="edit user message"
-				>
-					<SquarePen />
-				</Button.Root>
-			{/if}
+		<div class="mt-1 flex justify-end group-hover/files:visible md:invisible">
+			<Button.Root
+				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=close]:hidden"
+				onclick={() => {
+					editable = false;
+					content = editBuffer;
+				}}
+				data-state={editable ? 'open' : 'close'}
+			>
+				<X />
+			</Button.Root>
+			<Button.Root
+				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=close]:hidden"
+				onclick={() => onupdate(content)}
+				data-state={editable ? 'open' : 'close'}
+			>
+				<Check />
+			</Button.Root>
+			<Button.Root
+				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=open]:hidden"
+				onclick={() => {
+					editable = true;
+					editBuffer = content;
+				}}
+				data-state={editable ? 'open' : 'close'}
+			>
+				<SquarePen />
+			</Button.Root>
 		</div>
 	</div>
 </div>
