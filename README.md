@@ -12,7 +12,7 @@
 
 llumen is a lightweight, self-hostable LLM chat application (frontend + backend) that aims to provide an out-of-the-box experience for self-hosting users.
 
-Its design goal is simplicity: you only need a single OpenRouter API key to use LLM features — no separate keys for OCR, search, embeddings, image generation, or other services.
+Its design goal is simplicity: you only need a single **OpenRouter** API key to use LLM features — no separate keys for OCR, search, embeddings, image generation, or other services.
 
 ## :question: Why choose llumen?
 
@@ -33,6 +33,9 @@ Its design goal is simplicity: you only need a single OpenRouter API key to use 
 
 > [!TIP]
 > Use [reasoning-proxy](https://github.com/Eason0729/reasoning-proxy) to unlock advance feature(search, OCR) with normal openai endpoint
+
+> [!IMPORTANT]
+> The default account is `admin`, password is `P@88w0rd`
 
 ### :whale: Docker (Recommended)
 
