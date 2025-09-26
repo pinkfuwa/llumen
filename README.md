@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/static/web-app-manifest-512x512.png" alt="Shimmy Logo" width="300" height="auto" />
+  <img src="frontend/static/web-app-manifest-512x512.png" alt="Shimmy Logo" width="200" height="auto" />
 
   # llumen
 
@@ -14,7 +14,7 @@ llumen is a lightweight, self-hostable LLM chat application (frontend + backend)
 
 Its design goal is simplicity: you only need a single OpenRouter API key to use LLM features — no separate keys for OCR, search, embeddings, image generation, or other services.
 
-## :question: Why choose llumen
+## :question: Why choose llumen?
 
 - :handshake: We provide windows executable, docker image, linux binary
 - :ship: Single API key requirement (OpenRouter) for model calls.
@@ -55,7 +55,7 @@ docker run -it --rm \
 > [!TIP]
 > Prebuild-binary is not up to dated, it only built on per-release basis
 
-We Also provided prebuild binary, download it and extract from [release](https://github.com/pinkfuwa/llumen/releases).
+We also provided prebuild binary, download it and extract from [release](https://github.com/pinkfuwa/llumen/releases).
 
 ## :key: Environment variables
 

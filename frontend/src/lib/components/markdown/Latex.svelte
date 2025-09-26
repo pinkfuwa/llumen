@@ -10,7 +10,7 @@
 		.replace(/\s*\\\]$/g, '');
 
 	let rawHTML = $derived(
-		katex.renderToString('\\newcommand\\abs[1]{\\lvert#1\\rvert}' + text, {
+		katex.renderToString(text, {
 			displayMode: true,
 			output: 'mathml',
 			throwOnError: false
