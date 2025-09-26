@@ -46,7 +46,7 @@
 		</a>
 	{/if}
 	<button
-		class="mr-1 hidden h-6 w-6 shrink-0 p-[2px] group-hover:block"
+		class="mr-1 h-6 w-6 shrink-0 p-[2px] group-hover:block md:hidden"
 		onclick={() => {
 			if (!checked) checked = true;
 			else ondelete();

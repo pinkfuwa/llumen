@@ -1,25 +1,24 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	let { children, params } = $props();
 	import { Sidebar } from '$lib/components';
+	import CollapseBtn from '$lib/components/sidebar/CollapseBtn.svelte';
 
 	let addition = $derived(params.id != undefined);
-	let collapsed = $state(false);
+	let open = $state(false);
+	$effect(() => {
+		if (document.body.clientWidth < 768) open = false;
+		console.log(page.route.id != null);
+	});
 </script>
 
-<div class="relative flex h-screen flex-row bg-chat-bg">
-	<div class="absolute z-20 shrink-0 overflow-hidden md:static">
-		<Sidebar {addition} currentRoom={Number(params.id)} bind:collapsed />
+<CollapseBtn bind:open />
+
+<div class="flex h-screen w-screen flex-row bg-chat-bg">
+	<div class="z-20 h-full shrink-0">
+		<Sidebar {addition} currentRoom={Number(params.id)} bind:open />
 	</div>
-	<div class="absolute h-screen w-full min-w-0 md:static">
+	<div class="absolute h-full w-full min-w-0 grow md:static md:w-auto">
 		{@render children()}
 	</div>
 </div>
-
-<!-- <div class="relative bg-chat-bg">
-	<div class="absolute z-10 w-full">
-		<Sidebar {addition} currentRoom={Number(params.id)} bind:collapsed />
-	</div>
-	<div class="absolute w-full">
-		{@render children()}
-	</div>
-</div> -->
