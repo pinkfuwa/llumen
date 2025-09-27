@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-TARGET_TRIPLE="x86_64-pc-windows-gnu"
+TARGET_TRIPLE=${1:?Target triple must be provided}
 
 echo "--- Preparing to build artifacts for Windows target: $TARGET_TRIPLE ---"
 
@@ -14,7 +14,11 @@ TMP_DIR=$(mktemp -d -p "$ARTIFACTS_DIR")
 trap 'rm -rf -- "$TMP_DIR"' EXIT
 
 echo "--- Building backend ---"
-(cd backend && STATIC_DIR=./static cargo zigbuild --release --target "$TARGET_TRIPLE")
+if [[ "$TARGET_TRIPLE" == *"-msvc"* ]]; then
+  (cd backend && STATIC_DIR=./static cargo build --release --target "$TARGET_TRIPLE")
+else
+  (cd backend && STATIC_DIR=./static cargo zigbuild --release --target "$TARGET_TRIPLE")
+fi
 
 echo "--- Building frontend ---"
 (cd frontend && NOMAP=T pnpm build)
@@ -32,6 +36,6 @@ echo "--- Creating zip archive ---"
 ZIP_NAME="$TARGET_TRIPLE.zip"
 ZIP_PATH="$ARTIFACTS_DIR/$ZIP_NAME"
 
-(cd "$TMP_DIR" && zip -r "../$ZIP_NAME" .)
+(cd "$TMP_DIR" && 7z a -tzip "../$ZIP_NAME" ./)
 
 echo "--- Artifact created successfully: $ZIP_PATH ---"

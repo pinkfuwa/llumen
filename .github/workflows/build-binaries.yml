@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
-  release:
-    types: [created]
 
 permissions:
   contents: write
@@ -16,6 +14,7 @@ jobs:
   build-binaries:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-24.04
@@ -36,6 +35,10 @@ jobs:
             platform: linux
           - os: windows-2025
             target: x86_64-pc-windows-gnu
+            arch: x86_64
+            platform: windows
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
             arch: x86_64
             platform: windows
 
@@ -92,7 +95,7 @@ jobs:
       - name: Build artifacts for Windows
         if: matrix.platform == 'windows'
         shell: bash
-        run: ./package/build-artifacts-windows.sh
+        run: ./package/build-artifacts-windows.sh ${{ matrix.target }}
 
       - name: Upload artifact (Linux)
         if: matrix.platform == 'linux'
