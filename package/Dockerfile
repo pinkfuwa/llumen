@@ -41,7 +41,7 @@ COPY ./prompts .
 WORKDIR /compiler
 
 WORKDIR /compiler
-RUN --mount=type=cache,id=target,target=target && \
+RUN --mount=type=cache,id=target,target=target \
     cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl && \
     mkdir -p /app/linux && \
     cp target/aarch64-unknown-linux-musl/release/backend /app/linux/arm64 && \
