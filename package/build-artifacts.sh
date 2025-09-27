@@ -25,7 +25,7 @@ mv frontend/build "$TMP_DIR/static"
 
 touch "$TMP_DIR/.env"
 
-mv "backend/target/$TARGET_TRIPLE/release/llumen" "$TMP_DIR/llumen"
+mv "backend/target/$TARGET_TRIPLE/release/backend" "$TMP_DIR/llumen"
 
 echo "--- Creating compressed tarball ---"
 
