@@ -107,25 +107,3 @@ jobs:
         with:
           name: llumen-${{ matrix.target }}
           path: artifacts/${{ matrix.target }}.zip
-
-      - name: Upload Release Asset (Linux)
-        if: matrix.platform == 'linux'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./artifacts/${{ matrix.target }}.tar.gz
-          asset_name: llumen-${{ matrix.target }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Release Asset (Windows)
-        if: matrix.platform == 'windows'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./artifacts/${{ matrix.target }}.zip
-          asset_name: llumen-${{ matrix.target }}.zip
-          asset_content_type: application/zip
