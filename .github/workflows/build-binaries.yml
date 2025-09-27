@@ -59,6 +59,7 @@ jobs:
         with:
           version: 10
           run_install: false
+          package_json_file: "./frontend/package.json"
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
