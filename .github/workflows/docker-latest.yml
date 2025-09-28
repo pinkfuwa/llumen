@@ -1,26 +1,40 @@
-name: Build and Push Multi-Arch Docker Images
+name: Build and Push Latest Docker Image
 
 on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+  schedule:
+    - cron: "0 0 */2 * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  build-and-push:
+  build-and-push-latest:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for recent changes
+        id: git_log
+        run: |
+          if [ -z "$(git log --since='2 days ago')" ]; then
+            echo "No recent changes found in the last 2 days. Skipping build."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Recent changes found. Proceeding with build."
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up Docker Buildx
+        if: steps.git_log.outputs.changed == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
+        if: steps.git_log.outputs.changed == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -28,15 +42,15 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
+        if: steps.git_log.outputs.changed == 'true'
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/pinkfuwa/llumen
-          tags: |
-            type=semver,pattern={{version}}
-            type=raw,value=latest
+          tags: type=raw,value=latest
 
-      - name: Build and push image
+      - name: Build and push latest image
+        if: steps.git_log.outputs.changed == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
