@@ -35,6 +35,23 @@ pub struct AppState {
     pub blob: Arc<BlobDB>,
 }
 
+fn load_api_key() -> String {
+    match var("API_KEY") {
+        Ok(key) => key,
+        Err(_) => {
+            println!("Warning: API_KEY environment variable not found.");
+            println!("You can get a key from https://openrouter.ai/keys");
+            #[cfg(windows)]
+            {
+                use std::io::{self, Read};
+                println!("Press Enter to exit...");
+                io::stdin().read_exact(&mut [0u8]).unwrap();
+            }
+            std::process::exit(1);
+        }
+    }
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     dotenv::dotenv().ok();
@@ -44,7 +61,7 @@ async fn main() {
         .with(filter::Targets::new().with_target("backend", Level::TRACE))
         .init();
 
-    let api_key = var("API_KEY").expect("API_KEY is required");
+    let api_key = load_api_key();
     let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/".to_string());
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
