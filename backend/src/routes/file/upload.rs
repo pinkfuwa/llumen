@@ -22,26 +22,31 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     mut multipart: Multipart,
 ) -> JsonResult<FileUploadResp> {
-    let chat_field = multipart
-        .next_field()
-        .await
-        .kind(ErrorKind::MalformedRequest)?;
+    // https://docs.rs/multer/3.1.0/multer/struct.Multipart.html#field-exclusivity
+    // > That is, a Field emitted by next_field() must be dropped before calling next_field() again.
+    // > Failure to do so will result in an error.
+    let chat_id = {
+        let chat_field = multipart
+            .next_field()
+            .await
+            .kind(ErrorKind::MalformedRequest)?;
 
-    if chat_field.is_none() {
-        return Err(Json(Error {
-            error: ErrorKind::MalformedRequest,
-            reason: "missing chat_id field".into(),
-        }));
-    }
+        if chat_field.is_none() {
+            return Err(Json(Error {
+                error: ErrorKind::MalformedRequest,
+                reason: "missing chat_id field".into(),
+            }));
+        }
 
-    let chat_field = chat_field.unwrap();
-    let chat_id = chat_field
-        .text()
-        .await
-        .kind(ErrorKind::MalformedRequest)?
-        .trim()
-        .parse()
-        .kind(ErrorKind::MalformedRequest)?;
+        let chat_field = chat_field.unwrap();
+        chat_field
+            .text()
+            .await
+            .kind(ErrorKind::MalformedRequest)?
+            .trim()
+            .parse()
+            .kind(ErrorKind::MalformedRequest)?
+    };
 
     let content_field = multipart
         .next_field()

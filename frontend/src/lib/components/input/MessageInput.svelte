@@ -53,7 +53,9 @@
 	onpaste={(event) => {
 		const clipboardData = event.clipboardData;
 		if (clipboardData == null || clipboardData.files.length == 0) return;
-		files.push(clipboardData.files[0]);
+		for (let i = 0; i < clipboardData.files.length; i++) {
+			files.push(clipboardData.files[i]);
+		}
 	}}
 >
 	{#if dropZone.isOver && editable}
