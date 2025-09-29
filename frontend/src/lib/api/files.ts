@@ -1,9 +1,16 @@
 import { onDestroy } from 'svelte';
 import { RawAPIFetch } from './state/errorHandle';
 import type { FileUploadResp } from './types';
+import { dispatchError } from '$lib/error';
 
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // backend limit body size at 128 MB, body size!=file size
 export async function upload(file: File, chatId: number, signal?: AbortSignal) {
 	const formData = new FormData();
+	if (file.size > MAX_FILE_SIZE) {
+		dispatchError('internal', 'File size exceeds the maximum limit of 100MB.');
+		return null;
+	}
+
 	formData.append('chat_id', chatId.toString());
 	formData.append('file', file);
 

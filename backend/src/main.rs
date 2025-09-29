@@ -13,7 +13,7 @@ use axum::{Router, middleware};
 use chat::Context;
 use dotenv::var;
 use entity::prelude::*;
-use middlewares::{cache_control::CacheControlLayer, logger::LoggerLayer};
+use middlewares::cache_control::CacheControlLayer;
 use migration::MigratorTrait;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};

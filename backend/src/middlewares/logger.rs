@@ -4,7 +4,7 @@ use std::{
 };
 
 use futures_util::Future;
-use http::{Request, Response};
+use http::{Method, Request, Response};
 use tower::{Layer, Service};
 
 pub struct ResponseFuture<F> {
@@ -65,11 +65,13 @@ where
         let pin_response_future = Pin::new(&mut self.response_future);
         let response: Response<B> = ready!(pin_response_future.poll(cx))?;
 
-        log::info!(
-            "serving api {} {}",
-            self.uri.path(),
-            response.status().as_u16()
-        );
+        if matches!(self.method, Method::POST) {
+            log::info!(
+                "serving api {} {}",
+                self.uri.path(),
+                response.status().as_u16()
+            );
+        }
 
         Poll::Ready(Ok(response))
     }
