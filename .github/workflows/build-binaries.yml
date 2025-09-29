@@ -1,4 +1,4 @@
-name: Build Cross-Platform Binaries and Frontend Assets
+name: Release Binaries
 
 on:
   push:
