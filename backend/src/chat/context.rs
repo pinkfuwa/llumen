@@ -305,7 +305,7 @@ impl CompletionContext {
             .copied()
             .unwrap_or(0.0);
 
-        tracing::trace!("publish complete token");
+        log::trace!("publish complete token");
         self.publisher.publish_force(Token::Complete {
             message_id,
             chunk_ids,
@@ -316,7 +316,7 @@ impl CompletionContext {
         self.publisher.publish_force(Token::Empty);
 
         if let Err(err) = self.generate_title().await {
-            tracing::error!("failed to generate title: {}", err);
+            log::error!("failed to generate title: {}", err);
         }
 
         let db = &self.ctx.db;

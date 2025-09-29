@@ -258,7 +258,7 @@ where
                 self.advance_cursor(&shared_buffer)
             };
 
-            tracing::trace!(
+            log::trace!(
                 "recv: from: {:?}, to: {:?}, new_cursor: {:?}",
                 self.from,
                 self.to,

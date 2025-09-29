@@ -13,15 +13,13 @@ use axum::{Router, middleware};
 use chat::Context;
 use dotenv::var;
 use entity::prelude::*;
-use middlewares::cache_control::CacheControlLayer;
+use middlewares::{cache_control::CacheControlLayer, logger::LoggerLayer};
 use migration::MigratorTrait;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{Database, DbConn, EntityTrait};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
-use tracing::Level;
-use tracing_subscriber::{filter, layer::SubscriberExt, util::SubscriberInitExt};
 use utils::{blob::BlobDB, password_hash::Hasher};
 
 #[cfg(feature = "dev")]
@@ -56,10 +54,7 @@ fn load_api_key() -> String {
 async fn main() {
     dotenv::dotenv().ok();
 
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .with(filter::Targets::new().with_target("backend", Level::TRACE))
-        .init();
+    crate::utils::logger::init();
 
     let api_key = load_api_key();
     let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/".to_string());
@@ -130,7 +125,8 @@ async fn main() {
                     middlewares::auth::Middleware,
                     _,
                 >(state.clone()))
-                .nest("/auth", routes::auth::routes()),
+                .nest("/auth", routes::auth::routes())
+                .layer(middlewares::logger::LoggerLayer),
         )
         .fallback_service(
             ServiceBuilder::new().layer(CacheControlLayer).service(
@@ -157,7 +153,7 @@ async fn main() {
             ])),
     );
 
-    tracing::info!("Listening on http://{}", bind_addr);
+    log::info!("Listening on http://{}", bind_addr);
 
     let tcp = TcpListener::bind(bind_addr).await.unwrap();
     axum::serve(tcp, app).await.unwrap();

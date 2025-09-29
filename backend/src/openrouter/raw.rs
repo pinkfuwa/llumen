@@ -51,12 +51,15 @@ impl Default for CompletionReq {
 
 impl CompletionReq {
     pub fn log(&self) {
+        #[cfg(feature = "dev")]
         if let Ok(req) = serde_json::to_string_pretty(&self) {
-            tracing::debug!(
-                "completion requst:\n===============\n{}\n===============",
+            log::debug!(
+                "sending completion\n===============\n{}\n===============",
                 req
             );
         }
+        #[cfg(not(feature = "dev"))]
+        log::debug!("sending completion");
     }
 }
 
@@ -168,7 +171,7 @@ impl MessagePart {
             _ => {
                 // TODO: report unknown file type to user
                 // Unknown file type is provider-specific, so provider may return error(we can't capture it)
-                tracing::warn!("Unknown file type: {}", filename);
+                log::warn!("Unknown file type: {}", filename);
                 (
                     Self::text(format!("Uploaded file: {}", filename)),
                     Self::file(filename.to_string(), blob),

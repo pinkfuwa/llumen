@@ -96,7 +96,7 @@ pub async fn route(
     };
     tokio::spawn(async move {
         if let Err(e) = closure.await {
-            tracing::error!("Failed to process message: {:?}", e);
+            log::error!("Failed to process message: {:?}", e);
         }
     });
 
