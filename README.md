@@ -7,6 +7,8 @@
 
   [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://www.mozilla.org/en-US/MPL/2.0/)
   [![Rust](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://rustup.rs/)
+  [![Nightly Docker](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml)
+  [![Release Binaries](https://github.com/pinkfuwa/llumen/actions/workflows/build-binaries.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/build-binaries.yml)
 
 </div>
 
