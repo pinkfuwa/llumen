@@ -58,7 +58,7 @@ impl StreamCompletion {
                 responses: vec![],
             }),
             Err(e) => {
-                tracing::error!("Failed to create event source: {}", e);
+                log::error!("Failed to create event source: {}", e);
                 Err(anyhow!("Failed to create event source: {}", e))
             }
         }
@@ -154,7 +154,7 @@ impl StreamCompletion {
                 ),
             };
         } else {
-            tracing::error!("Stream error: {}", err);
+            log::error!("Stream error: {}", err);
 
             return err.into();
         }
@@ -169,7 +169,7 @@ impl StreamCompletion {
                 Err(e) => {
                     return match e {
                         reqwest_eventsource::Error::StreamEnded => {
-                            tracing::debug!("Stream ended");
+                            log::debug!("Stream ended");
                             None
                         }
                         e => Some(Err(self.handle_error(e).await)),
@@ -182,7 +182,7 @@ impl StreamCompletion {
 
     pub fn get_result(mut self) -> StreamResult {
         if self.stop_reason.is_none() {
-            tracing::warn!("Provider didn't return finish_reason, set to Stop");
+            log::warn!("Provider didn't return finish_reason, set to Stop");
         }
         let stop_reason = self.stop_reason.take().unwrap_or(raw::FinishReason::Stop);
 

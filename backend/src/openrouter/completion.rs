@@ -42,7 +42,7 @@ impl Openrouter {
         let mut default_req = raw::CompletionReq::default();
 
         if !api_base.contains("openrouter") {
-            tracing::warn!("Custom API_BASE detected, disabling plugin support");
+            log::warn!("Custom API_BASE detected, disabling plugin support");
             default_req.plugins = None;
             default_req.usage = None;
         }
@@ -60,7 +60,7 @@ impl Openrouter {
         model: &Model,
         tools: Vec<Tool>,
     ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
-        tracing::debug!("start streaming with model {}", &model.id);
+        log::debug!("start streaming with model {}", &model.id);
 
         let tools = match tools.is_empty() {
             true => None,
@@ -97,10 +97,10 @@ impl Openrouter {
         mut messages: Vec<Message>,
         model: Model,
     ) -> Result<ChatCompletion> {
-        tracing::debug!("start completion with model {}", &model.id);
+        log::debug!("start completion with model {}", &model.id);
 
         if model.online {
-            tracing::warn!("Online models should not be used in non-streaming completions.");
+            log::warn!("Online models should not be used in non-streaming completions.");
         }
 
         // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
@@ -131,7 +131,7 @@ impl Openrouter {
             .send()
             .await
             .map_err(|err| {
-                tracing::warn!("openrouter finish with error: {}", &err);
+                log::warn!("openrouter finish with error: {}", &err);
                 err
             })
             .context("Failed to build request")?;
@@ -142,7 +142,7 @@ impl Openrouter {
             .context("Failed to parse response")?;
 
         if let Some(error) = json.error {
-            tracing::warn!("openrouter finish with api error: {}", &error.message);
+            log::warn!("openrouter finish with api error: {}", &error.message);
             return Err(anyhow::anyhow!("Openrouter API error: {}", error.message));
         }
 

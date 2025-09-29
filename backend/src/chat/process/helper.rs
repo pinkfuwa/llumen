@@ -73,7 +73,7 @@ pub(super) async fn load_files(
     for task in tasks {
         match task.await? {
             Some(it) => results.push(it),
-            None => tracing::error!("File not found"),
+            None => log::error!("File not found"),
         };
     }
 
