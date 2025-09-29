@@ -1,4 +1,4 @@
-name: Build and Push Latest Docker Image
+name: Nightly Docker
 
 on:
   schedule:
