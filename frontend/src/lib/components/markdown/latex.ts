@@ -1,10 +1,12 @@
 import { marked } from 'marked';
-import markedKatex from 'marked-katex-extension';
 
-const bracketLatexInlineRegex = /^(\\\[)(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\\\]/;
-const bracketLatexBlockRegex = /^(\\\[)\n((?:\\[^]|[^\\])+?)\n\\\](?:\n|$)/;
-const parenthesesLatexInlineRegex = /^(\\\()(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\\\)/;
-const parenthesesLatexBlockRegex = /^(\\\()\n((?:\\[^]|[^\\])+?)\n\\\)(?:\n|$)/;
+const bracketInlineRegex = /^(\\\[)(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\\\]/;
+const bracketBlockRegex = /^(\\\[)\n((?:\\[^]|[^\\])+?)\n\\\](?:\n|$)/;
+const parenthesesInlineRegex = /^(\\\()(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\\\)/;
+const parenthesesBlockRegex = /^(\\\()\n((?:\\[^]|[^\\])+?)\n\\\)(?:\n|$)/;
+const dollarInlineRule =
+	/^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\1(?=[\s?!\.,:？！。，：]|$)/;
+const dollarBlockRule = /^(\${1,2})\n((?:\\[^]|[^\\])+?)\n\1(?:\n|$)/;
 
 export function latexTrim(i: string) {
 	return i
@@ -34,8 +36,9 @@ marked.use({
 						const possibleKatex = indexSrc.substring(index);
 
 						if (
-							possibleKatex.match(bracketLatexInlineRegex) ||
-							possibleKatex.match(parenthesesLatexInlineRegex)
+							possibleKatex.match(bracketInlineRegex) ||
+							possibleKatex.match(parenthesesInlineRegex) ||
+							possibleKatex.match(dollarInlineRule)
 						) {
 							return index;
 						}
@@ -45,7 +48,10 @@ marked.use({
 				}
 			},
 			tokenizer(src, tokens) {
-				const match = src.match(bracketLatexInlineRegex) || src.match(parenthesesLatexInlineRegex);
+				const match =
+					src.match(bracketInlineRegex) ||
+					src.match(parenthesesInlineRegex) ||
+					src.match(dollarInlineRule);
 				if (match) {
 					return {
 						type: 'inlineKatex',
@@ -60,7 +66,10 @@ marked.use({
 			name: 'blockKatex',
 			level: 'block',
 			tokenizer(src: string) {
-				const match = bracketLatexBlockRegex.exec(src) || parenthesesLatexBlockRegex.exec(src);
+				const match =
+					bracketBlockRegex.exec(src) ||
+					parenthesesBlockRegex.exec(src) ||
+					dollarBlockRule.exec(src);
 				if (match) {
 					return {
 						type: 'blockKatex',
@@ -73,13 +82,6 @@ marked.use({
 		}
 	]
 });
-
-marked.use(
-	markedKatex({
-		throwOnError: false,
-		nonStandard: false
-	})
-);
 
 export default function initLatex() {
 	console.log('inited latex');
