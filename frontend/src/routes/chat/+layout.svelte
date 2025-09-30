@@ -14,10 +14,11 @@
 
 <CollapseBtn bind:open />
 
-<div class="flex h-screen w-screen flex-row bg-chat-bg">
+<div class="relative flex h-screen w-screen flex-row bg-chat-bg">
 	<div class="z-20 h-full shrink-0">
 		<Sidebar {addition} currentRoom={Number(params.id)} bind:open />
 	</div>
+
 	<div class="absolute h-full w-full min-w-0 grow md:static md:w-auto">
 		{@render children()}
 	</div>
