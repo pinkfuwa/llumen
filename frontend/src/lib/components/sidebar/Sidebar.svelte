@@ -17,7 +17,7 @@
 	<div class="mb-4 shrink-0 border-b border-outline pb-1">
 		<CollapseHeader onclick={() => (open = !open)} />
 	</div>
-	<div class="min-w-0 grow">
+	<div class="nobar min-w-0 grow overflow-y-auto">
 		<RoomPagination {addition} {currentRoom} />
 	</div>
 	<div class="mt-4 shrink-0 border-t border-outline pt-4">
