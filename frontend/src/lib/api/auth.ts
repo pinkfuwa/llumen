@@ -46,7 +46,7 @@ export async function RenewToken(originalToken: string) {
 }
 
 export function initAuth() {
-	const guardPrefix = ['/chat', '/setting'];
+	const guardPrefix = '/chat';
 
 	const unsubscribers = [
 		token.subscribe((token) => {
@@ -54,7 +54,7 @@ export function initAuth() {
 			if (
 				!pathname.startsWith('/login') &&
 				token == undefined &&
-				guardPrefix.some((m) => pathname.startsWith(m))
+				pathname.startsWith(guardPrefix)
 			) {
 				goto(`/login?callback=${encodeURIComponent(pathname)}`);
 			}
