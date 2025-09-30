@@ -41,7 +41,7 @@
 				</div>
 			{/if}
 		</div>
-		<div class="mt-1 flex justify-end group-hover/files:visible md:invisible">
+		<div class="mt-1 flex justify-end">
 			<Button.Root
 				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=close]:hidden"
 				onclick={() => {
@@ -60,7 +60,7 @@
 				<Check />
 			</Button.Root>
 			<Button.Root
-				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=open]:hidden"
+				class="h-10 w-10 rounded-lg p-2 duration-150 group-hover/files:visible hover:bg-primary hover:text-text-hover data-[state=open]:hidden md:invisible"
 				onclick={() => {
 					editable = true;
 					editBuffer = content;
