@@ -4,8 +4,10 @@ TS_OUTPUT := "../frontend/src/lib/api/types.ts"
 
 DATABASE_URL := "sqlite://../db.sqlite?mode=rwc"
 
+BIND_ADDR := "127.0.0.1:8001"
+
 run:
-    RUST_BACKTRACE=1 RUST_LOG=debug cargo run --features dev
+    RUST_BACKTRACE=1 RUST_LOG=debug BIND_ADDR={{BIND_ADDR}} cargo run --features dev
 
 fresh:
     cd migration; DATABASE_URL={{DATABASE_URL}} cargo run -- fresh

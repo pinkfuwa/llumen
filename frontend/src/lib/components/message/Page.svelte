@@ -47,32 +47,38 @@
 
 <div class="mt-2 flex flex-col-reverse space-y-2" bind:this={div}>
 	{#each $data as msg}
-		{#if msg.role == Role.User}
-			{@const content = getTextFromChunks(msg.chunks)}
-			{@const files = getFileFromChunks(msg.chunks)}
-			<User
-				{content}
-				{files}
-				onupdate={(text) => {
-					if (room == undefined) return;
-					if (room.model_id == undefined) dispatchError('internal', 'select a model first');
-					else
-						mutate({
-							chat_id: roomId,
-							model_id: room.model_id,
-							mode: room.mode,
-							text,
-							files,
-							msgId: msg.id
-						});
-				}}
-			/>
-		{:else if msg.role == Role.Assistant}
-			<ResponseBox>
-				<Chunks chunks={msg.chunks} />
-				<ResponseEdit content={getTextFromChunks(msg.chunks)} token={msg.token} cost={msg.price} />
-			</ResponseBox>
-		{/if}
+		{#key msg.id}
+			{#if msg.role == Role.User}
+				{@const content = getTextFromChunks(msg.chunks)}
+				{@const files = getFileFromChunks(msg.chunks)}
+				<User
+					{content}
+					{files}
+					onupdate={(text) => {
+						if (room == undefined) return;
+						if (room.model_id == undefined) dispatchError('internal', 'select a model first');
+						else
+							mutate({
+								chat_id: roomId,
+								model_id: room.model_id,
+								mode: room.mode,
+								text,
+								files,
+								msgId: msg.id
+							});
+					}}
+				/>
+			{:else if msg.role == Role.Assistant}
+				<ResponseBox>
+					<Chunks chunks={msg.chunks} />
+					<ResponseEdit
+						content={getTextFromChunks(msg.chunks)}
+						token={msg.token}
+						cost={msg.price}
+					/>
+				</ResponseBox>
+			{/if}
+		{/key}
 	{:else}
 		<div class="h-1"></div>
 	{/each}

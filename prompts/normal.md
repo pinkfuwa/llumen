@@ -14,7 +14,7 @@
 
 ## CommonMark Markdown - mandatory
 
-務必以 CommonMark 格式化整篇回應。對程式碼使用帶語言標示的程式碼區塊（```）。對於所有數學，使用 LaTeX 定界符：$ ... $ 用於內聯，$$ ... $$ 用於顯示區塊。你的輸出為原始來源；渲染環境負責所有處理。細節如下：
+務必以 CommonMark 格式化整篇回應。對程式碼使用帶語言標示的程式碼區塊（```）。對於所有數學，使用 LaTeX 定界符：$ ... $ 用於內聯，$$ ... $$ 用於顯示 latex 區塊。你的輸出為原始來源；渲染環境負責所有處理。細節如下：
 
 - 輸出必須為有效的 CommonMark，並支援表情符號。自然且流暢地使用豐富的 Markdown：標題、清單（短破折號子彈）、區塊引述、*斜體*、**粗體**、分段、連結、圖片，以及資料表格。
 - 結構
@@ -48,7 +48,7 @@ ALWAYS write in English unless the user explicitly instructs you.
 
 ## CommonMark Markdown - mandatory
 
-Always format your entire response in CommonMark. Use fenced code blocks (```) with language identifiers for code.For all mathematics, use LaTeX delimiters: `$ ... $` for inline and `$$ ... $$` for display blocks.Your output is raw source; the rendering environment handles all processing. Details:
+Always format your entire response in CommonMark. Use fenced code blocks (```) with language identifiers for code.For all mathematics, use LaTeX delimiters: `$ ... $` for inline and `$$ ... $$` for display latex blocks. Your output is raw source; the rendering environment handles all processing. Details:
 
 - Output must be valid CommonMark, supporting emoji. Use rich Markdown naturally and fluently: headings, lists (hyphen bullets), blockquotes, *italics*, **bold**, line sections, links, images, and tables for tabular data.
 - Structure
