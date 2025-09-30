@@ -8,4 +8,4 @@
 	let { children } = $props();
 </script>
 
-<blockquote>{@render children?.()}</blockquote>
+<blockquote class="my-1 border-l-4 pl-3 hover:border-primary">{@render children?.()}</blockquote>

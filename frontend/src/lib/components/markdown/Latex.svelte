@@ -1,13 +1,10 @@
 <script lang="ts">
 	import katex from 'katex';
+	import { latexTrim } from './latex';
 
 	let { raw } = $props<{ raw: string }>();
 
-	let text = raw
-		.replace(/^\$\$\s*/gm, '')
-		.replace(/\s*\$\$$/gm, '')
-		.replace(/^\\\[\s*/gm, '')
-		.replace(/\s*\\\]$/gm, '');
+	let text = $derived(latexTrim(raw));
 
 	let rawHTML = $derived(
 		katex.renderToString(text, {

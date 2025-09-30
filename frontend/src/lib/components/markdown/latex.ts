@@ -3,6 +3,18 @@ import markedKatex from 'marked-katex-extension';
 
 const bracketLatexInlineRegex = /^(\\\[)(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\\\]/;
 const bracketLatexBlockRegex = /^(\\\[)\n((?:\\[^]|[^\\])+?)\n\\\](?:\n|$)/;
+const parenthesesLatexInlineRegex = /^(\\\()(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\\\)/;
+const parenthesesLatexBlockRegex = /^(\\\()\n((?:\\[^]|[^\\])+?)\n\\\)(?:\n|$)/;
+
+export function latexTrim(i: string) {
+	return i
+		.replace(/^\$\$\s*/gm, '')
+		.replace(/\s*\$\$$/gm, '')
+		.replace(/^\\\[\s*/gm, '')
+		.replace(/\s*\\\]$/gm, '')
+		.replace(/^\\\(\s*/gm, '')
+		.replace(/\s*\\\)$/gm, '');
+}
 
 marked.use({
 	extensions: [
@@ -21,16 +33,19 @@ marked.use({
 					if (f) {
 						const possibleKatex = indexSrc.substring(index);
 
-						if (possibleKatex.match(bracketLatexInlineRegex)) {
+						if (
+							possibleKatex.match(bracketLatexInlineRegex) ||
+							possibleKatex.match(parenthesesLatexInlineRegex)
+						) {
 							return index;
 						}
 					}
 
-					indexSrc = indexSrc.substring(index + 1).replace(/^\$+/, '');
+					indexSrc = indexSrc.substring(index + 1).replace(/^\\\[/, '');
 				}
 			},
 			tokenizer(src, tokens) {
-				const match = src.match(bracketLatexInlineRegex);
+				const match = src.match(bracketLatexInlineRegex) || src.match(parenthesesLatexInlineRegex);
 				if (match) {
 					return {
 						type: 'inlineKatex',
@@ -45,7 +60,7 @@ marked.use({
 			name: 'blockKatex',
 			level: 'block',
 			tokenizer(src: string) {
-				const match = bracketLatexBlockRegex.exec(src);
+				const match = bracketLatexBlockRegex.exec(src) || parenthesesLatexBlockRegex.exec(src);
 				if (match) {
 					return {
 						type: 'blockKatex',
