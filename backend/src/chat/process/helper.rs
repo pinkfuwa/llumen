@@ -44,6 +44,17 @@ pub(super) fn active_chunks_to_message(
                     ));
                 }
             }
+            entity::ChunkKind::Annotation => {
+                let annotations: serde_json::Value = serde_json::from_str(&content).unwrap();
+                if let Some(openrouter::Message::Assistant(last)) = results.pop() {
+                    results.push(openrouter::Message::AssistantAnnotationed {
+                        text: last,
+                        annotations,
+                    });
+                } else {
+                    log::warn!("Annotation chunk without preceding text chunk");
+                }
+            }
             _ => continue,
         };
     }

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { marked } from 'marked';
 	import Parser from './Parser.svelte';
 	import { lex } from '.';
 

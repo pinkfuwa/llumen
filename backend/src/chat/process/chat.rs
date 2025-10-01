@@ -6,9 +6,11 @@ use anyhow::{Context as _, Result};
 use entity::ChunkKind;
 use entity::FileHandle;
 use entity::MessageKind;
+use entity::chunk;
 use futures_util::StreamExt;
 use futures_util::future::BoxFuture;
 use sea_orm::ActiveValue;
+use sea_orm::ActiveValue::Set;
 
 use crate::chat::context::CompletionContext;
 use crate::chat::context::Context;
@@ -141,9 +143,29 @@ impl<P: ChatInner> ChatPipeline<P> {
             .update_usage(result.usage.cost as f32, result.usage.token as i32);
 
         let tokens = result.responses.into_iter().map(Into::into);
-        let chunks = Token::into_chunks(tokens.into_iter());
+        let mut chunks = Token::into_chunks(tokens.into_iter()).collect::<Vec<_>>();
 
-        self.completion_ctx.new_chunks.extend(chunks.into_iter());
+        if let Some(annotations) = result
+            .annotations
+            .map(|v| serde_json::to_string(&v).ok())
+            .flatten()
+        {
+            if let Some(idx) = chunks
+                .iter()
+                .rposition(|elem| matches!(elem.kind, ActiveValue::Set(ChunkKind::Text)))
+            {
+                chunks.insert(
+                    idx + 1,
+                    chunk::ActiveModel {
+                        content: Set(annotations),
+                        kind: Set(ChunkKind::Annotation),
+                        ..Default::default()
+                    },
+                );
+            }
+        }
+
+        self.completion_ctx.new_chunks.extend(chunks);
 
         match result.stop_reason {
             FinishReason::Length => return Err(anyhow::anyhow!("The response is too long")),

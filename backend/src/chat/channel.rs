@@ -30,7 +30,7 @@ pub type LockedOption<T> = Mutex<Option<T>>;
 
 pub struct Inner<S: Mergeable + Clone> {
     buffer: LockedVec<S>,
-    sender: LockedOption<watch::Sender<Cursor>>,
+    sender: LockedOption<watch::Sender<Option<Cursor>>>,
     flag: AtomicBool,
 }
 
@@ -42,10 +42,10 @@ impl<S: Mergeable + Clone + Send> Default for Inner<S> {
 
 impl<S: Mergeable + Clone + Send> Inner<S> {
     pub fn new() -> Self {
-        let (tx, _) = watch::channel(Cursor {
+        let (tx, _) = watch::channel(Some(Cursor {
             index: 0,
             offset: 0,
-        });
+        }));
         Self {
             buffer: Mutex::new(Vec::new()),
             sender: Mutex::new(Some(tx)),
@@ -79,7 +79,7 @@ pub struct Context<S: Mergeable> {
     map: Arc<LockedMap<i32, Inner<S>>>,
 }
 
-impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
+impl<S: Mergeable + Clone + Send + 'static + Sync + Debug> Context<S> {
     pub fn new() -> Self {
         Self {
             map: Arc::new(Mutex::new(HashMap::new())),
@@ -162,6 +162,7 @@ pub struct Publisher<S: Mergeable> {
 
 impl<S: Mergeable + Clone + Debug> Publisher<S> {
     pub fn publish_force(&mut self, item: S) {
+        dbg!(&item);
         let mut buffer = self.inner.buffer.lock().unwrap();
         if let Some(last) = buffer.last_mut() {
             if let Some(rest) = last.merge(item) {
@@ -182,7 +183,7 @@ impl<S: Mergeable + Clone + Debug> Publisher<S> {
             .unwrap()
             .as_ref()
             .unwrap()
-            .send_replace(cursor);
+            .send_replace(Some(cursor));
     }
     /// Error when the channel is closed
     pub fn publish(&mut self, item: S) -> Result<(), ()> {
@@ -199,7 +200,8 @@ impl<S: Mergeable + Clone + Debug> Publisher<S> {
 
 impl<S: Mergeable> Drop for Publisher<S> {
     fn drop(&mut self) {
-        let sender = self.inner.sender.lock().unwrap().take();
+        let sender = self.inner.sender.lock().unwrap().take().unwrap();
+        sender.send_replace(None);
         drop(sender);
         self.ctx.map.lock().unwrap().remove(&self.id);
     }
@@ -211,12 +213,12 @@ where
 {
     from: Cursor,
     to: Cursor,
-    receiver: watch::Receiver<Cursor>,
+    receiver: watch::Receiver<Option<Cursor>>,
     inner: Arc<Inner<S>>,
     ended: bool,
 }
 
-impl<S> Subscriber<S>
+impl<S: Debug> Subscriber<S>
 where
     S: Mergeable + Clone + Send,
 {
@@ -237,7 +239,7 @@ where
             ),
             cmp::Ordering::Less if from_offset == 0 => (
                 Cursor::new(from_index + 1, 0),
-                Some(shared_buffer[from_index].clone()),
+                shared_buffer.get(from_index).cloned(),
             ),
             cmp::Ordering::Less => (
                 Cursor::new(from_index + 1, 0),
@@ -250,11 +252,21 @@ where
         loop {
             {
                 let update = self.receiver.borrow_and_update();
-                self.to = *update;
+                match *update {
+                    Some(update) => self.to = update,
+                    None => self.ended = true,
+                }
             }
 
             let (new_cursor, item) = {
                 let shared_buffer = self.inner.buffer.lock().unwrap();
+                if self.ended {
+                    dbg!(&*shared_buffer);
+                    self.to = Cursor {
+                        index: shared_buffer.len(),
+                        offset: 0,
+                    };
+                }
                 self.advance_cursor(&shared_buffer)
             };
 
@@ -269,15 +281,11 @@ where
 
             if item.is_some() {
                 return item;
-            }
-
-            if self.ended {
+            } else if self.ended {
                 return None;
             }
 
-            if self.receiver.changed().await.is_err() {
-                self.ended = true;
-            }
+            self.receiver.changed().await.ok();
         }
     }
 }
