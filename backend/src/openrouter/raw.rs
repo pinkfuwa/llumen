@@ -105,6 +105,8 @@ pub struct Message {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "content")]
     pub contents: Option<Vec<MessagePart>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub annotations: Option<serde_json::Value>,
 }
 
 // `data:image/jpeg;base64,${base64Image}`;
@@ -288,6 +290,7 @@ pub struct Delta {
     pub role: Option<Role>,
     pub content: Option<String>,
     pub reasoning: Option<String>,
+    pub annotations: Option<serde_json::Value>,
     pub tool_calls: Option<Vec<ToolCall>>,
 }
 

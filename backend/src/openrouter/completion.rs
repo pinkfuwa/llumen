@@ -193,7 +193,14 @@ pub enum Message {
     System(String),
     User(String),
     Assistant(String),
-    MultipartUser { text: String, files: Vec<File> },
+    AssistantAnnotationed {
+        text: String,
+        annotations: serde_json::Value,
+    },
+    MultipartUser {
+        text: String,
+        files: Vec<File>,
+    },
     ToolCall(MessageToolCall),
     ToolResult(MessageToolResult),
 }
@@ -214,6 +221,12 @@ impl From<Message> for raw::Message {
             Message::Assistant(msg) => raw::Message {
                 role: raw::Role::Assistant,
                 content: Some(msg),
+                ..Default::default()
+            },
+            Message::AssistantAnnotationed { text, annotations } => raw::Message {
+                role: raw::Role::Assistant,
+                content: Some(text),
+                annotations: Some(annotations),
                 ..Default::default()
             },
             Message::MultipartUser { text, files } => {

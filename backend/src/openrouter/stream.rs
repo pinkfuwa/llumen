@@ -26,6 +26,7 @@ pub struct StreamCompletion {
     usage: Usage,
     stop_reason: Option<raw::FinishReason>,
     responses: Vec<StreamCompletionResp>,
+    annotations: Option<serde_json::Value>,
 }
 
 pub struct StreamResult {
@@ -33,6 +34,7 @@ pub struct StreamResult {
     pub usage: Usage,
     pub stop_reason: raw::FinishReason,
     pub responses: Vec<StreamCompletionResp>,
+    pub annotations: Option<serde_json::Value>,
 }
 
 impl StreamCompletion {
@@ -56,6 +58,7 @@ impl StreamCompletion {
                 usage: Usage::default(),
                 stop_reason: None,
                 responses: vec![],
+                annotations: None,
             }),
             Err(e) => {
                 log::error!("Failed to create event source: {}", e);
@@ -72,6 +75,10 @@ impl StreamCompletion {
         let delta = choice.delta;
 
         let content = delta.content.unwrap_or("".to_string());
+
+        if let Some(annotations) = delta.annotations {
+            self.annotations = Some(annotations);
+        }
 
         if let Some(reasoning) = delta.reasoning {
             return StreamCompletionResp::ReasoningToken(reasoning);
@@ -191,6 +198,7 @@ impl StreamCompletion {
             usage: self.usage.clone(),
             stop_reason,
             responses: std::mem::take(&mut self.responses),
+            annotations: self.annotations.take(),
         }
     }
 }
