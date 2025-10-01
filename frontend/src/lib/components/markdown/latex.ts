@@ -8,16 +8,6 @@ const dollarInlineRule =
 	/^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\1(?=[\s?!\.,:？！。，：]|$)/;
 const dollarBlockRule = /^(\${1,2})\n((?:\\[^]|[^\\])+?)\n\1(?:\n|$)/;
 
-export function latexTrim(i: string) {
-	return i
-		.replace(/^\$\$\s*/gm, '')
-		.replace(/\s*\$\$$/gm, '')
-		.replace(/^\\\[\s*/gm, '')
-		.replace(/\s*\\\]$/gm, '')
-		.replace(/^\\\(\s*/gm, '')
-		.replace(/\s*\\\)$/gm, '');
-}
-
 marked.use({
 	extensions: [
 		{
