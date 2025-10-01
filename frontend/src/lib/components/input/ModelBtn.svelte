@@ -5,7 +5,6 @@
 	import { getSupportedFileTypes } from './fileTypes';
 	let {
 		value = $bindable<string | undefined>(),
-		above = false,
 		disabled = false,
 		filetypes = $bindable('*')
 	} = $props();
@@ -14,6 +13,7 @@
 
 	$effect(() => {
 		if (!disabled && $data) {
+			// TODO: select last selected model
 			let lastModel = $data.list.at(-1);
 			if (lastModel && value == undefined) {
 				value = `${lastModel.id}`;
@@ -51,7 +51,7 @@
 		fallback="Select Model"
 		bind:selected={value}
 		{disabled}
-		class="grow truncate sm:grow-0 md:w-52"
-		popupClass="w-52"
+		class="grow truncate sm:w-56 sm:grow-0"
+		popupClass="w-56"
 	></Select>
 {/if}

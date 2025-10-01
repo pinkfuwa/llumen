@@ -29,7 +29,6 @@ export function Login(): CreateMutationResult<LoginReq, LoginResp> {
 }
 
 export async function RenewToken(originalToken: string) {
-	console.log('renew');
 	const res = await APIFetch<RenewResp, RenewReq>('auth/renew', { token: originalToken });
 
 	if (res) {
