@@ -1,7 +1,7 @@
 function latexTrim(i: string) {
 	return i
-		.replace(/^\$\$\s*/gm, '')
-		.replace(/\s*\$\$$/gm, '')
+		.replace(/^\$*\s*/gm, '')
+		.replace(/\s*\$*$/gm, '')
 		.replace(/^\\\[\s*/gm, '')
 		.replace(/\s*\\\]$/gm, '')
 		.replace(/^\\\(\s*/gm, '')
