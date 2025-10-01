@@ -252,7 +252,6 @@ impl CompletionContext {
 
         self.publisher
             .publish_force(Token::Title(title.to_string()));
-        self.publisher.publish_force(Token::Empty);
 
         Ok(())
     }
@@ -273,7 +272,7 @@ impl CompletionContext {
 
         let new_chunks = std::mem::take(&mut self.new_chunks);
 
-        let new_chunks = new_chunks
+        let mut new_chunks = new_chunks
             .into_iter()
             .map(|mut c| {
                 c.message_id = ActiveValue::Set(message_id);
@@ -281,7 +280,14 @@ impl CompletionContext {
             })
             .collect::<Vec<_>>();
 
-        let chunks_affected = self.new_chunks.len();
+        let chunks_affected = new_chunks.len();
+
+        if chunks_affected == 0 {
+            log::warn!("No content generated, it's likely a bug of llumen.");
+            new_chunks.push(error_chunk(
+                "No content generated, it's likely a bug of llumen.\nReport Here: https://github.com/pinkfuwa/llumen/issues/new".to_string(),
+            ));
+        }
 
         let last_insert_id = chunk::Entity::insert_many(new_chunks)
             .exec(db)
@@ -313,7 +319,6 @@ impl CompletionContext {
             token: token_count,
         });
         // FIXME: control token at end will be missing.
-        self.publisher.publish_force(Token::Empty);
 
         if let Err(err) = self.generate_title().await {
             log::error!("failed to generate title: {}", err);

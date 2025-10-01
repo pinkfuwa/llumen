@@ -41,7 +41,7 @@ impl Default for CompletionReq {
             plugins: Some(vec![Plugin {
                 id: "file-parser".to_string(),
                 pdf: PdfPlugin {
-                    engine: "pdf-text".to_string(),
+                    engine: "mistral-ocr".to_string(),
                 },
             }]),
             usage: Some(UsageReq { include: true }),
@@ -170,6 +170,10 @@ impl MessagePart {
                     Self::text(content),
                 )
             }
+            "pdf" => (
+                Self::text(format!("Uploaded file: {}", filename)),
+                Self::pdf(filename.to_string(), &blob),
+            ),
             _ => {
                 // TODO: report unknown file type to user
                 // Unknown file type is provider-specific, so provider may return error(we can't capture it)
@@ -186,6 +190,17 @@ impl MessagePart {
         Self {
             r#type: MultiPartMessageType::ImageUrl,
             image_url: Some(InputImage { url }),
+            ..Default::default()
+        }
+    }
+
+    pub fn pdf(filename: String, data: &[u8]) -> Self {
+        Self {
+            r#type: MultiPartMessageType::File,
+            file: Some(InputFile {
+                filename,
+                file_data: format!("data:application/pdf;base64,{}", STANDARD.encode(data)),
+            }),
             ..Default::default()
         }
     }
@@ -290,7 +305,7 @@ pub struct Delta {
     pub role: Option<Role>,
     pub content: Option<String>,
     pub reasoning: Option<String>,
-    pub annotations: Option<serde_json::Value>,
+    pub annotations: Option<Vec<serde_json::Value>>,
     pub tool_calls: Option<Vec<ToolCall>>,
 }
 

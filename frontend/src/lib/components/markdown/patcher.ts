@@ -1,4 +1,5 @@
 import { dev } from '$app/environment';
+import { token } from '$lib/store';
 import type { TokensList } from 'marked';
 import { marked } from 'marked';
 
@@ -74,7 +75,8 @@ export class MarkdownPatcher {
 			console.warn('only blocktoken can appear at top-level');
 		}
 
-		if (tokens.length >= 3 && !tokens[tokens.length - 2].type.startsWith('table')) {
+		const overlapTokens = ['table', 'citation'];
+		if (tokens.length >= 3 && !tokens.slice(1).some((x) => overlapTokens.includes(x.type))) {
 			let first = tokens;
 
 			let second: TokensList = [first.pop()!] as any;

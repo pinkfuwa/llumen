@@ -26,7 +26,7 @@ pub struct StreamCompletion {
     usage: Usage,
     stop_reason: Option<raw::FinishReason>,
     responses: Vec<StreamCompletionResp>,
-    annotations: Option<serde_json::Value>,
+    annotations: Option<Vec<serde_json::Value>>,
 }
 
 pub struct StreamResult {
@@ -77,7 +77,9 @@ impl StreamCompletion {
         let content = delta.content.unwrap_or("".to_string());
 
         if let Some(annotations) = delta.annotations {
-            self.annotations = Some(annotations);
+            self.annotations
+                .get_or_insert_with(|| Vec::with_capacity(1))
+                .extend(annotations);
         }
 
         if let Some(reasoning) = delta.reasoning {
@@ -198,11 +200,16 @@ impl StreamCompletion {
             usage: self.usage.clone(),
             stop_reason,
             responses: std::mem::take(&mut self.responses),
-            annotations: self.annotations.take(),
+            annotations: self.annotations.take().map(serde_json::Value::Array),
         }
     }
 }
 
+// Please be aware that Stream implementation will skip empty string tokens
+
+// For compatibility reason, we don't treat null and empty string differently
+//
+// And in openrouter's extension, they send null on special delta(annotation, tool call start, etc)
 impl Stream for StreamCompletion {
     type Item = Result<StreamCompletionResp>;
 
@@ -211,8 +218,23 @@ impl Stream for StreamCompletion {
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<Self::Item>> {
         let this = &mut *self;
-        let fut = StreamCompletion::next(this);
-        Box::pin(fut).poll_unpin(cx)
+        loop {
+            let fut = StreamCompletion::next(this);
+            let result = Box::pin(fut).poll_unpin(cx);
+            if let task::Poll::Ready(Some(Ok(StreamCompletionResp::ResponseToken(ref v)))) = result
+            {
+                if v.is_empty() {
+                    continue;
+                }
+            } else if let task::Poll::Ready(Some(Ok(StreamCompletionResp::ReasoningToken(ref v)))) =
+                result
+            {
+                if v.is_empty() {
+                    continue;
+                }
+            }
+            return result;
+        }
     }
 }
 

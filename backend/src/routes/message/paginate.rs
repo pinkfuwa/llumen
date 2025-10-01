@@ -193,49 +193,50 @@ pub async fn route(
             if chunks.is_empty() {
                 return None;
             }
+
             let chunks: Result<_, Json<Error>> = chunks
                 .into_iter()
-                .map(|chunk| {
-                    Ok(MessagePaginateRespChunk {
+                .filter_map(|chunk| {
+                    let resp = match chunk.kind {
+                        ChunkKind::File => {
+                            let file = chunk.as_file().kind(ErrorKind::Internal).ok()?;
+                            MessagePaginateRespChunkKind::File(MessagePaginateRespChunkKindFile {
+                                name: file.name,
+                                id: file.id,
+                            })
+                        }
+                        ChunkKind::Text => {
+                            MessagePaginateRespChunkKind::Text(MessagePaginateRespChunkKindText {
+                                content: chunk.content,
+                            })
+                        }
+                        ChunkKind::Reasoning => MessagePaginateRespChunkKind::Reasoning(
+                            MessagePaginateRespChunkKindReasoning {
+                                content: chunk.content,
+                            },
+                        ),
+                        ChunkKind::ToolCall => {
+                            let tool_call = chunk.as_tool_call().kind(ErrorKind::Internal).ok()?;
+                            MessagePaginateRespChunkKind::ToolCall(
+                                MessagePaginateRespChunkKindToolCall {
+                                    name: tool_call.name,
+                                    args: tool_call.args,
+                                    content: tool_call.content,
+                                },
+                            )
+                        }
+                        ChunkKind::Error => {
+                            MessagePaginateRespChunkKind::Error(MessagePaginateRespChunkKindError {
+                                content: chunk.content,
+                            })
+                        }
+                        _ => return None,
+                    };
+
+                    Some(Ok(MessagePaginateRespChunk {
                         id: chunk.id,
-                        kind: match chunk.kind {
-                            ChunkKind::File => {
-                                let file = chunk.as_file().kind(ErrorKind::Internal)?;
-                                MessagePaginateRespChunkKind::File(
-                                    MessagePaginateRespChunkKindFile {
-                                        name: file.name,
-                                        id: file.id,
-                                    },
-                                )
-                            }
-                            ChunkKind::Text => MessagePaginateRespChunkKind::Text(
-                                MessagePaginateRespChunkKindText {
-                                    content: chunk.content,
-                                },
-                            ),
-                            ChunkKind::Reasoning => MessagePaginateRespChunkKind::Reasoning(
-                                MessagePaginateRespChunkKindReasoning {
-                                    content: chunk.content,
-                                },
-                            ),
-                            ChunkKind::ToolCall => {
-                                let tool_call = chunk.as_tool_call().kind(ErrorKind::Internal)?;
-                                MessagePaginateRespChunkKind::ToolCall(
-                                    MessagePaginateRespChunkKindToolCall {
-                                        name: tool_call.name,
-                                        args: tool_call.args,
-                                        content: tool_call.content,
-                                    },
-                                )
-                            }
-                            ChunkKind::Error => MessagePaginateRespChunkKind::Error(
-                                MessagePaginateRespChunkKindError {
-                                    content: chunk.content,
-                                },
-                            ),
-                            _ => todo!("Handle other chunk kinds"),
-                        },
-                    })
+                        kind: resp,
+                    }))
                 })
                 .collect();
 

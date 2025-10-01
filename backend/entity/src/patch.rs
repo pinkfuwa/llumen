@@ -14,18 +14,28 @@ pub enum MessageKind {
     DeepResearch = 3,
 }
 
+/// Chunk kinds
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum ChunkKind {
+    /// Plain text content
     Text = 0,
+    /// File contains metadata of the uploaded file, see [FileHandle]
     File = 7,
+    /// Plain text content
     Reasoning = 1,
+    /// Tool call request, see [ToolCall]
     ToolCall = 2,
+    /// Plain text error result
     Error = 3,
+    /// JSON annotations in array
+    Annotation = 8,
+    /// Reserved for future use
     Report = 4,
     Plan = 5,
     Step = 6,
 }
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum ModeKind {
@@ -162,6 +172,12 @@ pub struct ToolCall {
     pub content: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FileHandle {
+    pub name: String,
+    pub id: i32,
+}
+
 impl crate::chunk::Model {
     pub fn as_tool_call(&self) -> Result<ToolCall> {
         debug_assert_eq!(self.kind, ChunkKind::ToolCall);
@@ -171,10 +187,4 @@ impl crate::chunk::Model {
         debug_assert_eq!(self.kind, ChunkKind::File);
         Ok(serde_json::from_str(&self.content)?)
     }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct FileHandle {
-    pub name: String,
-    pub id: i32,
 }
