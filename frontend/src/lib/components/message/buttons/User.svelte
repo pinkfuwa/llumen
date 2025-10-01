@@ -17,7 +17,7 @@
 	let actualHeight = $derived(Math.max(48, renderHeight));
 </script>
 
-<div class="flex w-full justify-end px-10 lg:px-20 2xl:px-36">
+<div class="flex w-full justify-end px-[5vw] lg:px-20 2xl:px-36">
 	<div
 		class="group/files {editable
 			? 'w-full md:w-[75%]'
