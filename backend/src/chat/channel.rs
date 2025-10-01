@@ -162,7 +162,6 @@ pub struct Publisher<S: Mergeable> {
 
 impl<S: Mergeable + Clone + Debug> Publisher<S> {
     pub fn publish_force(&mut self, item: S) {
-        dbg!(&item);
         let mut buffer = self.inner.buffer.lock().unwrap();
         if let Some(last) = buffer.last_mut() {
             if let Some(rest) = last.merge(item) {
@@ -261,7 +260,6 @@ where
             let (new_cursor, item) = {
                 let shared_buffer = self.inner.buffer.lock().unwrap();
                 if self.ended {
-                    dbg!(&*shared_buffer);
                     self.to = Cursor {
                         index: shared_buffer.len(),
                         offset: 0,

@@ -199,7 +199,10 @@ impl StreamCompletion {
             toolcall: std::mem::take(&mut self.toolcall),
             usage: self.usage.clone(),
             stop_reason,
-            responses: std::mem::take(&mut self.responses),
+            responses: std::mem::take(&mut self.responses)
+                .into_iter()
+                .filter(|x| !x.is_empty())
+                .collect(),
             annotations: self.annotations.take().map(serde_json::Value::Array),
         }
     }
@@ -221,15 +224,8 @@ impl Stream for StreamCompletion {
         loop {
             let fut = StreamCompletion::next(this);
             let result = Box::pin(fut).poll_unpin(cx);
-            if let task::Poll::Ready(Some(Ok(StreamCompletionResp::ResponseToken(ref v)))) = result
-            {
-                if v.is_empty() {
-                    continue;
-                }
-            } else if let task::Poll::Ready(Some(Ok(StreamCompletionResp::ReasoningToken(ref v)))) =
-                result
-            {
-                if v.is_empty() {
+            if let task::Poll::Ready(Some(Ok(ref t))) = result {
+                if t.is_empty() {
                     continue;
                 }
             }
@@ -258,6 +254,16 @@ pub enum StreamCompletionResp {
         price: f64,
         token: usize,
     },
+}
+
+impl StreamCompletionResp {
+    pub fn is_empty(&self) -> bool {
+        match self {
+            StreamCompletionResp::ReasoningToken(s) => s.is_empty(),
+            StreamCompletionResp::ResponseToken(s) => s.is_empty(),
+            _ => false,
+        }
+    }
 }
 
 impl From<ToolCall> for StreamCompletionResp {

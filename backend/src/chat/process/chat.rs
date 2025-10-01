@@ -142,7 +142,11 @@ impl<P: ChatInner> ChatPipeline<P> {
         self.completion_ctx
             .update_usage(result.usage.cost as f32, result.usage.token as i32);
 
-        let tokens = result.responses.into_iter().map(Into::into);
+        let tokens = result
+            .responses
+            .into_iter()
+            .map(Into::into)
+            .collect::<Vec<_>>();
         let mut chunks = Token::into_chunks(tokens.into_iter()).collect::<Vec<_>>();
 
         if let Some(annotations) = result
