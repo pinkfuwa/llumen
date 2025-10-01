@@ -2,13 +2,13 @@
 	import { ClipboardCopy } from '@lucide/svelte';
 	import { copy } from '$lib/copy';
 	import Code from '../shiki/Code.svelte';
-	import Root from './Root.svelte';
+	import { Markdown } from '.';
 
 	let { lang, text, monochrome = false } = $props();
 </script>
 
 {#if lang == 'markdown'}
-	<Root source={text} />
+	<Markdown source={text} />
 {:else}
 	<div class="group/codeblock relative">
 		{#if text.split('\n').length > 1}

@@ -5,10 +5,9 @@
 	import { initError, useError } from '$lib/error';
 	import { copyCounter } from '$lib/copy';
 	import CopyHint from '$lib/components/buttons/CopyHint.svelte';
-	import initLatex from '$lib/components/markdown/latex';
+	import { init as initMarkdown } from '$lib/components/markdown';
 	import { initPreference } from '$lib';
 	import { initAuth } from '$lib/api/auth';
-	import initCitation from '$lib/components/markdown/citation';
 
 	let { children } = $props();
 
@@ -16,8 +15,7 @@
 	initAuth();
 
 	initPreference();
-	initLatex();
-	initCitation();
+	initMarkdown();
 </script>
 
 {#if !$isLoading}
