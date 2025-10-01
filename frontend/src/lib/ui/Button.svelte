@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Button } from 'bits-ui';
-	import type { HTMLButtonAttributes, HTMLAnchorAttributes } from 'svelte/elements';
 
 	let { class: className, children, ...restProps }: Button.RootProps = $props();
 </script>

@@ -11,10 +11,14 @@
 
 	// TODO: use component lib
 	let editable = $state(false);
-	let editBuffer = $state('');
+	let editBuffer = $state(content);
 	let renderHeight = $state(0);
 
-	let actualHeight = $derived(Math.max(48, renderHeight));
+	let actualHeight = $state(22);
+
+	$effect(() => {
+		if (!editable) actualHeight = Math.max(22, renderHeight);
+	});
 </script>
 
 <div class="flex w-full justify-end px-[5vw] lg:px-20 2xl:px-36">
@@ -23,7 +27,7 @@
 			? 'w-full md:w-[75%]'
 			: 'max-w-full md:max-w-[75%]'} wrap-break-word"
 	>
-		<div class="w-full space-y-2 rounded-md bg-user-bg p-4">
+		<div class="w-full rounded-md bg-user-bg p-4">
 			{#if files.length != 0}
 				<div class="mb-2 overflow-auto border-b border-outline pb-2">
 					<FileGroup bind:files deletable={editable} />
@@ -35,11 +39,14 @@
 					bind:value={content}
 					style="height: {actualHeight}px"
 				></textarea>
-			{:else}
-				<div bind:clientHeight={renderHeight}>
-					<Root source={content} />
-				</div>
 			{/if}
+			<div
+				bind:clientHeight={renderHeight}
+				data-state={editable ? 'hide' : 'shown'}
+				class="data-[state=hide]:hidden"
+			>
+				<Root source={editBuffer} />
+			</div>
 		</div>
 		<div class="mt-1 flex justify-end">
 			<Button.Root

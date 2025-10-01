@@ -20,7 +20,7 @@
 
 <main class="flex h-full w-full flex-col justify-center">
 	<h1
-		class="mx-auto mb-4 bg-gradient-to-r from-secondary to-primary bg-clip-text pb-4 text-4xl font-semibold text-transparent select-none md:text-5xl lg:text-6xl"
+		class="mx-auto mb-4 bg-gradient-to-r from-secondary to-primary bg-clip-text pb-4 text-[8vw] font-semibold text-transparent select-none md:text-[max(60px,5vw)]"
 		in:fade={{ duration: 150 }}
 	>
 		{$_('chat.welcome')}

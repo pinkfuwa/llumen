@@ -31,8 +31,8 @@
 		{message}
 	</div>
 
-	<div class="flex grow flex-row">
-		<div>
+	<div class="ml-2 flex grow flex-row">
+		<div class="w-full">
 			<input
 				type="password"
 				class="mb-1 w-full rounded-md border border-outline p-1"

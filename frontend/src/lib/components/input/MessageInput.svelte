@@ -19,7 +19,6 @@
 		content = $bindable(''),
 		onsubmit = undefined as undefined | (() => void),
 		oncancel = undefined as undefined | (() => void),
-		above = false,
 		disabled = false
 	} = $props();
 
@@ -48,7 +47,7 @@
 </script>
 
 <div
-	class="min-h-sm item relative mx-auto w-[80vw] rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-120 lg:w-150 xl:w-200"
+	class="min-h-sm item relative mx-auto w-[90%] rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-[min(750px,75%)]"
 	bind:this={container}
 	onpaste={(event) => {
 		const clipboardData = event.clipboardData;
@@ -86,7 +85,7 @@
 	</div>
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
-			<ModelBtn bind:value={modelId} {above} bind:filetypes />
+			<ModelBtn bind:value={modelId} bind:filetypes />
 			<ModeBtn bind:value={mode} />
 			<UploadBtn bind:files {filetypes} />
 		</div>

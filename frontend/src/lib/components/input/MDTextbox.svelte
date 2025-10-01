@@ -22,27 +22,30 @@
 	});
 
 	let rows = () => Math.max(2, value.split('\n').length);
+
+	let renderValue = $state(value);
+	$effect(() => {
+		if (!editable) renderValue = value;
+	});
 </script>
 
 <textarea
-	class="editor field-sizing-content max-h-[60vh] max-w-[65vw] flex-grow resize-none rounded-md bg-input p-4 overflow-auto{editable
-		? ''
-		: ' hidden'}"
+	class="editor field-sizing-content max-h-[60vh] max-w-[65vw] flex-grow resize-none overflow-auto rounded-md bg-input p-4 data-[state=hide]:hidden"
 	bind:value
 	{placeholder}
 	rows={rows()}
 	bind:this={input}
 	{disabled}
 	aria-label="type message"
+	data-state={editable ? 'show' : 'hide'}
 	onkeypress={(event) => {
 		if (event.key == 'Enter' && !event.shiftKey && get(submitOnEnter) == 'true' && onsubmit)
 			onsubmit();
 	}}
 ></textarea>
-{#if !editable}
-	<div
-		class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-y-auto p-4 pr-2 wrap-break-word"
-	>
-		<Markdown source={value} />
-	</div>
-{/if}
+<div
+	class="new-message markdown max-h-[60vh] min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-y-auto p-4 pr-2 wrap-break-word data-[state=hide]:hidden"
+	data-state={editable ? 'hide' : 'show'}
+>
+	<Markdown source={renderValue} />
+</div>

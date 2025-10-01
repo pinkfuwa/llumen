@@ -1,22 +1,24 @@
-<script>
+<script lang="ts">
 	import { marked } from 'marked';
 	import Parser from './Parser.svelte';
 
 	// monochrome import shiki's performance
 	let { source, monochrome = false } = $props();
 
-	let tokens = new Promise((resolve) => {
-		setTimeout(() => {
-			const tokens = marked.lexer(source);
-			resolve(tokens);
-		}, 0);
-	});
+	function renderToken(source: string) {
+		return new Promise((resolve) => {
+			setTimeout(() => resolve(marked.lexer(source)), 0);
+		});
+	}
+
+	let tokens = $derived.by(() => renderToken(source));
 </script>
 
 {#await tokens}
-	{#each source.split('n') as line}
-		<p>{line}</p>
-	{/each}
+	<!-- this is intentional, source.split('\n') is almost as resource consuming as lexer -->
+	{source}
 {:then tokens}
-	<Parser {tokens} {monochrome} />
+	{#key source}
+		<Parser {tokens} {monochrome} />
+	{/key}
 {/await}
