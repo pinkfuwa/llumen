@@ -30,6 +30,7 @@ RUN --mount=type=cache,target=~/.cargo/bin/
 RUN --mount=type=cache,target=~/.cargo/registry/index/
 RUN --mount=type=cache,target=~/.cargo/registry/cache/
 RUN --mount=type=cache,target=~/.cargo/git/db/
+RUN --mount=type=cache,id=target,target=/compiler/target
 
 RUN cargo install --locked cargo-zigbuild
 
@@ -42,7 +43,7 @@ WORKDIR /compiler
 
 COPY ./backend .
 
-RUN --mount=type=cache,id=target,target=target \
+RUN --mount=type=cache,id=target,target=/compiler/target \
     cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl && \
     mkdir -p /app/linux && \
     cp target/aarch64-unknown-linux-musl/release/backend /app/linux/arm64 && \
