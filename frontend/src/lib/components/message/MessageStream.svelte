@@ -13,8 +13,11 @@
 	import { LastKind, MessagePaginateRespRole, type MessagePaginateRespList } from '$lib/api/types';
 	import { SetInfiniteQueryData } from '$lib/api/state';
 	import { useRoomStreamingState } from '$lib/api/chatroom';
+	import { heatCache } from '../markdown';
 
-	let { chat_id, chunks = $bindable<PartialMessagePaginateRespChunk[]>([]) } = $props();
+	let { chat_id } = $props<{ chat_id: number }>();
+
+	let chunks = $state<PartialMessagePaginateRespChunk[]>([]);
 
 	let tokens = $state<TokensList[]>([]);
 	let reasoning = $state('');
@@ -119,6 +122,12 @@
 		}
 
 		let chunk_ids = data.chunk_ids.toReversed();
+
+		chunks.forEach((c) => {
+			if (c.kind.t != 'text') return;
+			heatCache(c.kind.c.content);
+		});
+
 		SetInfiniteQueryData<MessagePaginateRespList>({
 			key: ['messagePaginate', chat_id.toString()],
 			data: {

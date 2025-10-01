@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Root from '$lib/components/markdown/Root.svelte';
+	import { Markdown } from '$lib/components/markdown';
 
-	let { content, monochrome = false }: { content: string; monochrome: boolean } = $props();
+	let { content, monochrome = false }: { content: string; monochrome?: boolean } = $props();
 </script>
 
 <div class="space-y-2">
-	<Root source={content} {monochrome} />
+	<Markdown source={content} {monochrome} />
 </div>

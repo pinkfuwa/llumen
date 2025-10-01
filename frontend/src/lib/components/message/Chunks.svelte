@@ -10,7 +10,10 @@
 	let {
 		chunks,
 		monochrome = false
-	}: { chunks: PartialMessagePaginateRespChunk[]; monochrome?: boolean } = $props();
+	}: {
+		chunks: PartialMessagePaginateRespChunk[];
+		monochrome?: boolean;
+	} = $props();
 </script>
 
 {#each chunks as chunk}

@@ -78,7 +78,7 @@ export function useMessage(chat_id: number): InfiniteQueryResult<MessagePaginate
 		key: ['messagePaginate', chat_id.toString()],
 		fetcher: new MessageFetcher(chat_id),
 		staleTime: Infinity,
-		revalidateOnFocus: true
+		revalidateOnFocus: false
 	});
 }
 

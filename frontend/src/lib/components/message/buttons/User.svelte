@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Root from '../../markdown/Root.svelte';
 	import { SquarePen, Check, X } from '@lucide/svelte';
 	import FileGroup from '../../buttons/FileGroup.svelte';
 	import { Button } from 'bits-ui';
+	import { Markdown } from '$lib/components/markdown';
 	let {
 		content = $bindable(''),
 		files = $bindable([] as Array<{ name: string; id: number }>),
@@ -45,7 +45,7 @@
 				data-state={editable ? 'hide' : 'shown'}
 				class="data-[state=hide]:hidden"
 			>
-				<Root source={editBuffer} />
+				<Markdown source={editBuffer} />
 			</div>
 		</div>
 		<div class="mt-1 flex justify-end">
