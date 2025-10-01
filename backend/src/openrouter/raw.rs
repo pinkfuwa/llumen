@@ -175,12 +175,14 @@ impl MessagePart {
                 Self::pdf(filename.to_string(), &blob),
             ),
             _ => {
+                let content = String::from_utf8_lossy(&blob).to_string();
+
                 // TODO: report unknown file type to user
                 // Unknown file type is provider-specific, so provider may return error(we can't capture it)
                 log::warn!("Unknown file type: {}", filename);
                 (
                     Self::text(format!("Uploaded file: {}", filename)),
-                    Self::file(filename.to_string(), blob),
+                    Self::text(content),
                 )
             }
         }
