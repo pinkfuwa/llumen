@@ -126,7 +126,8 @@ async fn main() {
                     _,
                 >(state.clone()))
                 .nest("/auth", routes::auth::routes())
-                .layer(middlewares::logger::LoggerLayer),
+                .layer(middlewares::logger::LoggerLayer)
+                .layer(middlewares::compression::ZstdCompressionLayer),
         )
         .fallback_service(
             ServiceBuilder::new().layer(CacheControlLayer).service(
