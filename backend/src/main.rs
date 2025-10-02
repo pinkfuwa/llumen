@@ -33,6 +33,7 @@ pub struct AppState {
     pub blob: Arc<BlobDB>,
 }
 
+// immediately exit confuse user
 fn load_api_key() -> String {
     match var("API_KEY") {
         Ok(key) => key,
@@ -120,14 +121,15 @@ async fn main() {
                 .nest("/user", routes::user::routes())
                 .nest("/message", routes::message::routes())
                 .nest("/model", routes::model::routes())
+                .layer(middlewares::compression::ZstdCompressionLayer)
+                // only compress plain text content
                 .nest("/file", routes::file::routes())
                 .layer(middleware::from_extractor_with_state::<
                     middlewares::auth::Middleware,
                     _,
                 >(state.clone()))
                 .nest("/auth", routes::auth::routes())
-                .layer(middlewares::logger::LoggerLayer)
-                .layer(middlewares::compression::ZstdCompressionLayer),
+                .layer(middlewares::logger::LoggerLayer),
         )
         .fallback_service(
             ServiceBuilder::new().layer(CacheControlLayer).service(
