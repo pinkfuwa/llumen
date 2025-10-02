@@ -44,6 +44,9 @@ export class MarkdownPatcher {
 	lastChunk: string = '';
 	// total content
 	content: string = '';
+	// is lexing in progress
+	isLexing = false;
+
 	constructor(updater: UIUpdater) {
 		this.updater = updater;
 	}
@@ -59,11 +62,15 @@ export class MarkdownPatcher {
 		}
 		return weight;
 	}
-	async feed(data: string) {
+	feed(data: string) {
 		this.content += data;
 		this.buffer += data;
-
+		this.lexNext();
+	}
+	private async lexNext() {
+		if (this.isLexing) return;
 		if (this.flushWeight < flushThreshold) return;
+		this.isLexing = true;
 
 		this.lastChunk += this.buffer;
 		this.buffer = '';
@@ -88,11 +95,15 @@ export class MarkdownPatcher {
 		} else {
 			this.updater.replace(tokens);
 		}
+		this.isLexing = false;
+		// check for more work
+		this.lexNext();
 	}
 	reset() {
 		this.updater.reset();
 		this.lastChunk = '';
 		this.content = '';
 		this.buffer = '';
+		this.isLexing = false;
 	}
 }

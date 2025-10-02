@@ -103,7 +103,7 @@
 		});
 	});
 
-	addSSEHandler('complete', (data) => {
+	addSSEHandler('complete', async (data) => {
 		if (lastChunkType == 'reasoning') {
 			chunks.push({
 				kind: {
@@ -123,10 +123,11 @@
 
 		let chunk_ids = data.chunk_ids.toReversed();
 
-		chunks.forEach((c) => {
-			if (c.kind.t != 'text') return;
-			heatMarkdownCache(c.kind.c.content);
-		});
+		await Promise.all(
+			chunks
+				.filter((c) => c.kind.t == 'text')
+				.map((c) => heatMarkdownCache((c.kind.c as any).content))
+		);
 
 		SetInfiniteQueryData<MessagePaginateRespList>({
 			key: ['messagePaginate', chat_id.toString()],
