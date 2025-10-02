@@ -9,7 +9,9 @@
 </script>
 
 {#await tokens}
-	<!-- this is intentional, source.split('\n') is almost as resource consuming as lexer -->
+	{#each source.split('\n') as line}
+		<p>{line}</p>
+	{/each}
 {:then tokens}
 	{#key source}
 		<Parser {tokens} {monochrome} />
