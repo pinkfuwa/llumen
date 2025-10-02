@@ -4,7 +4,7 @@
 	import { LoaderCircle } from '@lucide/svelte';
 
 	$effect(() => {
-		if ($token) goto('/chat/new');
+		if ($token) goto('/chat/1');
 		else goto('/login');
 	});
 </script>

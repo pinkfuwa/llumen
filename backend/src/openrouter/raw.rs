@@ -41,7 +41,7 @@ impl Default for CompletionReq {
             plugins: Some(vec![Plugin {
                 id: "file-parser".to_string(),
                 pdf: PdfPlugin {
-                    engine: "mistral-ocr".to_string(),
+                    engine: "pdf-text".to_string(),
                 },
             }]),
             usage: Some(UsageReq { include: true }),
