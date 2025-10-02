@@ -3,3 +3,8 @@ export type ShikiWorkerRequest = {
 	lang: string;
 	theme: 'light' | 'dark';
 };
+
+export type ShikiWorkerResponse = {
+	html?: string;
+	error?: string;
+};

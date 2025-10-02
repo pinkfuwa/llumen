@@ -1,4 +1,4 @@
-import type { ShikiWorkerRequest } from './types';
+import type { ShikiWorkerRequest, ShikiWorkerResponse } from './types';
 import Semaphore from '$lib/semaphore';
 
 const worker = new Worker(new URL('./worker.ts', import.meta.url), {
@@ -6,13 +6,15 @@ const worker = new Worker(new URL('./worker.ts', import.meta.url), {
 });
 
 let semphore = new Semaphore();
-let renderCallback: null | ((data: string) => void) = null;
+let renderCallback: null | ((data: ShikiWorkerResponse) => void) = null;
 
-worker.addEventListener('message', (event: MessageEvent<string>) => {
-	const html = event.data;
+worker.addEventListener('message', (event: MessageEvent<ShikiWorkerResponse>) => {
+	const data = event.data;
 	if (renderCallback == null) {
 		console.warn(`No callback found`);
-	} else renderCallback(html);
+	} else {
+		renderCallback(data);
+	}
 });
 
 export async function highlight(
@@ -22,7 +24,7 @@ export async function highlight(
 ): Promise<string> {
 	await semphore.acquire();
 
-	let html = await new Promise<string>((resolve) => {
+	let { html, error } = await new Promise<ShikiWorkerResponse>((resolve) => {
 		renderCallback = resolve;
 		const request: ShikiWorkerRequest = { code, lang, theme };
 		worker.postMessage(request);
@@ -30,5 +32,10 @@ export async function highlight(
 
 	semphore.release();
 
-	return html;
+	if (error) {
+		console.warn(error);
+		throw error;
+	}
+
+	return html!;
 }
