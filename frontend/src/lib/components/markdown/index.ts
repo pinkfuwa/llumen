@@ -2,6 +2,6 @@ import Markdown from './Root.svelte';
 import { lex } from './worker';
 export { Markdown };
 
-export function heatMarkdownCache(source: string) {
-	lex(source, true);
+export async function heatMarkdownCache(source: string) {
+	await lex(source, true);
 }

@@ -206,7 +206,6 @@ export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
 }
 
 export function updateRoomTitle(id: number, title: string) {
-	console.log({ id, title });
 	UpdateInfiniteQueryDataById<ChatPaginateRespList>({
 		key: ['chatPaginate'],
 		updater: (data) => {

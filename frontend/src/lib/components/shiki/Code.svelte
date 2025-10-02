@@ -1,5 +1,6 @@
 <script>
-	import { codeToHtml, getThemeStyle } from './shiki';
+	import { getThemeStyle } from './shiki';
+	import { highlight } from './highlight';
 	import { isLightTheme } from '$lib/preference';
 	import Monochrome from './Monochrome.svelte';
 
@@ -15,7 +16,7 @@
 	{#if monochrome}
 		<Monochrome {text} />
 	{:else}
-		{#await codeToHtml(text, { lang, isLight: $isLightTheme })}
+		{#await highlight(text, lang, $isLightTheme ? 'light' : 'dark')}
 			<Monochrome {text} />
 		{:then value}
 			{@html value}

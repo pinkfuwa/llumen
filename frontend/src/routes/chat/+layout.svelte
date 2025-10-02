@@ -6,7 +6,10 @@
 
 	let addition = $derived(params.id != undefined);
 	let open = $state(false);
+
+	function uselessFn(i: any) {}
 	$effect(() => {
+		uselessFn(page.url);
 		if (document.body.clientWidth < 768) open = false;
 	});
 </script>
