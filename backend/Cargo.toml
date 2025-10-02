@@ -55,7 +55,7 @@ features = ["macros"]
 
 [dependencies.tower-http]
 version = "0.6.6"
-features = ["cors", "fs"]
+features = ["cors", "fs", "compression-zstd"]
 
 [dependencies.reqwest]
 version = "0.12.22"
