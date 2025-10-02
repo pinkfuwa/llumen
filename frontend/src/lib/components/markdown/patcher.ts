@@ -1,7 +1,6 @@
 import { dev } from '$app/environment';
-import { token } from '$lib/store';
 import type { TokensList } from 'marked';
-import { marked } from 'marked';
+import { lex } from './worker';
 
 /**
  * UIUpdater maintain a list of Token
@@ -60,7 +59,7 @@ export class MarkdownPatcher {
 		}
 		return weight;
 	}
-	feed(data: string) {
+	async feed(data: string) {
 		this.content += data;
 		this.buffer += data;
 
@@ -69,7 +68,7 @@ export class MarkdownPatcher {
 		this.lastChunk += this.buffer;
 		this.buffer = '';
 
-		const tokens = marked.lexer(this.lastChunk);
+		const tokens = await lex(this.lastChunk);
 
 		if (dev && tokens.some((x) => !blocktokens.includes(x.type))) {
 			console.warn('only blocktoken can appear at top-level');
