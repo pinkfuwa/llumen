@@ -1,10 +1,7 @@
-import initCitation from './citation';
-import initLatex from './latex';
 import Markdown from './Root.svelte';
-import { lexer as lex } from './worker';
+import { lex } from './worker';
+export { Markdown };
 
-export function init() {
-	initLatex();
-	initCitation();
+export function heatMarkdownCache(source: string) {
+	lex(source, true);
 }
-export { Markdown, lex };

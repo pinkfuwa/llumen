@@ -8,7 +8,8 @@ marked.use(Citation);
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
 	const markdown = event.data;
+	console.log({ markdown });
 
 	const tokens = marked.lexer(markdown);
-	self.postMessage({ input: markdown, data: tokens } as WorkerResponse);
+	self.postMessage(tokens as WorkerResponse);
 };

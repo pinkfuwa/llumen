@@ -8,7 +8,6 @@
 	let open = $state(false);
 	$effect(() => {
 		if (document.body.clientWidth < 768) open = false;
-		console.log(page.route.id != null);
 	});
 </script>
 
