@@ -1,7 +1,6 @@
 use std::{
-    cmp,
     collections::HashMap,
-    fmt::Debug,
+    ops::Range,
     sync::{
         Arc, Mutex, Weak,
         atomic::{self, AtomicBool},
@@ -18,10 +17,7 @@ where
 {
     fn merge(&mut self, other: Self) -> Option<Self>;
     fn len(&self) -> usize;
-    /// get a split part from the end
-    fn split_end(&self, split: usize) -> Option<Self>;
-    /// get a split part from the start
-    fn split_start(&self, split: usize) -> Self;
+    fn slice(&self, r: Range<usize>) -> Option<Self>;
 }
 
 pub type LockedMap<K, V> = Mutex<HashMap<K, Weak<V>>>;
@@ -30,7 +26,7 @@ pub type LockedOption<T> = Mutex<Option<T>>;
 
 pub struct Inner<S: Mergeable + Clone> {
     buffer: LockedVec<S>,
-    sender: LockedOption<watch::Sender<Option<Cursor>>>,
+    sender: LockedOption<watch::Sender<()>>,
     flag: AtomicBool,
 }
 
@@ -42,10 +38,7 @@ impl<S: Mergeable + Clone + Send> Default for Inner<S> {
 
 impl<S: Mergeable + Clone + Send> Inner<S> {
     pub fn new() -> Self {
-        let (tx, _) = watch::channel(Some(Cursor {
-            index: 0,
-            offset: 0,
-        }));
+        let (tx, _) = watch::channel(());
         Self {
             buffer: Mutex::new(Vec::new()),
             sender: Mutex::new(Some(tx)),
@@ -54,38 +47,16 @@ impl<S: Mergeable + Clone + Send> Inner<S> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Cursor {
-    index: usize,
-    offset: usize,
-}
-
-impl cmp::PartialOrd for Cursor {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        match self.index.cmp(&other.index) {
-            cmp::Ordering::Equal => Some(self.offset.cmp(&other.offset)),
-            ord => Some(ord),
-        }
-    }
-}
-
-impl Cursor {
-    pub fn new(index: usize, offset: usize) -> Self {
-        Self { index, offset }
-    }
-}
-
 pub struct Context<S: Mergeable> {
     map: Arc<LockedMap<i32, Inner<S>>>,
 }
 
-impl<S: Mergeable + Clone + Send + 'static + Sync + Debug> Context<S> {
+impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
     pub fn new() -> Self {
         Self {
             map: Arc::new(Mutex::new(HashMap::new())),
         }
     }
-    // FIXME: halt is not immediate
     pub fn stop(&self, id: i32) {
         let map = self.map.lock().unwrap();
         if let Some(inner) = map.get(&id).and_then(|w| w.upgrade()) {
@@ -112,11 +83,9 @@ impl<S: Mergeable + Clone + Send + 'static + Sync + Debug> Context<S> {
         let inner = self.get_inner(id);
         let receiver = inner.sender.lock().unwrap().as_ref().unwrap().subscribe();
         Subscriber {
-            from: Cursor::new(0, 0),
-            to: Cursor::new(0, 0),
+            cursor: Cursor::default(),
             inner,
             receiver,
-            ended: false,
         }
     }
     pub fn subscribe(self: Arc<Self>, id: i32) -> impl Stream<Item = S> {
@@ -143,24 +112,33 @@ impl<S: Mergeable + Clone + Send + 'static + Sync + Debug> Context<S> {
 
         ReceiverStream::new(rx)
     }
-    pub fn publish(self: Arc<Self>, id: i32) -> Publisher<S> {
+    pub fn publish(self: Arc<Self>, id: i32) -> Option<Publisher<S>> {
         self.remove_weak();
         let inner = self.get_inner(id);
-        Publisher {
+        let sender = inner.sender.lock().unwrap().take()?;
+        Some(Publisher {
             inner,
             ctx: self,
             id,
-        }
+            sender,
+        })
     }
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct Cursor {
+    index: usize,
+    offset: usize,
 }
 
 pub struct Publisher<S: Mergeable> {
     inner: Arc<Inner<S>>,
     ctx: Arc<Context<S>>,
     id: i32,
+    sender: watch::Sender<()>,
 }
 
-impl<S: Mergeable + Clone + Debug> Publisher<S> {
+impl<S: Mergeable + Clone> Publisher<S> {
     pub fn publish_force(&mut self, item: S) {
         let mut buffer = self.inner.buffer.lock().unwrap();
         if let Some(last) = buffer.last_mut() {
@@ -170,21 +148,8 @@ impl<S: Mergeable + Clone + Debug> Publisher<S> {
         } else {
             buffer.push(item);
         }
-        let index = match buffer.is_empty() {
-            true => 0,
-            false => buffer.len() - 1,
-        };
-        let offset = buffer.last().map(|s| s.len()).unwrap_or(0);
-        let cursor = Cursor::new(index, offset);
-        self.inner
-            .sender
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .send_replace(Some(cursor));
+        self.sender.send_replace(());
     }
-    /// Error when the channel is closed
     pub fn publish(&mut self, item: S) -> Result<(), ()> {
         if self.inner.flag.load(atomic::Ordering::Acquire) {
             self.inner.flag.store(false, atomic::Ordering::Release);
@@ -200,7 +165,6 @@ impl<S: Mergeable + Clone + Debug> Publisher<S> {
 impl<S: Mergeable> Drop for Publisher<S> {
     fn drop(&mut self) {
         let sender = self.inner.sender.lock().unwrap().take().unwrap();
-        sender.send_replace(None);
         drop(sender);
         self.ctx.map.lock().unwrap().remove(&self.id);
     }
@@ -210,80 +174,61 @@ pub struct Subscriber<S>
 where
     S: Mergeable + Clone + Send + 'static,
 {
-    from: Cursor,
-    to: Cursor,
-    receiver: watch::Receiver<Option<Cursor>>,
+    cursor: Cursor,
+    receiver: watch::Receiver<()>,
     inner: Arc<Inner<S>>,
-    ended: bool,
 }
 
-impl<S: Debug> Subscriber<S>
+fn advance_cursor<S: Mergeable>(cursor: &mut Cursor, shared_buffer: &[S]) -> Option<S> {
+    let offset = cursor.offset;
+    let index = cursor.index;
+    let item = shared_buffer.get(index)?;
+    let len = item.len();
+
+    if offset == len {
+        if index + 1 < shared_buffer.len() {
+            cursor.index += 1;
+            cursor.offset = 0;
+
+            return advance_cursor(cursor, shared_buffer);
+        } else {
+            return None;
+        }
+    }
+
+    cursor.offset = len;
+
+    item.slice(offset..len)
+}
+
+fn check_buffer_exhausted<S: Mergeable>(cursor: &Cursor, shared_buffer: &[S]) -> bool {
+    cursor.index >= shared_buffer.len()
+        || (cursor.index == shared_buffer.len() - 1
+            && cursor.offset >= shared_buffer[cursor.index].len())
+}
+
+impl<S> Subscriber<S>
 where
     S: Mergeable + Clone + Send,
 {
-    /// skip all None
-    fn advance_cursor(&self, shared_buffer: &[S]) -> (Cursor, Option<S>) {
-        if self.from == self.to {
-            return (self.to.clone(), None);
-        }
-        let from_index = self.from.index;
-        let from_offset = self.from.offset;
-
-        match from_index.cmp(&self.to.index) {
-            cmp::Ordering::Equal => (
-                self.to.clone(),
-                shared_buffer[from_index]
-                    .split_end(from_offset)
-                    .map(|x| x.split_start(self.to.offset - from_offset)),
-            ),
-            cmp::Ordering::Less if from_offset == 0 => (
-                Cursor::new(from_index + 1, 0),
-                shared_buffer.get(from_index).cloned(),
-            ),
-            cmp::Ordering::Less => (
-                Cursor::new(from_index + 1, 0),
-                shared_buffer[from_index].split_end(from_offset),
-            ),
-            cmp::Ordering::Greater => panic!("from_index should not be greater than to_index"),
-        }
-    }
     async fn recv(&mut self) -> Option<S> {
         loop {
-            {
-                let update = self.receiver.borrow_and_update();
-                match *update {
-                    Some(update) => self.to = update,
-                    None => self.ended = true,
-                }
-            }
-
-            let (new_cursor, item) = {
-                let shared_buffer = self.inner.buffer.lock().unwrap();
-                if self.ended {
-                    self.to = Cursor {
-                        index: shared_buffer.len(),
-                        offset: 0,
-                    };
-                }
-                self.advance_cursor(&shared_buffer)
+            let item = {
+                let buffer = self.inner.buffer.lock().unwrap();
+                advance_cursor(&mut self.cursor, &buffer)
             };
 
-            log::trace!(
-                "recv: from: {:?}, to: {:?}, new_cursor: {:?}",
-                self.from,
-                self.to,
-                new_cursor
-            );
-
-            self.from = new_cursor;
-
-            if item.is_some() {
-                return item;
-            } else if self.ended {
-                return None;
+            if let Some(item) = item {
+                return Some(item);
             }
 
-            self.receiver.changed().await.ok();
+            if self.receiver.changed().await.is_err() {
+                let buffer = self.inner.buffer.lock().unwrap();
+
+                if check_buffer_exhausted(&self.cursor, &buffer) {
+                    return None;
+                }
+            }
         }
     }
 }

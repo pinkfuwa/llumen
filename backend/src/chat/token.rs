@@ -71,29 +71,17 @@ impl Mergeable for Token {
         }
     }
 
-    fn split_end(&self, split: usize) -> Option<Self> {
+    fn slice(&self, r: std::ops::Range<usize>) -> Option<Self> {
         match self {
-            Token::User(s) => Some(Token::User(s[split..].to_string())),
-            Token::Assitant(s) => Some(Token::Assitant(s[split..].to_string())),
-            Token::Reasoning(s) => Some(Token::Reasoning(s[split..].to_string())),
-            Token::ResearchPlan(s) => Some(Token::ResearchPlan(s[split..].to_string())),
-            Token::ResearchStep(s) => Some(Token::ResearchStep(s[split..].to_string())),
-            Token::ResearchReport(s) => Some(Token::ResearchReport(s[split..].to_string())),
-            Token::Error(s) => Some(Token::Error(s[split..].to_string())),
+            Token::User(s) => Some(Token::User(s[r].to_string())),
+            Token::Assitant(s) => Some(Token::Assitant(s[r].to_string())),
+            Token::Reasoning(s) => Some(Token::Reasoning(s[r].to_string())),
+            Token::ResearchPlan(s) => Some(Token::ResearchPlan(s[r].to_string())),
+            Token::ResearchStep(s) => Some(Token::ResearchStep(s[r].to_string())),
+            Token::ResearchReport(s) => Some(Token::ResearchReport(s[r].to_string())),
+            Token::Error(s) => Some(Token::Error(s[r].to_string())),
+            x if r.start == 0 => Some(x.clone()),
             _ => None,
-        }
-    }
-
-    fn split_start(&self, split: usize) -> Self {
-        match self {
-            Token::User(s) => Token::User(s[..split].to_string()),
-            Token::Assitant(s) => Token::Assitant(s[..split].to_string()),
-            Token::Reasoning(s) => Token::Reasoning(s[..split].to_string()),
-            Token::ResearchPlan(s) => Token::ResearchPlan(s[..split].to_string()),
-            Token::ResearchStep(s) => Token::ResearchStep(s[..split].to_string()),
-            Token::ResearchReport(s) => Token::ResearchReport(s[..split].to_string()),
-            Token::Error(s) => Token::Error(s[..split].to_string()),
-            _ => self.clone(),
         }
     }
 }
