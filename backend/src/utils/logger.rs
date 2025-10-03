@@ -1,4 +1,4 @@
-use std::{io::Write, str::FromStr};
+use std::{io::Write, panic, str::FromStr, sync::Arc};
 
 use dotenv::var;
 use flexi_logger::{DeferredNow, LogSpecification, Logger};
@@ -31,4 +31,24 @@ pub fn init() {
         .use_utc()
         .start()
         .unwrap();
+
+    let hook = Arc::new(|info: &panic::PanicInfo| {
+        if let Some(s) = info.payload().downcast_ref::<&str>() {
+            log::error!("Panic occurred: {}", s);
+        } else if let Some(s) = info.payload().downcast_ref::<String>() {
+            log::error!("Panic occurred: {}", s);
+        } else {
+            log::error!("Panic occurred with unknown payload");
+        }
+
+        if let Some(location) = info.location() {
+            log::error!(
+                "Location: {}:{}:{}",
+                location.file(),
+                location.line(),
+                location.column()
+            );
+        }
+    });
+    panic::set_hook(Box::new(move |info| hook(info)));
 }

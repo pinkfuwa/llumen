@@ -134,7 +134,7 @@ impl<P: ChatInner> ChatPipeline<P> {
             .await?;
 
         if matches!(halt, StreamEndReason::Halt) {
-            return Err(anyhow::anyhow!("The stream was halted"));
+            log::debug!("The stream was halted");
         }
 
         let result = res.get_result();

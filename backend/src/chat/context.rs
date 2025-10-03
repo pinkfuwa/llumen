@@ -131,13 +131,19 @@ impl CompletionContext {
         .insert(db)
         .await?;
 
+        let publisher = ctx
+            .channel
+            .clone()
+            .publish(chat_id)
+            .context("only one publisher is allow at same time")?;
+
         Ok(Self {
             model,
             chat: chat.into_active_model(),
             message: message.into_active_model(),
             messages_with_chunks,
             user,
-            publisher: ctx.channel.clone().publish(chat_id),
+            publisher,
             new_chunks: Vec::new(),
             ctx,
         })
@@ -280,14 +286,14 @@ impl CompletionContext {
             })
             .collect::<Vec<_>>();
 
-        let chunks_affected = new_chunks.len();
-
-        if chunks_affected == 0 {
+        if new_chunks.is_empty() {
             log::warn!("No content generated, it's likely a bug of llumen.");
             new_chunks.push(error_chunk(
                 "No content generated, it's likely a bug of llumen.\nReport Here: https://github.com/pinkfuwa/llumen/issues/new".to_string(),
             ));
         }
+
+        let chunks_affected = new_chunks.len();
 
         let last_insert_id = chunk::Entity::insert_many(new_chunks)
             .exec(db)
@@ -311,6 +317,10 @@ impl CompletionContext {
             .copied()
             .unwrap_or(0.0);
 
+        if let Err(err) = self.generate_title().await {
+            log::error!("failed to generate title: {}", err);
+        }
+
         log::trace!("publish complete token");
         self.publisher.publish_force(Token::Complete {
             message_id,
@@ -318,11 +328,6 @@ impl CompletionContext {
             cost,
             token: token_count,
         });
-        // FIXME: control token at end will be missing.
-
-        if let Err(err) = self.generate_title().await {
-            log::error!("failed to generate title: {}", err);
-        }
 
         let db = &self.ctx.db;
 
