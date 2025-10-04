@@ -45,17 +45,25 @@ export async function RenewToken(originalToken: string) {
 }
 
 export function initAuth() {
-	const guardPrefix = '/chat';
-
 	const unsubscribers = [
 		token.subscribe((token) => {
 			const pathname = page.url.pathname;
-			if (
-				!pathname.startsWith('/login') &&
-				token == undefined &&
-				pathname.startsWith(guardPrefix)
-			) {
-				goto(`/login?callback=${encodeURIComponent(pathname)}`);
+			console.log('check token and deciding auto route');
+			if (token) {
+				if (!pathname.startsWith('/chat')) {
+					const callback = page.url.searchParams.get('callback');
+
+					if (callback) {
+						let url = new URL(decodeURIComponent(callback), document.baseURI);
+						if (url.origin == window.location.origin) goto(url);
+					} else {
+						goto('/chat/new');
+					}
+				}
+			} else if (!pathname.startsWith('/login')) {
+				if (pathname.startsWith('/chat') && pathname != '/chat/new')
+					goto(`/login?callback=${encodeURIComponent(pathname)}`);
+				else goto('/login');
 			}
 		}),
 

@@ -16,10 +16,6 @@
 	let { open = $bindable() } = $props();
 	let value = $state('account');
 	let id: undefined | number = $state(undefined);
-
-	$effect(() => {
-		if ($token == undefined) goto('/login');
-	});
 </script>
 
 <Dialog.Root>
@@ -72,7 +68,6 @@
 						onclick={() => {
 							token.set(undefined);
 							clearCache();
-							goto('/login');
 						}}
 					>
 						<LogOut class="mr-2 inline-block h-5 w-5" />
