@@ -13,7 +13,8 @@ pub mod file;
 mod message;
 
 mod default;
-mod wal;
+// WAL is not presistent across connections, however, we should flush wal
+// mod wal;
 
 pub struct Migration;
 
@@ -35,7 +36,6 @@ impl MigrationTrait for Migration {
         chunk::Migration.up(manager).await?;
         message::Migration.up(manager).await?;
 
-        wal::Migration.up(manager).await?;
         default::Migration.up(manager).await?;
         file::Migration.up(manager).await?;
 
@@ -43,7 +43,6 @@ impl MigrationTrait for Migration {
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        wal::Migration.down(manager).await?;
         default::Migration.down(manager).await?;
 
         chunk::Migration.down(manager).await?;

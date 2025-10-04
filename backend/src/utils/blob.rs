@@ -1,15 +1,12 @@
-use std::{path::Path, sync::Arc};
+use std::path::Path;
 
-use redb::{Database, TableDefinition};
-use std::sync::Mutex;
+use redb::*;
+use tokio_stream::{Stream, StreamExt};
 
-const MAX_CACHE_SIZE: usize = 8;
-
-const TABLE: TableDefinition<i32, Vec<u8>> = TableDefinition::new("blobs");
+const TABLE: TableDefinition<i32, &[u8]> = TableDefinition::new("blobs");
 
 pub struct BlobDB {
     inner: Database,
-    cache: Mutex<Vec<(i32, Arc<Vec<u8>>)>>,
 }
 
 impl BlobDB {
@@ -18,81 +15,61 @@ impl BlobDB {
         Ok(Self::new(db))
     }
     pub fn new(inner: Database) -> Self {
-        Self {
-            inner,
-            cache: Mutex::new(Vec::with_capacity(MAX_CACHE_SIZE)),
-        }
+        Self { inner }
     }
 
-    async fn get_from_db(&self, id: i32) -> Option<Vec<u8>> {
-        self.inner.begin_read().ok().and_then(|txn| {
-            txn.open_table(TABLE).ok().and_then(|table| {
-                table
-                    .get(id)
-                    .ok()
-                    .flatten()
-                    .and_then(|blob| Some(blob.value()))
-            })
-        })
+    pub async fn get(&self, id: i32) -> Option<Vec<u8>> {
+        let txn = self.inner.begin_read().ok()?;
+        let table = txn.open_table(TABLE).ok()?;
+
+        let data = table.get(id).ok()??;
+        Some(data.value().to_vec())
     }
 
-    fn put_cache(&self, id: i32, blob: Arc<Vec<u8>>) {
-        let mut cache = self.cache.lock().unwrap();
-
-        if let Some(pos) = cache.iter().position(|x| x.0 == id) {
-            cache.remove(pos);
-        }
-
-        cache.insert(0, (id, blob));
-
-        if cache.len() > MAX_CACHE_SIZE {
-            cache.pop();
-        }
-    }
-
-    fn find_from_cache(&self, id: i32) -> Option<Arc<Vec<u8>>> {
-        let mut cache = self.cache.lock().unwrap();
-
-        if let Some(pos) = cache.iter().position(|x| x.0 == id) {
-            let item = cache.remove(pos);
-            let blob = item.1.clone();
-            cache.insert(0, item); // Move to front
-            Some(blob)
-        } else {
-            None
-        }
-    }
-
-    fn delete_from_cache(&self, id: i32) {
-        let mut cache = self.cache.lock().unwrap();
-        if let Some(pos) = cache.iter().position(|x| x.0 == id) {
-            cache.remove(pos);
-        }
-    }
-
-    pub async fn get(&self, id: i32) -> Option<Arc<Vec<u8>>> {
-        if let Some(x) = self.find_from_cache(id) {
-            return Some(x);
-        }
-
-        let data = self.get_from_db(id).await?;
-        let data = Arc::new(data);
-
-        self.put_cache(id, data.clone());
-
-        Some(data)
-    }
-
-    pub fn insert(&self, id: i32, data: Vec<u8>) -> Result<(), redb::Error> {
+    pub async fn insert_with_error<S, E>(
+        &self,
+        id: i32,
+        size: usize,
+        mut chunk_stream: S,
+    ) -> Result<Result<(), E>, redb::Error>
+    where
+        S: Stream<Item = Result<bytes::Bytes, E>> + Unpin,
+    {
         let txn = self.inner.begin_write()?;
 
-        let data = Arc::new(data);
         {
             let mut table = txn.open_table(TABLE)?;
-            table.insert(id, data.clone())?;
+            let mut accessor = table.insert_reserve(id, size)?;
+
+            let writer = accessor.as_mut();
+            let mut wrote = 0;
+
+            while let Some(chunk) = chunk_stream.next().await {
+                match chunk {
+                    Err(e) => return Ok(Err(e)),
+                    Ok(b) => {
+                        writer[wrote..wrote + b.len()].copy_from_slice(&b);
+                        wrote += b.len();
+                    }
+                }
+            }
         }
+
         txn.commit()?;
-        self.put_cache(id, data);
+
+        Ok(Ok(()))
+    }
+    pub async fn insert<S>(&self, id: i32, size: usize, chunk_stream: S) -> Result<(), redb::Error>
+    where
+        S: Stream<Item = bytes::Bytes> + Unpin + 'static,
+    {
+        self.insert_with_error(
+            id,
+            size,
+            chunk_stream.map(Ok::<bytes::Bytes, std::convert::Infallible>),
+        )
+        .await?
+        .unwrap();
         Ok(())
     }
 
@@ -103,7 +80,6 @@ impl BlobDB {
             table.remove(id)?;
         }
         txn.commit()?;
-        self.delete_from_cache(id);
         Ok(())
     }
 }

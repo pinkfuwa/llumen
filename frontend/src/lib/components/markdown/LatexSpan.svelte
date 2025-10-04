@@ -6,6 +6,6 @@
 	let { raw } = $props<{ raw: string }>();
 </script>
 
-<button onclick={() => copy(raw)} class="rounded-md p-2 font-semibold">
+<button onclick={() => copy(raw)} class="rounded-md p-2 font-semibold break-all">
 	<Latex text={raw} />
 </button>

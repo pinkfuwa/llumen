@@ -1,9 +1,10 @@
 use std::{pin::Pin, task};
 
 use anyhow::{Context, Result, anyhow};
-use futures_util::{FutureExt, Stream, StreamExt};
+use futures_util::FutureExt;
 use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
+use tokio_stream::{Stream, StreamExt};
 
 use super::{HTTP_REFERER, X_TITLE, raw};
 

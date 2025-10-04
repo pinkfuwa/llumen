@@ -7,8 +7,8 @@ use std::{
     },
 };
 
-use futures_util::Stream;
 use tokio::sync::{mpsc, watch};
+use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
 
 pub trait Mergeable
@@ -164,8 +164,6 @@ impl<S: Mergeable + Clone> Publisher<S> {
 
 impl<S: Mergeable> Drop for Publisher<S> {
     fn drop(&mut self) {
-        let sender = self.inner.sender.lock().unwrap().take().unwrap();
-        drop(sender);
         self.ctx.map.lock().unwrap().remove(&self.id);
     }
 }

@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use anyhow::Context as _;
 use entity::{ChunkKind, MessageKind, chat, chunk, message, model, user};
-use futures_util::{Stream, StreamExt};
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
     ModelTrait, QueryFilter,
 };
 use tokio::join;
+use tokio_stream::{Stream, StreamExt};
 
 use super::{
     channel::{self, Publisher},

@@ -9,6 +9,7 @@
 
 		return brs.includes(clean);
 	});
+	// TODO: <sub>
 </script>
 
 {#if isBr}

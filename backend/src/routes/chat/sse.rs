@@ -9,9 +9,10 @@ use axum::{
     },
 };
 use entity::prelude::*;
-use futures_util::{Stream, StreamExt, stream};
+use futures_util::stream;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use serde::{Deserialize, Serialize};
+use tokio_stream::{Stream, StreamExt};
 use typeshare::typeshare;
 
 use crate::{AppState, chat::Token, errors::*, middlewares::auth::UserId};
