@@ -77,7 +77,4 @@
 			</Button>
 		</form>
 	</div>
-	<p class="block animate-pulse border-b-2 border-red-500 md:hidden">
-		llumen is not well-supported on mobile
-	</p>
 </main>
