@@ -5,7 +5,6 @@
 
 	$effect(() => {
 		if ($token) goto('/chat/new');
-		else goto('/login');
 	});
 </script>
 

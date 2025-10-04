@@ -11,7 +11,7 @@
 </script>
 
 {#if $isError}
-	<Warning>{ $_('setting.account.error_updating_password') }</Warning>
+	<Warning>{$_('setting.account.error_updating_password')}</Warning>
 {/if}
 <CheckPwd
 	message={$_('setting.account.enter_new_password')}
@@ -19,7 +19,6 @@
 		mutate({ password }, () => {
 			token.set(undefined);
 			clearCache();
-			goto('/login');
 		});
 	}}
 ></CheckPwd>
