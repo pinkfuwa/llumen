@@ -7,10 +7,10 @@ use entity::ChunkKind;
 use entity::FileHandle;
 use entity::MessageKind;
 use entity::chunk;
-use futures_util::StreamExt;
 use futures_util::future::BoxFuture;
 use sea_orm::ActiveValue;
 use sea_orm::ActiveValue::Set;
+use tokio_stream::StreamExt;
 
 use crate::chat::context::CompletionContext;
 use crate::chat::context::Context;

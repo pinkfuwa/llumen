@@ -17,6 +17,17 @@ pub struct FileUploadResp {
 
 const FILE_FIELD: &str = "file";
 
+pub async fn read_attr_field(multipart: &mut Multipart, field_name: &str) -> anyhow::Result<i32> {
+    let field = multipart.next_field().await?;
+
+    if field.is_none() {
+        anyhow::bail!("missing field {}", field_name);
+    }
+
+    let value = field.unwrap().text().await?.parse::<i32>()?;
+    Ok(value)
+}
+
 pub async fn route(
     State(app): State<Arc<AppState>>,
     Extension(UserId(user_id)): Extension<UserId>,
@@ -25,28 +36,13 @@ pub async fn route(
     // https://docs.rs/multer/3.1.0/multer/struct.Multipart.html#field-exclusivity
     // > That is, a Field emitted by next_field() must be dropped before calling next_field() again.
     // > Failure to do so will result in an error.
-    let chat_id = {
-        let chat_field = multipart
-            .next_field()
-            .await
-            .kind(ErrorKind::MalformedRequest)?;
+    let chat_id = read_attr_field(&mut multipart, "chat_id")
+        .await
+        .kind(ErrorKind::MalformedRequest)?;
 
-        if chat_field.is_none() {
-            return Err(Json(Error {
-                error: ErrorKind::MalformedRequest,
-                reason: "missing chat_id field".into(),
-            }));
-        }
-
-        let chat_field = chat_field.unwrap();
-        chat_field
-            .text()
-            .await
-            .kind(ErrorKind::MalformedRequest)?
-            .trim()
-            .parse()
-            .kind(ErrorKind::MalformedRequest)?
-    };
+    let size = read_attr_field(&mut multipart, "size")
+        .await
+        .kind(ErrorKind::MalformedRequest)?;
 
     let content_field = multipart
         .next_field()
@@ -71,12 +67,7 @@ pub async fn route(
 
     let mime_type = content_field.content_type().map(|c| c.to_string());
 
-    let data = content_field
-        .bytes()
-        .await
-        .kind(ErrorKind::MalformedRequest)?;
-
-    let file = File::insert(entity::file::ActiveModel {
+    let file_id = File::insert(entity::file::ActiveModel {
         chat_id: Set(Some(chat_id)),
         owner_id: Set(Some(user_id)),
         mime_type: Set(mime_type),
@@ -87,7 +78,11 @@ pub async fn route(
     .kind(ErrorKind::Internal)?
     .last_insert_id;
 
-    app.blob.insert(file, data.to_vec()).unwrap();
+    app.blob
+        .insert_with_error(file_id, size.max(0) as usize, content_field)
+        .await
+        .kind(ErrorKind::Internal)?
+        .kind(ErrorKind::MalformedRequest)?;
 
-    Ok(Json(FileUploadResp { id: file }))
+    Ok(Json(FileUploadResp { id: file_id }))
 }

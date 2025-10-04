@@ -16,7 +16,7 @@ use entity::prelude::*;
 use middlewares::cache_control::CacheControlLayer;
 use migration::MigratorTrait;
 use pasetors::{keys::SymmetricKey, version4::V4};
-use sea_orm::{Database, DbConn, EntityTrait};
+use sea_orm::{ConnectionTrait, Database, DbConn, EntityTrait};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
@@ -79,6 +79,13 @@ async fn main() {
     migration::Migrator::up(&conn, None)
         .await
         .expect("Cannot migrate database");
+
+    conn.execute(sea_orm::Statement::from_string(
+        conn.get_database_backend(),
+        "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;".to_owned(),
+    ))
+    .await
+    .expect("Failed to set pragmas");
 
     let key = SymmetricKey::from(
         &Config::find_by_id("paseto_key")

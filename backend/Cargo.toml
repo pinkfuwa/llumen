@@ -32,9 +32,10 @@ fastrand = "2.3.0"
 minijinja = "2.12.0"
 base64 = "0.22.1"
 schemars = "1.0.4"
-redb = "2.6.3"
+redb = "3.1.0"
 regex = "1.11.2"
 flexi_logger = "0.31.4"
+bytes = "1.10.1"
 
 [dependencies.axum]
  version = "0.8.4"

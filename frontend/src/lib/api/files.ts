@@ -12,6 +12,7 @@ export async function upload(file: File, chatId: number, signal?: AbortSignal) {
 	}
 
 	formData.append('chat_id', chatId.toString());
+	formData.append('size', file.size.toString());
 	formData.append('file', file);
 
 	const response = await RawAPIFetch('file/upload', formData, 'POST', signal);
