@@ -7,6 +7,7 @@ use sea_orm::{ActiveValue::Set, EntityTrait};
 use serde::Serialize;
 use typeshare::typeshare;
 
+use crate::routes::file::MAX_FILE_SIZE;
 use crate::{AppState, errors::*, middlewares::auth::UserId};
 
 #[derive(Debug, Serialize)]
@@ -43,6 +44,13 @@ pub async fn route(
     let size = read_attr_field(&mut multipart, "size")
         .await
         .kind(ErrorKind::MalformedRequest)?;
+
+    if size > MAX_FILE_SIZE as i32 {
+        return Err(Json(Error {
+            error: ErrorKind::MalformedRequest,
+            reason: "file size exceeds the limit".to_string(),
+        }));
+    }
 
     let content_field = multipart
         .next_field()
