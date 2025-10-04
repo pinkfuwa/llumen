@@ -44,6 +44,13 @@
 		content = '';
 		editable = true;
 	});
+
+	function submit() {
+		if (onsubmit) {
+			disabled = true;
+			onsubmit();
+		}
+	}
 </script>
 
 <div
@@ -74,13 +81,13 @@
 			bind:editable
 			placeholder={disabled ? $_('chat.stop_first') : $_('chat.question')}
 			bind:value={content}
-			{onsubmit}
+			onsubmit={submit}
 			{disabled}
 		/>
 		{#if disabled}
 			<StopBtn onclick={oncancel} />
 		{:else}
-			<SendBtn onclick={onsubmit} />
+			<SendBtn onclick={submit} />
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
