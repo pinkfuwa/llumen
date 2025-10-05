@@ -17,7 +17,7 @@ use middlewares::cache_control::CacheControlLayer;
 use migration::MigratorTrait;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{ConnectionTrait, Database, DbConn, EntityTrait};
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, signal};
 use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
 use utils::{blob::BlobDB, password_hash::Hasher};
@@ -51,7 +51,31 @@ fn load_api_key() -> String {
     }
 }
 
-#[tokio::main(flavor = "current_thread")]
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+}
+
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() {
     dotenv::dotenv().ok();
 
@@ -166,5 +190,8 @@ async fn main() {
     log::info!("Listening on http://{}", bind_addr);
 
     let tcp = TcpListener::bind(bind_addr).await.unwrap();
-    axum::serve(tcp, app).await.unwrap();
+    axum::serve(tcp, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
 }

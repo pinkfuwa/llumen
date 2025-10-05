@@ -1,0 +1,12 @@
+[package]
+name = "runner"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+futures-util = "0.3.31"
+
+[dependencies.mlua]
+version = "0.11.4"
+default-features = false
+features = ["luau", "vendored", "anyhow"]

@@ -12,7 +12,7 @@ opt-level = "s"
 lto = true
 
 [workspace]
-members = [".", "entity", "migration"]
+members = [".", "entity", "migration", "runner"]
 
 [dependencies]
 dotenv = "0.15.0"
@@ -21,6 +21,7 @@ serde_json = "1.0.141"
 typeshare = "1.0.4"
 entity = { path = "entity" }
 migration = { path = "migration" }
+runner = { path = "runner" }
 anyhow = "1.0.98"
 futures-util = "0.3.31"
 reqwest-eventsource = "0.6.0"
@@ -69,7 +70,7 @@ features = ["derive"]
 
 [dependencies.tokio]
 version = "1.46.1"
-features = ["macros", "rt", "sync"]
+features = ["macros", "rt-multi-thread", "sync", "signal"]
 
 [dependencies.sea-orm]
 version = "1.1.14"
