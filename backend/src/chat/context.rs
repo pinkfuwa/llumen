@@ -3,8 +3,8 @@ use std::sync::Arc;
 use anyhow::Context as _;
 use entity::{ChunkKind, MessageKind, chat, chunk, message, model, user};
 use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
-    ModelTrait, QueryFilter,
+    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
+    IntoActiveModel, ModelTrait, QueryFilter,
 };
 use tokio::join;
 use tokio_stream::{Stream, StreamExt};
@@ -331,8 +331,16 @@ impl CompletionContext {
 
         let db = &self.ctx.db;
 
-        self.chat.update(db).await?;
-        self.message.update(db).await?;
+        if let Err(err) = self.chat.update(db).await {
+            if !matches!(err, DbErr::RecordNotUpdated) {
+                return Err(err.into());
+            }
+        }
+        if let Err(err) = self.message.update(db).await {
+            if !matches!(err, DbErr::RecordNotUpdated) {
+                return Err(err.into());
+            }
+        }
 
         Ok(())
     }
