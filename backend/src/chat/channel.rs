@@ -27,6 +27,7 @@ pub type LockedOption<T> = Mutex<Option<T>>;
 pub struct Inner<S: Mergeable + Clone> {
     buffer: LockedVec<S>,
     sender: LockedOption<watch::Sender<()>>,
+    receiver: watch::Receiver<()>,
     flag: AtomicBool,
 }
 
@@ -38,10 +39,11 @@ impl<S: Mergeable + Clone + Send> Default for Inner<S> {
 
 impl<S: Mergeable + Clone + Send> Inner<S> {
     pub fn new() -> Self {
-        let (tx, _) = watch::channel(());
+        let (tx, rx) = watch::channel(());
         Self {
             buffer: Mutex::new(Vec::new()),
             sender: Mutex::new(Some(tx)),
+            receiver: rx,
             flag: AtomicBool::new(false),
         }
     }
@@ -81,13 +83,14 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
 
     fn get_subscriber(&self, id: i32) -> Subscriber<S> {
         let inner = self.get_inner(id);
-        let receiver = inner.sender.lock().unwrap().as_ref().unwrap().subscribe();
+        let receiver = inner.receiver.clone();
         Subscriber {
             cursor: Cursor::default(),
             inner,
             receiver,
         }
     }
+
     pub fn subscribe(self: Arc<Self>, id: i32) -> impl Stream<Item = S> {
         let mut subscriber = self.get_subscriber(id);
         let (tx, rx) = mpsc::channel::<S>(1);
