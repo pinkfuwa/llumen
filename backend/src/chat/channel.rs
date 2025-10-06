@@ -98,16 +98,12 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         tokio::spawn(async move {
             loop {
                 match subscriber.recv().await {
-                    Some(item) if item.len() == 0 => {
-                        continue;
-                    }
+                    Some(item) if item.len() == 0 => continue,
+                    None => subscriber = self.get_subscriber(id),
                     Some(item) => {
                         if tx.send(item).await.is_err() {
                             break;
                         }
-                    }
-                    None => {
-                        subscriber = self.get_subscriber(id);
                     }
                 }
             }

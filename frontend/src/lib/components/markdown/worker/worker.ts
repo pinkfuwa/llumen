@@ -9,6 +9,6 @@ marked.use(Citation);
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
 	const markdown = event.data;
 
-	const tokens = marked.lexer(markdown);
+	const tokens = marked.lexer(markdown.replaceAll('&nbsp;', ' '));
 	self.postMessage(tokens as WorkerResponse);
 };
