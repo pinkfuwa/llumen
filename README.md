@@ -20,7 +20,7 @@ Its design goal is simplicity: you only need a single **OpenRouter** API key to 
 
 - :handshake: We provide windows executable, docker image, linux binary
 - :ship: Single API key requirement (OpenRouter) for model calls.
-- :rocket: starting time < 1s, disk usage < 100 MiB
+- :rocket: starting time < 1s, disk usage < 100 MiB, memory usage < 128MB
 - :blue_book: Markdown rendering with code and math support.
 - :mag: Multiple chat modes (normal, web-search-enabled).
 - :brain: Deep-research and agentic modes (WIP :construction: ).
@@ -52,7 +52,8 @@ docker run -it --rm \
   ghcr.io/pinkfuwa/llumen:latest
 ```
 ```
-2025-09-25T16:53:45.735807Z  INFO backend: Listening on http://0.0.0.0:8001
+06:46:48.654Z INFO | Using endpoint https://openrouter.ai/api/v1/chat/completions for completions
+06:46:48.675Z INFO | Listening on http://127.0.0.1:8001
 ```
 
 ### :package: Without docker
@@ -65,6 +66,7 @@ We also provided prebuild binary, download it and extract from [release](https:/
 ## :key: Environment variables
 
 - `API_KEY` (required) — OpenRouter or equivalent provider API key.
+- `API_BASE` — openai compatible api url. Default: `https://openrouter.ai`
 - `DATABASE_URL` — database connection string. Default in Docker: `sqlite://data/db.sqlite?mode=rwc`.
 - `BLOB_URL` — path for [redb](https://www.redb.org/) object storage. Default in Docker: `/data/blobs.redb`.
 - `BIND_ADDR` — address the backend binds to (default in Docker: `0.0.0.0:80`).
