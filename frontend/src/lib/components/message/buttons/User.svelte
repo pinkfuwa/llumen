@@ -12,13 +12,21 @@
 	// TODO: use component lib
 	let editable = $state(false);
 	let editBuffer = $state(content);
+
+	// bind to markdown height when rendering
+	let markdownHeight = $state(0);
+	// save height when not rendering
 	let renderHeight = $state(0);
-
-	let actualHeight = $state(22);
-
 	$effect(() => {
-		if (!editable) actualHeight = Math.max(22, renderHeight);
+		if (editable) return;
+		renderHeight = Math.max(24, markdownHeight);
 	});
+
+	const actualHeight = $derived.by(() => {
+		const contentHeight = (content.split('\n').length + 1) * 24;
+		return Math.max(contentHeight, renderHeight);
+	});
+	$inspect(actualHeight);
 </script>
 
 <div class="flex w-full justify-end px-[5vw] lg:px-20 2xl:px-36">
@@ -34,14 +42,16 @@
 				</div>
 			{/if}
 			{#if editable}
-				<textarea
-					class="editor inline field-sizing-content w-full flex-grow resize-none overflow-auto"
-					bind:value={content}
-					style="height: {actualHeight}px"
-				></textarea>
+				<div class="flex max-h-[60vh] w-full flex-col-reverse overflow-y-auto">
+					<textarea
+						class="editor inline field-sizing-content w-full flex-grow resize-none overflow-x-auto"
+						bind:value={content}
+						style="height: {actualHeight}px"
+					></textarea>
+				</div>
 			{/if}
 			<div
-				bind:clientHeight={renderHeight}
+				bind:clientHeight={markdownHeight}
 				data-state={editable ? 'hide' : 'shown'}
 				class="data-[state=hide]:hidden"
 			>

@@ -18,7 +18,7 @@ const Latex: MarkedExtension = {
 				let indexSrc = src;
 
 				while (indexSrc) {
-					index = indexSrc.indexOf('$');
+					index = indexSrc.indexOf('$') || indexSrc.indexOf('\\[') || indexSrc.indexOf('\\(');
 					if (index === -1) return;
 
 					const f = index > -1;
@@ -34,7 +34,11 @@ const Latex: MarkedExtension = {
 						}
 					}
 
-					indexSrc = indexSrc.substring(index + 1).replace(/^\\\[/, '');
+					indexSrc = indexSrc
+						.substring(index + 1)
+						.replace(/^\\\[/, '')
+						.replace(/^\$+/, '')
+						.replace(/^\\\(/, '');
 				}
 			},
 			tokenizer(src, tokens) {
