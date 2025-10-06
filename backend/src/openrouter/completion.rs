@@ -37,9 +37,15 @@ impl Openrouter {
     pub fn new(api_key: impl AsRef<str>, api_base: impl AsRef<str>) -> Self {
         let api_base = api_base.as_ref();
         let api_key = api_key.as_ref().to_string();
+
         let chat_completion_endpoint =
             format!("{}/api/v1/chat/completions", api_base.trim_end_matches('/'));
         let mut default_req = raw::CompletionReq::default();
+
+        log::info!(
+            "Using endpoint {} for completions",
+            &chat_completion_endpoint
+        );
 
         if !api_base.contains("openrouter") {
             log::warn!("Custom API_BASE detected, disabling plugin support");
