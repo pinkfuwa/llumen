@@ -23,6 +23,16 @@
 
 	let rows = () => Math.max(2, value.split('\n').length);
 
+	let virtualKeyboard = $state(false);
+	if ('virtualKeyboard' in navigator) {
+		navigator.virtualKeyboard.overlaysContent = true;
+
+		navigator.virtualKeyboard.addEventListener('geometrychange', (event) => {
+			const { width, height } = event.target.boundingRect;
+			if (width > 0 || height > 0) virtualKeyboard = true;
+		});
+	}
+
 	let renderValue = $state(value);
 	$effect(() => {
 		if (!editable) renderValue = value;
@@ -39,7 +49,13 @@
 	aria-label="type message"
 	data-state={editable ? 'show' : 'hide'}
 	onkeypress={(event) => {
-		if (event.key == 'Enter' && !event.shiftKey && get(submitOnEnter) == 'true' && onsubmit)
+		if (
+			!virtualKeyboard &&
+			event.key == 'Enter' &&
+			!event.shiftKey &&
+			get(submitOnEnter) == 'true' &&
+			onsubmit
+		)
 			onsubmit();
 	}}
 ></textarea>
