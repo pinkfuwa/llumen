@@ -25,7 +25,7 @@
 
 	let virtualKeyboard = $state(false);
 	if ('virtualKeyboard' in navigator) {
-		navigator.virtualKeyboard.overlaysContent = false;
+		navigator.virtualKeyboard.overlaysContent = true;
 
 		navigator.virtualKeyboard.addEventListener('geometrychange', (event) => {
 			const { width, height } = event.target.boundingRect;

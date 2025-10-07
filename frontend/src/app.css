@@ -96,9 +96,12 @@
 
 @layer utilities {
 	.h-screen {
-		height: 100svh;
+		height: 100vh;
 	}
-	.h-screen {
-		height: 100svh, 100vh;
+
+	@supports (height: 100svh) {
+		.h-screen {
+			height: calc(100svh - env(keyboard-inset-height, 0px));
+		}
 	}
 }
