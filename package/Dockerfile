@@ -38,6 +38,9 @@ RUN cargo install --locked cargo-zigbuild
 
 RUN rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
 
+WORKDIR /
+COPY README.md .
+
 WORKDIR /prompts
 COPY ./prompts .
 
