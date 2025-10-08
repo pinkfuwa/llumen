@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{slice::Iter, sync::Arc};
 
 use anyhow::Context as _;
 use entity::{ChunkKind, MessageKind, chat, chunk, message, model, user};
@@ -343,5 +343,23 @@ impl CompletionContext {
         }
 
         Ok(())
+    }
+
+    pub fn latest_user_message(&self) -> Option<&str> {
+        self.messages_with_chunks.last().and_then(|(m, chunks)| {
+            if m.kind == MessageKind::User {
+                let slice_vec: Vec<&str> = chunks
+                    .iter()
+                    .filter_map(|c| match c.kind {
+                        ChunkKind::Text => Some(c.content.as_str()),
+                        _ => None,
+                    })
+                    .collect();
+
+                slice_vec.iter().copied().last()
+            } else {
+                None
+            }
+        })
     }
 }
