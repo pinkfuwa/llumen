@@ -25,6 +25,8 @@ use utils::{blob::BlobDB, password_hash::Hasher};
 #[cfg(feature = "dev")]
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 
+// TODO: musl allocator sucks, but compile time is important, too.
+
 pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
@@ -163,14 +165,14 @@ async fn main() {
                 .layer(middlewares::logger::LoggerLayer),
         )
         .fallback_service(
+            // side notes about artifact size:
+            // 1. br sized about 1.3Mb, uncompressed sized about 4Mb
+            // 2. Rust binary sized about 6Mb
             ServiceBuilder::new().layer(CacheControlLayer).service(
                 ServeDir::new(static_dir.to_owned())
-                    .precompressed_gzip()
                     .precompressed_br()
                     .fallback(
-                        ServeFile::new(format!("{}/index.html", static_dir))
-                            .precompressed_br()
-                            .precompressed_gzip(),
+                        ServeFile::new(format!("{}/index.html", static_dir)).precompressed_br(),
                     ),
             ),
         )
