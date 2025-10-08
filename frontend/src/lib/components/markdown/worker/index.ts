@@ -18,9 +18,12 @@ worker.addEventListener('message', (event: MessageEvent<WorkerResponse>) => {
 	} else lexCallback(tokens);
 });
 
-export async function lex(markdown: string, shouldCache: boolean = false): Promise<WorkerResponse> {
+export function getCachedLex(markdown: string): WorkerResponse | null {
 	if (cache.has(markdown)) return cache.get(markdown)!;
+	return null;
+}
 
+export async function lex(markdown: string, shouldCache: boolean = false): Promise<WorkerResponse> {
 	await semphore.acquire();
 
 	let tokens = await new Promise<WorkerResponse>((resolve) => {
