@@ -25,10 +25,18 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<UserDeleteReq>,
 ) -> JsonResult<UserDeleteResp> {
+    if user_id == req.user_id {
+        return Err(Json(Error {
+            error: ErrorKind::ResourceNotFound,
+            reason: "You cannot delete yourself".to_string(),
+        }));
+    }
     let res = User::delete_by_id(req.user_id)
         .exec(&app.conn)
         .await
         .kind(ErrorKind::Internal)?;
+
+    log::info!("user({}) is deleted by {}", req.user_id, user_id);
 
     Ok(Json(UserDeleteResp {
         deleted: res.rows_affected == 1,

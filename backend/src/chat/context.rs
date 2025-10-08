@@ -1,4 +1,4 @@
-use std::{slice::Iter, sync::Arc};
+use std::sync::Arc;
 
 use anyhow::Context as _;
 use entity::{ChunkKind, MessageKind, chat, chunk, message, model, user};

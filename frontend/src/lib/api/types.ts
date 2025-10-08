@@ -324,12 +324,6 @@ export interface SseRespToolResult {
 	content: string;
 }
 
-export interface SseRespUser {
-	message_id: number;
-	chunk_id: number;
-	content: string;
-}
-
 export enum LastKind {
 	User = 'User',
 	Assistant = 'Assistant'

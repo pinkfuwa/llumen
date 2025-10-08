@@ -87,14 +87,6 @@ pub struct SseRespMessageComplete {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespUser {
-    pub message_id: i32,
-    pub chunk_id: i32,
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
 pub struct SseRespTitle {
     pub title: String,
 }

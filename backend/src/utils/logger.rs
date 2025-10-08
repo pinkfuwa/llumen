@@ -32,7 +32,7 @@ pub fn init() {
         .start()
         .unwrap();
 
-    let hook = Arc::new(|info: &panic::PanicInfo| {
+    let hook = Arc::new(|info: &panic::PanicHookInfo| {
         if let Some(s) = info.payload().downcast_ref::<&str>() {
             log::error!("Panic occurred: {}", s);
         } else if let Some(s) = info.payload().downcast_ref::<String>() {

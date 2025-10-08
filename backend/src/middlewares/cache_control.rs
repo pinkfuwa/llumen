@@ -11,7 +11,6 @@ use tower::{Layer, Service};
 
 pub struct ResponseFuture<F> {
     response_future: F,
-    layer: CacheControlLayer,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -21,17 +20,13 @@ impl<S> Layer<S> for CacheControlLayer {
     type Service = CacheControl<S>;
 
     fn layer(&self, inner: S) -> Self::Service {
-        CacheControl {
-            inner,
-            layer: *self,
-        }
+        CacheControl { inner }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct CacheControl<S> {
     inner: S,
-    layer: CacheControlLayer,
 }
 
 impl<'a, S, T, U> Service<Request<T>> for CacheControl<S>
@@ -51,10 +46,7 @@ where
     fn call(&mut self, req: Request<T>) -> Self::Future {
         let response_future = self.inner.call(req);
 
-        ResponseFuture {
-            response_future,
-            layer: self.layer,
-        }
+        ResponseFuture { response_future }
     }
 }
 

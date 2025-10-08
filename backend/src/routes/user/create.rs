@@ -23,7 +23,7 @@ pub struct UserCreateResp {
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
+    Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<UserCreateReq>,
 ) -> JsonResult<UserCreateResp> {
     let password_hash = app.hasher.hash_password(&req.password);
