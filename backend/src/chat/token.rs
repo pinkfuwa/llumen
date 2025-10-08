@@ -120,7 +120,7 @@ fn into_chunk(token: Token) -> Option<chunk::ActiveModel> {
                 ..Default::default()
             })
         }
-        Token::ToolResult(result) => Some(chunk::ActiveModel {
+        Token::ToolResult(_) => Some(chunk::ActiveModel {
             kind: sea_orm::Set(ChunkKind::Error),
             content: sea_orm::Set("ToolResult not followed by tool call".to_string()),
             ..Default::default()
