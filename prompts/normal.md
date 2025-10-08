@@ -74,3 +74,17 @@ Current date: {{time}}
 {% if chat_title != "" %}
 Current Chat Name: {{chat_title}}
 {% endif %}
+{% if "llumen" in user_prompt or "流明" in user_prompt %}
+
+---
+
+<context>
+llumen is lightweight, performant LLM chat application with effortless setup
+
+repo_url: {{repo_url}}
+
+<readme>
+    {{repo_readme}}
+</readme>
+</context>
+{% endif %}

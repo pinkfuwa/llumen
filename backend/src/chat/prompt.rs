@@ -39,6 +39,8 @@ impl Prompt {
             .unwrap();
         env.add_template("search", include_str!("../../../prompts/search.md"))
             .unwrap();
+        env.add_global("repo_url", "https://github.com/pinkfuwa/llumen");
+        env.add_global("repo_readme", include_str!("../../../README.md"));
         Self { env }
     }
 }
@@ -52,6 +54,7 @@ struct RenderingContext<'a> {
     chat_title: Option<&'a str>,
     locale: Option<&'a str>,
     time: String,
+    user_prompt: Option<&'a str>,
 }
 
 const TIME_FORMAT: &[BorrowedFormatItem<'static>] =
@@ -78,6 +81,7 @@ impl Prompt {
             chat_title,
             locale: ctx.user.preference.locale.as_ref().map(|x| x.as_str()),
             time,
+            user_prompt: ctx.latest_user_message(),
         };
 
         let template_name = kind.as_str();
