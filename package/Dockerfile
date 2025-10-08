@@ -11,7 +11,9 @@ COPY ./frontend /app
 WORKDIR /app
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+ENV NOMAP=T
 RUN pnpm run build
+RUN find build/ -type f -name "*.gz" -delete
 
 FROM --platform=$BUILDPLATFORM rust:1.90.0-slim-trixie AS backend-builder
 
