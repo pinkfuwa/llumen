@@ -9,17 +9,35 @@
 
 	import { default as Markdown } from '$lib/components/markdown/Root.svelte';
 	import { submitOnEnter } from '$lib/preference';
-	import { onStartTyping } from '@sv-use/core';
+	import { onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
 
 	let input = $state<null | HTMLElement>(null);
 
-	onStartTyping(() => {
+	function onKeyDown(event: KeyboardEvent) {
+		const activeElement = document.activeElement;
+		const { code, metaKey, ctrlKey, altKey } = event;
+		if (metaKey || ctrlKey || altKey) return false;
+
+		if (
+			activeElement &&
+			(activeElement.tagName == 'INPUT' ||
+				activeElement.tagName == 'TEXTAREA' ||
+				activeElement.hasAttribute('contenteditable'))
+		)
+			return;
+
+		if (!code.startsWith('Key') && !code.startsWith('Digit') && code != 'Enter') return;
+
 		if (input !== document.activeElement) {
-			editable = true;
 			input?.focus();
+			editable = true;
+			event.preventDefault();
 		}
-	});
+	}
+
+	window.addEventListener('keydown', onKeyDown);
+	onDestroy(() => window.removeEventListener('keydown', onKeyDown));
 
 	let rows = () => Math.max(2, value.split('\n').length);
 

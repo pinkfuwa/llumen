@@ -1,7 +1,6 @@
 <script lang="ts">
 	let { files = $bindable([] as File[]), filetypes } = $props();
 	import { Upload } from '@lucide/svelte';
-	import { createFileDialog } from '@sv-use/core';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
 	import Tooltip from '../buttons/Tooltip.svelte';
