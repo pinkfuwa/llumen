@@ -3,7 +3,7 @@
 </script>
 
 {#if ordered}
-	<ol class="ml-6 list-decimal" {start}>{@render children?.()}</ol>
+	<ol class="ml-6 list-decimal break-all" {start}>{@render children?.()}</ol>
 {:else}
-	<ul class="ml-6 list-disc">{@render children?.()}</ul>
+	<ul class="ml-6 list-disc break-all">{@render children?.()}</ul>
 {/if}
