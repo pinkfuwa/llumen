@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createDropZone } from '@sv-use/core';
+	import { createDropZone } from './dropzone.svelte';
 	import MdTextbox from './MDTextbox.svelte';
 	import ModeBtn from './ModeBtn.svelte';
 	import UploadBtn from './UploadBtn.svelte';
@@ -30,7 +30,7 @@
 
 	const dropZone = $derived(
 		createDropZone(() => container, {
-			allowedDataTypes: filetypes,
+			allowedDataTypes: '*',
 			multiple: false,
 			onDrop(files: File[] | null) {
 				if (files != null) {
