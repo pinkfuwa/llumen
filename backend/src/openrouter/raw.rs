@@ -162,7 +162,7 @@ impl MessagePart {
                 Self::text(format!("Uploaded file: {}", filename)),
                 Self::input_audio(blob, ext),
             ),
-            "txt" | "md" | "json" | "csv" | "log" => {
+            "txt" | "md" | "json" | "csv" | "log" | "svg" => {
                 let content = String::from_utf8_lossy(&blob).to_string();
 
                 (

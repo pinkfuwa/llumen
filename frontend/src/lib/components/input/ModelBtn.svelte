@@ -3,11 +3,11 @@
 	import { useModels } from '$lib/api/model';
 	import Select from '$lib/ui/Select.svelte';
 	import { getSupportedFileTypes } from './fileTypes';
-	let {
-		value = $bindable<string | undefined>(),
-		disabled = false,
-		filetypes = $bindable('*')
-	} = $props();
+	import { getContext } from 'svelte';
+	import type { Writable } from 'svelte/store';
+	let { value = $bindable<string | undefined>(), disabled = false } = $props();
+
+	const filetypes = getContext<Writable<string>>('filetypes');
 
 	let { data } = useModels();
 
@@ -26,7 +26,7 @@
 	$effect(() => {
 		let selectModelCap = $data?.list.find((x) => x.id == value);
 		if (selectModelCap != undefined) {
-			filetypes = getSupportedFileTypes(selectModelCap);
+			filetypes.set(getSupportedFileTypes(selectModelCap));
 		}
 	});
 

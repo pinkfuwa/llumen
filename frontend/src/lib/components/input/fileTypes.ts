@@ -6,34 +6,39 @@ interface CapabilityFileType {
 
 /** Mapping of capability flags to valid MIME‑type lists. */
 const IMAGE_TYPES = [
-	'image/png',
-	'image/jpeg',
-	'image/gif',
-	'image/webp',
-	'image/svg+xml',
+	'image/avcs',
+	'image/avif',
 	'image/bmp',
-	'image/tiff'
+	'image/gif',
+	'image/png',
+	'image/webp',
+	'image/jpeg',
+	'image/webp',
+	'image/apng',
+	'image/bmp',
+	'image/vnd.wap.wbmp'
 ];
 
-const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/flac'];
+const AUDIO_TYPES = ['audio/*'];
 
 const OTHER_TYPES = [
-	// Documents
 	'application/pdf',
 	'application/msword',
 	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 	'application/vnd.ms-excel',
 	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 	'application/vnd.ms-powerpoint',
-	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-	// Text files
-	'text/plain',
-	'text/csv',
-	'text/markdown'
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 ];
+
+// file that will directly upload without any processing
+const LITERAL_FILE = ['text/*', 'image/svg+xml'];
 
 export function getSupportedFileTypes(capability: CapabilityFileType): string {
 	const parts: string[] = [];
+
+	// clone the array to avoid mutation
+	parts.push(...LITERAL_FILE);
 
 	if (capability.image_input) {
 		parts.push(...IMAGE_TYPES);
