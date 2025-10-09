@@ -40,8 +40,9 @@
 		})
 	);
 
-	afterNavigate(() => {
-		content = '';
+	// FIXME: should clear state on upper layer with props
+	afterNavigate((after) => {
+		if (after.to?.route.id == '/chat/[id]') content = '';
 		editable = true;
 	});
 

@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
+	import { page } from '$app/state';
 
 	let { mutate } = createRoom();
 
@@ -12,6 +13,11 @@
 	let modelId = $state<string | undefined>(undefined);
 	let files = $state([]);
 	let mode = $state(Mode.Normal);
+
+	$effect(() => {
+		const param = page.url.searchParams;
+		if (param.has('q')) content = param.get('q')!;
+	});
 </script>
 
 <svelte:head>
