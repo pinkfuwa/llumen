@@ -1,5 +1,4 @@
 import { untrack } from 'svelte';
-type MaybeGetter<T> = T | (() => T);
 type CleanupFunction = () => void;
 
 type CreateDropZoneOptions = {
@@ -8,7 +7,7 @@ type CreateDropZoneOptions = {
 	 * Supports `*` and `xxx/*` wildcards.
 	 * @default '*'
 	 */
-	allowedDataTypes?: MaybeGetter<string> | MaybeGetter<string[]> | ((types: string[]) => boolean);
+	allowedDataTypes: () => string;
 	/**
 	 * Whether to allow multiple files to be dropped.
 	 * @default true
@@ -31,22 +30,19 @@ type CreateDropZoneReturn = {
  * Standalone migration from sv-use.
  */
 export function createDropZone(
-	target: MaybeGetter<HTMLElement | null | undefined>,
-	options: CreateDropZoneOptions = {}
+	target: () => HTMLElement | null | undefined,
+	options: CreateDropZoneOptions
 ): CreateDropZoneReturn {
 	// Inline utilities from sv-use
 	const noop = () => {};
-	const normalizeValue = <T>(value: MaybeGetter<T>): T =>
-		typeof value === 'function' ? (value as () => T)() : value;
-	const toArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [value]);
 
-	const { allowedDataTypes = '*', multiple = true, onDrop = noop } = options;
+	const { allowedDataTypes, multiple = true, onDrop = noop } = options;
 
 	let cleanups: CleanupFunction[] = [];
 	let counter = 0;
 	let isValid = true;
 
-	const _target = $derived(normalizeValue(target));
+	const _target = $derived(target());
 	let isOver = $state(false);
 	let files = $state<File[] | null>(null);
 
@@ -85,13 +81,8 @@ export function createDropZone(
 
 	function checkDataTypes(types: string[]): boolean {
 		if (types.length === 0) return false;
-		if (typeof allowedDataTypes === 'function' && allowedDataTypes.length > 0) {
-			return allowedDataTypes(types) as boolean;
-		}
-		if (allowedDataTypes === '*') return true;
 
-		const _allowedTypes = allowedDataTypes as MaybeGetter<string> | MaybeGetter<string[]>;
-		const allowedArray = toArray(normalizeValue(_allowedTypes));
+		const allowedArray = $derived(allowedDataTypes().split(','));
 
 		return types.every((type) => {
 			return allowedArray.some((allowedType) => {

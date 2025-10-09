@@ -11,6 +11,8 @@
 	import StopBtn from './StopBtn.svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { ChatMode as Mode } from '$lib/api/types';
+	import { setContext } from 'svelte';
+	import { writable } from 'svelte/store';
 
 	let {
 		mode = $bindable(Mode.Normal),
@@ -26,19 +28,18 @@
 
 	let container = $state<HTMLElement | null>();
 
-	let filetypes = $state('*');
+	const filetypes = writable('*');
+	setContext('filetypes', filetypes);
 
-	const dropZone = $derived(
-		createDropZone(() => container, {
-			allowedDataTypes: '*',
-			multiple: false,
-			onDrop(files: File[] | null) {
-				if (files != null) {
-					files.forEach((f) => files.push(f));
-				}
+	const dropZone = createDropZone(() => container, {
+		allowedDataTypes: () => $filetypes,
+		multiple: false,
+		onDrop(files: File[] | null) {
+			if (files != null) {
+				files.forEach((f) => files.push(f));
 			}
-		})
-	);
+		}
+	});
 
 	// FIXME: should clear state on upper layer with props
 	afterNavigate((after) => {
@@ -93,9 +94,9 @@
 	</div>
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
-			<ModelBtn bind:value={modelId} bind:filetypes />
+			<ModelBtn bind:value={modelId} />
 			<ModeBtn bind:value={mode} />
-			<UploadBtn bind:files {filetypes} />
+			<UploadBtn bind:files />
 		</div>
 		{#if content.length != 0}
 			<MarkdownBtn bind:editable />

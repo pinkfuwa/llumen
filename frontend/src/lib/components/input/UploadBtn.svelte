@@ -1,27 +1,42 @@
 <script lang="ts">
-	let { files = $bindable([] as File[]), filetypes } = $props();
+	let { files = $bindable([] as File[]) } = $props();
 	import { Upload } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
 	import Tooltip from '../buttons/Tooltip.svelte';
-	import { createFileDialog } from './fileDialog.svelte';
-	import { onDestroy } from 'svelte';
+	import { getContext } from 'svelte';
+	import type { Writable } from 'svelte/store';
 
-	const dialog = $derived(
-		createFileDialog({
-			multiple: false,
-			onChange(newfile) {
-				files = [...files, newfile[0]];
-			},
-			accept: filetypes
-		})
-	);
+	const filetypes = getContext<Writable<string>>('filetypes');
 
-	onDestroy(() => dialog.cleanup());
+	let inputElement: HTMLInputElement | null = null;
+
+	function openDialog() {
+		inputElement?.click();
+	}
+
+	function onChange(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (target.files) {
+			files = [...files, ...Array.from(target.files)];
+		}
+		if (inputElement) {
+			inputElement.value = '';
+		}
+	}
 </script>
 
-<Button class="aspect-square h-full shrink-0" onclick={dialog.open} aria-label="upload file">
+<Button class="aspect-square h-full shrink-0" onclick={openDialog} aria-label="upload file">
 	<Tooltip text={$_('chat.file')}>
 		<Upload class="inline-block" />
 	</Tooltip>
 </Button>
+
+<input
+	type="file"
+	class="hidden"
+	bind:this={inputElement}
+	accept={$filetypes}
+	multiple={false}
+	onchange={onChange}
+/>
