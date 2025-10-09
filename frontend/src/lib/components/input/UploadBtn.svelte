@@ -4,6 +4,8 @@
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
 	import Tooltip from '../buttons/Tooltip.svelte';
+	import { createFileDialog } from './fileDialog.svelte';
+	import { onDestroy } from 'svelte';
 
 	const dialog = $derived(
 		createFileDialog({
@@ -14,6 +16,8 @@
 			accept: filetypes
 		})
 	);
+
+	onDestroy(() => dialog.cleanup());
 </script>
 
 <Button class="aspect-square h-full shrink-0" onclick={dialog.open} aria-label="upload file">
