@@ -13,6 +13,7 @@
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { setContext } from 'svelte';
 	import { writable } from 'svelte/store';
+	import { FileUp } from '@lucide/svelte';
 
 	let {
 		mode = $bindable(Mode.Normal),
@@ -70,6 +71,7 @@
 		<div
 			class="absolute top-0 -left-0 flex h-full w-full items-center justify-center rounded-lg bg-primary text-2xl"
 		>
+			<FileUp />
 			Upload File
 		</div>
 	{/if}
