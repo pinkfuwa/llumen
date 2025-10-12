@@ -26,7 +26,6 @@
 		const contentHeight = (content.split('\n').length + 1) * 24;
 		return Math.max(contentHeight, renderHeight);
 	});
-	$inspect(actualHeight);
 </script>
 
 <div class="flex w-full justify-end px-[5vw] lg:px-20 2xl:px-36">

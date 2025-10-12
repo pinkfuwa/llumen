@@ -5,7 +5,7 @@
 	// monochrome import shiki's performance
 	let { source, monochrome = false } = $props();
 
-	let cached = getCachedLex(source);
+	let cached = $derived(getCachedLex(source));
 </script>
 
 {#if cached == null}
