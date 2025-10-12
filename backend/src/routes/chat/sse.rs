@@ -122,6 +122,7 @@ pub async fn route(
     let last_message = Message::find()
         .filter(entity::message::Column::ChatId.eq(req.id))
         .order_by_desc(entity::message::Column::Id)
+        .inner_join(entity::chunk::Entity)
         .one(&app.conn)
         .await
         .kind(ErrorKind::Internal)?;
