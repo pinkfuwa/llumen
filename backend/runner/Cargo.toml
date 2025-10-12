@@ -5,8 +5,23 @@ edition = "2024"
 
 [dependencies]
 futures-util = "0.3.31"
+anyhow = "1.0.98"
+serde_json = "1.0.141"
 
 [dependencies.mlua]
 version = "0.11.4"
 default-features = false
-features = ["luau", "vendored", "anyhow"]
+features = ["luau", "vendored", "anyhow", "serialize"]
+
+[dependencies.reqwest]
+version = "0.12.22"
+default-features = false
+features = ["json", "native-tls-vendored", "charset", "http2"]
+
+[dependencies.tokio]
+version = "1.46.1"
+features = ["macros", "rt", "time"]
+
+[dependencies.serde]
+version = "1.0.219"
+features = ["derive"]
