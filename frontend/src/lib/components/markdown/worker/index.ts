@@ -8,7 +8,7 @@ const worker = new Worker(new URL('./worker.ts', import.meta.url), {
 const CACHE_SIZE = 12;
 
 const cache = new Map<string, WorkerResponse>();
-let semphore = new Semaphore();
+let semaphore = new Semaphore();
 let lexCallback: null | ((data: WorkerResponse) => void) = null;
 
 worker.addEventListener('message', (event: MessageEvent<WorkerResponse>) => {
@@ -24,7 +24,7 @@ export function getCachedLex(markdown: string): WorkerResponse | null {
 }
 
 export async function lex(markdown: string, shouldCache: boolean = false): Promise<WorkerResponse> {
-	await semphore.acquire();
+	await semaphore.acquire();
 
 	let tokens = await new Promise<WorkerResponse>((resolve) => {
 		lexCallback = resolve;
@@ -39,7 +39,7 @@ export async function lex(markdown: string, shouldCache: boolean = false): Promi
 		cache.set(markdown, tokens);
 	}
 
-	semphore.release();
+	semaphore.release();
 
 	return tokens;
 }
