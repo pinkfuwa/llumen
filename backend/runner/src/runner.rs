@@ -1,34 +1,56 @@
 //! Main Lua runner implementation with tree-based state caching.
 
-use crate::{ExecutionPath, ExecutionResult, LuaRunnerConfig, LuaRunnerError, Result, StateTree};
+use crate::{ExecutionResult, LuaRunnerConfig, LuaRunnerError, Result};
 use mlua::{Lua, StdLib, Value};
 use std::sync::{Arc, Mutex};
+
+#[derive(Debug)]
+pub struct RunnerState {
+    pub command_stack: Vec<String>,
+    pub last_state: String,
+    pub last_output: String,
+    pub penultimate_state: Option<String>,
+}
 
 /// Main Lua runner with tree-based state management.
 pub struct LuaRunner {
     /// Configuration for the runner.
     config: LuaRunnerConfig,
 
-    /// State tree for caching execution results.
-    state_tree: Arc<Mutex<StateTree>>,
+    /// Internal state for linear caching.
+    runner_state: Arc<Mutex<RunnerState>>,
+
+    /// Optional custom function registrar.
+    registrar: Option<Box<dyn Fn(&Lua) -> Result<()> + Send + Sync + 'static>>,
 }
 
 impl LuaRunner {
-    /// Creates a new Lua runner with the given configuration.
-    pub fn new(config: LuaRunnerConfig) -> Self {
-        let initial_state = "{}".to_string();
-        let state_tree = Arc::new(Mutex::new(StateTree::new(initial_state)));
+    /// Creates a new Lua runner with the given configuration and optional custom registrar.
+    pub fn new(
+        config: LuaRunnerConfig,
+        registrar: Option<Box<dyn Fn(&Lua) -> Result<()> + Send + Sync + 'static>>,
+    ) -> Self {
+        let runner_state = Arc::new(Mutex::new(RunnerState {
+            command_stack: Vec::new(),
+            last_state: "{}".to_string(),
+            last_output: String::new(),
+            penultimate_state: None,
+        }));
 
-        Self { config, state_tree }
+        Self {
+            config,
+            runner_state,
+            registrar,
+        }
     }
 
     /// Executes a sequence of commands following an execution path.
     ///
     /// This method:
-    /// 1. Searches the state tree for the longest matching prefix of the path
-    /// 2. If the entire path is cached, returns the cached result
-    /// 3. Otherwise, executes the remaining commands starting from the cached state
-    /// 4. Caches each new execution result in the tree
+    /// 1. Checks if the path exactly matches the current command stack
+    /// 2. If matched, returns the cached result immediately
+    /// 3. Otherwise, re-executes the entire path from scratch
+    /// 4. Updates the internal state with the new stack and latest states
     ///
     /// # Arguments
     ///
@@ -37,60 +59,78 @@ impl LuaRunner {
     /// # Returns
     ///
     /// The execution result including output, captured stdout/stderr, and metadata.
-    pub async fn execute(&self, path: &ExecutionPath) -> Result<ExecutionResult> {
+    pub async fn execute(&self, path: &[&str]) -> Result<ExecutionResult> {
         if path.is_empty() {
             return Err(LuaRunnerError::InvalidPath(
                 "Execution path cannot be empty".to_string(),
             ));
         }
 
-        let (initial_state, cached_depth, remaining_commands): (String, usize, Vec<String>) = {
-            let mut tree = self
-                .state_tree
-                .lock()
-                .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
+        let guard = self
+            .runner_state
+            .lock()
+            .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
 
-            let (cached_node_state, rem) = tree.find_node(path)?;
-
-            let depth = path.len() - rem.len();
-            (cached_node_state, depth, rem.to_vec())
-        };
-
-        if remaining_commands.is_empty() {
+        if guard.command_stack == *path {
+            let output = guard.last_output.clone();
+            let stdout = String::new();
+            let stderr = String::new();
+            drop(guard);
             return Ok(ExecutionResult {
-                output: String::new(),
-                stdout: String::new(),
-                stderr: String::new(),
+                output,
+                stdout,
+                stderr,
                 from_cache: true,
                 instruction_count: None,
             });
         }
+        drop(guard);
 
-        let mut current_state = initial_state;
+        let mut current_state = "{}".to_string();
+        let mut penultimate_state: Option<String> = None;
+        let mut command_stack: Vec<String> = Vec::new();
         let mut last_output = String::new();
-        let mut total_instructions = 0;
+        let total_instructions = 0usize;
 
-        for (i, command) in remaining_commands.iter().enumerate() {
+        let num_commands = path.len();
+        if num_commands > 1 {
+            for command in &path[0..num_commands.saturating_sub(1)] {
+                let lua = self.create_lua_vm()?;
+
+                self.restore_state(&lua, &current_state)?;
+
+                let _result = self.execute_command(&lua, command).await?;
+
+                current_state = self.serialize_state(&lua)?;
+
+                command_stack.push(command.to_string());
+            }
+            penultimate_state = Some(current_state.clone());
+        }
+
+        if let Some(last_command) = path.last() {
             let lua = self.create_lua_vm()?;
 
             self.restore_state(&lua, &current_state)?;
 
-            let result = self.execute_command(&lua, command).await?;
+            let exec_result = self.execute_command(&lua, last_command).await?;
 
-            last_output = result.output;
-            if let Some(count) = result.instruction_count {
-                total_instructions += count;
-            }
+            last_output = exec_result.output;
 
             current_state = self.serialize_state(&lua)?;
 
-            let parent_path = path[..cached_depth + i].to_vec();
-            let mut tree = self
-                .state_tree
-                .lock()
-                .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
-            tree.insert_node(&parent_path, command.clone(), current_state.clone())?;
+            command_stack.push(last_command.to_string());
         }
+
+        let mut guard = self
+            .runner_state
+            .lock()
+            .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
+        guard.command_stack = command_stack;
+        guard.last_state = current_state;
+        guard.penultimate_state = penultimate_state;
+        guard.last_output = last_output.clone();
+        drop(guard);
 
         Ok(ExecutionResult {
             output: last_output,
@@ -103,8 +143,8 @@ impl LuaRunner {
 
     /// Executes a single command in the given Lua VM.
     async fn execute_command(&self, lua: &Lua, command: &str) -> Result<ExecutionResult> {
-        let mut stdout = String::new();
-        let mut stderr = String::new();
+        let stdout = String::new();
+        let stderr = String::new();
 
         if self.config.capture_stdout {
             lua.globals()
@@ -136,28 +176,21 @@ impl LuaRunner {
     /// Creates a new Lua VM with the configured settings.
     fn create_lua_vm(&self) -> Result<Lua> {
         let lua = Lua::new();
-        let std_libs = match self.config.enable_std_lib {
-            true => StdLib::ALL_SAFE,
-            false => {
-                let mut libs = StdLib::NONE;
-                if self.config.enable_math_lib {
-                    libs |= StdLib::MATH;
-                }
-                if self.config.enable_string_lib {
-                    libs |= StdLib::STRING;
-                }
-                if self.config.enable_table_lib {
-                    libs |= StdLib::TABLE;
-                }
-                if self.config.enable_utf8_lib {
-                    libs |= StdLib::UTF8;
-                }
-                libs
-            }
+        let std_libs = match (self.config.enable_std_lib, self.config.sandboxed) {
+            (true, true) => StdLib::ALL_SAFE,
+            (true, false) => StdLib::ALL,
+            _ => StdLib::NONE,
         };
+
+        lua.sandbox(self.config.sandboxed)
+            .map_err(|e| LuaRunnerError::InitializationError(e.to_string()))?;
 
         lua.load_std_libs(std_libs)
             .map_err(|e| LuaRunnerError::InitializationError(e.to_string()))?;
+
+        if let Some(registrar) = &self.registrar {
+            registrar(&lua)?;
+        }
 
         Ok(lua)
     }
@@ -286,23 +319,26 @@ impl LuaRunner {
         }
     }
 
-    /// Clears all cached states except the root.
+    /// Clears all cached states.
     pub fn clear_cache(&self) -> Result<()> {
-        let mut tree = self
-            .state_tree
+        let mut state = self
+            .runner_state
             .lock()
             .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
-        tree.clear();
+        state.command_stack.clear();
+        state.last_state = "{}".to_string();
+        state.last_output = String::new();
+        state.penultimate_state = None;
         Ok(())
     }
 
-    /// Gets the current number of cached nodes.
+    /// Gets the current length of the command stack (number of cached commands).
     pub fn cache_size(&self) -> Result<usize> {
-        let tree = self
-            .state_tree
+        let state = self
+            .runner_state
             .lock()
             .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
-        Ok(tree.node_count())
+        Ok(state.command_stack.len())
     }
 }
 
@@ -313,9 +349,9 @@ mod tests {
     #[tokio::test]
     async fn test_simple_execution() {
         let config = LuaRunnerConfig::default();
-        let runner = LuaRunner::new(config);
+        let runner = LuaRunner::new(config, None);
 
-        let path = vec!["return 2 + 2".to_string()];
+        let path = vec!["return 2 + 2"];
         let result = runner.execute(&path).await.unwrap();
 
         assert_eq!(result.output, "4");
@@ -325,12 +361,12 @@ mod tests {
     #[tokio::test]
     async fn test_variable_assignment() {
         let config = LuaRunnerConfig::default();
-        let runner = LuaRunner::new(config);
+        let runner = LuaRunner::new(config, None);
 
-        let path1 = vec!["x = 10".to_string()];
+        let path1 = vec!["x = 10"];
         runner.execute(&path1).await.unwrap();
 
-        let path2 = vec!["x = 10".to_string(), "return x + 5".to_string()];
+        let path2 = vec!["x = 10", "return x + 5"];
         let result = runner.execute(&path2).await.unwrap();
 
         assert_eq!(result.output, "15");
@@ -339,9 +375,9 @@ mod tests {
     #[tokio::test]
     async fn test_caching() {
         let config = LuaRunnerConfig::default();
-        let runner = LuaRunner::new(config);
+        let runner = LuaRunner::new(config, None);
 
-        let path = vec!["x = 10".to_string()];
+        let path = vec!["x = 10"];
         runner.execute(&path).await.unwrap();
 
         let result = runner.execute(&path).await.unwrap();
@@ -349,35 +385,52 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_exact_match_caching() {
+        let config = LuaRunnerConfig::default();
+        let runner = LuaRunner::new(config, None);
+
+        let path = vec!["x = 10", "x * 2"];
+        let result1 = runner.execute(&path).await.unwrap();
+        assert!(!result1.from_cache);
+        assert_eq!(result1.output, "20");
+
+        let result2 = runner.execute(&path).await.unwrap();
+        assert!(result2.from_cache);
+        assert_eq!(result2.output, "20");
+
+        assert_eq!(runner.cache_size().unwrap(), 2);
+    }
+
+    #[tokio::test]
     async fn test_branching_execution() {
         let config = LuaRunnerConfig::default();
-        let runner = LuaRunner::new(config);
+        let runner = LuaRunner::new(config, None);
 
-        let path1 = vec!["x = 10".to_string(), "y = 20".to_string()];
+        let path1 = vec!["x = 10", "y = 20"];
         runner.execute(&path1).await.unwrap();
 
-        let path2 = vec!["x = 10".to_string(), "z = 30".to_string()];
+        let path2 = vec!["x = 10", "z = 30"];
         runner.execute(&path2).await.unwrap();
 
-        assert_eq!(runner.cache_size().unwrap(), 4);
+        assert_eq!(runner.cache_size().unwrap(), 2);
     }
 
     #[tokio::test]
     async fn test_clear_cache() {
         let config = LuaRunnerConfig::default();
-        let runner = LuaRunner::new(config);
+        let runner = LuaRunner::new(config, None);
 
-        let path = vec!["x = 10".to_string()];
+        let path = vec!["x = 10"];
         runner.execute(&path).await.unwrap();
 
         runner.clear_cache().unwrap();
-        assert_eq!(runner.cache_size().unwrap(), 1);
+        assert_eq!(runner.cache_size().unwrap(), 0);
     }
 
     #[tokio::test]
     async fn test_empty_path_error() {
         let config = LuaRunnerConfig::default();
-        let runner = LuaRunner::new(config);
+        let runner = LuaRunner::new(config, None);
 
         let path = vec![];
         let result = runner.execute(&path).await;
@@ -388,9 +441,9 @@ mod tests {
     #[tokio::test]
     async fn test_sandbox_restrictions() {
         let config = LuaRunnerConfig::sandboxed();
-        let runner = LuaRunner::new(config);
+        let runner = LuaRunner::new(config, None);
 
-        let path = vec!["return io".to_string()];
+        let path = vec!["return io"];
         let result = runner.execute(&path).await.unwrap();
 
         assert_eq!(result.output, "nil");
