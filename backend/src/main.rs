@@ -106,6 +106,12 @@ async fn main() {
         .await
         .expect("Cannot migrate database");
 
+    // Some side note about memory:
+    // llumen is design to run on 1GB memory
+    // 1. sqlite page cache: 128MB
+    // 2. backend thread: 4MB * 4 = 16MB
+    // 3. heap memory: 256MB
+    // 4. lua runtime: 64MB * 8 = 512MB
     conn.execute(sea_orm::Statement::from_string(
         conn.get_database_backend(),
         "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;".to_owned(),

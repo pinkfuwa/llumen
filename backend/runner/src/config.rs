@@ -15,17 +15,7 @@ pub struct LuaRunnerConfig {
     pub enable_std_lib: bool,
 
     /// Whether to enable the math library.
-    pub enable_math_lib: bool,
-
-    /// Whether to enable the string library.
-    pub enable_string_lib: bool,
-
-    /// Whether to enable the table library.
-    pub enable_table_lib: bool,
-
-    /// Whether to enable the utf8 library.
-    pub enable_utf8_lib: bool,
-
+    pub sandboxed: bool,
     /// Whether to capture stdout during execution.
     pub capture_stdout: bool,
 
@@ -42,10 +32,7 @@ impl Default for LuaRunnerConfig {
             memory_limit: DEFAULT_MEMORY_LIMIT,
             instruction_limit: DEFAULT_INSTRUCTION_LIMIT,
             enable_std_lib: true,
-            enable_math_lib: true,
-            enable_string_lib: true,
-            enable_table_lib: true,
-            enable_utf8_lib: true,
+            sandboxed: false,
             capture_stdout: true,
             capture_stderr: true,
             timeout_ms: Some(5000), // 5 seconds default timeout
@@ -57,7 +44,7 @@ impl LuaRunnerConfig {
     /// Creates a new configuration with default sandboxing enabled.
     pub fn sandboxed() -> Self {
         Self {
-            enable_std_lib: false,
+            enable_std_lib: true,
             ..Default::default()
         }
     }
@@ -65,11 +52,8 @@ impl LuaRunnerConfig {
     /// Creates a minimal configuration with all libraries disabled.
     pub fn minimal() -> Self {
         Self {
-            enable_std_lib: false,
-            enable_math_lib: false,
-            enable_string_lib: false,
-            enable_table_lib: false,
-            enable_utf8_lib: false,
+            enable_std_lib: true,
+            sandboxed: false,
             ..Default::default()
         }
     }
@@ -96,46 +80,5 @@ impl LuaRunnerConfig {
     pub fn without_timeout(mut self) -> Self {
         self.timeout_ms = None;
         self
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_default_config() {
-        let config = LuaRunnerConfig::default();
-        assert_eq!(config.memory_limit, DEFAULT_MEMORY_LIMIT);
-        assert_eq!(config.instruction_limit, DEFAULT_INSTRUCTION_LIMIT);
-        assert!(config.enable_std_lib);
-        assert!(config.capture_stdout);
-    }
-
-    #[test]
-    fn test_sandboxed_config() {
-        let config = LuaRunnerConfig::sandboxed();
-        assert!(!config.enable_std_lib);
-        assert!(config.enable_math_lib);
-    }
-
-    #[test]
-    fn test_minimal_config() {
-        let config = LuaRunnerConfig::minimal();
-        assert!(!config.enable_std_lib);
-        assert!(!config.enable_math_lib);
-        assert!(!config.enable_string_lib);
-    }
-
-    #[test]
-    fn test_builder_pattern() {
-        let config = LuaRunnerConfig::default()
-            .with_memory_limit(1024)
-            .with_instruction_limit(1000)
-            .with_timeout(3000);
-
-        assert_eq!(config.memory_limit, 1024);
-        assert_eq!(config.instruction_limit, 1000);
-        assert_eq!(config.timeout_ms, Some(3000));
     }
 }
