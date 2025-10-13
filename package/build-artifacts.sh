@@ -18,7 +18,7 @@ echo "--- Building backend ---"
 
 echo "--- Building frontend ---"
 (cd frontend && NOMAP=T pnpm build)
-find build/ -type f -name "*.gz" -delete
+find frontend/build -type f -name "*.gz" -delete
 
 echo "--- Assembling artifacts in $TMP_DIR ---"
 
