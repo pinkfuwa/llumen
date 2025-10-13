@@ -47,9 +47,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/pinkfuwa/llumen
-          tags: type=raw,value=latest
+          tags: type=raw,value=nightly
 
-      - name: Build and push latest image
+      - name: Build and push nightly image
         if: steps.git_log.outputs.changed == 'true'
         uses: docker/build-push-action@v5
         with:
