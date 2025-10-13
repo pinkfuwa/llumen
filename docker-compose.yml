@@ -1,0 +1,13 @@
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: on-failure:3
+    environment:
+      - "API_KEY=sk-or-<YOUR_API_KEY>"
+    volumes:
+      - "./data:/data"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    memswap_limit: 1G
