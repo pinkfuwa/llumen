@@ -270,6 +270,7 @@ dependencies = [
  "futures-util",
  "http",
  "log",
+ "log_err",
  "migration",
  "minijinja",
  "pasetors",
@@ -1559,6 +1560,15 @@ name = "log"
 version = "0.4.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
+
+[[package]]
+name = "log_err"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2829e80508da18227e53a791bbe19018306f3f400bba439bc9959e9faa860f7"
+dependencies = [
+ "log",
+]
 
 [[package]]
 name = "lua-src"

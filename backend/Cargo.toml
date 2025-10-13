@@ -37,6 +37,7 @@ redb = "3.1.0"
 regex = "1.11.2"
 flexi_logger = "0.31.4"
 bytes = "1.10.1"
+log_err = "1.1.1"
 
 [dependencies.axum]
  version = "0.8.4"
