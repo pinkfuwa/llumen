@@ -6,6 +6,8 @@ services:
       - "API_KEY=sk-or-<YOUR_API_KEY>"
     volumes:
       - "./data:/data"
+    ports:
+      - "3000:80"
     deploy:
       resources:
         limits:
