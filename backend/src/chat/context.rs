@@ -325,9 +325,9 @@ impl CompletionContext {
             .copied()
             .unwrap_or(0.0);
 
-        // if let Err(err) = self.generate_title().await {
-        //     log::error!("failed to generate title: {}", err);
-        // }
+        if let Err(err) = self.generate_title().await {
+            log::error!("failed to generate title: {}", err);
+        }
 
         log::trace!("publish complete token");
         self.publisher.publish_force(Token::Complete {
