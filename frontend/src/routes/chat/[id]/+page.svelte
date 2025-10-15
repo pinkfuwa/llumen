@@ -8,6 +8,7 @@
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { haltCompletion, useRoom, useRoomStreamingState } from '$lib/api/chatroom.js';
 	import { UploadManager } from '$lib/api/files.js';
+	import Scroll from '$lib/ui/Scroll.svelte';
 
 	let id = $derived(Number(params.id));
 
@@ -39,7 +40,7 @@
 
 <Copyright top />
 
-<main class="nobar flex h-full flex-col-reverse overflow-y-auto">
+<Scroll class="nobar flex h-full flex-col-reverse">
 	<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
 		<MessageInput
 			bind:content
@@ -69,4 +70,4 @@
 		<MessagePagination {id} room={$room} />
 	{/key}
 	<div class="min-h-16"></div>
-</main>
+</Scroll>
