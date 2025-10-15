@@ -255,7 +255,12 @@ impl CompletionContext {
         static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\'', '*'];
 
         let title = completion.response;
-        let title = title.trim_matches(TRIMS);
+
+        let title = title
+            .trim_matches(TRIMS)
+            .chars()
+            .take(60)
+            .collect::<String>();
 
         self.chat.title = ActiveValue::set(Some(title.to_string()));
 
