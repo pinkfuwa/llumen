@@ -84,6 +84,7 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
     fn get_subscriber(&self, id: i32) -> Subscriber<S> {
         let inner = self.get_inner(id);
         let receiver = inner.receiver.clone();
+        inner.flag.store(false, atomic::Ordering::Release);
         Subscriber {
             cursor: Cursor::default(),
             inner,
@@ -110,6 +111,9 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         });
 
         ReceiverStream::new(rx)
+    }
+    pub fn publishable(&self, id: i32) -> bool {
+        self.get_inner(id).sender.lock().unwrap().is_some()
     }
     pub fn publish(self: Arc<Self>, id: i32) -> Option<Publisher<S>> {
         self.remove_weak();

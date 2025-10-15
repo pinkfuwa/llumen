@@ -60,7 +60,7 @@ export interface ChatPaginateReqRange {
 
 export interface ChatPaginateRespList {
 	id: number;
-	model_id: number;
+	model_id?: number;
 	title?: string;
 }
 
@@ -324,14 +324,9 @@ export interface SseRespToolResult {
 	content: string;
 }
 
-export enum LastKind {
-	User = 'User',
-	Assistant = 'Assistant'
-}
-
 export interface SseRespVersion {
 	version: number;
-	last_kind: LastKind;
+	streaming: boolean;
 }
 
 export interface UserCreateReq {

@@ -10,7 +10,7 @@
 	import ToolBox from './buttons/ToolBox.svelte';
 	import Tool from './buttons/Tool.svelte';
 	import type { PartialMessagePaginateRespChunk } from '$lib/api/patch';
-	import { LastKind, MessagePaginateRespRole, type MessagePaginateRespList } from '$lib/api/types';
+	import { MessagePaginateRespRole, type MessagePaginateRespList } from '$lib/api/types';
 	import { SetInfiniteQueryData } from '$lib/api/state';
 	import { useRoomStreamingState } from '$lib/api/chatroom';
 	import { heatMarkdownCache } from '../markdown';
@@ -146,7 +146,7 @@
 	});
 
 	addSSEHandler('version', (data) => {
-		isStreaming.set(data.last_kind == LastKind.User);
+		isStreaming.set(data.streaming);
 		// TODO: revalidate on version change
 	});
 
