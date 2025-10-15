@@ -63,7 +63,8 @@ const commonLanguages = [
 	'wasm',
 	'wgsl',
 	'xml',
-	'yaml'
+	'yaml',
+	'asm'
 ];
 
 let { code } = await codegen({
