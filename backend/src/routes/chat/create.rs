@@ -28,7 +28,7 @@ pub async fn route(
 ) -> JsonResult<ChatCreateResp> {
     let chat_id = Chat::insert(chat::ActiveModel {
         owner_id: Set(user_id),
-        model_id: Set(req.model_id),
+        model_id: Set(Some(req.model_id)),
         title: Set(None),
         mode: Set(req.mode.into()),
         ..Default::default()

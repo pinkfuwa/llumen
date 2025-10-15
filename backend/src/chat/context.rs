@@ -62,6 +62,9 @@ impl Context {
     pub fn subscribe(self: Arc<Self>, chat_id: i32) -> impl Stream<Item = Token> + 'static {
         self.channel.clone().subscribe(chat_id)
     }
+    pub fn is_streaming(&self, chat_id: i32) -> bool {
+        !self.channel.publishable(chat_id)
+    }
 }
 
 /// Creates a new error chunk with the given message.
@@ -317,9 +320,9 @@ impl CompletionContext {
             .copied()
             .unwrap_or(0.0);
 
-        if let Err(err) = self.generate_title().await {
-            log::error!("failed to generate title: {}", err);
-        }
+        // if let Err(err) = self.generate_title().await {
+        //     log::error!("failed to generate title: {}", err);
+        // }
 
         log::trace!("publish complete token");
         self.publisher.publish_force(Token::Complete {

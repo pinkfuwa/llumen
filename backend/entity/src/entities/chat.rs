@@ -8,7 +8,8 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub owner_id: i32,
-    pub model_id: i32,
+    #[sea_orm(nullable)]
+    pub model_id: Option<i32>,
     pub mode: crate::ModeKind,
     #[sea_orm(nullable)]
     pub title: Option<String>,
@@ -23,7 +24,7 @@ pub enum Relation {
         from = "Column::ModelId",
         to = "super::model::Column::Id",
         on_update = "Cascade",
-        on_delete = "Cascade"
+        on_delete = "SetNull"
     )]
     Model,
     #[sea_orm(

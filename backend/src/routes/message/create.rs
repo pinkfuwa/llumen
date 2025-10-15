@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::{ChunkKind, MessageKind, chunk, patch::FileHandle};
+use log_err::LogErrResult;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -79,12 +80,13 @@ pub async fn route(
 
     txn.commit().await.raw_kind(ErrorKind::Internal)?;
 
-    let closure = async move {
-        let mut completion_ctx = app
-            .processor
-            .get_completion_context(user_id, req.chat_id, req.model_id)
-            .await?;
+    let mut completion_ctx = app
+        .processor
+        .get_completion_context(user_id, req.chat_id, req.model_id)
+        .await
+        .kind(ErrorKind::ResourceNotFound)?;
 
+    let closure = async move {
         completion_ctx.set_mode(req.mode.into());
 
         match req.mode {
@@ -94,6 +96,7 @@ pub async fn route(
 
         Ok::<(), anyhow::Error>(())
     };
+
     tokio::spawn(async move {
         if let Err(e) = closure.await {
             log::error!("Failed to process message: {:?}", e);

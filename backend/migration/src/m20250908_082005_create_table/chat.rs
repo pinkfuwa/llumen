@@ -24,14 +24,14 @@ impl MigrationTrait for Migration {
                             .on_update(ForeignKeyAction::Cascade)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
-                    .col(integer(Chat::ModelId))
+                    .col(integer_null(Chat::ModelId))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-chat-model_id-model")
                             .from(Chat::Table, Chat::ModelId)
                             .to(Model::Table, Model::Id)
                             .on_update(ForeignKeyAction::Cascade)
-                            .on_delete(ForeignKeyAction::Cascade),
+                            .on_delete(ForeignKeyAction::SetNull),
                     )
                     .col(string_null(Chat::Title))
                     .to_owned(),

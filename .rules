@@ -54,6 +54,10 @@ export function useRoom(id: number): QueryResult<ChatReadResp> {
 }
 ```
 
+## Database government
+
+We use sea-orm without entity-codegen. When modifying migration files, ensure they are compatible with the current database schema. don't generate entity-codegen.
+
 ## backend tech stack
 * Rust
 * Axum
