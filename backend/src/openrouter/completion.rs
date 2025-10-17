@@ -39,7 +39,7 @@ impl Openrouter {
         let api_key = api_key.as_ref().to_string();
 
         let chat_completion_endpoint =
-            format!("{}/api/v1/chat/completions", api_base.trim_end_matches('/'));
+            format!("{}/v1/chat/completions", api_base.trim_end_matches('/'));
         let mut default_req = raw::CompletionReq::default();
 
         log::info!(

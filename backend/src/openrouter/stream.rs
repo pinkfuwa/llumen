@@ -130,7 +130,17 @@ impl StreamCompletion {
             });
         }
 
-        let resp = serde_json::from_str::<raw::CompletionResp>(data).context("Parse error")?;
+        let resp = match serde_json::from_str::<raw::CompletionResp>(data) {
+            Ok(x) => x,
+            Err(err) => {
+                log::warn!("Parse error during sse, skipping once: {}", err);
+                log::debug!(
+                    "sse parsing data: {}",
+                    data.chars().take(30).collect::<String>()
+                );
+                return Ok(StreamCompletionResp::ResponseToken("".to_string()));
+            }
+        };
 
         let choice = resp
             .choices
