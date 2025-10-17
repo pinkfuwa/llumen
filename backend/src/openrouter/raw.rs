@@ -257,8 +257,8 @@ pub struct ToolCallReq {
 #[derive(Debug, Clone, Deserialize)]
 pub struct CompletionResp {
     pub id: String,
-    pub model: String,
     pub choices: Vec<Choice>,
+    pub error: Option<ErrorInfo>,
 }
 
 /// openrouter specific response with usage and cost info

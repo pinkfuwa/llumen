@@ -68,8 +68,9 @@ impl Context {
 }
 
 /// Creates a new error chunk with the given message.
-fn error_chunk(msg: String) -> chunk::ActiveModel {
+fn error_chunk(msg: String, message_id: i32) -> chunk::ActiveModel {
     chunk::ActiveModel {
+        message_id: ActiveValue::Set(message_id),
         content: ActiveValue::Set(msg),
         kind: ActiveValue::Set(ChunkKind::Error),
         ..Default::default()
@@ -270,23 +271,35 @@ impl CompletionContext {
         Ok(())
     }
 
+    pub fn add_error_chunk(&mut self, msg: String) {
+        self.new_chunks
+            .push(error_chunk(msg.clone(), self.message.id.clone().unwrap()));
+        self.add_token_force(Token::Error(msg));
+    }
+
     /// Saves the completion to the database.
     pub async fn save<E>(mut self, err: Option<E>) -> Result<(), anyhow::Error>
     where
         E: ToString,
     {
+        let message_id = self.message.id.clone().unwrap();
+
         if let Some(err) = err {
             let err = err.to_string();
-            self.new_chunks.push(error_chunk(err.clone()));
-            self.add_token_force(Token::Error(err));
+            self.add_error_chunk(err);
         }
 
-        let db = &self.ctx.db;
-        let message_id = self.message.id.clone().unwrap();
+        if let Err(err) = self.generate_title().await {
+            self.add_error_chunk(err.to_string());
+        }
+
+        if self.new_chunks.is_empty() {
+            self.add_error_chunk("No content generated, it's likely a bug of llumen.\nReport Here: https://github.com/pinkfuwa/llumen/issues/new".to_string());
+        }
 
         let new_chunks = std::mem::take(&mut self.new_chunks);
 
-        let mut new_chunks = new_chunks
+        let new_chunks = new_chunks
             .into_iter()
             .map(|mut c| {
                 c.message_id = ActiveValue::Set(message_id);
@@ -294,12 +307,7 @@ impl CompletionContext {
             })
             .collect::<Vec<_>>();
 
-        if new_chunks.is_empty() {
-            log::warn!("No content generated, it's likely a bug of llumen.");
-            new_chunks.push(error_chunk(
-                "No content generated, it's likely a bug of llumen.\nReport Here: https://github.com/pinkfuwa/llumen/issues/new".to_string(),
-            ));
-        }
+        let db = &self.ctx.db;
 
         let chunks_affected = new_chunks.len();
 
@@ -324,10 +332,6 @@ impl CompletionContext {
             .try_as_ref()
             .copied()
             .unwrap_or(0.0);
-
-        if let Err(err) = self.generate_title().await {
-            log::error!("failed to generate title: {}", err);
-        }
 
         log::trace!("publish complete token");
         self.publisher.publish_force(Token::Complete {

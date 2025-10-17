@@ -1,7 +1,6 @@
-use anyhow::{Context, Result};
-
-use super::raw;
-use super::stream::StreamCompletion;
+use crate::openrouter::error::Error;
+use crate::openrouter::raw;
+use crate::openrouter::stream::StreamCompletion;
 
 static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
@@ -22,7 +21,7 @@ impl Model {
         if self.online {
             id.push_str(":online");
         }
-        return id;
+        id
     }
 }
 
@@ -60,12 +59,13 @@ impl Openrouter {
             http_client: reqwest::Client::new(),
         }
     }
+
     pub fn stream(
         &self,
         mut messages: Vec<Message>,
         model: &Model,
         tools: Vec<Tool>,
-    ) -> impl std::future::Future<Output = Result<StreamCompletion>> {
+    ) -> impl std::future::Future<Output = Result<StreamCompletion, Error>> {
         log::debug!("start streaming with model {}", &model.id);
 
         let tools = match tools.is_empty() {
@@ -98,11 +98,12 @@ impl Openrouter {
             req,
         )
     }
+
     pub async fn complete(
         &self,
         mut messages: Vec<Message>,
         model: Model,
-    ) -> Result<ChatCompletion> {
+    ) -> Result<ChatCompletion, Error> {
         log::debug!("start completion with model {}", &model.id);
 
         if model.online {
@@ -136,28 +137,26 @@ impl Openrouter {
             .json(&req)
             .send()
             .await
-            .map_err(|err| {
-                log::warn!("openrouter finish with error: {}", &err);
-                err
-            })
-            .context("Failed to build request")?;
+            .map_err(Error::Http)?;
 
         let json = res
             .json::<raw::CompletionResponse>()
             .await
-            .context("Failed to parse response")?;
+            .map_err(Error::Http)?;
 
         if let Some(error) = json.error {
             log::warn!("openrouter finish with api error: {}", &error.message);
-            return Err(anyhow::anyhow!("Openrouter API error: {}", error.message));
+            return Err(Error::from(error));
         }
 
-        let choice = json
-            .choices
-            .unwrap_or(Vec::new())
-            .into_iter()
-            .next()
-            .context("Malformed response")?;
+        let choice =
+            json.choices
+                .unwrap_or_default()
+                .into_iter()
+                .next()
+                .ok_or(Error::MalformedResponse(
+                    "No choices in completion response",
+                ))?;
 
         let text = choice.message.content;
 
@@ -238,11 +237,10 @@ impl From<Message> for raw::Message {
             Message::MultipartUser { text, files } => {
                 let files = files
                     .into_iter()
-                    .map(|f| {
+                    .flat_map(|f| {
                         let (first, second) = raw::MessagePart::unknown(&f.name, f.data);
                         vec![first, second]
                     })
-                    .flatten()
                     .collect::<Vec<_>>();
 
                 raw::Message {

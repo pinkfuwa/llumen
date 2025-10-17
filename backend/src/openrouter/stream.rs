@@ -1,12 +1,11 @@
 use std::{pin::Pin, task};
 
-use anyhow::{Context, Result, anyhow};
 use futures_util::FutureExt;
 use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
 use tokio_stream::{Stream, StreamExt};
 
-use super::{HTTP_REFERER, X_TITLE, raw};
+use super::{HTTP_REFERER, X_TITLE, error::Error, raw};
 
 #[derive(Default, Clone)]
 pub struct ToolCall {
@@ -44,7 +43,7 @@ impl StreamCompletion {
         api_key: &str,
         endpoint: &str,
         req: raw::CompletionReq,
-    ) -> Result<StreamCompletion> {
+    ) -> Result<StreamCompletion, Error> {
         let builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
@@ -63,7 +62,7 @@ impl StreamCompletion {
             }),
             Err(e) => {
                 log::error!("Failed to create event source: {}", e);
-                Err(anyhow!("Failed to create event source: {}", e))
+                Err(Error::CannotCloneRequest(e))
             }
         }
     }
@@ -115,10 +114,10 @@ impl StreamCompletion {
                 },
             };
         }
-        return StreamCompletionResp::ResponseToken(content);
+        StreamCompletionResp::ResponseToken(content)
     }
 
-    fn handle_data(&mut self, data: &str) -> Result<StreamCompletionResp> {
+    fn handle_data(&mut self, data: &str) -> Result<StreamCompletionResp, Error> {
         // this approach made it compatible with both openrouter and openai
         if let Ok(resp) = serde_json::from_str::<raw::CompletionInfoResp>(data) {
             self.usage.cost += resp.usage.cost;
@@ -130,61 +129,59 @@ impl StreamCompletion {
             });
         }
 
-        let resp = match serde_json::from_str::<raw::CompletionResp>(data) {
-            Ok(x) => x,
-            Err(err) => {
-                log::warn!("Parse error during sse, skipping once: {}", err);
-                log::debug!(
-                    "sse parsing data: {}",
-                    data.chars().take(30).collect::<String>()
-                );
-                return Ok(StreamCompletionResp::ResponseToken("".to_string()));
-            }
-        };
+        let resp = serde_json::from_str::<raw::CompletionResp>(data)?;
+
+        if let Some(error) = resp.error {
+            return Err(error.into());
+        }
 
         let choice = resp
             .choices
             .into_iter()
             .next()
-            .ok_or(anyhow!("No returned choices in completion"))?;
+            .ok_or(Error::Incompatible("No returned choices in completion"))?;
 
         let resp = self.handle_choice(choice);
         self.responses.push(resp.clone());
         Ok(resp)
     }
 
-    async fn handle_error(&self, err: reqwest_eventsource::Error) -> anyhow::Error {
-        if let reqwest_eventsource::Error::InvalidStatusCode(code, res) = err {
-            return match res
-                .json::<raw::ErrorResp>()
-                .await
-                .context("Stream Error, cannot capture error message")
-            {
-                Ok(error) => {
-                    anyhow!(
+    async fn handle_error(&self, err: reqwest_eventsource::Error) -> Error {
+        use reqwest_eventsource::Error as EventErr;
+        if let EventErr::InvalidStatusCode(code, res) = err {
+            match res.json::<raw::ErrorResp>().await {
+                Ok(error) => Error::Api {
+                    message: format!(
                         "Openrouter return status code {}, message: {}",
-                        code,
-                        error.error.message
-                    )
-                }
-                Err(x) => anyhow!(
-                    "Openrouter return status code {}, cannot parse error message: {}",
-                    code,
-                    x
-                ),
-            };
+                        code, error.error.message
+                    ),
+                    code: Some(code.as_u16() as i32),
+                },
+                Err(e) => Error::Api {
+                    message: format!(
+                        "Openrouter return status code {}, cannot parse error message: {}",
+                        code, e
+                    ),
+                    code: Some(code.as_u16() as i32),
+                },
+            }
         } else {
-            log::error!("Stream error: {}", err);
-
-            return err.into();
+            Error::EventSource(err)
         }
     }
 
-    pub async fn next(&mut self) -> Option<Result<StreamCompletionResp>> {
+    pub async fn next(&mut self) -> Option<Result<StreamCompletionResp, Error>> {
         loop {
             match self.source.next().await? {
                 Ok(Event::Message(e)) if &e.data != "[DONE]" => {
-                    return Some(self.handle_data(&e.data));
+                    return match self.handle_data(&e.data) {
+                        Ok(x) => Some(Ok(x)),
+                        Err(Error::Incompatible(msg)) => {
+                            log::warn!("Malbehave upstream: {}", msg);
+                            continue;
+                        }
+                        Err(err) => Some(Err(err)),
+                    };
                 }
                 Err(e) => {
                     return match e {
@@ -225,7 +222,7 @@ impl StreamCompletion {
 //
 // And in openrouter's extension, they send null on special delta(annotation, tool call start, etc)
 impl Stream for StreamCompletion {
-    type Item = Result<StreamCompletionResp>;
+    type Item = Result<StreamCompletionResp, Error>;
 
     fn poll_next(
         mut self: Pin<&mut Self>,
@@ -236,7 +233,7 @@ impl Stream for StreamCompletion {
             let fut = StreamCompletion::next(this);
             let result = Box::pin(fut).poll_unpin(cx);
             if let task::Poll::Ready(Some(Ok(ref t))) = result {
-                if t.is_empty() {
+                if StreamCompletionResp::is_empty(t) {
                     continue;
                 }
             }

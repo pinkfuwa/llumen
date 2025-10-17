@@ -1,4 +1,5 @@
 mod completion;
+mod error;
 #[allow(dead_code)]
 mod raw;
 mod stream;
