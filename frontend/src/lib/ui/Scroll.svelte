@@ -19,6 +19,11 @@
 	const velocityThreshold = 3;
 
 	function onwheel(event: WheelEvent) {
+		if (scrollElement == null || scrollElement.getBoundingClientRect().right - 220 > event.pageX)
+			return;
+		const activeTage = document.activeElement?.tagName;
+		if (activeTage == 'TEXTAREA' || activeTage == 'INPUT') return;
+
 		if (Math.abs(event.deltaY / event.deltaX) < 1) return;
 		event.preventDefault();
 
