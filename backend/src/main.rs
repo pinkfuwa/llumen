@@ -151,6 +151,12 @@ async fn main() {
         blob,
     });
 
+    let mut cache_control = CacheControlLayer::new();
+
+    if let Err(err) = cache_control.try_load_version(&static_dir).await {
+        log::warn!("Fail to load svelte kit's build version. {}", err);
+    }
+
     let var_name = Router::new();
     let app = var_name
         .nest(
@@ -174,7 +180,7 @@ async fn main() {
             // side notes about artifact size:
             // 1. br sized about 1.3Mb, uncompressed sized about 4Mb
             // 2. Rust binary sized about 6Mb
-            ServiceBuilder::new().layer(CacheControlLayer).service(
+            ServiceBuilder::new().layer(cache_control).service(
                 ServeDir::new(static_dir.to_owned())
                     .precompressed_br()
                     .fallback(
