@@ -19,7 +19,7 @@ export function localState<T>(
 	const tokenStore = writable(storedValue);
 
 	tokenStore.subscribe((value) => {
-		if (value) {
+		if (value !== undefined) {
 			localStorage.setItem(key, JSON.stringify(value));
 		} else {
 			localStorage.removeItem(key);
