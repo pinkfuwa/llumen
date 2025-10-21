@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use axum::body::Bytes;
 use axum::extract::{Path, State};
 use axum::response::{IntoResponse, Response};
 use axum::{Extension, Json};
@@ -10,6 +9,8 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use crate::AppState;
 use crate::errors::{AppError, Error, ErrorKind, WithKind};
 use crate::middlewares::auth::UserId;
+
+use bytes::Bytes;
 
 pub async fn route(
     State(app): State<Arc<AppState>>,
@@ -37,5 +38,7 @@ pub async fn route(
         );
     }
 
-    Ok((headers, Bytes::from(blob.to_vec())).into_response())
+    let blob = blob.as_ref().to_vec();
+
+    Ok((headers, Bytes::from(blob)).into_response())
 }
