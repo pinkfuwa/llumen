@@ -7,7 +7,7 @@
 	import { onDestroy } from 'svelte';
 
 	let addition = $derived(params.id != undefined);
-	let open = $state(false);
+	let open = $state(document.body.clientWidth >= 768);
 
 	function uselessFn(i: any) {}
 	$effect(() => {
