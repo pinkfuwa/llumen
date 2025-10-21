@@ -1,66 +1,43 @@
+use std::io::Read;
 use std::path::Path;
 
 use redb::*;
 use tokio_stream::{Stream, StreamExt};
 
-const TABLE: TableDefinition<i32, &[u8]> = TableDefinition::new("blobs");
+use std::sync::Arc;
 
-struct Reader {
-    accessor: AccessGuard<'static, &'static [u8]>,
-    read: usize,
-}
+pub const TABLE: TableDefinition<i32, &[u8]> = TableDefinition::new("blobs");
 
-const MAX_CHUNK_LEN: usize = 512 * 1024;
+pub const MAX_CHUNK_LEN: usize = 512 * 1024;
 
-impl Stream for Reader {
-    type Item = bytes::Bytes;
+pub struct Reader(AccessGuard<'static, &'static [u8]>);
 
-    fn poll_next(
-        self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Option<Self::Item>> {
-        if self.read >= self.accessor.value().len() {
-            std::task::Poll::Ready(None)
-        } else {
-            let chunk_len = std::cmp::min(MAX_CHUNK_LEN, self.accessor.value().len() - self.read);
-            std::task::Poll::Ready(Some(bytes::Bytes::from(
-                self.accessor.value()[self.read..self.read + chunk_len].to_vec(),
-            )))
-        }
+impl AsRef<[u8]> for Reader {
+    fn as_ref(&self) -> &[u8] {
+        self.0.value()
     }
 }
 
 pub struct BlobDB {
-    inner: Database,
+    pub inner: Arc<Database>,
 }
 
 impl BlobDB {
     pub async fn new_from_path(path: impl AsRef<Path>) -> Result<Self, redb::Error> {
-        let db = Database::create(path)?;
+        let db = Arc::new(Database::create(path)?);
         Ok(Self::new(db))
     }
 
-    pub fn new(inner: Database) -> Self {
+    pub fn new(inner: Arc<Database>) -> Self {
         Self { inner }
     }
 
-    pub async fn get(&self, id: i32) -> Option<Vec<u8>> {
+    pub async fn get(&self, id: i32) -> Option<Reader> {
         let txn = self.inner.begin_read().ok()?;
         let table = txn.open_table(TABLE).ok()?;
 
-        let data = table.get(id).ok()??;
-        Some(data.value().to_vec())
-    }
-
-    pub async fn get_reader(&self, id: i32) -> Option<impl Stream<Item = bytes::Bytes>> {
-        let txn = self.inner.begin_read().ok()?;
-        let table = txn.open_table(TABLE).ok()?;
-
-        let data = table.get(id).ok()??;
-        Some(Reader {
-            accessor: data,
-            read: 0,
-        })
+        let guard = table.get(id).ok()??;
+        Some(Reader(guard))
     }
 
     pub async fn insert_with_error<S, E>(
@@ -72,7 +49,7 @@ impl BlobDB {
     where
         S: Stream<Item = Result<bytes::Bytes, E>> + Unpin,
     {
-        let txn = self.inner.begin_write()?;
+        let txn = (&*self.inner).begin_write()?;
 
         {
             let mut table = txn.open_table(TABLE)?;
