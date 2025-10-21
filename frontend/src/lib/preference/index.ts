@@ -69,3 +69,5 @@ export const locale = derived(preference, (x) => x.locale);
 export const isLightTheme = derived(theme, (x) => isLightThemeFn(x as any));
 
 export const titleGrad = derived(theme, (x) => getTitleGrad(x as any));
+
+export const lastModel = localState<number | null>('lastModel', null);

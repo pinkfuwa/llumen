@@ -3,8 +3,9 @@
 	import { useModels } from '$lib/api/model';
 	import Select from '$lib/ui/Select.svelte';
 	import { getSupportedFileTypes } from './fileTypes';
-	import { getContext } from 'svelte';
+	import { getContext, untrack } from 'svelte';
 	import type { Writable } from 'svelte/store';
+	import { lastModel } from '$lib/preference';
 	let { value = $bindable<string | undefined>(), disabled = false } = $props();
 
 	const filetypes = getContext<Writable<string>>('filetypes');
@@ -13,14 +14,20 @@
 
 	$effect(() => {
 		if (!disabled && $data) {
-			// TODO: select last selected model
-			let lastModel = $data.list.at(-1);
-			if (lastModel && value == undefined) {
-				value = `${lastModel.id}`;
-			} else if (value != undefined) {
-				value = `${value}`;
+			let lastModelId = untrack(() => $lastModel);
+
+			if (value == undefined) {
+				const list = $data.list;
+				let model = list.find((x) => x.id == lastModelId) || list.at(-1);
+
+				if (model) value = model.id;
 			}
 		}
+	});
+
+	$effect(() => {
+		let id: number | null = parseInt(value);
+		if (!isNaN(id)) lastModel.set(id);
 	});
 
 	$effect(() => {
