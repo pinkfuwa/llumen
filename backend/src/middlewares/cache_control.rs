@@ -164,7 +164,10 @@ where
         }
 
         if !is_html {
-            headers.insert(CACHE_CONTROL, HeaderValue::from_static("max-age=604800"));
+            headers.insert(
+                CACHE_CONTROL,
+                HeaderValue::from_static("public, max-age=31536000, immutable"),
+            );
         }
 
         Poll::Ready(Ok(response))
