@@ -8,7 +8,9 @@
 </script>
 
 <Button.Root
-	onclick={() => {
+	onclick={(e: MouseEvent) => {
+		console.log(e);
+		e.stopPropagation();
 		if (!checked) checked = true;
 		else ondelete();
 	}}
