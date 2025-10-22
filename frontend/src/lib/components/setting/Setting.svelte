@@ -42,7 +42,7 @@
 						value="account"
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
 					>
-						<CircleUser class="mr-2 inline-block h-5 w-5" />
+						<CircleUser class="inline-block h-5 w-5 md:mr-2" />
 						<span class="hidden md:inline-block">
 							{$_('setting.account_settings')}
 						</span>
@@ -51,7 +51,7 @@
 						value="admin"
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
 					>
-						<ShieldUser class="mr-2 inline-block h-5 w-5" />
+						<ShieldUser class="inline-block h-5 w-5 md:mr-2" />
 						<span class="hidden md:inline-block">
 							{$_('setting.admin_settings')}
 						</span>
@@ -60,7 +60,7 @@
 						value="openrouter"
 						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
 					>
-						<EthernetPort class="mr-2 inline-block h-5 w-5" />
+						<EthernetPort class="inline-block h-5 w-5 md:mr-2" />
 						<span class="hidden md:inline-block"> Openrouter </span>
 					</Tabs.Trigger>
 					<button
@@ -70,7 +70,7 @@
 							clearCache();
 						}}
 					>
-						<LogOut class="mr-2 inline-block h-5 w-5" />
+						<LogOut class="inline-block h-5 w-5 md:mr-2" />
 						<span class="hidden md:inline-block"> {$_('setting.logout')} </span>
 					</button>
 					<a
@@ -78,11 +78,11 @@
 						href="https://github.com/pinkfuwa/llumen"
 						target="_blank"
 					>
-						<Star class="mr-2 inline-block h-5 w-5" />
+						<Star class="inline-block h-5 w-5 md:mr-2" />
 						<span class="hidden md:inline-block"> {$_('setting.github_star')} </span>
 					</a>
 				</Tabs.List>
-				<div class="w-full min-w-0 flex-1 justify-center p-3">
+				<div class="h-full w-full min-w-0 flex-1 justify-center p-3">
 					<Tabs.Content value="account">
 						<Dialog.Title class="pb-6 text-center text-xl">
 							{$_('setting.account_settings')}
@@ -95,7 +95,7 @@
 						</Dialog.Title>
 						<Admin />
 					</Tabs.Content>
-					<Tabs.Content value="openrouter">
+					<Tabs.Content value="openrouter" class="flex h-full flex-col">
 						<Dialog.Title class="pb-6 text-center text-xl">Openrouter</Dialog.Title>
 						<Openrouter bind:id bind:value />
 					</Tabs.Content>

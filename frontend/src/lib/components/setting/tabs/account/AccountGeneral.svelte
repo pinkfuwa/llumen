@@ -5,6 +5,7 @@
 	import { get } from 'svelte/store';
 	import Warning from '$lib/components/setting/Warning.svelte';
 	import type { UserPreference } from '$lib/api/types';
+	import Select from '$lib/ui/Select.svelte';
 
 	let themeData = $state(get(theme));
 	let localeData = $state(get(locale));
@@ -22,43 +23,49 @@
 {/if}
 <div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 	<label for="theme" class="grow">{$_('setting.theme')}: </label>
-	<select
-		id="theme"
-		bind:value={themeData}
-		class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
-		onchange={() => mutatePreference({ theme: themeData })}
+	<Select
+		data={[
+			{ value: 'light', label: 'Llumen' },
+			{ value: 'dark', label: 'Sun set' },
+			{ value: 'blue', label: 'Ocean' }
+		]}
+		fallback="Select Theme"
+		bind:selected={themeData}
 		disabled={$isPending}
-	>
-		<option value="light">Llumen</option>
-		<option value="dark">Sun set</option>
-		<option value="blue">Ocean</option>
-	</select>
+		class="w-36 truncate"
+		popupClass="w-38"
+		onchange={() => mutatePreference({ theme: themeData })}
+	/>
 </div>
 
+<!-- class="grow truncate"
+		popupClass="w-30" -->
 <div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 	<label for="lang" class="grow">{$_('setting.language')}: </label>
-	<select
-		id="lang"
-		bind:value={localeData}
-		class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
-		onchange={() => mutatePreference({ locale: localeData })}
+	<Select
+		data={[
+			{ value: 'en', label: 'English' },
+			{ value: 'zh-tw', label: '繁體中文' }
+		]}
+		bind:selected={localeData}
 		disabled={$isPending}
-	>
-		<option value="en">English</option>
-		<option value="zh-tw">繁體中文</option>
-	</select>
+		class="w-36 truncate"
+		popupClass="w-38"
+		onchange={() => mutatePreference({ locale: localeData })}
+	/>
 </div>
 
 <div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
 	<label for="enter" class="grow">{$_('setting.enter')}: </label>
-	<select
-		id="enter"
-		bind:value={submitOnEnterData}
-		class="mx-1 rounded-md p-1 text-right duration-150 hover:bg-primary hover:text-text-hover"
-		onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}
+	<Select
+		data={[
+			{ value: 'true', label: $_('setting.enable') },
+			{ value: 'false', label: $_('setting.disable') }
+		]}
+		bind:selected={submitOnEnterData}
 		disabled={$isPending}
-	>
-		<option value="true">{$_('setting.enable')}</option>
-		<option value="false">{$_('setting.disable')}</option>
-	</select>
+		class="w-36 truncate"
+		popupClass="w-38"
+		onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}
+	/>
 </div>
