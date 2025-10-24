@@ -3,13 +3,16 @@
 	import { _ } from 'svelte-i18n';
 	import CheckDelete from './CheckDelete.svelte';
 	import Button from '$lib/ui/Button.svelte';
+	import { getContext } from 'svelte';
+	import type { Readable } from 'svelte/store';
+	import type { ModelListResp } from '$lib/api/types';
 
 	let { id = $bindable(), value = $bindable() }: { id?: number; value: string } = $props();
 	const { mutate: deleteModel } = DeleteModel();
-	const { isLoading, data } = useModels();
+	const data = getContext<Readable<ModelListResp | undefined>>('models');
 </script>
 
-{#if $isLoading}
+{#if data == undefined}
 	<div class="mb-4 flex items-center justify-center p-6 text-lg">Loading models...</div>
 {:else if $data != undefined}
 	<div class="grow space-y-2 overflow-y-auto">

@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::{ChunkKind, MessageKind, chunk, patch::FileHandle};
-use log_err::LogErrResult;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use serde_json;

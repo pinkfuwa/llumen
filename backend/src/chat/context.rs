@@ -135,11 +135,15 @@ impl CompletionContext {
         .insert(db)
         .await?;
 
-        let publisher = ctx
+        let mut publisher = ctx
             .channel
             .clone()
             .publish(chat_id)
             .context("only one publisher is allow at same time")?;
+
+        if publisher.publish(Token::Start).is_err() {
+            log::debug!("publisher was halted before completion start");
+        }
 
         Ok(Self {
             model,

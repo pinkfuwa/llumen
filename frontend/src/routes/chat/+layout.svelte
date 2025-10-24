@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { useModels } from '$lib/api/model.js';
+	import { useUser } from '$lib/api/user.js';
 	let { children, params } = $props();
 	import { Sidebar } from '$lib/components';
 	import CollapseBtn from '$lib/components/sidebar/CollapseBtn.svelte';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, setContext } from 'svelte';
 
 	let addition = $derived(params.id != undefined);
 	let open = $state(document.body.clientWidth >= 768);
@@ -28,6 +30,11 @@
 
 	document.body.addEventListener('keydown', onKeydown);
 	onDestroy(() => document.body.removeEventListener('keydown', onKeydown));
+
+	const { data: user } = useUser();
+	const { data: models } = useModels();
+	setContext('user', user);
+	setContext('models', models);
 </script>
 
 <CollapseBtn bind:open />

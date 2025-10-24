@@ -76,9 +76,7 @@ class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 export function useMessage(chat_id: number): InfiniteQueryResult<MessagePaginateRespList> {
 	return CreateInfiniteQuery({
 		key: ['messagePaginate', chat_id.toString()],
-		fetcher: new MessageFetcher(chat_id),
-		staleTime: Infinity,
-		revalidateOnFocus: false
+		fetcher: new MessageFetcher(chat_id)
 	});
 }
 
@@ -124,7 +122,8 @@ let SSEHandlers: {
 	tool_result: [],
 	title: [],
 	error: [],
-	version: []
+	version: [],
+	start: []
 } satisfies {
 	[key in SseResp['t']]: Array<(data: Extract<SseResp, { t: key }>['c']) => void>;
 };
@@ -139,7 +138,8 @@ let SSEQueued: {
 	tool_result: [],
 	title: [],
 	error: [],
-	version: []
+	version: [],
+	start: []
 } satisfies {
 	[key in SseResp['t']]: Array<Extract<SseResp, { t: key }>['c']>;
 };
@@ -158,8 +158,8 @@ export function startSSE(chatId: number) {
 
 			const handlers = SSEHandlers[res.t];
 
-			if (handlers.length === 0) SSEQueued[res.t].push(res.c as any);
-			else handlers.forEach((handler) => handler(res.c as any));
+			if (handlers.length === 0) (SSEQueued[res.t] as any[]).push(res.c as any);
+			else handlers.forEach((handler: any) => handler(res.c as any));
 		},
 		onConnected: () => {
 			if (dev) console.log('SSE Connected');
