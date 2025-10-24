@@ -205,7 +205,7 @@ export interface InfiniteQueryResult<D extends { id: number }> {
 export function CreateInfiniteQuery<D extends { id: number }>(
 	option: InfiniteQueryOption<D>
 ): InfiniteQueryResult<D> {
-	let { key, fetcher, id, staleTime, revalidateOnFocus } = option;
+	let { key, fetcher, id, staleTime, revalidateOnFocus = true } = option;
 
 	const pageStore = globalCache.getOrExecute(
 		key,

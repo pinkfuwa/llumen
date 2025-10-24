@@ -3,11 +3,14 @@
 	import { Trash } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import CheckDelete from './CheckDelete.svelte';
+	import { getContext } from 'svelte';
+	import type { Readable } from 'svelte/store';
+	import type { UserReadResp } from '$lib/api/types';
 
 	const { mutate: deleteUser } = DeleteUser();
 	const { isLoading, data } = useUsers();
 
-	const { isLoading: isUserDataLoading, data: userData } = useUser();
+	const userData = getContext<Readable<UserReadResp | undefined>>('user');
 </script>
 
 {#if $isLoading}
@@ -20,7 +23,7 @@
 					class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
 				>
 					{user.name}
-					{#if !$isUserDataLoading && user.id != $userData?.user_id}
+					{#if $userData != undefined && user.id != $userData?.user_id}
 						<CheckDelete
 							ondelete={() =>
 								deleteUser({

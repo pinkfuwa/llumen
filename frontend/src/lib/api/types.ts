@@ -326,7 +326,6 @@ export interface SseRespToolResult {
 
 export interface SseRespVersion {
 	version: number;
-	streaming: boolean;
 }
 
 export interface UserCreateReq {
@@ -401,4 +400,5 @@ export type SseResp =
 	| { t: 'tool_result'; c: SseRespToolResult }
 	| { t: 'complete'; c: SseRespMessageComplete }
 	| { t: 'title'; c: SseRespTitle }
-	| { t: 'error'; c: SseRespError };
+	| { t: 'error'; c: SseRespError }
+	| { t: 'start'; c?: undefined };

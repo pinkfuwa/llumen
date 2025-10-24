@@ -145,9 +145,11 @@
 		patcher.reset();
 	});
 
-	addSSEHandler('version', (data) => {
-		isStreaming.set(data.streaming);
-		// TODO: revalidate on version change
+	// TODO: revalidate on version change
+	// addSSEHandler('version', (data) => { });
+
+	addSSEHandler('start', () => {
+		isStreaming.set(true);
 	});
 
 	addSSEHandler('connect', () => {

@@ -19,15 +19,12 @@ export interface QueryOption<P, D> {
 }
 
 export function CreateQuery<P, D>(option: QueryOption<P, D>): QueryResult<D> {
-	let { target, key, staleTime, revalidateOnFocus, path, body, method } = option;
+	let { target, key, staleTime = 60000, revalidateOnFocus = true, path, body, method } = option;
 
 	const getPath = () => (path instanceof Function ? path() : path);
 	const getBody = () => (body instanceof Function ? body() : body);
 
 	const fetcher = async () => APIFetch<D>(getPath(), getBody(), method);
-
-	if (staleTime == undefined) staleTime = 30000;
-	if (staleTime == Infinity || staleTime == 0) staleTime = undefined;
 
 	return CreateInternalQuery({
 		target,

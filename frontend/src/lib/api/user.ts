@@ -53,8 +53,7 @@ export function useUser(): QueryResult<UserReadResp> {
 	return CreateQuery<UserReadReq, UserReadResp>({
 		key: ['currentUser'],
 		path: 'user/read',
-		body: {},
-		staleTime: 0
+		body: {}
 	});
 }
 

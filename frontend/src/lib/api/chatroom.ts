@@ -165,7 +165,6 @@ export function useRooms(): InfiniteQueryResult<ChatPaginateRespList> {
 	return CreateInfiniteQuery({
 		key: ['chatPaginate'],
 		fetcher: new ChatFetcher(),
-		staleTime: 1000 * 60,
 		revalidateOnFocus: 'force'
 	});
 }
@@ -184,7 +183,6 @@ export function useRoom(id: number): QueryResult<ChatReadResp> {
 		key: ['chatRead', id.toString()],
 		path: 'chat/read',
 		body: { id },
-		revalidateOnFocus: false,
 		staleTime: Infinity
 	});
 }

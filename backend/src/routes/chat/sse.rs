@@ -35,13 +35,13 @@ pub enum SseResp {
     Complete(SseRespMessageComplete),
     Title(SseRespTitle),
     Error(SseRespError),
+    Start,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct SseRespVersion {
     pub version: i32,
-    pub streaming: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -120,13 +120,10 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?;
 
-    let streaming = app.processor.is_streaming(req.id);
-
     let initial_event = if let Some(last_message) = last_message {
         let event = SseResp::Version(SseRespVersion {
             // FIXME: change version when revalidate is needed
             version: last_message.id,
-            streaming,
         });
         let event = Event::default().json_data(event).unwrap();
         Some(Ok(event))
@@ -153,6 +150,7 @@ pub async fn route(
             Token::ToolResult(content) => SseResp::ToolResult(SseRespToolResult { content }),
             Token::Error(content) => SseResp::Error(SseRespError { content }),
             Token::Title(title) => SseResp::Title(SseRespTitle { title }),
+            Token::Start => SseResp::Start,
             _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())

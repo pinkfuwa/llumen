@@ -4,13 +4,14 @@
 	import Select from '$lib/ui/Select.svelte';
 	import { getSupportedFileTypes } from './fileTypes';
 	import { getContext, untrack } from 'svelte';
-	import type { Writable } from 'svelte/store';
+	import type { Readable, Writable } from 'svelte/store';
 	import { lastModel } from '$lib/preference';
+	import type { ModelListResp } from '$lib/api/types';
 	let { value = $bindable<string | undefined>(), disabled = false } = $props();
 
 	const filetypes = getContext<Writable<string>>('filetypes');
 
-	let { data } = useModels();
+	const data = getContext<Readable<ModelListResp | undefined>>('models');
 
 	$effect(() => {
 		if (!disabled && $data) {
