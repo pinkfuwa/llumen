@@ -139,8 +139,18 @@ class Pages<D extends { id: number }> {
 		const pages = get(this.pages);
 		if (pages.length == 0) return;
 
+		let firstDataId: number | undefined;
+
+		for (const page of pages) {
+			const pageData = get(page.data);
+			firstDataId = pageData.at(0)?.id;
+			if (firstDataId === data.id) return;
+		}
+
+		if (firstDataId === data.id) return;
+
 		pages[0].data.update((x) => {
-			if (data.id != x[0]?.id) x.unshift(data);
+			x.unshift(data);
 			return x;
 		});
 	}
