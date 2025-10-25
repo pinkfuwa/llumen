@@ -62,13 +62,14 @@
 			</renderers.list>
 		{/if}
 	{:else}
-		{@const SvelteComponent_2 = renderers[type]}
-		<svelte:component this={SvelteComponent_2} {...rest} {monochrome}>
+		<!-- we don't care the type -->
+		{@const Render = renderers[type] as any}
+		<Render {...rest} {monochrome}>
 			{#if tokens}
 				<Parser {tokens} {renderers} {monochrome} />
 			{:else}
 				{rest.raw}
 			{/if}
-		</svelte:component>
+		</Render>
 	{/if}
 {/if}

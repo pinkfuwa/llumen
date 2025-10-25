@@ -37,50 +37,59 @@
 			</Dialog.Close>
 
 			<Tabs.Root bind:value class="flex w-full flex-row">
-				<Tabs.List class="flex flex-col space-y-2 border-r-2 border-outline pr-2 text-xl md:w-70">
-					<Tabs.Trigger
-						value="account"
-						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
-					>
-						<CircleUser class="inline-block h-5 w-5 md:mr-2" />
-						<span class="hidden md:inline-block">
-							{$_('setting.account_settings')}
-						</span>
-					</Tabs.Trigger>
-					<Tabs.Trigger
-						value="admin"
-						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
-					>
-						<ShieldUser class="inline-block h-5 w-5 md:mr-2" />
-						<span class="hidden md:inline-block">
-							{$_('setting.admin_settings')}
-						</span>
-					</Tabs.Trigger>
-					<Tabs.Trigger
-						value="openrouter"
-						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover data-[state=active]:bg-primary data-[state=active]:text-text-hover"
-					>
-						<EthernetPort class="inline-block h-5 w-5 md:mr-2" />
-						<span class="hidden md:inline-block"> Openrouter </span>
-					</Tabs.Trigger>
-					<button
-						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
-						onclick={() => {
-							token.set(undefined);
-							clearCache();
-						}}
-					>
-						<LogOut class="inline-block h-5 w-5 md:mr-2" />
-						<span class="hidden md:inline-block"> {$_('setting.logout')} </span>
-					</button>
-					<a
-						class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
-						href="https://github.com/pinkfuwa/llumen"
-						target="_blank"
-					>
-						<Star class="inline-block h-5 w-5 md:mr-2" />
-						<span class="hidden md:inline-block"> {$_('setting.github_star')} </span>
-					</a>
+				<Tabs.List
+					class="flex flex-col justify-between border-r-2 border-outline pr-2 text-xl md:w-70"
+				>
+					<div class="flex flex-col space-y-2">
+						<Tabs.Trigger
+							value="account"
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover
+						data-[state=active]:bg-primary data-[state=active]:text-text-hover"
+						>
+							<CircleUser class="inline-block h-5 w-5 md:mr-2" />
+							<span class="hidden md:inline-block">
+								{$_('setting.account_settings')}
+							</span>
+						</Tabs.Trigger>
+						<Tabs.Trigger
+							value="admin"
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover
+					data-[state=active]:bg-primary 	data-[state=active]:text-text-hover"
+						>
+							<ShieldUser class="inline-block h-5 w-5 md:mr-2" />
+							<span class="hidden md:inline-block">
+								{$_('setting.admin_settings')}
+							</span>
+						</Tabs.Trigger>
+						<Tabs.Trigger
+							value="openrouter"
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover
+						data-[state=active]:bg-primary data-[state=active]:text-text-hover"
+						>
+							<EthernetPort class="inline-block h-5 w-5 md:mr-2" />
+							<span class="hidden md:inline-block"> Openrouter </span>
+						</Tabs.Trigger>
+					</div>
+					<div class="flex flex-col space-y-2">
+						<a
+							class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
+							href="https://github.com/pinkfuwa/llumen"
+							target="_blank"
+						>
+							<Star class="inline-block h-5 w-5 md:mr-2" />
+							<span class="hidden md:inline-block"> {$_('setting.github_star')} </span>
+						</a>
+						<button
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
+							onclick={() => {
+								token.set(undefined);
+								clearCache();
+							}}
+						>
+							<LogOut class="inline-block h-5 w-5 md:mr-2" />
+							<span class="hidden md:inline-block"> {$_('setting.logout')} </span>
+						</button>
+					</div>
 				</Tabs.List>
 				<div class="h-full w-full min-w-0 flex-1 justify-center p-3">
 					<Tabs.Content value="account">

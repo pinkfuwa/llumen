@@ -11,7 +11,7 @@
 		<Bot class="mx-2 h-6 w-6" />
 		<a href="https://github.com/pinkfuwa/llumen" target="_blank">llumen</a>
 	</div>
-	<Button class="rounded-lg p-3 " onclick={onclick}>
+	<Button class="rounded-lg p-3" {onclick}>
 		<ArrowLeft />
 	</Button>
 </div>
