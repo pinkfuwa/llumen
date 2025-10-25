@@ -19,20 +19,20 @@
 }
 
 [data-theme='dark'] {
-	--color-primary: var(--color-orange-600);
-	--color-secondary: var(--color-amber-300);
+	--color-secondary: #e6521f;
+	--color-secondary: #fb9e3a;
 	--color-outline: #ccc;
 	--color-text: var(--color-white);
 	--color-text-hover: var(--color-white);
-	--color-input: var(--color-stone-700);
+	--color-input: var(--color-popup-bg);
 
-	--color-login-bg: #0d1117;
-	--color-chat-bg: #0d1117;
-	--color-sidebar-bg: var(--color-stone-700);
-	--color-chat-input-bg: var(--color-stone-700);
-	--color-user-bg: var(--color-stone-700);
-	--color-popup-bg: var(--color-stone-800);
-	--color-component-bg: var(--color-stone-700);
+	--color-login-bg: #141211;
+	--color-chat-bg: var(--color-login-bg);
+	--color-sidebar-bg: #1d1b1a;
+	--color-chat-input-bg: var(--color-sidebar-bg);
+	--color-user-bg: var(--color-sidebar-bg);
+	--color-popup-bg: #272422;
+	--color-component-bg: var(--color-sidebar-bg);
 }
 
 [data-theme='blue'] {
