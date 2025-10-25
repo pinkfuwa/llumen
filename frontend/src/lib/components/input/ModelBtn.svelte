@@ -48,10 +48,13 @@
 
 {#if select_data == undefined}
 	<div
-		class="flex min-w-0 items-center justify-between truncate rounded-md border border-outline px-3 py-2 text-left font-mono"
+		class="inline-flex h-full grow cursor-not-allowed items-center justify-between rounded-lg border border-outline
+		px-3 text-center text-nowrap text-text duration-150 sm:w-56 sm:grow-0"
 	>
-		<span> Loading </span>
-		<LoaderCircle class="inline-block animate-spin" />
+		<span class="flex min-w-0 grow items-center justify-start truncate">
+			<span> Loading </span>
+			<LoaderCircle class="ml-2 inline-block animate-spin" />
+		</span>
 	</div>
 {:else}
 	<Select
