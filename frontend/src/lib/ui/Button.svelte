@@ -6,6 +6,7 @@
 
 <Button.Root
 	class={`
+		cursor-pointer
 		rounded-lg
 		border
 		border-outline
