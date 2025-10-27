@@ -3,11 +3,11 @@
 
 	let decimalDigit = $derived(start.toString().length);
 
-	let marginLeft = $derived(decimalDigit <= 2 ? 24 : decimalDigit * 12);
+	let marginLeft = $derived(decimalDigit <= 2 ? 1.5 : decimalDigit * 0.75);
 </script>
 
 {#if ordered}
-	<ol class="list-decimal" {start} style={`margin-left: ${marginLeft}px`}>
+	<ol class="list-decimal" {start} style={`margin-left: ${marginLeft}rem`}>
 		{@render children?.()}
 	</ol>
 {:else}

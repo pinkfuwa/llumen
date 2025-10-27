@@ -30,7 +30,7 @@
 			<Dialog.Close
 				class="focus-visible:ring-foreground focus-visible:ring-offset-background absolute top-5 right-5 rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.98]"
 			>
-				<div>
+				<div class="pb-3 pl-3">
 					<X class="text-foreground size-5" />
 					<span class="sr-only">Close</span>
 				</div>

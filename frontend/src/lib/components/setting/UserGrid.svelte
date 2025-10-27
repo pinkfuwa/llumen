@@ -20,7 +20,7 @@
 		<ul class="grid w-full grid-cols-1 gap-2 overflow-y-auto pb-2 text-lg xl:grid-cols-2">
 			{#each $data.list as user}
 				<li
-					class="flex min-h-[50px] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
+					class="flex min-h-[3rem] shrink-0 items-center justify-between rounded-lg border border-outline py-1 pr-2 pl-4"
 				>
 					{user.name}
 					{#if $userData != undefined && user.id != $userData?.user_id}

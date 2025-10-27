@@ -20,7 +20,7 @@
 				</div>
 				{#if deletable}
 					<X
-						class="bg-background absolute top-0 right-0 hidden h-5 w-5 rounded-sm border border-outline p-[2px] group-hover:block"
+						class="bg-background absolute top-0 right-0 hidden h-5 w-5 rounded-sm border border-outline p-[0.15rem] group-hover:block"
 						onclick={() => {
 							files.splice(i, 1);
 							files = files;

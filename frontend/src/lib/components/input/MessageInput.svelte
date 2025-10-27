@@ -79,7 +79,9 @@
 			<FileGroup {files} deletable />
 		</div>
 	{/if}
-	<div class="mb-2 flex items-center justify-between space-x-2 border-b border-outline pr-2 pb-2">
+	<div
+		class="mb-2 flex flex-row items-center justify-between space-x-2 border-b border-outline pr-2 pb-2"
+	>
 		<MdTextbox
 			bind:editable
 			placeholder={disabled ? $_('chat.stop_first') : $_('chat.question')}
