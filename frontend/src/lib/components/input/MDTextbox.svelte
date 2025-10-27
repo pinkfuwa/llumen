@@ -47,7 +47,10 @@
 
 		navigator.virtualKeyboard.addEventListener('geometrychange', (event) => {
 			const { width, height } = event.target.boundingRect;
-			if (width > 0 || height > 0) virtualKeyboard = true;
+			if (width > 0 || height > 0) {
+				virtualKeyboard = true;
+				input?.focus();
+			}
 		});
 	}
 
