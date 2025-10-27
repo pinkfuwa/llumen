@@ -9,12 +9,14 @@
 	import { onDestroy, setContext } from 'svelte';
 
 	let addition = $derived(params.id != undefined);
-	let open = $state(document.body.clientWidth >= 768);
+	let open = $state(window.matchMedia('(width >= 48rem)').matches);
 
 	function uselessFn(i: any) {}
 	$effect(() => {
 		uselessFn(page.url);
-		if (document.body.clientWidth < 768) open = false;
+		const large = window.matchMedia('(width >= 48rem)').matches;
+		console.log(large);
+		if (!large) open = false;
 	});
 
 	function onKeydown(e: KeyboardEvent) {

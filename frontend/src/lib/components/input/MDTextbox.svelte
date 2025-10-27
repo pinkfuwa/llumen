@@ -59,7 +59,7 @@
 
 <!-- TODO: replace max-h-96 with calc(... keyboard-inset-height) -->
 <textarea
-	class="editor field-sizing-content max-h-96 max-w-[65vw] flex-grow resize-none overflow-auto rounded-md bg-input p-4 data-[state=hide]:hidden md:max-h-[60vh]"
+	class="editor field-sizing-content max-h-96 flex-grow resize-none overflow-auto rounded-md bg-input p-4 data-[state=hide]:hidden md:max-h-[60vh]"
 	bind:value
 	{placeholder}
 	rows={rows()}
