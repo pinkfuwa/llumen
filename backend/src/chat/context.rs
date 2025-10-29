@@ -257,15 +257,25 @@ impl CompletionContext {
 
         self.update_usage(completion.price as f32, completion.token as i32);
 
-        static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\'', '*'];
+        static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\'', '*', '#'];
 
         let title = completion.response;
 
-        let title = title
+        let mut title = title
             .trim_matches(TRIMS)
             .chars()
             .take(60)
             .collect::<String>();
+
+        if title.contains("\n") {
+            title = title
+                .split('\n')
+                .next()
+                .unwrap_or_default()
+                .trim_matches(TRIMS)
+                .chars()
+                .collect::<String>();
+        }
 
         self.chat.title = ActiveValue::set(Some(title.to_string()));
 
