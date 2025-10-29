@@ -46,11 +46,8 @@
 		navigator.virtualKeyboard.overlaysContent = true;
 
 		navigator.virtualKeyboard.addEventListener('geometrychange', (event) => {
-			const { width, height } = event.target.boundingRect;
-			if (width > 0 || height > 0) {
-				virtualKeyboard = true;
-				input?.scrollIntoView();
-			}
+			virtualKeyboard = true;
+			navigator.virtualKeyboard.overlaysContent = false;
 		});
 	}
 
