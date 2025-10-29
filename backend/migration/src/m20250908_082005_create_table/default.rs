@@ -8,6 +8,7 @@ display_name="GPT-OSS 20B"
 # don't put "online" suffix.
 model_id="openai/gpt-oss-20b"
 
+# Try auto-complete by pressing Tab
 # For more settings, see https://github.com/pinkfuwa/llumen
 "#;
 

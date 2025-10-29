@@ -13,13 +13,13 @@
 		"codegen-shiki": "node codegen/shiki-codegen.js"
 	},
 	"dependencies": {
+		"@codemirror/autocomplete": "^6.19.1",
 		"@codemirror/commands": "^6.8.1",
 		"@codemirror/language": "^6.11.3",
 		"@codemirror/legacy-modes": "^6.5.1",
 		"@codemirror/state": "^6.5.2",
 		"@codemirror/view": "^6.38.1",
 		"@lezer/highlight": "^1.2.1",
-		"@octokit/rest": "^22.0.0",
 		"@sveltejs/adapter-auto": "^6.0.0",
 		"@sveltejs/adapter-static": "^3.0.8",
 		"@sveltejs/kit": "^2.22.0",

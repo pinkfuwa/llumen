@@ -108,5 +108,6 @@ export const defaultModelConfig = [
 	'# don\'t put "online" suffix.',
 	'model_id="openai/gpt-oss-20b"',
 	'',
+	'# Try auto-complete by pressing Tab',
 	'# For more settings, see https://github.com/pinkfuwa/llumen'
 ].join('\n');
