@@ -1,3 +1,11 @@
+import 'svelte/elements';
+
+declare module 'svelte/elements' {
+	export interface DOMAttributes<T extends HTMLTextAreaElemen> {
+		virtualkeyboardpolicy?: 'auto' | 'manual' | (string & {});
+	}
+}
+
 export {};
 
 declare global {

@@ -101,7 +101,7 @@
 
 	@supports (height: 100svh) {
 		.h-screen {
-			height: calc(100svh - env(keyboard-inset-height, 0px));
+			height: 100svh;
 		}
 	}
 }
