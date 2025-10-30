@@ -259,6 +259,7 @@ pub struct CompletionResp {
     pub id: String,
     pub choices: Vec<Choice>,
     pub error: Option<ErrorInfo>,
+    pub model: Option<String>,
 }
 
 /// openrouter specific response with usage and cost info
@@ -340,6 +341,7 @@ pub struct FullChoice {
 pub struct CompletionResponse {
     pub choices: Option<Vec<FullChoice>>,
     pub error: Option<ErrorInfo>,
+    pub model: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -27,6 +27,7 @@ pub struct StreamCompletion {
     stop_reason: Option<raw::FinishReason>,
     responses: Vec<StreamCompletionResp>,
     annotations: Option<Vec<serde_json::Value>>,
+    model_id: Option<String>,
 }
 
 pub struct StreamResult {
@@ -44,6 +45,7 @@ impl StreamCompletion {
         endpoint: &str,
         req: raw::CompletionReq,
     ) -> Result<StreamCompletion, Error> {
+        let model_id = req.model.clone();
         let builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
@@ -59,6 +61,7 @@ impl StreamCompletion {
                 stop_reason: None,
                 responses: vec![],
                 annotations: None,
+                model_id: Some(model_id),
             }),
             Err(e) => {
                 log::error!("Failed to create event source: {}", e);
@@ -130,6 +133,23 @@ impl StreamCompletion {
         }
 
         let resp = serde_json::from_str::<raw::CompletionResp>(data)?;
+
+        match (resp.model, &mut self.model_id) {
+            (_, None) => {}
+            (None, expect) => {
+                log::warn!("Model ID not found in response");
+                expect.take();
+            }
+            (Some(x), expect) => {
+                if x != expect.as_ref().unwrap().as_str() {
+                    log::warn!(
+                        "Model ID mismatch: expected {}, got {}",
+                        expect.take().unwrap(),
+                        x
+                    );
+                }
+            }
+        };
 
         if let Some(error) = resp.error {
             return Err(error.into());
