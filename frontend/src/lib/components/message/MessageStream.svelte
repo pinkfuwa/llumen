@@ -14,6 +14,8 @@
 	import { SetInfiniteQueryData } from '$lib/api/state';
 	import { useRoomStreamingState } from '$lib/api/chatroom';
 	import { heatMarkdownCache } from '../markdown';
+	import { getContext } from 'svelte';
+	import type { Writable } from 'svelte/store';
 
 	let { chat_id } = $props<{ chat_id: number }>();
 
@@ -43,6 +45,7 @@
 	};
 
 	const patcher = new MarkdownPatcher(updater);
+	let scrollLock = getContext<Writable<boolean>>('scrollLock');
 
 	addSSEHandler('reasoning', (data) => {
 		isStreaming.set(true);
@@ -129,6 +132,8 @@
 				.map((c) => heatMarkdownCache((c.kind.c as any).content))
 		);
 
+		scrollLock.set(true);
+
 		SetInfiniteQueryData<MessagePaginateRespList>({
 			key: ['messagePaginate', chat_id.toString()],
 			data: {
@@ -143,6 +148,8 @@
 		chunks = [];
 		reasoning = '';
 		patcher.reset();
+
+		setTimeout(() => scrollLock.set(false), 0);
 	});
 
 	// TODO: revalidate on version change

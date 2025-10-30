@@ -23,9 +23,10 @@ import {
 	type SseReq,
 	type SseResp
 } from './types';
-import { onDestroy } from 'svelte';
+import { getContext, onDestroy } from 'svelte';
 import { dev } from '$app/environment';
 import { globalCache } from './state/cache';
+import type { Writable } from 'svelte/store';
 
 class MessageFetcher implements Fetcher<MessagePaginateRespList> {
 	chatId: number;
@@ -194,6 +195,7 @@ export function updateMessage(): RawMutationResult<
 	MessageCreateReq & { msgId: number },
 	MessageCreateResp
 > {
+	const scrollLock = getContext<Writable<boolean>>('scrollLock');
 	const { mutate: create } = createMessage();
 	return CreateRawMutation({
 		mutator: (param) => {
@@ -202,6 +204,7 @@ export function updateMessage(): RawMutationResult<
 					id: param.msgId
 				});
 
+				scrollLock.set(true);
 				RemoveInfiniteQueryData<MessagePaginateRespList>({
 					predicate(entry) {
 						return entry.id >= param.msgId;
@@ -209,6 +212,7 @@ export function updateMessage(): RawMutationResult<
 					key: ['messagePaginate', param.chat_id.toString()]
 				});
 				await create(param, resolve);
+				setTimeout(() => scrollLock.set(false), 0);
 			});
 		}
 	});
