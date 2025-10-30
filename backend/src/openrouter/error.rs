@@ -85,8 +85,3 @@ impl From<reqwest_eventsource::CannotCloneRequestError> for Error {
 }
 
 // Optional: for anyhow interop if needed
-impl From<anyhow::Error> for Error {
-    fn from(e: anyhow::Error) -> Self {
-        Error::Incompatible(Box::leak(e.to_string().into_boxed_str()))
-    }
-}
