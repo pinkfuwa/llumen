@@ -6,95 +6,10 @@ import { toml } from '@codemirror/legacy-modes/mode/toml';
 import githubLight from './github-light';
 import githubDark from './github-dark';
 import { get, type Readable, type Writable } from 'svelte/store';
-import type { CompletionContext } from '@codemirror/autocomplete';
 import { autocompletion, acceptCompletion } from '@codemirror/autocomplete';
 import { minimalSetup } from 'codemirror';
 
-const TOML_FIELDS = [
-	'display_name',
-	'model_id',
-	'capability.image',
-	'capability.audio',
-	'capability.ocr',
-	'capability.tool',
-	'parameter.temperature',
-	'parameter.repeat_penalty',
-	'parameter.top_k',
-	'parameter.top_p'
-];
-
-const TOML_TABLE_HEADERS = ['[capability]', '[parameter]'];
-
-let modelIds: string[] = [];
-let modelIdsFetched = false;
-
-async function fetchModelIds() {
-	try {
-		const resp = await fetch('https://openrouter.ai/api/v1/models');
-		const { data: models } = await resp.json();
-		modelIds = models.map((m: any) => m.id);
-		modelIdsFetched = true;
-	} catch (e) {
-		modelIds = [];
-		modelIdsFetched = true;
-	}
-}
-
-function tomlCompletion(context: CompletionContext) {
-	const { state, pos } = context;
-	const lineObj = state.doc.lineAt(pos);
-	const lineText = lineObj.text;
-	const before = lineText.slice(0, pos - lineObj.from);
-
-	// Table header completion: at start of line or after blank line, or if line starts with '['
-	if (/^\s*$/.test(before) || /^\s*\[/.test(before)) {
-		return {
-			from: lineObj.from,
-			options: TOML_TABLE_HEADERS.map((h) => ({
-				label: h,
-				type: 'variable',
-				info: 'TOML table header'
-			})),
-			validFor: /^\[.*$/
-		};
-	}
-
-	// If editing model_id line, show modelIds
-	if (/^\s*model_id\s*=/.test(lineText)) {
-		const word = context.matchBefore(/\w+(\.\w+)?/);
-		if (!word) return null;
-		return {
-			from: word.from,
-			options: modelIds.map((id) => ({ label: id, type: 'variable' }))
-		};
-	}
-
-	// Context-aware: if inside [capability] or [parameter] table, suggest only relevant keys
-	const prevLines = [];
-	for (let i = lineObj.number - 1; i >= 1 && i >= lineObj.number - 10; i--) {
-		const prevLine = state.doc.line(i).text.trim();
-		if (prevLine.startsWith('[') && prevLine.endsWith(']')) {
-			prevLines.push(prevLine);
-			break;
-		}
-	}
-	const currentTable = prevLines.length ? prevLines[0] : null;
-
-	let options: string[] = TOML_FIELDS;
-	if (currentTable === '[capability]') {
-		options = ['image', 'audio', 'ocr', 'tool'];
-	} else if (currentTable === '[parameter]') {
-		options = ['temperature', 'repeat_penalty', 'top_k', 'top_p'];
-	}
-
-	const word = context.matchBefore(/\w+(\.\w+)?/);
-	if (!word) return null;
-
-	return {
-		from: word.from,
-		options: options.map((f) => ({ label: f, type: 'variable' }))
-	};
-}
+import { modelIdsFetched, fetchModelIds, tomlCompletion } from './completion';
 
 export default function useCodeMirror(option: {
 	isLightTheme: boolean;
@@ -143,6 +58,18 @@ export default function useCodeMirror(option: {
 			cursor: 'pointer !important',
 			border: 'none !important',
 			transition: 'background 0.15s, color 0.15s !important'
+		},
+		'.cm-completionIcon-keyword::before': {
+			content: 'none !important',
+			display: 'none !important'
+		},
+		'.cm-completionIcon-variable::before': {
+			content: 'none !important',
+			display: 'none !important'
+		},
+		'.cm-completionIcon-table::before': {
+			content: 'none !important',
+			display: 'none !important'
 		}
 	});
 
