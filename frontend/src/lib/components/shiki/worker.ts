@@ -1,5 +1,5 @@
-import type { ShikiWorkerRequest, ShikiWorkerResponse } from './types';
-import type { Highlighter, BundledLanguage, BundledTheme } from './shiki.bundle';
+import type { ShikiWorkerRequest } from './types';
+import type { BundledLanguage, BundledTheme } from './shiki.bundle';
 import { createHighlighter } from './shiki.bundle';
 
 let highlighter = await createHighlighter({

@@ -65,7 +65,7 @@ function runVisibilityListeners() {
 	}
 }
 
-export function addVisibliityListener(callback: () => void): VisibilityStateListenierId {
+export function addVisiblityListener(callback: () => void): VisibilityStateListenierId {
 	visibilityListenerCount += 1;
 	const id = visibilityListenerCount;
 	visibilityListeners.set(id, callback);

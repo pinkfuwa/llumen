@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createRoom } from '$lib/api/chatroom';
+	import { createRoom } from '$lib/api/chatroom.svelte';
 	import { fade } from 'svelte/transition';
 	import { MessageInput, Copyright } from '$lib/components';
 	import { goto } from '$app/navigation';

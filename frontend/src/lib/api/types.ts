@@ -132,6 +132,7 @@ export interface MessageCreateReq {
 
 export interface MessageCreateResp {
 	id: number;
+	user_id: number;
 }
 
 export interface MessageDeleteReq {
@@ -328,6 +329,11 @@ export interface SseRespVersion {
 	version: number;
 }
 
+export interface SseStart {
+	id: number;
+	user_msg_id: number;
+}
+
 export interface UserCreateReq {
 	username: string;
 	password: string;
@@ -401,4 +407,4 @@ export type SseResp =
 	| { t: 'complete'; c: SseRespMessageComplete }
 	| { t: 'title'; c: SseRespTitle }
 	| { t: 'error'; c: SseRespError }
-	| { t: 'start'; c?: undefined };
+	| { t: 'start'; c: SseStart };

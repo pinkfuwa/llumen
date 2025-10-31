@@ -1,10 +1,11 @@
 <script lang="ts">
 	import Parser from './Parser.svelte';
 	import { renderers } from './renderers';
+	import type { WorkerToken } from './worker/types';
 
 	let {
 		type = undefined as keyof typeof renderers | undefined,
-		tokens = undefined,
+		tokens = undefined as WorkerToken[] | undefined,
 		header = undefined,
 		rows = undefined,
 		ordered = false,
@@ -15,7 +16,18 @@
 
 {#if !type}
 	{#each tokens as token}
-		<Parser {...token} {renderers} {monochrome} />
+		<Parser
+			type={token.type as any}
+			tokens={token.tokens}
+			raw={token.raw}
+			text={token.text}
+			header={token.header}
+			rows={token.rows}
+			ordered={token.ordered}
+			depth={token.depth}
+			{monochrome}
+			{renderers}
+		/>
 	{/each}
 {:else if renderers[type]}
 	{#if type === 'table'}
@@ -23,7 +35,7 @@
 			<renderers.tablehead>
 				<renderers.tablerow>
 					{#each header as headerItem, i}
-						<renderers.tablecell header={true} align={rest.align[i] || 'center'}>
+						<renderers.tablecell header={true} align={rest.align?.[i] || 'center'}>
 							<Parser tokens={headerItem.tokens} {renderers} />
 						</renderers.tablecell>
 					{/each}
@@ -33,7 +45,7 @@
 				{#each rows as row}
 					<renderers.tablerow>
 						{#each row as cells, i}
-							<renderers.tablecell header={false} align={rest.align[i] || 'center'}>
+							<renderers.tablecell header={false} align={rest.align?.[i] || 'center'}>
 								<Parser tokens={cells.tokens} {renderers} />
 							</renderers.tablecell>
 						{/each}
