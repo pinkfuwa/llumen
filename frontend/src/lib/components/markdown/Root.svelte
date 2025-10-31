@@ -1,25 +1,24 @@
 <script lang="ts">
 	import Parser from './Parser.svelte';
-	import { lex, getCachedLex } from './worker';
+	import { parseMarkdown, type WorkerToken } from './parser/index';
+	import { parseMarkdown as workerParseMarkdown } from './worker';
 
-	// monochrome import shiki's performance
-	let { source, monochrome = false } = $props();
+	let { source, monochrome = false, incremental = false } = $props();
 
-	let cached = $derived(getCachedLex(source));
+	let tokens: WorkerToken[] | undefined = $state(undefined);
+
+	$effect(() => {
+		(incremental ? parseMarkdown : workerParseMarkdown)(source).then((resp) => {
+			tokens = resp;
+		});
+	});
+	$inspect(tokens);
 </script>
 
-{#if cached == null}
-	{#await lex(source, true)}
-		{#each source.split('\n') as line}
-			<p>{line}</p>
-		{/each}
-	{:then tokens}
-		{#key source}
-			<Parser {tokens} {monochrome} />
-		{/key}
-	{/await}
+{#if tokens === undefined}
+	{#each source.split('\n') as line}
+		<p>{line}</p>
+	{/each}
 {:else}
-	{#key cached}
-		<Parser tokens={cached} {monochrome} />
-	{/key}
+	<Parser {tokens} {monochrome} />
 {/if}

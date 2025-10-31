@@ -1,14 +1,13 @@
-import { marked } from 'marked';
-import type { WorkerRequest, WorkerResponse } from './types';
-import Latex from './latex';
-import Citation from './citation';
+import { parseMarkdown, type WorkerRequest } from '../parser';
 
-marked.use(Latex);
-marked.use(Citation);
+self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
+	const raw = event.data;
 
-self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-	const markdown = event.data;
+	try {
+		let token = await parseMarkdown(raw);
 
-	const tokens = marked.lexer(markdown.replaceAll('&nbsp;', ' '));
-	self.postMessage(tokens as WorkerResponse);
+		self.postMessage(token);
+	} catch (error) {
+		self.postMessage({ error });
+	}
 };

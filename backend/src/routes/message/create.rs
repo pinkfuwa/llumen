@@ -36,6 +36,7 @@ pub struct MessageCreateReq {
 #[typeshare]
 pub struct MessageCreateResp {
     pub id: i32,
+    pub user_id: i32,
 }
 
 pub async fn route(
@@ -85,6 +86,8 @@ pub async fn route(
         .await
         .kind(ErrorKind::ResourceNotFound)?;
 
+    let id = completion_ctx.get_message_id();
+
     let closure = async move {
         completion_ctx.set_mode(req.mode.into());
 
@@ -102,5 +105,8 @@ pub async fn route(
         }
     });
 
-    Ok(Json(MessageCreateResp { id: user_msg.id }))
+    Ok(Json(MessageCreateResp {
+        user_id: user_msg.id,
+        id,
+    }))
 }

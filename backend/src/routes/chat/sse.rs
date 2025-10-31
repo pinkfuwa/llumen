@@ -35,7 +35,7 @@ pub enum SseResp {
     Complete(SseRespMessageComplete),
     Title(SseRespTitle),
     Error(SseRespError),
-    Start,
+    Start(SseStart),
 }
 
 #[derive(Debug, Serialize)]
@@ -88,6 +88,13 @@ pub struct SseRespTitle {
 #[typeshare]
 pub struct SseRespError {
     pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseStart {
+    pub id: i32,
+    pub user_msg_id: i32,
 }
 
 pub async fn route(
@@ -150,7 +157,7 @@ pub async fn route(
             Token::ToolResult(content) => SseResp::ToolResult(SseRespToolResult { content }),
             Token::Error(content) => SseResp::Error(SseRespError { content }),
             Token::Title(title) => SseResp::Title(SseRespTitle { title }),
-            Token::Start => SseResp::Start,
+            Token::Start { id, user_msg_id } => SseResp::Start(SseStart { id, user_msg_id }),
             _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())

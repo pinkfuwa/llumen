@@ -141,7 +141,21 @@ impl CompletionContext {
             .publish(chat_id)
             .context("only one publisher is allow at same time")?;
 
-        if publisher.publish(Token::Start).is_err() {
+        let user_msg_id = messages_with_chunks
+            .iter()
+            .filter(|(m, _)| m.kind == MessageKind::User)
+            .last()
+            .context("no user message found")?
+            .0
+            .id;
+
+        if publisher
+            .publish(Token::Start {
+                id: message.id,
+                user_msg_id,
+            })
+            .is_err()
+        {
             log::debug!("publisher was halted before completion start");
         }
 

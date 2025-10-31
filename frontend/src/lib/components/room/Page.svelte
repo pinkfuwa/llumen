@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { deleteRoom, updateRoom } from '$lib/api/chatroom';
-	import { addSSEHandler } from '$lib/api/message';
+	import { deleteRoom, updateRoom } from '$lib/api/chatroom.svelte';
 	import type { PageEntry } from '$lib/api/state';
 	import { type ChatPaginateRespList } from '$lib/api/types';
 	import { dispatchError } from '$lib/error';
@@ -21,18 +20,6 @@
 	const { mutate: delete_ } = deleteRoom();
 
 	$effect(() => entry.target.set(li));
-
-	addSSEHandler('title', (resp) => {
-		if (get(data).some((x) => x.id == currentRoom)) {
-			data.update((list) => {
-				const idx = list.findIndex((x) => x.id == currentRoom);
-				if (idx !== -1) {
-					list[idx].title = resp.title;
-				}
-				return list;
-			});
-		}
-	});
 </script>
 
 <li bind:this={li} class="space-y-1">

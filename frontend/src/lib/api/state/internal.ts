@@ -1,12 +1,7 @@
 import { type Readable, type Writable, derived, get } from 'svelte/store';
 import { globalCache } from './cache';
 import { onDestroy } from 'svelte';
-import {
-	isElementInViewport,
-	once,
-	addVisibliityListener,
-	clearVisibilityListener
-} from './helper';
+import { isElementInViewport, once, addVisiblityListener, clearVisibilityListener } from './helper';
 
 export interface InternalQueryResult<T> {
 	data: Writable<T | undefined>;
@@ -101,7 +96,7 @@ export function CreateInternalQuery<D>(option: InternalQueryOption<D>): Internal
 				}
 			};
 
-			let visibilityListenerId: number | undefined = addVisibliityListener(visibilityStateHandler);
+			let visibilityListenerId: number | undefined = addVisiblityListener(visibilityStateHandler);
 			cleanup(() => {
 				if (visibilityListenerId != undefined) clearVisibilityListener(visibilityListenerId);
 			});
@@ -119,7 +114,7 @@ export function CreateInternalQuery<D>(option: InternalQueryOption<D>): Internal
 			else revalidateIfVisible();
 		};
 
-		let visibilityListenerId2: number | undefined = addVisibliityListener(revalidateFnFocus);
+		let visibilityListenerId2: number | undefined = addVisiblityListener(revalidateFnFocus);
 		cleanup(() => {
 			if (visibilityListenerId2 != undefined) clearVisibilityListener(visibilityListenerId2);
 		});

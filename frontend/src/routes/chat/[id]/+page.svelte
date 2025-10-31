@@ -3,12 +3,12 @@
 	import { MessageInput } from '$lib/components';
 	import MessagePagination from '$lib/components/message/MessagePagination.svelte';
 	import Copyright from '$lib/components/Copyright.svelte';
-	import { createMessage } from '$lib/api/message';
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
-	import { haltCompletion, useRoom, useRoomStreamingState } from '$lib/api/chatroom.js';
+	import { haltCompletion, useRoom } from '$lib/api/chatroom.svelte';
 	import { UploadManager } from '$lib/api/files.js';
 	import Scroll from '$lib/ui/Scroll.svelte';
+	import { createMessage, getStream } from '$lib/api/messageDirect.svelte.js';
 
 	let id = $derived(Number(params.id));
 
@@ -29,7 +29,7 @@
 		if (mode == null) mode = $room.mode;
 	});
 
-	let isStreaming = $derived(useRoomStreamingState(id));
+	let streaming = $derived(getStream());
 
 	let uploadManager = $derived(new UploadManager(id));
 
@@ -48,7 +48,6 @@
 			bind:mode
 			bind:files
 			onsubmit={async () => {
-				isStreaming.set(true);
 				mutate({
 					chat_id: id,
 					text: content,
@@ -61,13 +60,10 @@
 			}}
 			oncancel={() => {
 				halt({ id });
-				isStreaming.set(false);
 			}}
-			disabled={$isStreaming || modelId === null || mode === null}
+			disabled={streaming || modelId === null || mode === null}
 		/>
 	</div>
-	{#key id}
-		<MessagePagination {id} room={$room} />
-	{/key}
+	<MessagePagination room={$room} />
 	<div class="min-h-16"></div>
 </Scroll>
