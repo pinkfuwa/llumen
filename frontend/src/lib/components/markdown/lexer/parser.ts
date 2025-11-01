@@ -139,7 +139,7 @@ const parser = baseParser.configure([GFM, latexExtension]);
 /**
  * Parse markdown source to a Lezer syntax tree.
  */
-export function parseMarkdown(source: string): Tree {
+export function parse(source: string): Tree {
 	return parser.parse(source);
 }
 
@@ -491,11 +491,7 @@ function buildFragments(
  * Problematic blocks (tables, code fences, etc.) are excluded from incremental
  * parsing to ensure correctness, while other regions benefit from fragment reuse.
  */
-export function parseMarkdownIncremental(
-	prevTree: Tree,
-	prevSource: string,
-	newSource: string
-): Tree {
+export function parseIncremental(prevTree: Tree, prevSource: string, newSource: string): Tree {
 	// Not an append, do full parse
 	if (!newSource.startsWith(prevSource)) {
 		return parser.parse(newSource);
@@ -562,6 +558,5 @@ export function walkTree(tree: Tree | null, source: string): any | null {
 		};
 	}
 	const result = walk(tree.topNode);
-	// console.log('Node types found:', Array.from(nodeTypes).sort());
 	return result;
 }
