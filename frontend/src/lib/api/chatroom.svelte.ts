@@ -29,8 +29,6 @@ import {
 } from './state';
 import { APIFetch } from './state/errorHandle';
 import type { MutationResult } from './state/mutate';
-import { globalCache } from './state/cache';
-import type { Writable } from 'svelte/store';
 import { UpdateInfiniteQueryDataById } from './state';
 import { upload } from './files';
 import { pushUserMessage } from './message.svelte';
@@ -81,7 +79,7 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			let filesMetadata = files.map((f) => ({ name: f.name, id: f.id }));
 
-			pushUserMessage(res.id, res.user_id, param.message, filesMetadata);
+			pushUserMessage(res.user_id, param.message, filesMetadata);
 
 			SetInfiniteQueryData<ChatPaginateRespList>({
 				key: ['chatPaginate'],
