@@ -1,26 +1,21 @@
 import { goto } from '$app/navigation';
-import {
-	type ChatCreateReq,
-	type ChatCreateResp,
-	type MessageCreateResp,
-	type MessageCreateReq,
-	type ChatPaginateRespList,
-	type ChatPaginateReq,
-	type ChatPaginateResp,
-	ChatPaginateReqOrder,
-	type MessagePaginateRespList,
-	MessagePaginateRespRole,
-	type ChatReadResp,
-	type ChatReadReq,
-	type ChatDeleteReq,
-	type ChatDeleteResp,
-	type ChatUpdateReq,
-	type ChatUpdateResp,
-	ChatMode,
-	type MessageCreateReqFile,
-	type MessagePaginateRespChunkKindFile,
-	type MessagePaginateRespChunk
+import type {
+	ChatCreateReq,
+	ChatCreateResp,
+	MessageCreateResp,
+	MessageCreateReq,
+	ChatPaginateRespList,
+	ChatPaginateReq,
+	ChatPaginateResp,
+	ChatReadResp,
+	ChatReadReq,
+	ChatDeleteReq,
+	ChatDeleteResp,
+	ChatUpdateReq,
+	ChatUpdateResp,
+	MessageCreateReqFile
 } from './types';
+import { ChatPaginateReqOrder, MessagePaginateRespRole, ChatMode } from './types';
 import {
 	CreateInfiniteQuery,
 	CreateMutation,
@@ -34,10 +29,9 @@ import {
 } from './state';
 import { APIFetch } from './state/errorHandle';
 import type { MutationResult } from './state/mutate';
-import { globalCache } from './state/cache';
-import type { Writable } from 'svelte/store';
 import { UpdateInfiniteQueryDataById } from './state';
 import { upload } from './files';
+import { pushUserMessage } from './message.svelte';
 
 export interface CreateRoomRequest {
 	message: string;
@@ -57,20 +51,6 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 			if (!chatRes) return;
 
 			let chatId = chatRes.id;
-
-			SetInfiniteQueryData<ChatPaginateRespList>({
-				key: ['chatPaginate'],
-				data: {
-					id: chatId,
-					model_id: param.modelId
-				}
-			});
-
-			const roomStreamingState = globalCache.getOr(['chat', 'stream', chatId.toString()], false);
-
-			await goto('/chat/' + encodeURIComponent(chatId));
-
-			roomStreamingState.set(true);
 
 			let files: MessageCreateReqFile[] = [];
 
@@ -97,27 +77,19 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			if (!res) return;
 
-			let fileChunks = files.map(
-				(f) =>
-					({
-						id: 0,
-						kind: { t: 'file', c: { name: f.name, id: f.id } }
-					}) as MessagePaginateRespChunk
-			);
+			let filesMetadata = files.map((f) => ({ name: f.name, id: f.id }));
 
-			SetInfiniteQueryData<MessagePaginateRespList>({
-				key: ['messagePaginate', chatRes.id.toString()],
+			pushUserMessage(res.user_id, param.message, filesMetadata);
+
+			SetInfiniteQueryData<ChatPaginateRespList>({
+				key: ['chatPaginate'],
 				data: {
-					id: res.id,
-					chunks: [
-						{ id: res.id, kind: { t: 'text', c: { content: param.message } } },
-						...fileChunks
-					],
-					role: MessagePaginateRespRole.User,
-					token: 0,
-					price: 0
-				} as MessagePaginateRespList
+					id: chatId,
+					model_id: param.modelId
+				}
 			});
+
+			await goto('/chat/' + encodeURIComponent(chatId));
 
 			return chatRes;
 		}
@@ -191,10 +163,6 @@ export function deleteRoom(): MutationResult<ChatDeleteReq, ChatDeleteResp> {
 	return CreateMutation<ChatDeleteReq, ChatDeleteResp>({
 		path: 'chat/delete'
 	});
-}
-
-export function useRoomStreamingState(id: number): Writable<boolean> {
-	return globalCache.getOr(['chat', 'stream', id.toString()], false);
 }
 
 export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {

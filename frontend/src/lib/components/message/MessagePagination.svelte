@@ -1,26 +1,82 @@
 <script lang="ts">
-	import type { ChatReadResp } from '$lib/api/types';
-	import { addSSEHandler, startSSE, useMessage } from '$lib/api/message';
-	import Page from './Page.svelte';
-	import MessageStream from './MessageStream.svelte';
-	import { updateRoomTitle } from '$lib/api/chatroom';
+	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/message.svelte';
+	import {
+		MessagePaginateRespRole as Role,
+		type ChatReadResp,
+		type MessagePaginateRespChunk,
+		type MessagePaginateRespChunkKindFile,
+		type MessagePaginateRespChunkKindText
+	} from '$lib/api/types';
+	import { dispatchError } from '$lib/error';
+	import ResponseBox from './buttons/ResponseBox.svelte';
+	import ResponseEdit from './buttons/ResponseEdit.svelte';
+	import User from './buttons/User.svelte';
+	import Chunks from './Chunks.svelte';
+	import { page } from '$app/state';
 
-	// TODO: ChatReadResp is props drill, use globalCache
-	let { id, room }: { id: number; room: ChatReadResp | undefined } = $props();
+	const { room }: { room: ChatReadResp | undefined } = $props();
 
-	const { data } = useMessage(id);
+	const chatId = $derived(parseInt(page.params.id));
 
-	startSSE(id);
+	let { mutate } = updateMessage();
 
-	addSSEHandler('title', (data) => {
-		updateRoomTitle(id, data.title);
-	});
+	useSSEEffect(() => chatId);
+
+	function getTextFromChunks(chunks: MessagePaginateRespChunk[]) {
+		return chunks
+			.filter((x) => x.kind.t == 'text')
+			.map((x) => (x.kind.c as MessagePaginateRespChunkKindText).content)
+			.join('\n')
+			.trim();
+	}
+
+	function getFileFromChunks(chunks: MessagePaginateRespChunk[]): { id: number; name: string }[] {
+		return chunks
+			.filter((x) => x.kind.t == 'file')
+			.map((x) => x.kind.c as MessagePaginateRespChunkKindFile);
+	}
 </script>
 
-<MessageStream chat_id={id} />
+{#each getMessages() as msg}
+	{#key msg.id}
+		{#if msg.role == Role.User}
+			{@const content = getTextFromChunks(msg.chunks)}
+			{@const files = getFileFromChunks(msg.chunks)}
+			<User
+				{content}
+				{files}
+				onupdate={(text) => {
+					if (room == undefined) return;
+					if (room.model_id == undefined) dispatchError('internal', 'select a model first');
+					else
+						mutate({
+							chat_id: chatId,
+							model_id: room.model_id,
+							mode: room.mode,
+							text,
+							files,
+							msgId: msg.id
+						});
+				}}
+			/>
+		{:else if msg.role == Role.Assistant}
+			{@const streaming = msg.stream}
+			<ResponseBox>
+				<Chunks chunks={msg.chunks} {streaming} />
 
-{#each $data as page}
-	{#key page.no}
-		<Page entry={page} roomId={id} {room} />
+				{#if streaming}
+					<div class="space-y-4">
+						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+					</div>
+				{:else}
+					<ResponseEdit
+						content={getTextFromChunks(msg.chunks)}
+						token={msg.token}
+						cost={msg.price}
+					/>
+				{/if}
+			</ResponseBox>
+		{/if}
 	{/key}
 {/each}

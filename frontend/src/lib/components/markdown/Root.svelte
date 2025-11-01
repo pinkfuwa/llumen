@@ -1,25 +1,48 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Parser from './Parser.svelte';
-	import { lex, getCachedLex } from './worker';
+	import { parseIncremental, walkTree } from './lexer';
+	import { parseAst } from './worker';
 
-	// monochrome import shiki's performance
-	let { source, monochrome = false } = $props();
+	const { source, monochrome = false, incremental = false } = $props();
 
-	let cached = $derived(getCachedLex(source));
+	let prevSource: string = $state('');
+	let prevTree: import('@lezer/common').Tree | null = null;
+	let ast: any = $state(null);
+
+	$effect(() => {
+		const prevTreeValue = untrack(() => prevTree);
+		const prevSourceValue = untrack(() => prevSource);
+
+		async function updateAst() {
+			const increment =
+				incremental &&
+				prevTreeValue &&
+				source.startsWith(prevSourceValue) &&
+				source.length > prevSourceValue.length;
+
+			if (increment) {
+				const tree = await parseIncremental(prevTreeValue, prevSourceValue, source);
+				ast = await walkTree(tree, source);
+				prevSource = source;
+				prevTree = tree;
+			} else {
+				ast = await parseAst(source);
+			}
+		}
+
+		updateAst();
+	});
 </script>
 
-{#if cached == null}
-	{#await lex(source, true)}
+{#if ast == null}
+	<div class="space-y-2">
 		{#each source.split('\n') as line}
 			<p>{line}</p>
 		{/each}
-	{:then tokens}
-		{#key source}
-			<Parser {tokens} {monochrome} />
-		{/key}
-	{/await}
+	</div>
 {:else}
-	{#key cached}
-		<Parser tokens={cached} {monochrome} />
-	{/key}
+	<div class="space-y-2">
+		<Parser {ast} {monochrome} />
+	</div>
 {/if}

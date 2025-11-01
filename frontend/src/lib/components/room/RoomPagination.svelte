@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import Page from './Page.svelte';
-	import { useRooms } from '$lib/api/chatroom';
+	import { useRooms } from '$lib/api/chatroom.svelte';
 	import New from './New.svelte';
 
 	let { addition = false, currentRoom = undefined as undefined | number } = $props();

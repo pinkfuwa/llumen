@@ -3,9 +3,9 @@
 
 	import Latex from '../latex/Latex.svelte';
 
-	let { raw } = $props<{ raw: string }>();
+	let { node, monochrome = false } = $props();
 </script>
 
-<button onclick={() => copy(raw)} class="rounded-md p-2 font-semibold break-all">
-	<Latex text={raw} />
+<button onclick={() => copy(node.text)} class="rounded-md p-2 font-semibold break-all">
+	<Latex text={node.text} />
 </button>

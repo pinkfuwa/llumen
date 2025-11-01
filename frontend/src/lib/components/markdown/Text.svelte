@@ -1,5 +1,5 @@
-<script>
-	let { children } = $props();
+<script lang="ts">
+	let { node } = $props();
 </script>
 
-{@render children?.()}
+<span>{node.text}</span>
