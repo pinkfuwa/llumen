@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { copy } from '$lib/copy';
-
-	import Latex from '../latex/Latex.svelte';
-
-	let { raw } = $props<{ raw: string }>();
+	let { node, monochrome = false } = $props();
 </script>
 
-<button onclick={() => copy(raw)} class="rounded-md p-2 font-semibold break-all">
-	<Latex text={raw} />
-</button>
+<span
+	class="latex-span"
+	class:monochrome
+	style="font-family: 'Latin Modern Math', 'Times New Roman', serif;"
+>
+	<!-- Render inline latex, you may want to use a latex renderer here -->
+	{node.text}
+</span>

@@ -5,5 +5,5 @@
 </script>
 
 <div class="space-y-2">
-	<Markdown source={content} {monochrome} />
+	<Markdown source={content} {monochrome} incremental={monochrome} />
 </div>
