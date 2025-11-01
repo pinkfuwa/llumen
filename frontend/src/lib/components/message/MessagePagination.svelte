@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/messageDirect.svelte';
+	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/message.svelte';
 	import {
 		MessagePaginateRespRole as Role,
 		type ChatReadResp,
@@ -62,8 +62,20 @@
 		{:else if msg.role == Role.Assistant}
 			{@const streaming = msg.stream}
 			<ResponseBox>
-				<Chunks chunks={msg.chunks} monochrome={streaming} />
-				<ResponseEdit content={getTextFromChunks(msg.chunks)} token={msg.token} cost={msg.price} />
+				<Chunks chunks={msg.chunks} {streaming} />
+
+				{#if streaming}
+					<div class="space-y-4">
+						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+					</div>
+				{:else}
+					<ResponseEdit
+						content={getTextFromChunks(msg.chunks)}
+						token={msg.token}
+						cost={msg.price}
+					/>
+				{/if}
 			</ResponseBox>
 		{/if}
 	{/key}

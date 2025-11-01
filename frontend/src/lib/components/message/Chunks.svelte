@@ -9,10 +9,10 @@
 
 	let {
 		chunks,
-		monochrome = false
+		streaming = false
 	}: {
 		chunks: PartialMessagePaginateRespChunk[];
-		monochrome?: boolean;
+		streaming?: boolean;
 	} = $props();
 </script>
 
@@ -22,7 +22,7 @@
 	{#if kind == 'reasoning'}
 		<Reasoning {content} />
 	{:else if kind == 'text'}
-		<Assitant {content} {monochrome} />
+		<Assitant {content} {streaming} />
 	{:else if kind == 'tool_call'}
 		<ToolBox toolname={chunk.kind.c.name}>
 			<Tool content={chunk.kind.c.args} />

@@ -8,7 +8,7 @@
 	import { haltCompletion, useRoom } from '$lib/api/chatroom.svelte';
 	import { UploadManager } from '$lib/api/files.js';
 	import Scroll from '$lib/ui/Scroll.svelte';
-	import { createMessage, getStream } from '$lib/api/messageDirect.svelte.js';
+	import { createMessage, getStream } from '$lib/api/message.svelte.js';
 
 	let id = $derived(Number(params.id));
 

@@ -33,7 +33,7 @@ import { globalCache } from './state/cache';
 import type { Writable } from 'svelte/store';
 import { UpdateInfiniteQueryDataById } from './state';
 import { upload } from './files';
-import { pushUserMessage } from './messageDirect.svelte';
+import { pushUserMessage } from './message.svelte';
 
 export interface CreateRoomRequest {
 	message: string;

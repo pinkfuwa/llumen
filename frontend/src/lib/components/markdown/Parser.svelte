@@ -164,17 +164,8 @@
 		<p>
 			Unmapped node type: {ast.type}
 		</p>
-		{#if ast.children && ast.children.length > 0}
-			{#each ast.children as child}
-				<Parser ast={child} {monochrome} />
-			{/each}
-		{:else if ast.text && ast.text.trim()}
-			<span style="background: rgba(255, 255, 0, 0.2);" title="Unmapped: {ast.type}"
-				>{ast.text}</span
-			>
-		{/if}
 	{:else}
-		{#key ast.text}
+		{#key (monochrome ? 'm' : 'u') + ast.text}
 			{@const MappedComponent = nodeMap[ast.type]}
 			<MappedComponent node={ast} {monochrome}>
 				{#each segments as seg}
