@@ -34,14 +34,14 @@ const Handlers: {
 		console.log(data);
 		if (version !== data.version) {
 			version = data.version;
-			messages = [];
 			console.log('version updated');
 			syncMessages(chatId);
 		}
 	},
 
 	start: (data) => {
-		if (messages.at(-1)?.id == data.id) return;
+		if (messages.at(-1)?.id == data.user_msg_id) console.warn('Duplicate message detected');
+		console.log('push assistant');
 		messages.unshift({
 			id: data.id,
 			role: MessagePaginateRespRole.Assistant,
@@ -57,7 +57,6 @@ const Handlers: {
 	},
 
 	reasoning: (reasoning) => {
-		console.log('reasoning');
 		handleTokenChunk('reasoning', { content: reasoning.content });
 	},
 
@@ -101,40 +100,44 @@ const Handlers: {
 	}
 };
 
-export function startMessageSSE(chatId: number): () => void {
-	const controller = new AbortController();
+export function useSSEEffect(chatId: () => number) {
+	$inspect('messages', messages);
+	$effect(() => {
+		console.log('start sse');
+		const id = chatId();
+		const controller = new AbortController();
 
-	version = -1;
-	messages = [];
+		RawAPIFetch<SseReq>('chat/sse', { id: id }, 'POST', controller.signal).then(
+			async (response) => {
+				if (response == undefined) return;
 
-	RawAPIFetch<SseReq>('chat/sse', { id: chatId }, 'POST', controller.signal).then(
-		async (response) => {
-			if (response == undefined) return;
+				const stream = events(response);
 
-			const stream = events(response);
+				for await (const event of stream) {
+					const data = event.data;
 
-			for await (const event of stream) {
-				const data = event.data;
-
-				if (data != undefined && data.trim() != ':') {
-					const resJson = JSON.parse(data) as SseResp;
-					const error = getError(resJson);
-					if (error) {
-						dispatchError(error.error, error.reason);
+					if (data != undefined && data.trim() != ':') {
+						const resJson = JSON.parse(data) as SseResp;
+						const error = getError(resJson);
+						if (error) {
+							dispatchError(error.error, error.reason);
+						} else {
+							const handler = Handlers[resJson.t];
+							if (handler != undefined) handler(resJson.c as any, id);
+						}
 					} else {
-						const handler = Handlers[resJson.t];
-						if (handler != undefined) handler(resJson.c as any, chatId);
+						console.log(data);
 					}
-				} else {
-					console.log(data);
 				}
 			}
-		}
-	);
+		);
 
-	return () => {
-		controller.abort();
-	};
+		return () => {
+			messages = [];
+			version = -1;
+			controller.abort();
+		};
+	});
 }
 
 async function syncMessages(chatId: number) {
@@ -145,10 +148,10 @@ async function syncMessages(chatId: number) {
 			order: MessagePaginateReqOrder.Lt
 		}
 	});
-	if (resp != undefined) messages = [...resp.list, ...messages];
+	let streamingMessage = messages.filter((m) => m.stream);
+	if (resp != undefined) messages = [...streamingMessage, ...resp.list];
 }
 
-// Helper to handle chunk creation and merging
 function handleTokenChunk(
 	kind: 'text' | 'reasoning' | 'tool_call' | 'tool_result' | 'error',
 	chunkContent: any
@@ -209,6 +212,7 @@ export function pushUserMessage(
 	content: string,
 	files: MessagePaginateRespChunkKindFile[]
 ) {
+	console.log('push user message');
 	let fileChunks = files.map((f) => ({
 		id: 0,
 		kind: {
