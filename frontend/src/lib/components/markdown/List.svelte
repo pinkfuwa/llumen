@@ -8,7 +8,6 @@
 	let start = 100;
 	let decimalDigit = $derived(start.toString().length);
 	let marginLeft = $derived(decimalDigit <= 2 ? 1.5 : decimalDigit * 0.75);
-	$inspect('list', node);
 </script>
 
 {#if isOrdered}
