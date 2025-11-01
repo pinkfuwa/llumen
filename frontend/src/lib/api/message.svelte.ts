@@ -38,7 +38,6 @@ const Handlers: {
 	},
 
 	start: (data) => {
-		if (messages.at(-1)?.id == data.user_msg_id) console.warn('Duplicate message detected');
 		messages.unshift({
 			id: data.id,
 			role: MessagePaginateRespRole.Assistant,
@@ -123,12 +122,13 @@ function startSSE(chatId: number, signal: AbortSignal) {
 				}
 			}
 		} catch (e) {
-			console.trace('SSE aborted', e);
+			console.trace('SSE aborted');
 		}
 	});
 }
 
 export function useSSEEffect(chatId: () => number) {
+	$inspect(messages);
 	$effect(() => {
 		let controller = new AbortController();
 
@@ -139,7 +139,8 @@ export function useSSEEffect(chatId: () => number) {
 		function onVisibilityChange() {
 			const state = globalThis.document.visibilityState;
 			if (state === 'visible') {
-				if (controller.signal.aborted) controller = new AbortController();
+				if (!controller.signal.aborted) controller.abort();
+				controller = new AbortController();
 				startSSE(id, controller.signal);
 			} else if (state === 'hidden') controller.abort();
 		}
@@ -163,8 +164,10 @@ async function syncMessages(chatId: number) {
 			order: MessagePaginateReqOrder.Lt
 		}
 	});
-	let streamingMessage = messages.filter((m) => m.stream);
-	if (resp != undefined) messages = [...streamingMessage, ...resp.list];
+	if (resp != undefined) {
+		let streamingMessage = messages.filter((m) => m.stream && !resp.list.some((x) => x.id == m.id));
+		messages = [...streamingMessage, ...resp.list];
+	}
 }
 
 function handleTokenChunk(
@@ -249,7 +252,6 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 	return CreateMutation({
 		path: 'message/create',
 		onSuccess: (data, param) => {
-			console.warn(data);
 			pushUserMessage(data.user_id, param.text, param.files || []);
 		}
 	});
@@ -266,6 +268,8 @@ export function updateMessage(): RawMutationResult<
 				await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', {
 					id: param.msgId
 				});
+
+				messages = messages.filter((x) => x.id < param.msgId);
 
 				await create(param, resolve);
 			});
