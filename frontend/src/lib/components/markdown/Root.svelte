@@ -10,7 +10,7 @@
 	let prevTree: import('@lezer/common').Tree | null = null;
 	let ast: any = $state(null);
 
-	let throttleTimer: ReturnType<typeof setTimeout> | null = null;
+	let throttleTimer: ReturnType<typeof setTimeout> | null = $state(null);
 	const THROTTLE_MS = 100;
 
 	let pendingSource: string | null = null;
@@ -40,7 +40,13 @@
 	$effect(() => {
 		pendingSource = source;
 
-		if (!throttleTimer) {
+		if (!incremental) {
+			if (throttleTimer != null) {
+				clearTimeout(throttleTimer);
+				throttleTimer = null;
+			}
+			doParse(source);
+		} else if (!throttleTimer) {
 			const runThrottle = async () => {
 				let lastParsedSource = pendingSource;
 				await doParse(lastParsedSource!);
