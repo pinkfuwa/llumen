@@ -37,7 +37,10 @@ pub enum Token {
         token: i32,
     },
     Title(String),
-    Start,
+    Start {
+        id: i32,
+        user_msg_id: i32,
+    },
 }
 
 impl Mergeable for Token {
@@ -67,7 +70,7 @@ impl Mergeable for Token {
             Token::Tool { .. }
             | Token::ToolResult { .. }
             | Token::Empty
-            | Token::Start
+            | Token::Start { .. }
             | Token::Complete { .. }
             | Token::Title { .. } => 1,
         }

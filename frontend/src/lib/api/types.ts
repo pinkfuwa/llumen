@@ -132,6 +132,7 @@ export interface MessageCreateReq {
 
 export interface MessageCreateResp {
 	id: number;
+	user_id: number;
 }
 
 export interface MessageDeleteReq {
@@ -301,6 +302,7 @@ export interface SseRespMessageComplete {
 	chunk_ids: number[];
 	token_count: number;
 	cost: number;
+	version: number;
 }
 
 export interface SseRespReasoning {
@@ -325,6 +327,12 @@ export interface SseRespToolResult {
 }
 
 export interface SseRespVersion {
+	version: number;
+}
+
+export interface SseStart {
+	id: number;
+	user_msg_id: number;
 	version: number;
 }
 
@@ -401,4 +409,4 @@ export type SseResp =
 	| { t: 'complete'; c: SseRespMessageComplete }
 	| { t: 'title'; c: SseRespTitle }
 	| { t: 'error'; c: SseRespError }
-	| { t: 'start'; c?: undefined };
+	| { t: 'start'; c: SseStart };

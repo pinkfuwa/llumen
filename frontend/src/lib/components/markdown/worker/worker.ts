@@ -1,14 +1,25 @@
-import { marked } from 'marked';
-import type { WorkerRequest, WorkerResponse } from './types';
-import Latex from './latex';
-import Citation from './citation';
+import { parse, walkTree } from '../lexer';
 
-marked.use(Latex);
-marked.use(Citation);
+self.onmessage = async (event) => {
+	const { source, id } = event.data;
+	try {
+		const tree = await parse(source);
 
-self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-	const markdown = event.data;
-
-	const tokens = marked.lexer(markdown.replaceAll('&nbsp;', ' '));
-	self.postMessage(tokens as WorkerResponse);
+		const ast = await walkTree(tree, source);
+		self.postMessage({ ast, id });
+	} catch (error) {
+		console.error(error);
+		// let message: string;
+		// if (
+		// 	typeof error === 'object' &&
+		// 	error !== null &&
+		// 	'message' in error &&
+		// 	typeof (error as { message?: unknown }).message === 'string'
+		// ) {
+		// 	message = (error as { message: string }).message;
+		// } else {
+		// 	message = String(error);
+		// }
+		// self.postMessage({ error: message, id });
+	}
 };

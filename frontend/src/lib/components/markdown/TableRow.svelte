@@ -1,11 +1,7 @@
-<script>
-	/**
-	 * @typedef {Object} Props
-	 * @property {import('svelte').Snippet} [children]
-	 */
-
-	/** @type {Props} */
-	let { children } = $props();
+<script lang="ts">
+	let { monochrome = false, children } = $props();
 </script>
 
-<tr>{@render children?.()}</tr>
+<tr class:monochrome>
+	{@render children?.()}
+</tr>

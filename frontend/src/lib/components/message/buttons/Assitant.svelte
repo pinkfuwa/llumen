@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { Markdown } from '$lib/components/markdown';
 
-	let { content, monochrome = false }: { content: string; monochrome?: boolean } = $props();
+	let { content, streaming = false }: { content: string; streaming?: boolean } = $props();
+	let everStream = $state(false);
+	$effect(() => {
+		everStream = streaming || everStream;
+	});
 </script>
 
 <div class="space-y-2">
-	<Markdown source={content} {monochrome} />
+	<Markdown source={content} monochrome={streaming} incremental={everStream} />
 </div>

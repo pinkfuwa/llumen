@@ -1,12 +1,25 @@
-<script>
+<script lang="ts">
 	import { copy } from '$lib/copy';
 
-	let { raw } = $props();
+	let { node } = $props();
 
-	let text = raw.replace(/`/g, '');
+	// Extract code text, excluding the backtick markers
+	function extractCodeText(node: any): string {
+		// InlineCode nodes may have CodeMark children (the backticks)
+		// We want the actual text content between them
+		const codeTextChild = node.children?.find(
+			(c: any) => c.type === 'CodeText' || c.type === 'InlineCode'
+		);
+		if (codeTextChild) {
+			return codeTextChild.text;
+		}
+		return node.text || '';
+	}
+
+	const text = $derived(extractCodeText(node).replace(/`/g, ''));
 </script>
 
-<span class="py-1">
+<span class="mx-1 py-1">
 	<button
 		class="my-0.5 cursor-pointer rounded-md bg-secondary px-2 py-0.5 font-mono break-all text-text duration-150 hover:bg-primary hover:text-text-hover"
 		onclick={() => copy(text)}>{text}</button

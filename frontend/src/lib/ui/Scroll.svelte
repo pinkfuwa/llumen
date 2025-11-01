@@ -1,8 +1,6 @@
 <script lang="ts">
 	import type { Component } from '@lucide/svelte';
-	import { setContext, untrack } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import { get, writable } from 'svelte/store';
 
 	const props = $props<
 		HTMLAttributes<HTMLElement> & {
@@ -61,32 +59,6 @@
 			animationFrameId = null;
 		}
 	}
-
-	let scrollTop = $state(0);
-	let scrollHeight = $state(0);
-
-	let lock = writable(false);
-	setContext('scrollLock', lock);
-
-	$effect(() =>
-		lock.subscribe((value) => {
-			if (value || !scrollElement) return;
-			let scrollTopValue = untrack(() => scrollTop);
-
-			if (scrollTopValue < 0)
-				scrollTopValue = Math.min(scrollTopValue - scrollElement.scrollHeight + scrollHeight, 0);
-
-			scrollTop = scrollTopValue;
-			scrollElement.scrollTo({
-				top: scrollTopValue,
-				behavior: 'instant'
-			});
-		})
-	);
-
-	$effect(() => {
-		if (scrollElement) scrollHeight = scrollElement.scrollHeight;
-	});
 </script>
 
 <div
@@ -95,12 +67,6 @@
 	style={props.style}
 	bind:this={scrollElement}
 	{onwheel}
-	onscroll={() => {
-		if (!scrollElement || get(lock)) return;
-		scrollTop = scrollElement.scrollTop;
-		scrollHeight = scrollElement.scrollHeight;
-		console.log('update top to', scrollElement.scrollTop);
-	}}
 >
 	{@render children()}
 </div>

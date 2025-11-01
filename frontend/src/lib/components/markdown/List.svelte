@@ -1,13 +1,11 @@
-<script>
-	let { ordered, start, children } = $props();
+<script lang="ts">
+	let { node, children } = $props();
 
-	let decimalDigit = $derived(start.toString().length);
-
-	let marginLeft = $derived(decimalDigit <= 2 ? 1.5 : decimalDigit * 0.75);
+	const isOrdered = node.type === 'OrderedList';
 </script>
 
-{#if ordered}
-	<ol class="list-decimal" {start} style={`margin-left: ${marginLeft}rem`}>
+{#if isOrdered}
+	<ol class="list-decimal" style={`margin-left: 2.5rem`}>
 		{@render children?.()}
 	</ol>
 {:else}

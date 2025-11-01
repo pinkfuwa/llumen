@@ -1,11 +1,7 @@
-<script>
-	/**
-	 * @typedef {Object} Props
-	 * @property {import('svelte').Snippet} [children]
-	 */
-
-	/** @type {Props} */
-	let { children } = $props();
+<script lang="ts">
+	let { node, children } = $props();
 </script>
 
-<li class="items-center">{@render children?.()}</li>
+<li class="items-center">
+	{@render children?.()}
+</li>
