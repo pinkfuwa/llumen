@@ -302,6 +302,7 @@ export interface SseRespMessageComplete {
 	chunk_ids: number[];
 	token_count: number;
 	cost: number;
+	version: number;
 }
 
 export interface SseRespReasoning {
@@ -332,6 +333,7 @@ export interface SseRespVersion {
 export interface SseStart {
 	id: number;
 	user_msg_id: number;
+	version: number;
 }
 
 export interface UserCreateReq {

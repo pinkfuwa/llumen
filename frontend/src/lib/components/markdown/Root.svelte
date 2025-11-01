@@ -3,7 +3,6 @@
 	import Parser from './Parser.svelte';
 	import { parseIncremental, walkTree } from './lexer';
 	import { parseAst } from './worker';
-	import type { Tree } from '@lezer/common';
 
 	const { source, monochrome = false, incremental = false } = $props();
 

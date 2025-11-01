@@ -47,6 +47,7 @@ const Handlers: {
 			price: 0,
 			stream: true
 		});
+		version = data.version;
 	},
 
 	token: (token) => {
@@ -70,12 +71,13 @@ const Handlers: {
 	},
 
 	complete: (data) => {
-		const lastMsg = messages.at(-1);
+		const lastMsg = messages.at(0);
 		if (lastMsg && lastMsg.stream) {
 			lastMsg.stream = false;
 			lastMsg.token = data.token_count;
 			lastMsg.price = data.cost;
 		}
+		version = data.version;
 	},
 
 	title: (data, chatId) => {
@@ -97,41 +99,55 @@ const Handlers: {
 	}
 };
 
-export function useSSEEffect(chatId: () => number) {
-	$effect(() => {
-		const id = chatId();
-		const controller = new AbortController();
+function startSSE(chatId: number, signal: AbortSignal) {
+	RawAPIFetch<SseReq>('chat/sse', { id: chatId }, 'POST', signal).then(async (response) => {
+		if (response == undefined) return;
 
-		RawAPIFetch<SseReq>('chat/sse', { id: id }, 'POST', controller.signal).then(
-			async (response) => {
-				if (response == undefined) return;
+		const stream = events(response);
 
-				const stream = events(response);
+		try {
+			for await (const event of stream) {
+				const data = event.data;
 
-				try {
-					for await (const event of stream) {
-						const data = event.data;
-
-						if (data != undefined && data.trim() != ':') {
-							const resJson = JSON.parse(data) as SseResp;
-							const error = getError(resJson);
-							if (error) {
-								dispatchError(error.error, error.reason);
-							} else {
-								const handler = Handlers[resJson.t];
-								if (handler != undefined) handler(resJson.c as any, id);
-							}
-						} else {
-							console.log(data);
-						}
+				if (data != undefined && data.trim() != ':') {
+					const resJson = JSON.parse(data) as SseResp;
+					const error = getError(resJson);
+					if (error) {
+						dispatchError(error.error, error.reason);
+					} else {
+						const handler = Handlers[resJson.t];
+						if (handler != undefined) handler(resJson.c as any, chatId);
 					}
-				} catch (e) {
-					console.trace('SSE aborted', e);
+				} else {
+					console.log(data);
 				}
 			}
-		);
+		} catch (e) {
+			console.trace('SSE aborted', e);
+		}
+	});
+}
+
+export function useSSEEffect(chatId: () => number) {
+	$effect(() => {
+		let controller = new AbortController();
+
+		const id = chatId();
+
+		startSSE(id, controller.signal);
+
+		function onVisibilityChange() {
+			const state = globalThis.document.visibilityState;
+			if (state === 'visible') {
+				if (controller.signal.aborted) controller = new AbortController();
+				startSSE(id, controller.signal);
+			} else if (state === 'hidden') controller.abort();
+		}
+
+		globalThis.document.addEventListener('visibilitychange', onVisibilityChange);
 
 		return () => {
+			globalThis.document.removeEventListener('visibilitychange', onVisibilityChange);
 			messages = [];
 			version = -1;
 			controller.abort();
@@ -206,7 +222,6 @@ export function getStream() {
 }
 
 export function pushUserMessage(
-	id: number,
 	user_id: number,
 	content: string,
 	files: MessagePaginateRespChunkKindFile[]
@@ -220,7 +235,8 @@ export function pushUserMessage(
 	}));
 
 	let streamingMessage = untrack(() => messages).filter((x) => x.stream);
-	streamingMessage.splice(streamingMessage.length, 0, {
+
+	messages.splice(streamingMessage.length, 0, {
 		id: user_id,
 		chunks: [{ id: -1, kind: { t: 'text', c: { content } } }, ...fileChunks],
 		role: MessagePaginateRespRole.User,
@@ -233,7 +249,8 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 	return CreateMutation({
 		path: 'message/create',
 		onSuccess: (data, param) => {
-			pushUserMessage(data.id, data.user_id, param.text, param.files || []);
+			console.warn(data);
+			pushUserMessage(data.user_id, param.text, param.files || []);
 		}
 	});
 }
