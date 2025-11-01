@@ -8,6 +8,7 @@ import {
 	type DelimiterType
 } from '@lezer/markdown';
 import { tags } from '@lezer/highlight';
+import { parseCitation, isCitationBlock, type CitationData } from './citation-parser';
 
 // Mathematical expression node names
 const INLINE_MATH_DOLLAR = 'InlineMathDollar';
@@ -132,6 +133,48 @@ const latexExtension: MarkdownConfig = {
 			}
 		}
 	]
+};
+
+/**
+ * Detects citation blocks in the source.
+ * Citations are identified by <citation>...</citation> tags.
+ */
+const citationDetector: BlockDetector = {
+	name: 'citation',
+	detect(source: string, changeStart: number): BlockRegion[] {
+		const regions: BlockRegion[] = [];
+		let pos = 0;
+
+		while (pos < source.length) {
+			const openIndex = source.indexOf('<citation>', pos);
+			if (openIndex === -1) break;
+
+			const closeIndex = source.indexOf('</citation>', openIndex + 10);
+			if (closeIndex === -1) {
+				// Unclosed citation, include from opening to end
+				if (openIndex >= changeStart) {
+					regions.push({
+						start: openIndex,
+						end: source.length,
+						type: 'citation'
+					});
+				}
+				break;
+			}
+
+			const blockEnd = closeIndex + 11; // Length of '</citation>'
+			if (blockEnd >= changeStart) {
+				regions.push({
+					start: openIndex,
+					end: blockEnd,
+					type: 'citation'
+				});
+			}
+			pos = blockEnd;
+		}
+
+		return regions;
+	}
 };
 
 const parser = baseParser.configure([GFM, latexExtension]);
@@ -409,7 +452,12 @@ const latexDetector: BlockDetector = {
  * Registry of all block detectors.
  * Add new detectors here to extend support for additional block types.
  */
-const blockDetectors: BlockDetector[] = [tableDetector, codeFenceDetector, latexDetector];
+const blockDetectors: BlockDetector[] = [
+	tableDetector,
+	codeFenceDetector,
+	latexDetector,
+	citationDetector
+];
 
 /**
  * Finds all block regions in the source that cannot be incrementally parsed.
@@ -537,6 +585,7 @@ export function parseIncremental(prevTree: Tree, prevSource: string, newSource: 
 /**
  * Walk the Lezer tree and produce a nested AST structure.
  * Each node contains its type, text, and children.
+ * Special handling for citation blocks to extract structured data.
  */
 export function walkTree(tree: Tree | null, source: string): any | null {
 	if (!tree) {
@@ -549,13 +598,27 @@ export function walkTree(tree: Tree | null, source: string): any | null {
 		for (let child = node.firstChild; child; child = child.nextSibling) {
 			children.push(walk(child));
 		}
-		return {
+
+		const text = source.slice(node.from, node.to);
+		const baseNode = {
 			type: node.type.name,
 			from: node.from,
 			to: node.to,
-			text: source.slice(node.from, node.to),
+			text,
 			children
 		};
+
+		// Check if this is an HTMLBlock that contains a citation
+		if (node.type.name === 'HTMLBlock' && isCitationBlock(text)) {
+			const citationData = parseCitation(text);
+			return {
+				...baseNode,
+				type: 'Citation',
+				citationData
+			};
+		}
+
+		return baseNode;
 	}
 	const result = walk(tree.topNode);
 	return result;

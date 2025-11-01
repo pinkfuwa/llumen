@@ -26,12 +26,21 @@
 	import Parser from './Parser.svelte';
 	import Empty from './Empty.svelte';
 
+	interface CitationData {
+		title?: string;
+		url?: string;
+		favicon?: string;
+		authoritative?: boolean;
+		raw: string;
+	}
+
 	interface ASTNode {
 		type: string;
 		from?: number;
 		to?: number;
 		text?: string;
 		children?: ASTNode[];
+		citationData?: CitationData;
 	}
 
 	type Segment = { type: 'text'; text: string } | { type: 'node'; node: ASTNode };
@@ -160,6 +169,15 @@
 		{#each ast.children ?? [] as child}
 			<Parser ast={child} {monochrome} />
 		{/each}
+	{:else if ast.type === 'Citation' && ast.citationData}
+		{@const data = ast.citationData}
+		<Citation
+			raw={data.raw}
+			title={data.title}
+			url={data.url}
+			favicon={data.favicon}
+			authoritative={data.authoritative}
+		/>
 	{:else if !nodeMap[ast.type]}
 		<p>
 			Unmapped node type: {ast.type}
