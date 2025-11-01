@@ -54,16 +54,6 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			let chatId = chatRes.id;
 
-			SetInfiniteQueryData<ChatPaginateRespList>({
-				key: ['chatPaginate'],
-				data: {
-					id: chatId,
-					model_id: param.modelId
-				}
-			});
-
-			await goto('/chat/' + encodeURIComponent(chatId));
-
 			let files: MessageCreateReqFile[] = [];
 
 			for (const file of param.files) {
@@ -91,8 +81,17 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			let filesMetadata = files.map((f) => ({ name: f.name, id: f.id }));
 
-			// Optimistically insert the first user message into the messages array and trigger reactivity.
 			pushUserMessage(res.id, res.user_id, param.message, filesMetadata);
+
+			SetInfiniteQueryData<ChatPaginateRespList>({
+				key: ['chatPaginate'],
+				data: {
+					id: chatId,
+					model_id: param.modelId
+				}
+			});
+
+			await goto('/chat/' + encodeURIComponent(chatId));
 
 			return chatRes;
 		}

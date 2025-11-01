@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getMessages, startMessageSSE, updateMessage } from '$lib/api/messageDirect.svelte';
+	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/messageDirect.svelte';
 	import {
 		MessagePaginateRespRole as Role,
 		type ChatReadResp,
@@ -20,7 +20,7 @@
 
 	let { mutate } = updateMessage();
 
-	$effect(() => startMessageSSE(chatId));
+	useSSEEffect(() => chatId);
 
 	function getTextFromChunks(chunks: MessagePaginateRespChunk[]) {
 		return chunks
