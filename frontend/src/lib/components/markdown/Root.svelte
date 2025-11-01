@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Parser from './Parser.svelte';
-	import { parseMarkdown, parseMarkdownIncremental, walkTree } from './lezer';
+	import { parseIncremental, walkTree } from './lexer';
+	import { parseAst } from './worker';
+	import type { Tree } from '@lezer/common';
 
 	const { source, monochrome = false, incremental = false } = $props();
 
@@ -12,25 +14,36 @@
 	$effect(() => {
 		const prevTreeValue = untrack(() => prevTree);
 		const prevSourceValue = untrack(() => prevSource);
-		let tree: import('@lezer/common').Tree;
 
-		if (
-			incremental &&
-			prevTreeValue &&
-			source.startsWith(prevSourceValue) &&
-			source.length > prevSourceValue.length
-		) {
-			tree = parseMarkdownIncremental(prevTreeValue, prevSourceValue, source);
-		} else {
-			tree = parseMarkdown(source);
+		async function updateAst() {
+			const increment =
+				incremental &&
+				prevTreeValue &&
+				source.startsWith(prevSourceValue) &&
+				source.length > prevSourceValue.length;
+
+			if (increment) {
+				const tree = await parseIncremental(prevTreeValue, prevSourceValue, source);
+				ast = await walkTree(tree, source);
+				prevSource = source;
+				prevTree = tree;
+			} else {
+				ast = await parseAst(source);
+			}
 		}
 
-		prevSource = source;
-		prevTree = tree;
-		ast = walkTree(tree, source);
+		updateAst();
 	});
 </script>
 
-<div class="space-y-2">
-	<Parser {ast} {monochrome} />
-</div>
+{#if ast == null}
+	<div class="space-y-2">
+		{#each source.split('\n') as line}
+			<p>{line}</p>
+		{/each}
+	</div>
+{:else}
+	<div class="space-y-2">
+		<Parser {ast} {monochrome} />
+	</div>
+{/if}

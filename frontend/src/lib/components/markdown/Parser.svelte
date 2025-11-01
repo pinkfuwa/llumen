@@ -97,7 +97,7 @@
 		LinkMark: Empty,
 		QuoteMark: Empty,
 		ListMark: Empty,
-		HeaderMark: Text,
+		HeaderMark: Empty,
 		default: Text,
 		TableDelimiter: Empty,
 		Escape: Empty
@@ -174,15 +174,17 @@
 			>
 		{/if}
 	{:else}
-		{@const MappedComponent = nodeMap[ast.type]}
-		<MappedComponent node={ast} {monochrome}>
-			{#each segments as seg}
-				{#if seg.type === 'text'}
-					{seg.text}
-				{:else if seg.type === 'node'}
-					<Parser ast={seg.node} {monochrome} />
-				{/if}
-			{/each}
-		</MappedComponent>
+		{#key ast.text}
+			{@const MappedComponent = nodeMap[ast.type]}
+			<MappedComponent node={ast} {monochrome}>
+				{#each segments as seg}
+					{#if seg.type === 'text'}
+						{seg.text}
+					{:else if seg.type === 'node'}
+						<Parser ast={seg.node} {monochrome} />
+					{/if}
+				{/each}
+			</MappedComponent>
+		{/key}
 	{/if}
 {/if}

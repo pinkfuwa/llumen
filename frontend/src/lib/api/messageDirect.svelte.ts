@@ -8,7 +8,6 @@ import type {
 	MessageDeleteReq,
 	MessageCreateReq,
 	MessageCreateResp,
-	MessagePaginateRespChunk,
 	MessagePaginateResp,
 	MessagePaginateReq,
 	MessagePaginateRespList,
@@ -99,9 +98,7 @@ const Handlers: {
 };
 
 export function useSSEEffect(chatId: () => number) {
-	$inspect('messages', messages);
 	$effect(() => {
-		console.log('start sse');
 		const id = chatId();
 		const controller = new AbortController();
 
@@ -111,21 +108,25 @@ export function useSSEEffect(chatId: () => number) {
 
 				const stream = events(response);
 
-				for await (const event of stream) {
-					const data = event.data;
+				try {
+					for await (const event of stream) {
+						const data = event.data;
 
-					if (data != undefined && data.trim() != ':') {
-						const resJson = JSON.parse(data) as SseResp;
-						const error = getError(resJson);
-						if (error) {
-							dispatchError(error.error, error.reason);
+						if (data != undefined && data.trim() != ':') {
+							const resJson = JSON.parse(data) as SseResp;
+							const error = getError(resJson);
+							if (error) {
+								dispatchError(error.error, error.reason);
+							} else {
+								const handler = Handlers[resJson.t];
+								if (handler != undefined) handler(resJson.c as any, id);
+							}
 						} else {
-							const handler = Handlers[resJson.t];
-							if (handler != undefined) handler(resJson.c as any, id);
+							console.log(data);
 						}
-					} else {
-						console.log(data);
 					}
+				} catch (e) {
+					console.trace('SSE aborted', e);
 				}
 			}
 		);
@@ -210,7 +211,6 @@ export function pushUserMessage(
 	content: string,
 	files: MessagePaginateRespChunkKindFile[]
 ) {
-	console.log('push user message');
 	let fileChunks = files.map((f) => ({
 		id: 0,
 		kind: {

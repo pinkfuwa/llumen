@@ -1,7 +1,5 @@
 <script lang="ts">
-	let { node } = $props();
-
-	let displayText = $derived(node.text.trim().replace(/^#+/, ''));
+	let { node, children } = $props();
 
 	const classMap: Record<string, string> = {
 		ATXHeading1: 'mt-1 text-2xl font-bold',
@@ -12,4 +10,6 @@
 	};
 </script>
 
-<h2 class={classMap[node.type]}>{displayText}</h2>
+<h2 class={classMap[node.type]}>
+	{@render children?.()}
+</h2>
