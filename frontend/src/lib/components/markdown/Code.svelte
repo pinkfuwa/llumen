@@ -3,6 +3,7 @@
 	import { copy } from '$lib/copy';
 	import Code from '../shiki/Code.svelte';
 	import Root from './Root.svelte';
+	import Latex from './Latex.svelte';
 
 	let { node, monochrome = false } = $props();
 
@@ -26,11 +27,12 @@
 
 	const lang = $derived(extractLanguage(node));
 	const text = $derived(extractCodeText(node));
-	$inspect('lang', lang);
 </script>
 
 {#if lang == 'markdown'}
 	<Root source={text} />
+{:else if lang == 'latex'}
+	<Latex node={{ text }} />
 {:else}
 	<div class="group/codeblock relative">
 		{#if text.split('\n').length > 1}

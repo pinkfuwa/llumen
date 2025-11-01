@@ -20,6 +20,7 @@ import type {
 import { MessagePaginateReqOrder, MessagePaginateRespRole } from './types';
 import { dispatchError } from '$lib/error';
 import { UpdateInfiniteQueryDataById } from './state';
+import { untrack } from 'svelte';
 
 let version = $state(-1);
 
@@ -31,17 +32,14 @@ const Handlers: {
 	[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c'], chatId: number) => void;
 } = {
 	version: (data, chatId) => {
-		console.log(data);
 		if (version !== data.version) {
 			version = data.version;
-			console.log('version updated');
 			syncMessages(chatId);
 		}
 	},
 
 	start: (data) => {
 		if (messages.at(-1)?.id == data.user_msg_id) console.warn('Duplicate message detected');
-		console.log('push assistant');
 		messages.unshift({
 			id: data.id,
 			role: MessagePaginateRespRole.Assistant,
@@ -221,7 +219,8 @@ export function pushUserMessage(
 		} as MessagePaginateRespChunkKind
 	}));
 
-	messages.unshift({
+	let streamingMessage = untrack(() => messages).filter((x) => x.stream);
+	streamingMessage.splice(streamingMessage.length, 0, {
 		id: user_id,
 		chunks: [{ id: -1, kind: { t: 'text', c: { content } } }, ...fileChunks],
 		role: MessagePaginateRespRole.User,

@@ -15,7 +15,6 @@
 	$effect(() => {
 		uselessFn(page.url);
 		const large = window.matchMedia('(width >= 48rem)').matches;
-		console.log(large);
 		if (!large) open = false;
 	});
 
