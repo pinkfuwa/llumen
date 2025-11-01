@@ -1,14 +1,36 @@
-<script>
+<script lang="ts">
 	import { ClipboardCopy } from '@lucide/svelte';
 	import { copy } from '$lib/copy';
 	import Code from '../shiki/Code.svelte';
-	import { Markdown } from '.';
+	import Root from './Root.svelte';
 
-	let { lang, text, monochrome = false } = $props();
+	let { node, monochrome = false } = $props();
+
+	function extractLanguage(node: any): string {
+		const infoChild = node.children?.find((c: any) => c.type === 'CodeInfo');
+		if (infoChild) {
+			return infoChild.text.trim();
+		}
+		return '';
+	}
+
+	function extractCodeText(node: any): string {
+		if (node.type === 'FencedCode' || node.type === 'CodeBlock') {
+			const codeTextChild = node.children?.find((c: any) => c.type === 'CodeText');
+			if (codeTextChild) {
+				return codeTextChild.text;
+			}
+		}
+		return node.text || '';
+	}
+
+	const lang = $derived(extractLanguage(node));
+	const text = $derived(extractCodeText(node));
+	$inspect('lang', lang);
 </script>
 
 {#if lang == 'markdown'}
-	<Markdown source={text} />
+	<Root source={text} />
 {:else}
 	<div class="group/codeblock relative">
 		{#if text.split('\n').length > 1}

@@ -1,24 +1,36 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Parser from './Parser.svelte';
-	import { parseMarkdown, type WorkerToken } from './parser/index';
-	import { parseMarkdown as workerParseMarkdown } from './worker';
+	import { parseMarkdown, parseMarkdownIncremental, walkTree } from './lezer';
 
-	let { source, monochrome = false, incremental = false } = $props();
+	const { source, monochrome = false, incremental = false } = $props();
 
-	let tokens: WorkerToken[] | undefined = $state(undefined);
+	let prevSource: string = $state('');
+	let prevTree: import('@lezer/common').Tree | null = null;
+	let ast: any = $state(null);
 
 	$effect(() => {
-		(incremental ? parseMarkdown : workerParseMarkdown)(source).then((resp) => {
-			tokens = resp;
-		});
+		const prevTreeValue = untrack(() => prevTree);
+		const prevSourceValue = untrack(() => prevSource);
+		let tree: import('@lezer/common').Tree;
+
+		if (
+			incremental &&
+			prevTreeValue &&
+			source.startsWith(prevSourceValue) &&
+			source.length > prevSourceValue.length
+		) {
+			tree = parseMarkdownIncremental(prevTreeValue, prevSourceValue, source);
+		} else {
+			tree = parseMarkdown(source);
+		}
+
+		prevSource = source;
+		prevTree = tree;
+		ast = walkTree(tree, source);
 	});
-	$inspect(tokens);
 </script>
 
-{#if tokens === undefined}
-	{#each source.split('\n') as line}
-		<p>{line}</p>
-	{/each}
-{:else}
-	<Parser {tokens} {monochrome} />
-{/if}
+<div class="space-y-2">
+	<Parser {ast} {monochrome} />
+</div>
