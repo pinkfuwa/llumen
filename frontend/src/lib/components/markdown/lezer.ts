@@ -1,4 +1,4 @@
-import type { Tree, SyntaxNode } from '@lezer/common';
+import type { Tree, SyntaxNode, TreeFragment } from '@lezer/common';
 
 import { parser as baseParser, GFM } from '@lezer/markdown';
 const parser = baseParser.configure(GFM);
@@ -26,9 +26,22 @@ export function parseMarkdownIncremental(
 	if (!newSource.startsWith(prevSource)) {
 		return parser.parse(newSource);
 	}
-	// Lezer's incremental parsing expects TreeFragment[], not Tree.
-	// For now, fallback to full parse to avoid type errors.
-	return parser.parse(newSource);
+
+	const addedLength = newSource.length - prevSource.length;
+	if (addedLength === 0) {
+		return prevTree;
+	}
+
+	const fragments: TreeFragment[] = [
+		{
+			from: 0,
+			to: prevTree.length,
+			offset: 0,
+			tree: prevTree
+		} as TreeFragment
+	];
+
+	return parser.parse(newSource, fragments);
 }
 
 /**
@@ -55,6 +68,6 @@ export function walkTree(tree: Tree | null, source: string): any | null {
 		};
 	}
 	const result = walk(tree.topNode);
-	// console.log('Node types found:', Array.from(nodeTypes).sort());
+
 	return result;
 }
