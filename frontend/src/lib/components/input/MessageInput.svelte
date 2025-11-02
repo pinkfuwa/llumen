@@ -11,7 +11,7 @@
 	import StopBtn from './StopBtn.svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { ChatMode as Mode } from '$lib/api/types';
-	import { setContext } from 'svelte';
+	import { onMount, setContext } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { FileUp } from '@lucide/svelte';
 

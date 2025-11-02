@@ -183,7 +183,7 @@
 			Unmapped node type: {ast.type}
 		</p>
 	{:else}
-		{#key (monochrome ? 'm' : 'u') + ast.text}
+		{#key (monochrome && ast.type.includes('Code') ? 'm' : 'u') + ast.text}
 			{@const MappedComponent = nodeMap[ast.type]}
 			<MappedComponent node={ast} {monochrome}>
 				{#each segments as seg}
