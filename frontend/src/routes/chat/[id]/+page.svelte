@@ -29,13 +29,14 @@
 		if (mode == null) mode = $room.mode;
 	});
 
-	let streaming = $derived(getStream());
-
 	let uploadManager = $derived(new UploadManager(id));
 
 	$effect(() => {
 		uploadManager.retain(files);
 	});
+
+	let stream = $state(false);
+	getStream((x) => (stream = x));
 </script>
 
 <Copyright top />
@@ -61,7 +62,7 @@
 			oncancel={() => {
 				halt({ id });
 			}}
-			disabled={streaming || modelId === null || mode === null}
+			disabled={stream || modelId === null || mode === null}
 		/>
 	</div>
 	<MessagePagination room={$room} />

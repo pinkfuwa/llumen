@@ -25,7 +25,7 @@ let version = $state(-1);
 
 let messages = $state<Array<MessagePaginateRespList & { stream?: boolean }>>([]);
 
-let streaming = $derived(!!messages.at(-1)?.stream);
+// let streaming = $derived(!!messages.at(0)?.stream);
 
 const Handlers: {
 	[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c'], chatId: number) => void;
@@ -122,13 +122,12 @@ function startSSE(chatId: number, signal: AbortSignal) {
 				}
 			}
 		} catch (e) {
-			console.trace('SSE aborted');
+			console.log('SSE aborted');
 		}
 	});
 }
 
 export function useSSEEffect(chatId: () => number) {
-	$inspect(messages);
 	$effect(() => {
 		let controller = new AbortController();
 
@@ -220,8 +219,11 @@ export function getMessages() {
 	return messages;
 }
 
-export function getStream() {
-	return streaming;
+export function getStream(updater: (x: boolean) => void) {
+	$effect(() => {
+		const stream = messages.at(0)?.stream ? true : false;
+		updater(stream);
+	});
 }
 
 export function pushUserMessage(
