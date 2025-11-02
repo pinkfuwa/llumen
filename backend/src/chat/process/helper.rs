@@ -72,10 +72,9 @@ pub(super) async fn load_files(
         let name = handle.name.clone();
         let db = db.clone();
         let handle = tokio::spawn(async move {
-            db.get(id).await.map(|data| openrouter::File {
-                name,
-                data: data.as_ref().to_vec(),
-            })
+            db.get_vectored(id)
+                .await
+                .map(|data| openrouter::File { name, data })
         });
         tasks.push(handle);
     }

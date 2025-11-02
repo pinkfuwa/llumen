@@ -27,7 +27,7 @@ pub async fn route(
             reason: "".to_owned(),
         }))?;
 
-    let blob = app.blob.get(id).await.unwrap();
+    let blob = app.blob.get_vectored(id).await.unwrap();
 
     let mut headers = axum::http::HeaderMap::new();
 
@@ -37,8 +37,6 @@ pub async fn route(
             axum::http::HeaderValue::from_str(mime.as_str()).unwrap(),
         );
     }
-
-    let blob = blob.as_ref().to_vec();
 
     Ok((headers, Bytes::from(blob)).into_response())
 }

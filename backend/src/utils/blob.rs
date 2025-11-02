@@ -18,6 +18,7 @@ impl AsRef<[u8]> for Reader {
     }
 }
 
+#[derive(Clone)]
 pub struct BlobDB {
     pub inner: Arc<Database>,
 }
@@ -32,12 +33,23 @@ impl BlobDB {
         Self { inner }
     }
 
-    pub async fn get(&self, id: i32) -> Option<Reader> {
+    /// get Reader
+    ///
+    /// Please note redb use mmap, so it's blocking on page fault
+    pub fn get(&self, id: i32) -> Option<Reader> {
         let txn = self.inner.begin_read().ok()?;
         let table = txn.open_table(TABLE).ok()?;
 
         let guard = table.get(id).ok()??;
         Some(Reader(guard))
+    }
+
+    /// read all data
+    pub async fn get_vectored(&self, id: i32) -> Option<Vec<u8>> {
+        let db = self.clone();
+        tokio::task::spawn_blocking(move || db.get(id).map(|reader| reader.as_ref().to_vec()))
+            .await
+            .ok()?
     }
 
     pub async fn insert_with_error<S, E>(
