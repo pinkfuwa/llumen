@@ -31,4 +31,21 @@ testData:
       Can you translate this into chinese? --- The object is customarily
       positioned so that one of its principal faces is parallel to the plane of
       projection.
-evaluators: []
+evaluators:
+  - name: Check statement
+    llm:
+      model: gpt-4.1
+      modelId: azureml://registries/azure-openai/models/gpt-4.1/versions/2025-04-14
+      prompt: |-
+        Check that output is a valid title, to be a title, it must:
+        - not a full sentence
+        - not "." or"。", ",", "，"
+        - Fewer than 8 words
+        - no trailing newline
+      choices:
+        - choice: valid
+          score: 1
+        - choice: invalid
+          score: 0
+      modelParameters:
+        max_completion_tokens: 400
