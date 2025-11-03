@@ -102,9 +102,21 @@ jobs:
         with:
           version: "0.13.0"
 
+      - name: Cache cargo binaries
+        if: steps.git_log.outputs.changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin
+          key: cargo-bin-${{ runner.os }}-cargo-zigbuild
+          restore-keys: |
+            cargo-bin-${{ runner.os }}-
+
       - name: Install cargo-zigbuild
         if: steps.git_log.outputs.changed == 'true'
-        run: cargo install --locked cargo-zigbuild
+        run: |
+          if ! command -v cargo-zigbuild &> /dev/null; then
+            cargo install --locked cargo-zigbuild
+          fi
 
       - name: Make build script executable
         if: steps.git_log.outputs.changed == 'true'

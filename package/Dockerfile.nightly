@@ -1,5 +1,5 @@
 # Dockerfile for nightly builds using pre-built artifacts
-# Artifacts should be built outside Docker using build-artifacts.sh
+# Artifacts should be built outside Docker using build-docker-artifacts.sh
 # This approach allows for better caching of build dependencies
 
 FROM alpine AS ca
