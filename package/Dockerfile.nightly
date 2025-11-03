@@ -21,7 +21,7 @@ WORKDIR /
 
 COPY --from=ca /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY ./frontend/build /static
-COPY ./artifacts/${TARGETPLATFORM} /backend
+COPY ./artifacts/${TARGETPLATFORM}/backend /backend
 
 ENV STATIC_DIR="/static"
 ENV DATABASE_URL="sqlite://data/db.sqlite?mode=rwc"
