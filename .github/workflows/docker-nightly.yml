@@ -29,6 +29,91 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: Get lockfile hashes
+        if: steps.git_log.outputs.changed == 'true'
+        id: lockfile_hash
+        run: |
+          echo "cargo_lock_hash=$(sha256sum backend/Cargo.lock | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: Cache backend target directory
+        if: steps.git_log.outputs.changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: backend/target
+          key: backend-target-${{ runner.os }}-${{ steps.lockfile_hash.outputs.cargo_lock_hash }}
+          restore-keys: |
+            backend-target-${{ runner.os }}-
+
+      - name: Cache frontend node_modules
+        if: steps.git_log.outputs.changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: frontend-node-modules-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
+          restore-keys: |
+            frontend-node-modules-${{ runner.os }}-
+
+      - name: Cache frontend .svelte-kit
+        if: steps.git_log.outputs.changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: frontend/.svelte-kit
+          key: frontend-svelte-kit-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
+          restore-keys: |
+            frontend-svelte-kit-${{ runner.os }}-
+
+      - name: Install Rust toolchain
+        if: steps.git_log.outputs.changed == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+
+      - name: Setup musl-tools
+        if: steps.git_log.outputs.changed == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools pkg-config make perl
+
+      - uses: pnpm/action-setup@v4
+        if: steps.git_log.outputs.changed == 'true'
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+          package_json_file: "./frontend/package.json"
+
+      - name: Setup Node.js
+        if: steps.git_log.outputs.changed == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: ./frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        if: steps.git_log.outputs.changed == 'true'
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Install Zig
+        if: steps.git_log.outputs.changed == 'true'
+        uses: mlugg/setup-zig@v2
+        with:
+          version: "0.13.0"
+
+      - name: Install cargo-zigbuild
+        if: steps.git_log.outputs.changed == 'true'
+        run: cargo install --locked cargo-zigbuild
+
+      - name: Make build script executable
+        if: steps.git_log.outputs.changed == 'true'
+        run: chmod +x package/build-docker-artifacts.sh
+
+      - name: Build artifacts outside Docker
+        if: steps.git_log.outputs.changed == 'true'
+        run: ./package/build-docker-artifacts.sh
+
       - name: Set up Docker Buildx
         if: steps.git_log.outputs.changed == 'true'
         uses: docker/setup-buildx-action@v3
@@ -54,10 +139,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./package/Dockerfile
+          file: ./package/Dockerfile.nightly
           platforms: "linux/amd64,linux/arm64"
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max

@@ -1,0 +1,36 @@
+# Dockerfile for nightly builds using pre-built artifacts
+# Artifacts should be built outside Docker using build-artifacts.sh
+# This approach allows for better caching of build dependencies
+
+FROM alpine AS ca
+
+FROM scratch
+
+ARG TARGETPLATFORM
+
+LABEL org.opencontainers.image.title="llumen"
+LABEL org.opencontainers.image.description="A lightweight, self-hostable LLM chat application."
+LABEL org.opencontainers.image.url="https://github.com/pinkfuwa/llumen"
+LABEL org.opencontainers.image.source="https://github.com/pinkfuwa/llumen"
+LABEL org.opencontainers.image.authors="eason0729, kaiyohugo"
+LABEL org.opencontainers.image.vendor="llumen"
+
+WORKDIR /static
+WORKDIR /data
+WORKDIR /
+
+COPY --from=ca /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY ./frontend/build /static
+COPY ./artifacts/${TARGETPLATFORM} /backend
+
+ENV STATIC_DIR="/static"
+ENV DATABASE_URL="sqlite://data/db.sqlite?mode=rwc"
+ENV BLOB_URL="/data/blobs.redb"
+ENV BIND_ADDR="0.0.0.0:80"
+ENV RUST_LOG=none,backend=debug
+
+EXPOSE 80
+
+VOLUME ["/data"]
+
+CMD ["/backend"]
