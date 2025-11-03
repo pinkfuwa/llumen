@@ -1,4 +1,3 @@
-use std::io::Read;
 use std::path::Path;
 
 use redb::*;
@@ -7,8 +6,6 @@ use tokio_stream::{Stream, StreamExt};
 use std::sync::Arc;
 
 pub const TABLE: TableDefinition<i32, &[u8]> = TableDefinition::new("blobs");
-
-pub const MAX_CHUNK_LEN: usize = 512 * 1024;
 
 pub struct Reader(AccessGuard<'static, &'static [u8]>);
 

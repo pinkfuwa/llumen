@@ -15,12 +15,16 @@ use dotenv::var;
 use entity::prelude::*;
 use middlewares::cache_control::CacheControlLayer;
 use migration::MigratorTrait;
+use mimalloc::MiMalloc;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{ConnectionTrait, Database, DbConn, EntityTrait};
 use tokio::{net::TcpListener, signal};
 use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
 use utils::{blob::BlobDB, password_hash::Hasher};
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 #[cfg(feature = "dev")]
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
@@ -84,7 +88,7 @@ async fn main() {
     crate::utils::logger::init();
 
     let api_key = load_api_key();
-    let api_base = var("API_BASE").unwrap_or("https://openrouter.ai/api".to_string());
+    let api_base = var("OPENAI_API_BASE").unwrap_or("https://openrouter.ai/api".to_string());
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
     let static_dir = var("STATIC_DIR").unwrap_or(
