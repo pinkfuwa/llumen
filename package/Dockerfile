@@ -28,13 +28,8 @@ ENV PATH="/opt/zig:$PATH"
 
 WORKDIR /
 
-RUN --mount=type=cache,target=~/.cargo/bin/
-RUN --mount=type=cache,target=~/.cargo/registry/index/
-RUN --mount=type=cache,target=~/.cargo/registry/cache/
-RUN --mount=type=cache,target=~/.cargo/git/db/
-RUN --mount=type=cache,id=target,target=/compiler/target
-
-RUN cargo install --locked cargo-zigbuild
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo install --locked cargo-zigbuild
 
 RUN rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
 
@@ -48,7 +43,8 @@ WORKDIR /compiler
 
 COPY ./backend .
 
-RUN --mount=type=cache,id=target,target=/compiler/target \
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,id=target,target=/compiler/target \
     cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl && \
     mkdir -p /app/linux && \
     cp target/aarch64-unknown-linux-musl/release/backend /app/linux/arm64 && \
