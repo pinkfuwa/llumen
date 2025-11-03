@@ -1,3 +1,7 @@
 node_modules
 .env
 artifacts
+
+# Frontend build artifacts
+frontend/.svelte-kit
+frontend/build
