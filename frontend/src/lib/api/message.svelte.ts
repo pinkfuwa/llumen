@@ -108,6 +108,13 @@ function startSSE(chatId: number, signal: AbortSignal) {
 
 		try {
 			for await (const event of stream) {
+				// Check if this connection has been aborted before processing the event
+				// This prevents duplicate chunks when a new connection starts while old one is still processing
+				if (signal.aborted) {
+					console.log('SSE connection aborted, stopping event processing');
+					break;
+				}
+
 				const data = event.data;
 
 				if (data != undefined && data.trim() != ':') {
