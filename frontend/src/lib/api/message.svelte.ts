@@ -38,14 +38,16 @@ const Handlers: {
 	},
 
 	start: (data) => {
-		messages.unshift({
-			id: data.id,
-			role: MessagePaginateRespRole.Assistant,
-			chunks: [],
-			token: 0,
-			price: 0,
-			stream: true
-		});
+		if (!messages.some((m) => m.id == data.id)) {
+			messages.unshift({
+				id: data.id,
+				role: MessagePaginateRespRole.Assistant,
+				chunks: [],
+				token: 0,
+				price: 0,
+				stream: true
+			});
+		}
 		version = data.version;
 	},
 
