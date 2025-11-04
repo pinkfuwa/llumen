@@ -1,6 +1,6 @@
 //! Configuration options for the Lua runner.
 
-use crate::{DEFAULT_INSTRUCTION_LIMIT, DEFAULT_MEMORY_LIMIT};
+use crate::{DEFAULT_INSTRUCTION_LIMIT, DEFAULT_MEMORY_LIMIT, DEEP_RESEARCH_MEMORY_LIMIT};
 
 /// Configuration for the Lua runner.
 #[derive(Debug, Clone)]
@@ -45,7 +45,21 @@ impl LuaRunnerConfig {
     pub fn sandboxed() -> Self {
         Self {
             enable_std_lib: true,
+            sandboxed: true,
             ..Default::default()
+        }
+    }
+
+    /// Creates a configuration for deep research with higher limits.
+    pub fn deep_research() -> Self {
+        Self {
+            memory_limit: DEEP_RESEARCH_MEMORY_LIMIT,
+            instruction_limit: 1_000_000, // Higher limit for deep research
+            enable_std_lib: true,
+            sandboxed: true,
+            capture_stdout: true,
+            capture_stderr: true,
+            timeout_ms: Some(60_000), // 60 seconds
         }
     }
 
