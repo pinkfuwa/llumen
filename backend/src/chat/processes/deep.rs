@@ -22,76 +22,17 @@ impl DeepPipeline {
 
     pub async fn process(mut self) -> Result<()> {
         // Check if the model supports tool calling
-        let model_config = self.completion_ctx.model.get_config();
-        let is_tool_capable = match model_config {
-            Some(config) => config.is_tool_capable(),
-            None => true, // Assume tool support if no config
-        };
+        let model_config = self
+            .completion_ctx
+            .model
+            .get_config()
+            .context("corruptted database")?;
 
-        if !is_tool_capable {
-            // Send error chunk instead of returning an error
-            let assistant_msg = entity::message::ActiveModel {
-                chat_id: Set(self.completion_ctx.chat.id.clone().unwrap()),
-                kind: Set(MessageKind::DeepResearch),
-                ..Default::default()
-            }
-            .insert(&self.ctx.db)
-            .await
-            .context("Failed to create assistant message")?;
-
-            let message_id = assistant_msg.id;
-
-            // Send start token
-            self.completion_ctx.add_token_force(Token::Start {
-                id: message_id,
-                user_msg_id: self.completion_ctx.get_message_id(),
-            });
-
-            // Send error token
-            self.completion_ctx.add_token_force(Token::Error(
-                "Deep research requires a model with tool calling support. Please select a different model.".to_string(),
-            ));
-
-            // Store error chunk
-            let error_chunk = chunk::ActiveModel {
-                message_id: Set(message_id),
-                kind: Set(ChunkKind::Error),
-                content: Set("Deep research requires a model with tool calling support. Please select a different model.".to_string()),
-                ..Default::default()
-            };
-
-            let chunk_result = error_chunk.insert(&self.ctx.db).await
-                .context("Failed to insert error chunk")?;
-
-            // Send completion token
-            self.completion_ctx.add_token_force(Token::Complete {
-                message_id,
-                chunk_ids: vec![chunk_result.id],
-                cost: 0.0,
-                token: 0,
-            });
-
-            return Ok(());
+        if !model_config.is_tool_capable() {
+            return self.completion_ctx.save(Some("Deep research requires a model with tool calling support. Please select a different model.")).await;
         }
 
-        // Initialize the assistant message
-        let assistant_msg = entity::message::ActiveModel {
-            chat_id: Set(self.completion_ctx.chat.id.clone().unwrap()),
-            kind: Set(MessageKind::DeepResearch),
-            ..Default::default()
-        }
-        .insert(&self.ctx.db)
-        .await
-        .context("Failed to create assistant message")?;
-
-        let message_id = assistant_msg.id;
-
-        // Send start token
-        self.completion_ctx
-            .add_token_force(Token::Start {
-                id: message_id,
-                user_msg_id: self.completion_ctx.get_message_id(),
-            });
+        let message_id = self.completion_ctx.get_message_id();
 
         // For now, send a simple placeholder message
         // TODO: Implement the full deep research flow
@@ -108,10 +49,9 @@ impl DeepPipeline {
         });
 
         // Send plan token
-        self.completion_ctx
-            .add_token_force(Token::ResearchPlan(
-                serde_json::to_string(&plan_json).unwrap(),
-            ));
+        self.completion_ctx.add_token_force(Token::ResearchPlan(
+            serde_json::to_string(&plan_json).unwrap(),
+        ));
 
         // Send a simple report
         self.completion_ctx
@@ -141,16 +81,15 @@ impl DeepPipeline {
             .context("Failed to insert chunks")?;
 
         // Send completion token
-        self.completion_ctx
-            .add_token_force(Token::Complete {
-                message_id,
-                chunk_ids: vec![
-                    chunk_results.last_insert_id,
-                    chunk_results.last_insert_id + 1,
-                ],
-                cost: 0.0,
-                token: 0,
-            });
+        self.completion_ctx.add_token_force(Token::Complete {
+            message_id,
+            chunk_ids: vec![
+                chunk_results.last_insert_id,
+                chunk_results.last_insert_id + 1,
+            ],
+            cost: 0.0,
+            token: 0,
+        });
 
         Ok(())
     }

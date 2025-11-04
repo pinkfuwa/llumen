@@ -183,6 +183,7 @@ impl CompletionContext {
         self.chat.id.clone().unwrap()
     }
 
+    /// get user assistant id
     pub fn get_message_id(&self) -> i32 {
         self.message.id.clone().unwrap()
     }
