@@ -6,6 +6,9 @@
 	import Result from './buttons/Result.svelte';
 	import Tool from './buttons/Tool.svelte';
 	import ToolBox from './buttons/ToolBox.svelte';
+	import DeepPlan from './buttons/DeepPlan.svelte';
+	import DeepStep from './buttons/DeepStep.svelte';
+	import DeepReport from './buttons/DeepReport.svelte';
 
 	let {
 		chunks,
@@ -30,5 +33,11 @@
 		</ToolBox>
 	{:else if kind == 'error'}
 		<ResponseError {content} />
+	{:else if kind == 'plan'}
+		<DeepPlan {content} />
+	{:else if kind == 'step'}
+		<DeepStep {content} />
+	{:else if kind == 'report'}
+		<DeepReport {content} />
 	{/if}
 {/each}

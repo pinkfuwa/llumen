@@ -8,7 +8,7 @@
 	let { value = $bindable(Mode.Normal) as Mode, disabled = false } = $props();
 
 	// TODO: enable Mode.Research when ready
-	const modes = [Mode.Normal, Mode.Search];
+	const modes = [Mode.Normal, Mode.Search, Mode.Research];
 	function nextStage() {
 		const nextIndex = modes.indexOf(value) + 1;
 		value = modes[nextIndex % modes.length];
