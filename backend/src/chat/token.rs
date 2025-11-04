@@ -54,6 +54,18 @@ impl Mergeable for Token {
                 s1.push_str(&s2);
                 None
             }
+            (Token::ResearchPlan(s1), Token::ResearchPlan(s2)) => {
+                s1.push_str(&s2);
+                None
+            }
+            (Token::ResearchStep(s1), Token::ResearchStep(s2)) => {
+                s1.push_str(&s2);
+                None
+            }
+            (Token::ResearchReport(s1), Token::ResearchReport(s2)) => {
+                s1.push_str(&s2);
+                None
+            }
             (_, other) => Some(other),
         }
     }
@@ -132,6 +144,21 @@ fn into_chunk(token: Token) -> Option<chunk::ActiveModel> {
         }),
         Token::Reasoning(content) => Some(chunk::ActiveModel {
             kind: sea_orm::Set(ChunkKind::Reasoning),
+            content: sea_orm::Set(content),
+            ..Default::default()
+        }),
+        Token::ResearchPlan(content) => Some(chunk::ActiveModel {
+            kind: sea_orm::Set(ChunkKind::Plan),
+            content: sea_orm::Set(content),
+            ..Default::default()
+        }),
+        Token::ResearchStep(content) => Some(chunk::ActiveModel {
+            kind: sea_orm::Set(ChunkKind::Step),
+            content: sea_orm::Set(content),
+            ..Default::default()
+        }),
+        Token::ResearchReport(content) => Some(chunk::ActiveModel {
+            kind: sea_orm::Set(ChunkKind::Report),
             content: sea_orm::Set(content),
             ..Default::default()
         }),

@@ -8,5 +8,5 @@ mod token;
 pub use context::{CompletionContext, Context};
 
 pub use process::Pipeline;
-pub use processes::{Normal, Search};
+pub use processes::{Normal, Search, DeepPipeline};
 pub use token::Token;

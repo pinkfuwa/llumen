@@ -178,6 +178,44 @@ pub struct FileHandle {
     pub id: i32,
 }
 
+/// Deep research plan structure
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[typeshare]
+pub struct DeepPlan {
+    pub steps: Vec<DeepStep>,
+    pub has_enough_context: bool,
+}
+
+/// Deep research step structure
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[typeshare]
+pub struct DeepStep {
+    pub id: String,
+    pub description: String,
+    pub need_search: bool,
+    pub status: DeepStepStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<String>,
+}
+
+/// Status of a deep research step
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[typeshare]
+#[serde(rename_all = "snake_case")]
+pub enum DeepStepStatus {
+    Pending,
+    InProgress,
+    Completed,
+    Failed,
+}
+
+/// Deep research report structure
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[typeshare]
+pub struct DeepReport {
+    pub content: String,
+}
+
 impl crate::chunk::Model {
     pub fn as_tool_call(&self) -> Result<ToolCall> {
         debug_assert_eq!(self.kind, ChunkKind::ToolCall);
@@ -185,6 +223,18 @@ impl crate::chunk::Model {
     }
     pub fn as_file(&self) -> Result<FileHandle> {
         debug_assert_eq!(self.kind, ChunkKind::File);
+        Ok(serde_json::from_str(&self.content)?)
+    }
+    pub fn as_deep_plan(&self) -> Result<DeepPlan> {
+        debug_assert_eq!(self.kind, ChunkKind::Plan);
+        Ok(serde_json::from_str(&self.content)?)
+    }
+    pub fn as_deep_step(&self) -> Result<DeepStep> {
+        debug_assert_eq!(self.kind, ChunkKind::Step);
+        Ok(serde_json::from_str(&self.content)?)
+    }
+    pub fn as_deep_report(&self) -> Result<DeepReport> {
+        debug_assert_eq!(self.kind, ChunkKind::Report);
         Ok(serde_json::from_str(&self.content)?)
     }
 }
