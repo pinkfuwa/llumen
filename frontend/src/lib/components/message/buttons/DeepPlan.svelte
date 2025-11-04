@@ -47,16 +47,12 @@
 				<Icon class="w-5 h-5 mt-0.5 flex-shrink-0 {getStatusClass(step.status)}" />
 				<div class="flex-1">
 					<p class="text-sm text-gray-700 dark:text-gray-300">{step.description}</p>
-					{#if step.need_search}
-						<span class="text-xs text-gray-500 dark:text-gray-400">Requires web search</span>
-					{/if}
+					<span class="text-xs text-gray-500 dark:text-gray-400 data-[show=false]:hidden" data-show={step.need_search}>Requires web search</span>
 				</div>
 			</div>
 		{/each}
 	</div>
-	{#if !plan.has_enough_context}
-		<p class="mt-3 text-sm text-gray-600 dark:text-gray-400 italic">
-			Gathering additional information...
-		</p>
-	{/if}
+	<p class="mt-3 text-sm text-gray-600 dark:text-gray-400 italic data-[show=false]:hidden" data-show={!plan.has_enough_context}>
+		Gathering additional information...
+	</p>
 </div>

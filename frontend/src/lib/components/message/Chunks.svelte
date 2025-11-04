@@ -38,6 +38,6 @@
 	{:else if kind == 'step'}
 		<DeepStep {content} />
 	{:else if kind == 'report'}
-		<DeepReport {content} />
+		<DeepReport {content} {streaming} />
 	{/if}
 {/each}

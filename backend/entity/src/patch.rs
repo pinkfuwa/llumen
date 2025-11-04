@@ -203,7 +203,6 @@ pub struct DeepStep {
 #[typeshare]
 #[serde(rename_all = "snake_case")]
 pub enum DeepStepStatus {
-    Pending,
     InProgress,
     Completed,
     Failed,

@@ -25,75 +25,17 @@ struct Architecture {
     input_modalities: Option<Vec<String>>,
 }
 
-fn write_support_function(file_name: &str, fn_name: &str, description: &str) {
-    let mut src = String::new();
-    src.push_str("/// Auto‑generated – do NOT edit manually.\n\n");
-    src.push_str(&format!("/// {}\n", description));
-    src.push_str(&format!("pub fn {}(_id: &str) -> bool {{\n", fn_name));
-    src.push_str("    true // Default implementation\n");
-    src.push_str("}\n");
-
-    let out_dir = PathBuf::from("./src/models");
-    let dest_path = out_dir.join(file_name);
-    let file = File::create(&dest_path).expect("Could not create generated file");
-    let mut writer = BufWriter::new(file);
-    writer
-        .write_all(src.as_bytes())
-        .expect("Failed to write generated Rust code");
-}
-
-fn generate_default_support_functions() {
-    write_support_function(
-        "support_tool.rs",
-        "support_tool",
-        "Returns `true` if the model **does** support tools.",
-    );
-    write_support_function(
-        "support_image.rs",
-        "support_image",
-        "Returns `true` if the model **does** support images.",
-    );
-    write_support_function(
-        "support_audio.rs",
-        "support_audio",
-        "Returns `true` if the model **does** support audio.",
-    );
-    println!("cargo:rerun-if-changed=build.rs");
-}
-
 fn main() {
     let url = "https://openrouter.ai/api/v1/models";
     let client = Client::new();
     let resp = client
         .get(url)
-        .send();
-    
-    // If we can't fetch the list (e.g., no network), use default implementations
-    let resp = match resp {
-        Ok(r) => match r.error_for_status() {
-            Ok(r) => match r.json::<ApiResponse>() {
-                Ok(data) => data,
-                Err(e) => {
-                    eprintln!("Warning: Failed to parse OpenRouter model list: {}", e);
-                    eprintln!("Using default implementations");
-                    generate_default_support_functions();
-                    return;
-                }
-            },
-            Err(e) => {
-                eprintln!("Warning: Non-200 response from OpenRouter: {}", e);
-                eprintln!("Using default implementations");
-                generate_default_support_functions();
-                return;
-            }
-        },
-        Err(e) => {
-            eprintln!("Warning: Failed to request OpenRouter model list: {}", e);
-            eprintln!("Using default implementations");
-            generate_default_support_functions();
-            return;
-        }
-    };
+        .send()
+        .expect("Failed to request OpenRouter model list")
+        .error_for_status()
+        .expect("Non‑200 response from OpenRouter")
+        .json::<ApiResponse>()
+        .expect("Failed to deserialize JSON");
 
     let non_tool_ids: Vec<String> = resp
         .data

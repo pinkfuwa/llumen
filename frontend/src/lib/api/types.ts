@@ -4,10 +4,9 @@
 
 /** Status of a deep research step */
 export enum DeepStepStatus {
-	Pending = 'pending',
-	InProgress = 'in_progress',
-	Completed = 'completed',
-	Failed = 'failed'
+	InProgress = "in_progress",
+	Completed = "completed",
+	Failed = "failed",
 }
 
 /** Deep research step structure */
@@ -35,3 +34,4 @@ export interface UserPreference {
 	locale?: string;
 	submit_on_enter?: string;
 }
+

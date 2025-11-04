@@ -103,9 +103,6 @@
 /// Default memory limit for Lua VM (in bytes).
 pub const DEFAULT_MEMORY_LIMIT: usize = 64 * 1024 * 1024; // 64 MB
 
-/// Deep research memory limit for Lua VM (in bytes).
-pub const DEEP_RESEARCH_MEMORY_LIMIT: usize = 128 * 1024 * 1024; // 128 MB
-
 /// Default instruction count limit for Lua execution.
 pub const DEFAULT_INSTRUCTION_LIMIT: usize = 10000;
 
