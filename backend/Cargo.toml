@@ -79,4 +79,4 @@ features = ["sqlx-sqlite", "runtime-tokio", "macros"]
 
 [dependencies.flexi_logger]
 version = "0.31.4"
-disable-features = true
+default-features = true
