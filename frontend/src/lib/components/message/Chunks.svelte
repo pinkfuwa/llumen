@@ -33,11 +33,11 @@
 		</ToolBox>
 	{:else if kind == 'error'}
 		<ResponseError {content} />
-	{:else if kind == 'plan'}
+		<!-- {:else if kind == 'plan'}
 		<DeepPlan {content} />
 	{:else if kind == 'step'}
 		<DeepStep {content} />
 	{:else if kind == 'report'}
-		<DeepReport {content} {streaming} />
+		<DeepReport {content} {streaming} /> -->
 	{/if}
 {/each}
