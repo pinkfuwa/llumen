@@ -97,6 +97,18 @@ const Handlers: {
 				kind: { t: 'error', c: { content: err.content } }
 			});
 		}
+	},
+
+	deep_plan: (plan) => {
+		handleTokenChunk('deep_plan', { content: plan.content });
+	},
+
+	deep_step: (step) => {
+		handleTokenChunk('deep_step', { content: step.content });
+	},
+
+	deep_report: (report) => {
+		handleTokenChunk('deep_report', { content: report.content });
 	}
 };
 
@@ -179,7 +191,7 @@ async function syncMessages(chatId: number) {
 }
 
 function handleTokenChunk(
-	kind: 'text' | 'reasoning' | 'tool_call' | 'tool_result' | 'error',
+	kind: 'text' | 'reasoning' | 'tool_call' | 'tool_result' | 'error' | 'deep_plan' | 'deep_step' | 'deep_report',
 	chunkContent: any
 ) {
 	const firstMsg = messages.at(0);
@@ -221,6 +233,33 @@ function handleTokenChunk(
 			id: Date.now(),
 			kind: { t: 'error', c: { content: chunkContent.content } }
 		});
+	} else if (kind === 'deep_plan') {
+		if (lastChunk && lastChunk.kind.t === 'plan') {
+			lastChunk.kind.c.content += chunkContent.content;
+		} else {
+			firstMsg.chunks.push({
+				id: Date.now(),
+				kind: { t: 'plan', c: { content: chunkContent.content } }
+			});
+		}
+	} else if (kind === 'deep_step') {
+		if (lastChunk && lastChunk.kind.t === 'step') {
+			lastChunk.kind.c.content += chunkContent.content;
+		} else {
+			firstMsg.chunks.push({
+				id: Date.now(),
+				kind: { t: 'step', c: { content: chunkContent.content } }
+			});
+		}
+	} else if (kind === 'deep_report') {
+		if (lastChunk && lastChunk.kind.t === 'report') {
+			lastChunk.kind.c.content += chunkContent.content;
+		} else {
+			firstMsg.chunks.push({
+				id: Date.now(),
+				kind: { t: 'report', c: { content: chunkContent.content } }
+			});
+		}
 	}
 }
 

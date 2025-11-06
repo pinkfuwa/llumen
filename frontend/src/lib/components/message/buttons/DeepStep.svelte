@@ -1,13 +1,43 @@
 <script lang="ts">
 	import { AlertCircle, CheckCircle, Loader2 } from '@lucide/svelte';
+	import { JSONParser } from '@streamparser/json-whatwg';
 
 	let { content }: { content: string } = $props();
 
-	let step = $derived.by(() => {
+	let step = $state<any>({ id: '', description: '', status: 'in_progress', result: null });
+
+	// Parse incrementally using streaming parser
+	$effect(() => {
 		try {
-			return JSON.parse(content);
+			// Try to parse as complete JSON first
+			const parsed = JSON.parse(content);
+			step = parsed;
 		} catch {
-			return { id: '', description: '', status: 'in_progress', result: null };
+			// If incomplete, try incremental parsing
+			try {
+				const parser = new JSONParser();
+				let partialStep = { id: '', description: '', status: 'in_progress', result: null };
+				
+				parser.onValue = ({ value, key, parent, stack }) => {
+					if (stack.length === 0) {
+						// Root level complete object
+						partialStep = value as any;
+					} else if (key === 'id') {
+						partialStep.id = value as string;
+					} else if (key === 'description') {
+						partialStep.description = value as string;
+					} else if (key === 'status') {
+						partialStep.status = value as string;
+					} else if (key === 'result') {
+						partialStep.result = value as string | null;
+					}
+				};
+				
+				parser.write(content);
+				step = partialStep;
+			} catch {
+				// Keep existing step if parsing fails
+			}
 		}
 	});
 

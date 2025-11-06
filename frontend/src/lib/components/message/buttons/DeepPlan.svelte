@@ -1,13 +1,39 @@
 <script lang="ts">
 	import { CheckCircle, Circle, Loader2 } from '@lucide/svelte';
+	import { JSONParser } from '@streamparser/json-whatwg';
 
 	let { content }: { content: string } = $props();
 
-	let plan = $derived.by(() => {
+	let plan = $state<any>({ steps: [], has_enough_context: false });
+
+	// Parse incrementally using streaming parser
+	$effect(() => {
 		try {
-			return JSON.parse(content);
+			// Try to parse as complete JSON first
+			const parsed = JSON.parse(content);
+			plan = parsed;
 		} catch {
-			return { steps: [], has_enough_context: false };
+			// If incomplete, try incremental parsing
+			try {
+				const parser = new JSONParser();
+				let partialPlan = { steps: [], has_enough_context: false };
+				
+				parser.onValue = ({ value, key, parent, stack }) => {
+					if (stack.length === 0) {
+						// Root level complete object
+						partialPlan = value as any;
+					} else if (key === 'steps' && Array.isArray(value)) {
+						partialPlan.steps = value;
+					} else if (key === 'has_enough_context') {
+						partialPlan.has_enough_context = value as boolean;
+					}
+				};
+				
+				parser.write(content);
+				plan = partialPlan;
+			} catch {
+				// Keep existing plan if parsing fails
+			}
 		}
 	});
 

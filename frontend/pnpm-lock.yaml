@@ -35,6 +35,9 @@ importers:
       '@lezer/markdown':
         specifier: ^1.5.1
         version: 1.5.1
+      '@streamparser/json-whatwg':
+        specifier: ^0.0.22
+        version: 0.0.22
       '@sveltejs/adapter-auto':
         specifier: ^6.0.0
         version: 6.0.1(@sveltejs/kit@2.25.1(@sveltejs/vite-plugin-svelte@6.1.0(svelte@5.36.13)(vite@7.0.5(jiti@2.4.2)(lightningcss@1.30.1)))(svelte@5.36.13)(vite@7.0.5(jiti@2.4.2)(lightningcss@1.30.1)))
@@ -656,6 +659,12 @@ packages:
 
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
+
+  '@streamparser/json-whatwg@0.0.22':
+    resolution: {integrity: sha512-qRYYbaytZYXfGMFNtPAUrbK2CJ0KmGk2l+uLxW1hKVLOt3aBaWGsskiUCdGoaoSTeJBHswNqi59wSppg+IVWKQ==}
+
+  '@streamparser/json@0.0.22':
+    resolution: {integrity: sha512-b6gTSBjJ8G8SuO3Gbbj+zXbVx8NSs1EbpbMKpzGLWMdkR+98McH9bEjSz3+0mPJf68c5nxa3CrJHp5EQNXM6zQ==}
 
   '@sveltejs/acorn-typescript@1.0.5':
     resolution: {integrity: sha512-IwQk4yfwLdibDlrXVE04jTZYlLnwsTT2PIOQQGNLWfjavGifnk1JD1LcZjZaBTRcxZu2FfPfNLOE04DSu9lqtQ==}
@@ -2011,6 +2020,12 @@ snapshots:
   '@shikijs/vscode-textmate@10.0.2': {}
 
   '@standard-schema/spec@1.0.0': {}
+
+  '@streamparser/json-whatwg@0.0.22':
+    dependencies:
+      '@streamparser/json': 0.0.22
+
+  '@streamparser/json@0.0.22': {}
 
   '@sveltejs/acorn-typescript@1.0.5(acorn@8.15.0)':
     dependencies:

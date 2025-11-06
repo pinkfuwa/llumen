@@ -36,6 +36,9 @@ pub enum SseResp {
     Title(SseRespTitle),
     Error(SseRespError),
     Start(SseStart),
+    DeepPlan(SseRespDeepPlan),
+    DeepStep(SseRespDeepStep),
+    DeepReport(SseRespDeepReport),
 }
 
 #[derive(Debug, Serialize)]
@@ -97,6 +100,24 @@ pub struct SseStart {
     pub id: i32,
     pub user_msg_id: i32,
     pub version: i32,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespDeepPlan {
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespDeepStep {
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespDeepReport {
+    pub content: String,
 }
 
 pub async fn route(
@@ -165,6 +186,9 @@ pub async fn route(
                 user_msg_id,
                 version: user_msg_id,
             }),
+            Token::ResearchPlan(content) => SseResp::DeepPlan(SseRespDeepPlan { content }),
+            Token::ResearchStep(content) => SseResp::DeepStep(SseRespDeepStep { content }),
+            Token::ResearchReport(content) => SseResp::DeepReport(SseRespDeepReport { content }),
             _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())

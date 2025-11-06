@@ -320,6 +320,18 @@ export interface SseReq {
 	id: number;
 }
 
+export interface SseRespDeepPlan {
+	content: string;
+}
+
+export interface SseRespDeepReport {
+	content: string;
+}
+
+export interface SseRespDeepStep {
+	content: string;
+}
+
 export interface SseRespError {
 	content: string;
 }
@@ -436,4 +448,7 @@ export type SseResp =
 	| { t: 'complete'; c: SseRespMessageComplete }
 	| { t: 'title'; c: SseRespTitle }
 	| { t: 'error'; c: SseRespError }
-	| { t: 'start'; c: SseStart };
+	| { t: 'start'; c: SseStart }
+	| { t: 'deep_plan'; c: SseRespDeepPlan }
+	| { t: 'deep_step'; c: SseRespDeepStep }
+	| { t: 'deep_report'; c: SseRespDeepReport };
