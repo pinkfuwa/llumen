@@ -1,8 +1,8 @@
-name: PR Test
+name: status check
 
 on:
+  push:
   pull_request:
-    types: [synchronize]
 
 permissions:
   contents: read
