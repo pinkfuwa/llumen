@@ -387,7 +387,7 @@ mod tests {
         assert!(result2.from_cache);
         assert_eq!(result2.output, "20");
 
-        assert_eq!(runner.cache_size().unwrap(), 2);
+        assert_eq!(runner.cache_size().await.unwrap(), 2);
     }
 
     #[tokio::test]
@@ -401,7 +401,7 @@ mod tests {
         let path2 = vec!["x = 10", "z = 30"];
         runner.execute(&path2).await.unwrap();
 
-        assert_eq!(runner.cache_size().unwrap(), 2);
+        assert_eq!(runner.cache_size().await.unwrap(), 2);
     }
 
     #[tokio::test]
@@ -412,8 +412,8 @@ mod tests {
         let path = vec!["x = 10"];
         runner.execute(&path).await.unwrap();
 
-        runner.clear_cache().unwrap();
-        assert_eq!(runner.cache_size().unwrap(), 0);
+        runner.clear_cache().await.unwrap();
+        assert_eq!(runner.cache_size().await.unwrap(), 0);
     }
 
     #[tokio::test]
