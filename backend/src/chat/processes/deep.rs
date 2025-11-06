@@ -13,7 +13,7 @@ use crate::openrouter;
 struct PlannerResponse {
     locale: String,
     has_enough_context: bool,
-    thought: String,
+    thought: String, // Planner's reasoning about the research approach
     title: String,
     steps: Vec<PlannerStep>,
 }
@@ -23,7 +23,7 @@ struct PlannerStep {
     need_search: bool,
     title: String,
     description: String,
-    step_type: String,
+    step_type: String, // "research" or "processing" - indicates the nature of the step
 }
 
 /// Deep research pipeline that orchestrates multiple agents for comprehensive research
@@ -134,7 +134,10 @@ impl DeepPipeline {
 
         // Parse planner response
         let planner_response: PlannerResponse = serde_json::from_str(&completion.response)
-            .context("Failed to parse planner response")?;
+            .context(format!(
+                "Failed to parse planner response as JSON. Expected Plan structure with fields: locale, has_enough_context, thought, title, steps. Response: {}",
+                completion.response.chars().take(500).collect::<String>()
+            ))?;
 
         // Convert to DeepPlan format
         let steps = planner_response
@@ -259,7 +262,7 @@ impl DeepPipeline {
         }
 
         if result.is_empty() {
-            result = "No research results obtained.".to_string();
+            result = format!("No research results obtained for step: {}", step.description);
         }
 
         Ok(result)
