@@ -403,6 +403,16 @@ impl DeepPipeline {
             )
             .context("Failed to render researcher prompt")?;
 
+        // Split the system prompt into two system messages
+        // The researcher prompt should have --- separator for two system messages
+        let system_messages: Vec<&str> = system_prompt.split("---").collect();
+        let first_system_msg = system_messages.get(0).map(|s| s.trim()).unwrap_or(&system_prompt);
+        let second_system_msg = if system_messages.len() > 1 {
+            system_messages.get(1).map(|s| s.trim()).unwrap_or("")
+        } else {
+            ""
+        };
+
         // Create tools for researcher
         let web_search_tool = openrouter::Tool {
             name: "web_search_tool".to_string(),
@@ -436,11 +446,16 @@ impl DeepPipeline {
 
         let tools = vec![web_search_tool, crawl_tool];
 
-        // Multi-turn conversation with researcher
+        // Multi-turn conversation with researcher - start with two system messages
         let mut messages = vec![
-            openrouter::Message::System(system_prompt),
-            openrouter::Message::User(step.description.clone()),
+            openrouter::Message::System(first_system_msg.to_string()),
         ];
+        
+        if !second_system_msg.is_empty() {
+            messages.push(openrouter::Message::System(second_system_msg.to_string()));
+        }
+        
+        messages.push(openrouter::Message::User(step.description.clone()));
 
         let mut final_response = String::new();
         let max_turns = 5; // Limit conversation turns
@@ -555,6 +570,15 @@ impl DeepPipeline {
             )
             .context("Failed to render coder prompt")?;
 
+        // Split the system prompt into two system messages if available
+        let system_messages: Vec<&str> = system_prompt.split("---").collect();
+        let first_system_msg = system_messages.get(0).map(|s| s.trim()).unwrap_or(&system_prompt);
+        let second_system_msg = if system_messages.len() > 1 {
+            system_messages.get(1).map(|s| s.trim()).unwrap_or("")
+        } else {
+            ""
+        };
+
         // Create lua_repl tool
         let lua_repl_tool = openrouter::Tool {
             name: "lua_repl".to_string(),
@@ -573,11 +597,16 @@ impl DeepPipeline {
 
         let tools = vec![lua_repl_tool];
 
-        // Multi-turn conversation with coder
+        // Multi-turn conversation with coder - start with system messages
         let mut messages = vec![
-            openrouter::Message::System(system_prompt),
-            openrouter::Message::User(step.description.clone()),
+            openrouter::Message::System(first_system_msg.to_string()),
         ];
+        
+        if !second_system_msg.is_empty() {
+            messages.push(openrouter::Message::System(second_system_msg.to_string()));
+        }
+        
+        messages.push(openrouter::Message::User(step.description.clone()));
 
         let mut final_response = String::new();
         let max_turns = 10; // Allow more turns for processing
