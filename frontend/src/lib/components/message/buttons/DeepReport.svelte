@@ -23,7 +23,7 @@
 				const parser = new JSONParser();
 				let partialReport = { content: '' };
 				
-				parser.onValue = ({ value, key, parent, stack }) => {
+				parser.onValue = ({ value, key, stack }) => {
 					if (stack.length === 0 && typeof value === 'object' && value !== null) {
 						// Root level complete object
 						partialReport = value as any;

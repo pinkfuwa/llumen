@@ -18,7 +18,7 @@
 				const parser = new JSONParser();
 				let partialPlan = { steps: [], has_enough_context: false };
 				
-				parser.onValue = ({ value, key, parent, stack }) => {
+				parser.onValue = ({ value, key, stack }) => {
 					if (stack.length === 0) {
 						// Root level complete object
 						partialPlan = value as any;

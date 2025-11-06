@@ -18,7 +18,7 @@
 				const parser = new JSONParser();
 				let partialStep = { id: '', description: '', status: 'in_progress', result: null };
 				
-				parser.onValue = ({ value, key, parent, stack }) => {
+				parser.onValue = ({ value, key, stack }) => {
 					if (stack.length === 0) {
 						// Root level complete object
 						partialStep = value as any;
