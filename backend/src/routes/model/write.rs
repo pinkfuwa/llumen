@@ -33,7 +33,7 @@ pub async fn route(
         .map_err(|e| {
             Json(Error {
                 error: ErrorKind::MalformedRequest,
-                reason: e,
+                reason: e.to_string(),
             })
         })?
         .display_name;

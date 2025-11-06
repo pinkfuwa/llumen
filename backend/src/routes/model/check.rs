@@ -30,6 +30,6 @@ pub async fn route(
     let check = model::Model::check_config(&config);
 
     Ok(Json(ModelCheckResp {
-        reason: check.err(),
+        reason: check.err().map(|x| x.to_string()),
     }))
 }

@@ -52,7 +52,7 @@ pub async fn route(
         }
         Err(reason) => Err(Json(Error {
             error: ErrorKind::MalformedRequest,
-            reason,
+            reason: reason.to_string(),
         })),
     }
 }

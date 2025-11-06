@@ -1,6 +1,7 @@
+use anyhow::Context;
 use entity::{ChunkKind, chunk, patch};
 use sea_orm::ActiveValue;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::openrouter;
 
@@ -35,6 +36,14 @@ pub fn tool_chunk(content: &patch::ToolCall) -> chunk::ActiveModel {
         kind: ActiveValue::Set(ChunkKind::ToolCall),
         ..Default::default()
     }
+}
+
+pub fn from_str_error<T: DeserializeOwned>(s: &str, kind: &'static str) -> anyhow::Result<T> {
+    let mut trim = s;
+    if trim.len() > 20 {
+        trim = &trim[0..20];
+    }
+    serde_json::from_str(s).with_context(|| format!("{} is not a valid {}", trim, kind))
 }
 
 pub fn get_web_search_tool_def() -> openrouter::Tool {

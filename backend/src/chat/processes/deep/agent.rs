@@ -13,7 +13,7 @@ use crate::chat::processes::deep::helper::{
 use crate::chat::{CompletionContext, Context};
 use crate::openrouter;
 
-use super::helper::{PlannerResponse, PlannerStep};
+use super::helper::{PlannerResponse, PlannerStep, from_str_error};
 
 /// Deep research agent that orchestrates multiple agents for comprehensive research
 pub struct DeepAgent<'a> {
@@ -29,7 +29,7 @@ impl<'a> DeepAgent<'a> {
     pub fn handoff_tool(
         pipeline: &'a mut ChatPipeline<super::Inner>,
         _toolcall: openrouter::ToolCall,
-    ) -> BoxFuture<'a, Result<(), anyhow::Error>> {
+    ) -> BoxFuture<'a, Result<()>> {
         let model = pipeline.model.clone();
         let ctx = pipeline.ctx.clone();
         let completion_ctx = &mut pipeline.completion_ctx;
@@ -172,7 +172,7 @@ impl<'a> DeepAgent<'a> {
 
         log::debug!("Plan: {}", &plan_json);
         // Parse the JSON response
-        self.plan = serde_json::from_str(&plan_json).context("Failed to parse planner response")?;
+        self.plan = from_str_error(&plan_json, "plan")?;
 
         Ok(())
     }

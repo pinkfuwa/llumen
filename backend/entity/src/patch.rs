@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 use sea_orm::{DeriveActiveEnum, FromJsonQueryResult, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -56,13 +56,15 @@ pub struct UserPreference {
 }
 
 impl crate::entities::model::Model {
-    pub fn check_config(config: &str) -> Result<ModelConfig, String> {
-        let config = toml::from_str::<ModelConfig>(config).map_err(|e| e.to_string())?;
+    pub fn check_config(config: &str) -> anyhow::Result<ModelConfig> {
+        let config = toml::from_str::<ModelConfig>(config)?;
 
         if config.model_id.contains(":online") {
-            return Err("\"online\" suffix are not allowed, see https://openrouter.ai/docs/faq#what-are-model-variants".to_string());
+            anyhow::bail!(
+                "\"online\" suffix are not allowed, see https://openrouter.ai/docs/faq#what-are-model-variants"
+            );
         }
-        config.parameter.check().map_err(|x| x.to_owned())?;
+        config.parameter.check()?;
 
         Ok(config)
     }
@@ -105,25 +107,25 @@ pub struct ModelParameter {
 }
 
 impl ModelParameter {
-    fn check(&self) -> Result<(), &'static str> {
+    fn check(&self) -> anyhow::Result<()> {
         if let Some(temperature) = self.temperature {
             if temperature < 0.0 || temperature > 1.0 {
-                return Err("Temperature must be between 0.0 and 1.0");
+                bail!("Temperature must be between 0.0 and 1.0");
             }
         }
         if let Some(repeat_penalty) = self.repeat_penalty {
             if repeat_penalty < 1.0 || repeat_penalty > 2.0 {
-                return Err("Repeat penalty must be between 1.0 and 2.0");
+                bail!("Repeat penalty must be between 1.0 and 2.0");
             }
         }
         if let Some(top_k) = self.top_k {
             if top_k < 0 || top_k > 100 {
-                return Err("Top K must be between 0 and 100");
+                bail!("Top K must be between 0 and 100");
             }
         }
         if let Some(top_p) = self.top_p {
             if top_p < 0.0 || top_p > 1.0 {
-                return Err("Top P must be between 0.0 and 1.0");
+                bail!("Top P must be between 0.0 and 1.0");
             }
         }
         Ok(())
