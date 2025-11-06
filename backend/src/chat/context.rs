@@ -317,16 +317,8 @@ impl CompletionContext {
     }
 
     /// Saves the completion to the database.
-    pub async fn save<E>(mut self, err: Option<E>) -> Result<(), anyhow::Error>
-    where
-        E: ToString,
-    {
+    pub async fn save(mut self) -> Result<(), anyhow::Error> {
         let message_id = self.message.id.clone().unwrap();
-
-        if let Some(err) = err {
-            let err = err.to_string();
-            self.add_error_chunk(err);
-        }
 
         if let Err(err) = self.generate_title().await {
             self.add_error_chunk(err.to_string());

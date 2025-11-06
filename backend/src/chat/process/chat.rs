@@ -179,16 +179,20 @@ impl<P: ChatInner> ChatPipeline<P> {
         self.completion_ctx.new_chunks.extend(chunks);
 
         match result.stop_reason {
-            FinishReason::Length => Err(anyhow::anyhow!("The response is too long")),
+            FinishReason::Stop => {}
+            FinishReason::Length => {
+                log::warn!("The response is too long");
+            }
             FinishReason::ToolCalls => {
                 let tool_call = result
                     .toolcall
                     .context("No tool calls found, but finish reason is tool_calls")?;
 
-                P::handoff_tool(self, tool_call).await
+                return P::handoff_tool(self, tool_call).await;
             }
-            FinishReason::Stop => Ok(()),
         }
+
+        self.completion_ctx.save().await
     }
 }
 
@@ -198,7 +202,7 @@ impl<P: ChatInner + Send> super::Pipeline for ChatPipeline<P> {
         completion_ctx: CompletionContext,
     ) -> BoxFuture<'static, anyhow::Result<()>> {
         Box::pin(async move {
-            let mut pipeline = ChatPipeline::<P>::new(ctx, completion_ctx)
+            let pipeline = ChatPipeline::<P>::new(ctx, completion_ctx)
                 .await
                 .context("Failed to create chat pipeline")?;
 
