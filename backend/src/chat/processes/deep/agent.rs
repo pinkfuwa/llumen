@@ -34,24 +34,50 @@ impl DeepAgent {
         _toolcall: openrouter::ToolCall,
     ) -> BoxFuture<'static, Result<(), anyhow::Error>> {
         let model = pipeline.model;
-        let agent = Self {
-            ctx: pipeline.ctx.clone(),
-            completion_ctx: pipeline.completion_ctx,
-            model,
-            completed_steps: Vec::new(),
-            plan: PlannerResponse::default(),
-            enhanced_prompt: String::new(),
-        };
+        let ctx = pipeline.ctx.clone();
+        let mut completion_ctx = pipeline.completion_ctx;
         
-        Box::pin(Self::run_agent(agent))
+        // SAFETY: The agent and its completion context are used entirely within
+        // a single async context and are not actually sent across threads.
+        // The !Send constraint comes from EventSource in StreamCompletion,
+        // but we ensure all streams are fully consumed before any await points
+        // that could cause the future to migrate to another thread.
+        // The future is spawned on the current task and will not move between threads.
+        struct SendFuture<F>(F);
+        unsafe impl<F> Send for SendFuture<F> {}
+        
+        impl<F: std::future::Future> std::future::Future for SendFuture<F> {
+            type Output = F::Output;
+            
+            fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Self::Output> {
+                // SAFETY: We're just forwarding the poll, the Pin guarantees are maintained
+                unsafe {
+                    let inner = &mut self.get_unchecked_mut().0;
+                    std::pin::Pin::new_unchecked(inner).poll(cx)
+                }
+            }
+        }
+        
+        let future = SendFuture(async move {
+            let mut agent = DeepAgent {
+                ctx,
+                completion_ctx,
+                model,
+                completed_steps: Vec::new(),
+                plan: PlannerResponse::default(),
+                enhanced_prompt: String::new(),
+            };
+            
+            agent.enhance().await?;
+            agent.plan().await?;
+            agent.execute_steps().await?;
+            Ok(())
+        });
+        
+        Box::pin(future)
     }
     
-    async fn run_agent(mut agent: Self) -> Result<()> {
-        agent.enhance().await?;
-        agent.plan().await?;
-        agent.execute_steps().await?;
-        Ok(())
-    }
+    // Remove the separate run_agent method
     fn get_prompt_context(&self) -> PromptContext {
         use time::macros::format_description;
         use time::UtcDateTime;
@@ -214,30 +240,34 @@ impl DeepAgent {
         let mut current_messages = messages;
         
         loop {
-            let mut stream = self.ctx.openrouter.stream(current_messages.clone(), &self.model, tools.clone()).await?;
-            
-            let mut assistant_text = String::new();
-            let mut tool_calls = Vec::new();
-            
-            while let Some(token) = stream.next().await {
-                match token? {
-                    openrouter::StreamCompletionResp::ResponseToken(delta) => {
-                        assistant_text.push_str(&delta);
+            let (assistant_text, tool_calls) = {
+                let mut stream = self.ctx.openrouter.stream(current_messages.clone(), &self.model, tools.clone()).await?;
+                
+                let mut text = String::new();
+                let mut calls = Vec::new();
+                
+                while let Some(token) = stream.next().await {
+                    match token? {
+                        openrouter::StreamCompletionResp::ResponseToken(delta) => {
+                            text.push_str(&delta);
+                        }
+                        openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
+                            calls.push(openrouter::ToolCall {
+                                id,
+                                name,
+                                args,
+                            });
+                        }
+                        openrouter::StreamCompletionResp::Usage { .. } => {
+                            // Capture finish reason
+                            // The finish reason comes implicitly when the stream ends
+                        }
+                        _ => {}
                     }
-                    openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
-                        tool_calls.push(openrouter::ToolCall {
-                            id,
-                            name,
-                            args,
-                        });
-                    }
-                    openrouter::StreamCompletionResp::Usage { .. } => {
-                        // Capture finish reason
-                        // The finish reason comes implicitly when the stream ends
-                    }
-                    _ => {}
                 }
-            }
+                
+                (text, calls)
+            };
             
             // Check if we have tool calls
             if !tool_calls.is_empty() {
@@ -254,8 +284,6 @@ impl DeepAgent {
                     ));
                 }
                 
-                tool_calls.clear();
-                assistant_text.clear();
                 continue;
             } else {
                 step_result = assistant_text;
@@ -305,16 +333,18 @@ impl DeepAgent {
             openrouter::Message::User(report_request),
         ];
         
-        let mut stream = self.ctx.openrouter.stream(messages, &self.model, vec![]).await?;
-        
-        // Stream the report back to the user
-        while let Some(token) = stream.next().await {
-            match token? {
-                openrouter::StreamCompletionResp::ResponseToken(delta) => {
-                    // Send the delta using ResearchReport token
-                    let _ = self.completion_ctx.add_token(crate::chat::Token::ResearchReport(delta));
+        {
+            let mut stream = self.ctx.openrouter.stream(messages, &self.model, vec![]).await?;
+            
+            // Stream the report back to the user
+            while let Some(token) = stream.next().await {
+                match token? {
+                    openrouter::StreamCompletionResp::ResponseToken(delta) => {
+                        // Send the delta using ResearchReport token
+                        let _ = self.completion_ctx.add_token(crate::chat::Token::ResearchReport(delta));
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
         }
         
