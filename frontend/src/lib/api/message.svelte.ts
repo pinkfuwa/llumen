@@ -52,7 +52,7 @@ const Handlers: {
 	},
 
 	token: (token) => {
-		handleTokenChunk('text', { content: token.content });
+		handleTokenChunk('token', { content: token.content });
 	},
 
 	reasoning: (reasoning) => {
@@ -190,16 +190,13 @@ async function syncMessages(chatId: number) {
 	}
 }
 
-function handleTokenChunk(
-	kind: 'text' | 'reasoning' | 'tool_call' | 'tool_result' | 'error' | 'deep_plan' | 'deep_step' | 'deep_report',
-	chunkContent: any
-) {
+function handleTokenChunk(kind: SseResp['t'], chunkContent: any) {
 	const firstMsg = messages.at(0);
 	if (!firstMsg || !firstMsg.stream) return;
 
 	const lastChunk = firstMsg.chunks[firstMsg.chunks.length - 1];
 
-	if (kind === 'text') {
+	if (kind === 'token') {
 		if (lastChunk && lastChunk.kind.t === 'text') {
 			lastChunk.kind.c.content += chunkContent.content;
 		} else {
