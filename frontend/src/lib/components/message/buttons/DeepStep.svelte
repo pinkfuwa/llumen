@@ -1,54 +1,55 @@
 <script lang="ts">
 	import { AlertCircle, CheckCircle, Loader2 } from '@lucide/svelte';
-	import { JSONParser } from '@streamparser/json-whatwg';
+
+	interface Step {
+		id: string;
+		description: string;
+		status: 'completed' | 'in_progress' | 'failed';
+		result: string | null;
+	}
 
 	let { content }: { content: string } = $props();
 
-	let step = $state<any>({ id: '', description: '', status: 'in_progress', result: null });
+	let step = $state<Step>({
+		id: '',
+		description: '',
+		status: 'in_progress',
+		result: null
+	});
 
-	// Parse incrementally using streaming parser
+	// Parse incrementally
 	$effect(() => {
 		try {
 			// Try to parse as complete JSON first
 			const parsed = JSON.parse(content);
-			step = parsed;
+			step = parsed as Step;
 		} catch {
-			// If incomplete, try incremental parsing
+			// If incomplete, try to extract fields from partial JSON
 			try {
-				const parser = new JSONParser();
-				let partialStep = { id: '', description: '', status: 'in_progress', result: null };
-				
-				parser.onValue = ({ value, key, stack }) => {
-					if (stack.length === 0) {
-						// Root level complete object
-						partialStep = value as any;
-					} else if (key === 'id') {
-						partialStep.id = value as string;
-					} else if (key === 'description') {
-						partialStep.description = value as string;
-					} else if (key === 'status') {
-						partialStep.status = value as string;
-					} else if (key === 'result') {
-						partialStep.result = value as string | null;
-					}
+				const idMatch = content.match(/"id"\s*:\s*"([^"]*)"/);
+				const descMatch = content.match(/"description"\s*:\s*"([^"]*)"/);
+				const statusMatch = content.match(/"status"\s*:\s*"(completed|in_progress|failed)"/);
+				const resultMatch = content.match(/"result"\s*:\s*"([^"]*)"/);
+
+				step = {
+					id: idMatch?.[1] ?? '',
+					description: descMatch?.[1] ?? '',
+					status: (statusMatch?.[1] as 'completed' | 'in_progress' | 'failed') ?? 'in_progress',
+					result: resultMatch?.[1] ?? null
 				};
-				
-				parser.write(content);
-				step = partialStep;
 			} catch {
 				// Keep existing step if parsing fails
 			}
 		}
 	});
 
-	// change type to keyof
-	const iconMap: Record<string, typeof CheckCircle> = {
+	const iconMap: Record<'completed' | 'in_progress' | 'failed', typeof CheckCircle> = {
 		completed: CheckCircle,
 		in_progress: Loader2,
 		failed: AlertCircle
 	};
 
-	const Icon = $derived(iconMap[step.status] || Loader2);
+	const Icon = $derived(iconMap[step.status]);
 </script>
 
 <div
