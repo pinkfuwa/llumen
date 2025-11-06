@@ -24,10 +24,10 @@ use super::helper;
 pub trait ChatInner {
     fn get_system_prompt(ctx: &Context, completion_ctx: &CompletionContext) -> Result<String>;
     fn get_model(ctx: &Context, completion_ctx: &CompletionContext) -> Result<openrouter::Model>;
-    fn handoff_tool(
-        pipeline: ChatPipeline<Self>,
+    fn handoff_tool<'a>(
+        pipeline: &'a mut ChatPipeline<Self>,
         toolcall: openrouter::ToolCall,
-    ) -> BoxFuture<'static, Result<(), anyhow::Error>>
+    ) -> BoxFuture<'a, Result<(), anyhow::Error>>
     where
         Self: Sized,
     {
@@ -123,7 +123,7 @@ impl<P: ChatInner> ChatPipeline<P> {
 
         Ok(())
     }
-    async fn process(mut self) -> Result<(), anyhow::Error> {
+    async fn process(&mut self) -> Result<(), anyhow::Error> {
         let mut message = self.messages.clone();
         message.extend(helper::active_chunks_to_message(
             self.completion_ctx.new_chunks.clone().into_iter(),
@@ -188,11 +188,11 @@ impl<P: ChatInner> ChatPipeline<P> {
                     .toolcall
                     .context("No tool calls found, but finish reason is tool_calls")?;
 
-                return P::handoff_tool(self, tool_call).await;
+                P::handoff_tool(self, tool_call).await?;
             }
         }
 
-        self.completion_ctx.save().await
+        Ok(())
     }
 }
 
@@ -202,12 +202,14 @@ impl<P: ChatInner + Send> super::Pipeline for ChatPipeline<P> {
         completion_ctx: CompletionContext,
     ) -> BoxFuture<'static, anyhow::Result<()>> {
         Box::pin(async move {
-            let pipeline = ChatPipeline::<P>::new(ctx, completion_ctx)
+            let mut pipeline = ChatPipeline::<P>::new(ctx, completion_ctx)
                 .await
                 .context("Failed to create chat pipeline")?;
 
-            let err = pipeline.process().await.err();
-            log::error!("Error processing chat pipeline: {:?}", err);
+            if let Some(err) = pipeline.process().await.err() {
+                pipeline.completion_ctx.add_error_chunk(err.to_string());
+            }
+            pipeline.completion_ctx.save().await?;
 
             Ok(())
         })

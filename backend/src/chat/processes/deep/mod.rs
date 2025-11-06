@@ -53,10 +53,10 @@ impl ChatInner for Inner {
         }])
     }
 
-    fn handoff_tool(
-        pipeline: ChatPipeline<Self>,
+    fn handoff_tool<'a>(
+        pipeline: &'a mut ChatPipeline<Self>,
         toolcall: openrouter::ToolCall,
-    ) -> BoxFuture<'static, Result<(), anyhow::Error>>
+    ) -> BoxFuture<'a, Result<(), anyhow::Error>>
     where
         Self: Sized,
     {

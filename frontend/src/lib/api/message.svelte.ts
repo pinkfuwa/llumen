@@ -149,6 +149,7 @@ function startSSE(chatId: number, signal: AbortSignal) {
 }
 
 export function useSSEEffect(chatId: () => number) {
+	$inspect('messages', messages);
 	$effect(() => {
 		let controller = new AbortController();
 

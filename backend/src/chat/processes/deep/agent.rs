@@ -16,23 +16,23 @@ use crate::openrouter;
 use super::helper::{PlannerResponse, PlannerStep};
 
 /// Deep research agent that orchestrates multiple agents for comprehensive research
-pub struct DeepAgent {
+pub struct DeepAgent<'a> {
     ctx: Arc<Context>,
-    completion_ctx: CompletionContext,
+    completion_ctx: &'a mut CompletionContext,
     model: openrouter::Model,
     completed_steps: Vec<CompletedStep>,
     plan: PlannerResponse,
     enhanced_prompt: String,
 }
 
-impl DeepAgent {
+impl<'a> DeepAgent<'a> {
     pub fn handoff_tool(
-        pipeline: ChatPipeline<super::Inner>,
+        pipeline: &'a mut ChatPipeline<super::Inner>,
         _toolcall: openrouter::ToolCall,
-    ) -> BoxFuture<'static, Result<(), anyhow::Error>> {
-        let model = pipeline.model;
+    ) -> BoxFuture<'a, Result<(), anyhow::Error>> {
+        let model = pipeline.model.clone();
         let ctx = pipeline.ctx.clone();
-        let completion_ctx = pipeline.completion_ctx;
+        let completion_ctx = &mut pipeline.completion_ctx;
 
         let mut agent = DeepAgent {
             ctx,
@@ -44,10 +44,17 @@ impl DeepAgent {
         };
 
         Box::pin(async move {
-            agent.enhance().await?;
-            agent.plan().await?;
-            agent.execute_steps().await?;
-            agent.completion_ctx.save().await?;
+            macro_rules! handle {
+                ($e:ident) => {
+                    if let Err(err) = agent.$e().await {
+                        agent.completion_ctx.add_error_chunk(err.to_string());
+                        return Ok(());
+                    }
+                };
+            }
+            handle!(enhance);
+            handle!(plan);
+            handle!(execute_steps);
             Ok(())
         })
     }
@@ -114,7 +121,6 @@ impl DeepAgent {
             text
         };
 
-        // Extract content between <enhanced_prompt> tags
         if let Some(start) = enhanced_text.find("<enhanced_prompt>") {
             if let Some(end) = enhanced_text.find("</enhanced_prompt>") {
                 let start_pos = start + "<enhanced_prompt>".len();
@@ -123,8 +129,10 @@ impl DeepAgent {
                 self.enhanced_prompt = enhanced_text;
             }
         } else {
-            self.enhanced_prompt = enhanced_text;
+            self.enhanced_prompt = original_prompt.to_string();
         }
+
+        log::debug!("Enhanced Prompt: {}", self.enhanced_prompt);
 
         Ok(())
     }
@@ -212,7 +220,10 @@ impl DeepAgent {
 
         // Render step input using template
         let step_input = self.ctx.deep_prompt.render_step_input(&prompt_ctx)?;
-        let step_system_message = self.ctx.deep_prompt.render_step_system_message(&prompt_ctx)?;
+        let step_system_message = self
+            .ctx
+            .deep_prompt
+            .render_step_system_message(&prompt_ctx)?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
@@ -334,6 +345,7 @@ impl DeepAgent {
         Ok(())
     }
     async fn execute_tool(&self, tool_name: &str, args: &str) -> Result<String> {
+        log::debug!("Running tool({}), arg: {}", tool_name, args);
         match tool_name {
             "web_search_tool" => {
                 #[derive(Deserialize)]
