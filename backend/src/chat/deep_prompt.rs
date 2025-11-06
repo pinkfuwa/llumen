@@ -7,6 +7,12 @@ use time::macros::format_description;
 
 use crate::chat::CompletionContext;
 
+#[derive(Serialize, Clone)]
+pub struct CompletedStep {
+    pub title: String,
+    pub content: String,
+}
+
 #[derive(Serialize)]
 pub struct PromptContext {
     pub time: String,
@@ -15,9 +21,10 @@ pub struct PromptContext {
     pub user_prompt: Option<String>,
     // For researcher and coder: completed steps and current step
     pub plan_title: Option<String>,
-    pub completed_steps: Option<String>,
+    pub completed_steps: Option<Vec<CompletedStep>>,
     pub current_step_title: Option<String>,
     pub current_step_description: Option<String>,
+    pub enhanced_prompt: Option<String>,
 }
 
 pub struct DeepPrompt {
@@ -60,6 +67,21 @@ impl DeepPrompt {
             include_str!("../../../prompts/deepresearch/reporter.md"),
         )
         .unwrap();
+        env.add_template(
+            "step_system_message",
+            include_str!("../../../prompts/deepresearch/step_system_message.md"),
+        )
+        .unwrap();
+        env.add_template(
+            "step_input",
+            include_str!("../../../prompts/deepresearch/step_input.md"),
+        )
+        .unwrap();
+        env.add_template(
+            "report_input",
+            include_str!("../../../prompts/deepresearch/report_input.md"),
+        )
+        .unwrap();
         Self { env }
     }
 
@@ -95,6 +117,24 @@ impl DeepPrompt {
 
     pub fn render_reporter(&self, ctx: &PromptContext) -> Result<String> {
         let template = self.env.get_template("deep_reporter")?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_step_system_message(&self, ctx: &PromptContext) -> Result<String> {
+        let template = self.env.get_template("step_system_message")?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_step_input(&self, ctx: &PromptContext) -> Result<String> {
+        let template = self.env.get_template("step_input")?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_report_input(&self, ctx: &PromptContext) -> Result<String> {
+        let template = self.env.get_template("report_input")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }

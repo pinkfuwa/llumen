@@ -5,7 +5,7 @@ use futures_util::future::BoxFuture;
 use serde::Deserialize;
 use tokio_stream::StreamExt;
 
-use crate::chat::deep_prompt::PromptContext;
+use crate::chat::deep_prompt::{CompletedStep, PromptContext};
 use crate::chat::process::chat::ChatPipeline;
 use crate::chat::processes::deep::helper::{
     get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def,
@@ -15,14 +15,12 @@ use crate::openrouter;
 
 use super::helper::{PlannerResponse, PlannerStep};
 
-const SECOND_SYSTEM_MESSAGE: &str = "IMPORTANT: DO NOT include inline citations in the text. Instead, track all sources and include a References section at the end using link reference format. Include an empty line between each citation for better readability. Use this format for each reference:\n- [Source Title](URL)\n\n- [Another Source](URL)";
-
 /// Deep research agent that orchestrates multiple agents for comprehensive research
 pub struct DeepAgent {
     ctx: Arc<Context>,
     completion_ctx: CompletionContext,
     model: openrouter::Model,
-    completed_steps: Vec<String>,
+    completed_steps: Vec<CompletedStep>,
     plan: PlannerResponse,
     enhanced_prompt: String,
 }
@@ -49,6 +47,7 @@ impl DeepAgent {
             agent.enhance().await?;
             agent.plan().await?;
             agent.execute_steps().await?;
+            agent.completion_ctx.save().await?;
             Ok(())
         })
     }
@@ -82,6 +81,7 @@ impl DeepAgent {
             completed_steps: None,
             current_step_title: None,
             current_step_description: None,
+            enhanced_prompt: None,
         }
     }
     async fn enhance(&mut self) -> Result<()> {
@@ -188,18 +188,13 @@ impl DeepAgent {
     async fn execute_step(&mut self, step: &PlannerStep) -> Result<()> {
         let mut prompt_ctx = self.get_prompt_context();
         prompt_ctx.plan_title = Some(self.plan.title.clone());
+        prompt_ctx.locale = self.plan.locale.clone();
         prompt_ctx.current_step_title = Some(step.title.clone());
         prompt_ctx.current_step_description = Some(step.description.clone());
 
-        // Build completed steps context
+        // Build completed steps context using the array
         if !self.completed_steps.is_empty() {
-            let mut completed_text = String::new();
-            for (i, step_result) in self.completed_steps.iter().enumerate() {
-                completed_text.push_str(&format!("\n## Completed Step {}: ", i + 1));
-                completed_text.push_str(step_result);
-                completed_text.push_str("\n");
-            }
-            prompt_ctx.completed_steps = Some(completed_text);
+            prompt_ctx.completed_steps = Some(self.completed_steps.clone());
         }
 
         let (system_prompt, tools) = if step.step_type.starts_with("processing") {
@@ -215,20 +210,14 @@ impl DeepAgent {
             (system_prompt, tools)
         };
 
-        // Create messages with two system prompts as shown in the example
-        // Note: We use self.plan.locale here instead of completion_ctx locale
-        // because the planner determines the appropriate locale for the research
-        let step_description = format!(
-            "# Research Topic\n\n{}\n\n# Current Step\n\n## Title\n\n{}\n\n## Description\n\n{}\n\n## Locale\n\n{}",
-            self.plan.title, step.title, step.description, self.plan.locale
-        );
-
-        let second_system = SECOND_SYSTEM_MESSAGE;
+        // Render step input using template
+        let step_input = self.ctx.deep_prompt.render_step_input(&prompt_ctx)?;
+        let step_system_message = self.ctx.deep_prompt.render_step_system_message(&prompt_ctx)?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
-            openrouter::Message::System(second_system.to_string()),
-            openrouter::Message::User(step_description),
+            openrouter::Message::System(step_system_message),
+            openrouter::Message::User(step_input),
         ];
 
         // Execute with tool calls
@@ -250,6 +239,14 @@ impl DeepAgent {
                     match token? {
                         openrouter::StreamCompletionResp::ResponseToken(delta) => {
                             text.push_str(&delta);
+                            // Stream step output to user
+                            if self
+                                .completion_ctx
+                                .add_token(crate::chat::Token::ResearchStep(delta))
+                                .is_err()
+                            {
+                                return Ok(());
+                            }
                         }
                         openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
                             calls.push(openrouter::ToolCall { id, name, args });
@@ -287,44 +284,26 @@ impl DeepAgent {
             }
         }
 
-        self.completed_steps.push(step_result);
+        self.completed_steps.push(CompletedStep {
+            title: step.title.clone(),
+            content: step_result,
+        });
         Ok(())
     }
 
     async fn generate_report(&mut self) -> Result<()> {
         let mut prompt_ctx = self.get_prompt_context();
         prompt_ctx.plan_title = Some(self.plan.title.clone());
+        prompt_ctx.locale = self.plan.locale.clone();
+        prompt_ctx.enhanced_prompt = Some(self.enhanced_prompt.clone());
+        prompt_ctx.completed_steps = Some(self.completed_steps.clone());
 
         let system_prompt = self.ctx.deep_prompt.render_reporter(&prompt_ctx)?;
-
-        // Build the report request with all completed steps
-        let mut report_request = format!(
-            "# Research Requirements\n\n## Task\n\n{}\n\n## Description\n\n{}\n",
-            self.plan.title, self.enhanced_prompt
-        );
-
-        report_request.push_str("IMPORTANT: Structure your report according to the format in the prompt. Remember to include:\n\n");
-        report_request.push_str("1. Key Points - A bulleted list of the most important findings\n");
-        report_request.push_str("2. Overview - A brief introduction to the topic\n");
-        report_request.push_str("3. Detailed Analysis - Organized into logical sections\n");
-        report_request.push_str("4. Survey Note (optional) - For more comprehensive reports\n");
-        report_request.push_str("5. Key Citations - List all references at the end\n\n");
-        report_request.push_str("For citations, DO NOT include inline citations in the text. Instead, place all citations in the 'Key Citations' section at the end using the format: `- [Source Title](URL)`. Include an empty line between each citation for better readability.\n\n");
-        report_request.push_str("PRIORITIZE USING MARKDOWN TABLES for data presentation and comparison. Use tables whenever presenting comparative data, statistics, features, or options. Structure tables with clear headers and aligned columns. Example table format:\n\n");
-        report_request.push_str("| Feature | Description | Pros | Cons |\n");
-        report_request.push_str("|---------|-------------|------|------|\n");
-        report_request.push_str("| Feature 1 | Description 1 | Pros 1 | Cons 1 |\n");
-        report_request.push_str("| Feature 2 | Description 2 | Pros 2 | Cons 2 |\n");
-        report_request.push_str("---\n");
-        report_request.push_str("Below are some observations for the research task:\n\n");
-
-        for (_i, step_result) in self.completed_steps.iter().enumerate() {
-            report_request.push_str(&format!("{{{}}}\n", step_result));
-        }
+        let report_input = self.ctx.deep_prompt.render_report_input(&prompt_ctx)?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
-            openrouter::Message::User(report_request),
+            openrouter::Message::User(report_input),
         ];
 
         {
@@ -339,9 +318,13 @@ impl DeepAgent {
                 match token? {
                     openrouter::StreamCompletionResp::ResponseToken(delta) => {
                         // Send the delta using ResearchReport token
-                        let _ = self
+                        if self
                             .completion_ctx
-                            .add_token(crate::chat::Token::ResearchReport(delta));
+                            .add_token(crate::chat::Token::ResearchReport(delta))
+                            .is_err()
+                        {
+                            return Ok(());
+                        }
                     }
                     _ => {}
                 }
