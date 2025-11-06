@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
@@ -20,7 +20,9 @@ impl CrawlTool {
     pub fn new() -> Self {
         Self {
             client: reqwest::Client::builder()
-                .user_agent("Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)")
+                .user_agent(
+                    "Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)",
+                )
                 .timeout(std::time::Duration::from_secs(30))
                 .build()
                 .expect("Failed to create HTTP client"),
@@ -35,7 +37,8 @@ impl CrawlTool {
             .context("Invalid URL")?;
 
         // Fetch the page
-        let response = self.client
+        let response = self
+            .client
             .get(url)
             .send()
             .await
@@ -48,7 +51,7 @@ impl CrawlTool {
                 .ok()
                 .and_then(|s| s.parse::<u64>().ok())
                 .unwrap_or(60);
-            
+
             anyhow::bail!(
                 "Rate limited. Please retry after {} seconds.",
                 retry_seconds
@@ -80,7 +83,9 @@ impl WebSearchTool {
     pub fn new() -> Self {
         Self {
             client: reqwest::Client::builder()
-                .user_agent("Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)")
+                .user_agent(
+                    "Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)",
+                )
                 .timeout(std::time::Duration::from_secs(30))
                 .build()
                 .expect("Failed to create HTTP client"),
@@ -90,33 +95,36 @@ impl WebSearchTool {
         }
     }
 
-    /// Performs a web search using DuckDuckGo
+    /// Performs a web search using DuckDuckGo HTML search API
     pub async fn search(&self, query: &str) -> Result<Vec<WebSearchResult>> {
         // Acquire semaphore permit to limit concurrent requests
-        let _permit = self.semaphore.acquire().await.context("Failed to acquire semaphore")?;
+        let _permit = self
+            .semaphore
+            .acquire()
+            .await
+            .context("Failed to acquire semaphore")?;
 
         // Rate limit: ensure at least 1 second between requests
         {
             let mut last_time = self.last_search_time.lock().await;
             let elapsed = last_time.elapsed();
             let min_interval = std::time::Duration::from_millis(1000);
-            
+
             if elapsed < min_interval {
                 let sleep_duration = min_interval - elapsed;
                 tokio::time::sleep(sleep_duration).await;
             }
-            
+
             *last_time = std::time::Instant::now();
         }
 
-        // Use DuckDuckGo Instant Answer API
-        let url = format!(
-            "https://api.duckduckgo.com/?q={}&format=json&no_html=1&skip_disambig=1",
-            urlencoding::encode(query)
-        );
-
-        let response = self.client
-            .get(&url)
+        // Use DuckDuckGo HTML search API
+        let response = self
+            .client
+            .post("https://html.duckduckgo.com/html/")
+            .header("Referer", "https://html.duckduckgo.com/")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .form(&[("q", query), ("b", "")])
             .send()
             .await
             .context("Failed to perform search")?;
@@ -128,7 +136,7 @@ impl WebSearchTool {
                 .ok()
                 .and_then(|s| s.parse::<u64>().ok())
                 .unwrap_or(60);
-            
+
             anyhow::bail!(
                 "Rate limited. Please retry after {} seconds.",
                 retry_seconds
@@ -140,57 +148,76 @@ impl WebSearchTool {
             anyhow::bail!("HTTP error: {}", status);
         }
 
-        let json: serde_json::Value = response
-            .json()
-            .await
-            .context("Failed to parse search results")?;
+        let html = response.text().await.context("Failed to read response")?;
 
+        let results = Self::parse_search_results(&html)?;
+
+        Ok(results)
+    }
+
+    /// Parses DuckDuckGo HTML search results
+    fn parse_search_results(html: &str) -> Result<Vec<WebSearchResult>> {
+        use scraper::{Html, Selector};
+
+        let document = Html::parse_document(html);
         let mut results = Vec::new();
 
-        // Parse RelatedTopics
-        if let Some(topics) = json.get("RelatedTopics").and_then(|v| v.as_array()) {
-            for topic in topics {
-                if let Some(obj) = topic.as_object() {
-                    // Skip topic groups
-                    if obj.contains_key("Topics") {
-                        continue;
-                    }
+        // Select all search result containers
+        let result_selector = Selector::parse("div.result")
+            .map_err(|_| anyhow!("Failed to parse result selector"))?;
 
-                    if let (Some(text), Some(url)) = (
-                        obj.get("Text").and_then(|v| v.as_str()),
-                        obj.get("FirstURL").and_then(|v| v.as_str()),
-                    ) {
-                        results.push(WebSearchResult {
-                            title: text.split(" - ").next().unwrap_or(text).to_string(),
-                            url: url.to_string(),
-                            description: text.to_string(),
-                        });
-                    }
-                }
-            }
-        }
+        for result_element in document.select(&result_selector) {
+            // Extract title and URL from the h2 > a element
+            let title_selector = Selector::parse("h2.result__title a")
+                .map_err(|_| anyhow!("Failed to parse title selector"))?;
 
-        // If no results from RelatedTopics, try Abstract
-        if results.is_empty() {
-            if let (Some(abstract_text), Some(abstract_url)) = (
-                json.get("AbstractText").and_then(|v| v.as_str()),
-                json.get("AbstractURL").and_then(|v| v.as_str()),
-            ) {
-                if !abstract_text.is_empty() && !abstract_url.is_empty() {
+            let url_selector = Selector::parse("a.result__url")
+                .map_err(|_| anyhow!("Failed to parse URL selector"))?;
+
+            let snippet_selector = Selector::parse("a.result__snippet")
+                .map_err(|_| anyhow!("Failed to parse snippet selector"))?;
+
+            if let Some(title_elem) = result_element.select(&title_selector).next() {
+                let title = title_elem.inner_html();
+                let title_clean = Self::clean_html_text(&title);
+
+                if let Some(href) = title_elem.value().attr("href") {
+                    let url = href.to_string();
+
+                    // Extract description from snippet if available
+                    let description = result_element
+                        .select(&snippet_selector)
+                        .next()
+                        .map(|elem| Self::clean_html_text(&elem.inner_html()))
+                        .unwrap_or_else(|| String::from("No description available"));
+
                     results.push(WebSearchResult {
-                        title: json
-                            .get("Heading")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Search Result")
-                            .to_string(),
-                        url: abstract_url.to_string(),
-                        description: abstract_text.to_string(),
+                        title: title_clean,
+                        url,
+                        description,
                     });
                 }
             }
         }
 
         Ok(results)
+    }
+
+    /// Removes HTML tags and trims whitespace from text
+    fn clean_html_text(html: &str) -> String {
+        let mut result = String::new();
+        let mut in_tag = false;
+
+        for ch in html.chars() {
+            match ch {
+                '<' => in_tag = true,
+                '>' => in_tag = false,
+                _ if !in_tag => result.push(ch),
+                _ => {}
+            }
+        }
+
+        result.split_whitespace().collect::<Vec<_>>().join(" ")
     }
 }
 
@@ -202,14 +229,19 @@ pub struct LuaReplTool {
 impl LuaReplTool {
     pub fn new() -> Self {
         let config = runner::LuaRunnerConfig::sandboxed();
-        
+
         // Create runner with SQL and HTTP functions
-        let runner = runner::LuaRunner::new(config, Some(Box::new(|lua| {
-            let ctx = Arc::new(runner::tools::SqliteContext::new());
-            runner::tools::register_sql_functions(lua, ctx).map_err(|e| runner::LuaRunnerError::InitializationError(e.to_string()))?;
-            runner::tools::register_http_functions(lua).map_err(|e| runner::LuaRunnerError::InitializationError(e.to_string()))?;
-            Ok(())
-        })));
+        let runner = runner::LuaRunner::new(
+            config,
+            Some(Box::new(|lua| {
+                let ctx = Arc::new(runner::tools::SqliteContext::new());
+                runner::tools::register_sql_functions(lua, ctx)
+                    .map_err(|e| runner::LuaRunnerError::InitializationError(e.to_string()))?;
+                runner::tools::register_http_functions(lua)
+                    .map_err(|e| runner::LuaRunnerError::InitializationError(e.to_string()))?;
+                Ok(())
+            })),
+        );
 
         Self {
             runner: Arc::new(runner),
@@ -236,9 +268,10 @@ mod tests {
     async fn test_web_search() {
         let tool = WebSearchTool::new();
         let results = tool.search("rust programming language").await;
-        
+
         // May fail due to rate limiting or network issues
         if let Ok(results) = results {
+            dbg!(&results);
             assert!(!results.is_empty() || true); // Always pass - search results may vary
         }
     }
