@@ -217,12 +217,6 @@ impl DeepPipeline {
             .render(PromptKind::DeepResearcher, &self.completion_ctx)
             .context("Failed to render researcher prompt")?;
 
-        // Create research tools
-        let tools = vec![
-            self.create_web_search_tool(),
-            self.create_crawl_tool(),
-        ];
-
         // Build messages
         let messages = vec![
             openrouter::Message::System(system_prompt),
@@ -238,11 +232,11 @@ impl DeepPipeline {
         let mut model: openrouter::Model = model_config.into();
         model.online = true; // Enable online mode for web search
 
-        // Stream the completion with tools
+        // Stream the completion
         let stream = self
             .ctx
             .openrouter
-            .stream(messages, &model, tools)
+            .stream(messages, &model, vec![])
             .await
             .context("Failed to start researcher agent stream")?;
 
@@ -255,13 +249,6 @@ impl DeepPipeline {
             match resp {
                 Ok(openrouter::StreamCompletionResp::ResponseToken(token)) => {
                     result.push_str(&token);
-                }
-                Ok(openrouter::StreamCompletionResp::ToolCall { name, args, id: _ }) => {
-                    // Execute tool and get result
-                    let _tool_result = self.execute_tool(&name, &args).await?;
-                    // In a complete implementation, we would send the tool result back
-                    // For now, we just append it to the result
-                    result.push_str(&format!("\n[Tool: {} executed]\n", name));
                 }
                 Ok(_) => {}
                 Err(e) => {
@@ -276,46 +263,6 @@ impl DeepPipeline {
         }
 
         Ok(result)
-    }
-
-    fn create_web_search_tool(&self) -> openrouter::Tool {
-        openrouter::Tool {
-            name: "web_search_tool".to_string(),
-            description: "Use this to perform web search and gather online information.".to_string(),
-            schema: serde_json::json!({
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The topic to search, expected to be started with What/Where/How..."
-                    }
-                },
-                "required": ["query"]
-            }),
-        }
-    }
-
-    fn create_crawl_tool(&self) -> openrouter::Tool {
-        openrouter::Tool {
-            name: "crawl_tool".to_string(),
-            description: "Use this to crawl a url and get a readable content in markdown format.".to_string(),
-            schema: serde_json::json!({
-                "type": "object",
-                "properties": {
-                    "url": {
-                        "type": "string",
-                        "description": "The url to crawl."
-                    }
-                },
-                "required": ["url"]
-            }),
-        }
-    }
-
-    async fn execute_tool(&self, _name: &str, _args: &str) -> Result<String> {
-        // Tool execution is handled by OpenRouter with online mode
-        // This is a placeholder for potential local tool execution
-        Ok("Tool executed successfully".to_string())
     }
 
     async fn stream_step(&mut self, step_json: &str) -> Result<()> {
