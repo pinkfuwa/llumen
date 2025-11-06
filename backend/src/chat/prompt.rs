@@ -11,6 +11,9 @@ pub enum PromptKind {
     Normal,
     Search,
     TitleGen,
+    DeepPlanner,
+    DeepResearcher,
+    DeepReporter,
 }
 
 impl PromptKind {
@@ -19,6 +22,9 @@ impl PromptKind {
             PromptKind::Normal => "normal",
             PromptKind::Search => "search",
             PromptKind::TitleGen => "title",
+            PromptKind::DeepPlanner => "deep_planner",
+            PromptKind::DeepResearcher => "deep_researcher",
+            PromptKind::DeepReporter => "deep_reporter",
         }
     }
 }
@@ -39,6 +45,12 @@ impl Prompt {
             .unwrap();
         env.add_template("search", include_str!("../../../prompts/search.md"))
             .unwrap();
+        env.add_template("deep_planner", include_str!("../../../prompts/deepresearch/planner.md"))
+            .unwrap();
+        env.add_template("deep_researcher", include_str!("../../../prompts/deepresearch/researcher.md"))
+            .unwrap();
+        env.add_template("deep_reporter", include_str!("../../../prompts/deepresearch/reporter.md"))
+            .unwrap();
         env.add_global("repo_url", "https://github.com/pinkfuwa/llumen");
         env.add_global("repo_readme", include_str!("../../../README.md"));
         Self { env }
@@ -52,9 +64,10 @@ struct RenderingContext<'a> {
     username: &'a str,
     chat_id: i32,
     chat_title: Option<&'a str>,
-    locale: Option<&'a str>,
+    locale: &'a str,
     time: String,
     user_prompt: Option<&'a str>,
+    max_step_num: usize,
 }
 
 const TIME_FORMAT: &[BorrowedFormatItem<'static>] =
@@ -73,15 +86,20 @@ impl Prompt {
 
         let time = UtcDateTime::now().format(&TIME_FORMAT).unwrap();
 
+        let locale = ctx.user.preference.locale.as_ref()
+            .map(|x| x.as_str())
+            .unwrap_or("en-US");
+
         let rendering_ctx = RenderingContext {
             model: config,
             user_id: ctx.user.id,
             username: &ctx.user.name,
             chat_id: ctx.chat.id.clone().unwrap(),
             chat_title,
-            locale: ctx.user.preference.locale.as_ref().map(|x| x.as_str()),
+            locale,
             time,
             user_prompt: ctx.latest_user_message(),
+            max_step_num: 7, // Default max steps for deep research
         };
 
         let template_name = kind.as_str();

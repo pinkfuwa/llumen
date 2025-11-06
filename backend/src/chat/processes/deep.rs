@@ -3,8 +3,28 @@ use std::sync::Arc;
 use anyhow::{Context as _, Result};
 use entity::{ChunkKind, DeepPlan, DeepReport, DeepStep, DeepStepStatus, chunk};
 use sea_orm::{ActiveValue::Set, EntityTrait};
+use serde::{Deserialize, Serialize};
 
-use crate::chat::{CompletionContext, Context, Token};
+use crate::chat::{CompletionContext, Context, Token, prompt::PromptKind};
+use crate::openrouter;
+
+/// Planner response structure matching the prompt output
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct PlannerResponse {
+    locale: String,
+    has_enough_context: bool,
+    thought: String,
+    title: String,
+    steps: Vec<PlannerStep>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct PlannerStep {
+    need_search: bool,
+    title: String,
+    description: String,
+    step_type: String,
+}
 
 /// Deep research pipeline that orchestrates multiple agents for comprehensive research
 pub struct DeepPipeline {
@@ -41,11 +61,13 @@ impl DeepPipeline {
         let plan_json = serde_json::to_string(&plan).unwrap();
         self.stream_plan(&plan_json).await?;
 
-        // Phase 2: Execute research steps
+        // Phase 2: Execute research steps (if needed)
         let mut step_results = Vec::new();
-        for (idx, step) in plan.steps.iter().enumerate() {
-            let result = self.execute_step(step, idx).await?;
-            step_results.push(result);
+        if !plan.has_enough_context {
+            for (idx, step) in plan.steps.iter().enumerate() {
+                let result = self.execute_step(step, idx).await?;
+                step_results.push(result);
+            }
         }
 
         // Phase 3: Generate and stream final report
@@ -77,31 +99,60 @@ impl DeepPipeline {
     }
 
     async fn create_research_plan(&self) -> Result<DeepPlan> {
-        // TODO: Call planner agent with user query
-        // For now, create a simple demo plan
+        // Render planner prompt
+        let system_prompt = self
+            .ctx
+            .prompt
+            .render(PromptKind::DeepPlanner, &self.completion_ctx)
+            .context("Failed to render planner prompt")?;
+
         let user_message = self
             .completion_ctx
             .latest_user_message()
             .unwrap_or("research topic");
-        
+
+        // Call LLM with planner prompt
+        let messages = vec![
+            openrouter::Message::System(system_prompt),
+            openrouter::Message::User(user_message.to_string()),
+        ];
+
+        let model_config = self
+            .completion_ctx
+            .model
+            .get_config()
+            .context("Failed to get model config")?;
+
+        let model: openrouter::Model = model_config.into();
+
+        let completion = self
+            .ctx
+            .openrouter
+            .complete(messages, model)
+            .await
+            .context("Failed to call planner agent")?;
+
+        // Parse planner response
+        let planner_response: PlannerResponse = serde_json::from_str(&completion.response)
+            .context("Failed to parse planner response")?;
+
+        // Convert to DeepPlan format
+        let steps = planner_response
+            .steps
+            .into_iter()
+            .enumerate()
+            .map(|(idx, step)| DeepStep {
+                id: format!("step{}", idx + 1),
+                description: format!("{}: {}", step.title, step.description),
+                need_search: step.need_search,
+                status: DeepStepStatus::InProgress,
+                result: None,
+            })
+            .collect();
+
         Ok(DeepPlan {
-            steps: vec![
-                DeepStep {
-                    id: "step1".to_string(),
-                    description: format!("Research and gather information about: {}", user_message),
-                    need_search: true,
-                    status: DeepStepStatus::InProgress,
-                    result: None,
-                },
-                DeepStep {
-                    id: "step2".to_string(),
-                    description: "Analyze and synthesize gathered information".to_string(),
-                    need_search: false,
-                    status: DeepStepStatus::InProgress,
-                    result: None,
-                },
-            ],
-            has_enough_context: false,
+            steps,
+            has_enough_context: planner_response.has_enough_context,
         })
     }
 
@@ -125,23 +176,146 @@ impl DeepPipeline {
         let step_json = serde_json::to_string(&current_step).unwrap();
         self.stream_step(&step_json).await?;
 
-        // TODO: Execute actual research step
-        // For now, simulate processing
-        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+        // If step doesn't need search, just mark as completed
+        if !step.need_search {
+            current_step.status = DeepStepStatus::Completed;
+            current_step.result = Some(format!(
+                "Processing step completed: {}",
+                step.description
+            ));
+            
+            let step_json = serde_json::to_string(&current_step).unwrap();
+            self.stream_step(&step_json).await?;
+            return Ok(current_step);
+        }
 
-        // Mark step as completed with result
-        current_step.status = DeepStepStatus::Completed;
-        current_step.result = Some(format!(
-            "Completed step {}: {}",
-            idx + 1,
-            step.description
-        ));
+        // Execute research step with researcher agent
+        match self.execute_research_step(step).await {
+            Ok(result) => {
+                current_step.status = DeepStepStatus::Completed;
+                current_step.result = Some(result);
+            }
+            Err(e) => {
+                log::error!("Research step {} failed: {:?}", idx + 1, e);
+                current_step.status = DeepStepStatus::Failed;
+                current_step.result = Some(format!("Failed: {}", e));
+            }
+        }
 
         // Stream updated step
         let step_json = serde_json::to_string(&current_step).unwrap();
         self.stream_step(&step_json).await?;
 
         Ok(current_step)
+    }
+
+    async fn execute_research_step(&self, step: &DeepStep) -> Result<String> {
+        // Render researcher prompt
+        let system_prompt = self
+            .ctx
+            .prompt
+            .render(PromptKind::DeepResearcher, &self.completion_ctx)
+            .context("Failed to render researcher prompt")?;
+
+        // Create research tools
+        let tools = vec![
+            self.create_web_search_tool(),
+            self.create_crawl_tool(),
+        ];
+
+        // Build messages
+        let messages = vec![
+            openrouter::Message::System(system_prompt),
+            openrouter::Message::User(step.description.clone()),
+        ];
+
+        let model_config = self
+            .completion_ctx
+            .model
+            .get_config()
+            .context("Failed to get model config")?;
+
+        let mut model: openrouter::Model = model_config.into();
+        model.online = true; // Enable online mode for web search
+
+        // Stream the completion with tools
+        let stream = self
+            .ctx
+            .openrouter
+            .stream(messages, &model, tools)
+            .await
+            .context("Failed to start researcher agent stream")?;
+
+        // Collect the research result
+        let mut result = String::new();
+        let mut stream = Box::pin(stream);
+        
+        use tokio_stream::StreamExt;
+        while let Some(resp) = stream.next().await {
+            match resp {
+                Ok(openrouter::StreamCompletionResp::ResponseToken(token)) => {
+                    result.push_str(&token);
+                }
+                Ok(openrouter::StreamCompletionResp::ToolCall { name, args, id: _ }) => {
+                    // Execute tool and get result
+                    let _tool_result = self.execute_tool(&name, &args).await?;
+                    // In a complete implementation, we would send the tool result back
+                    // For now, we just append it to the result
+                    result.push_str(&format!("\n[Tool: {} executed]\n", name));
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    log::error!("Stream error during research: {:?}", e);
+                    break;
+                }
+            }
+        }
+
+        if result.is_empty() {
+            result = "No research results obtained.".to_string();
+        }
+
+        Ok(result)
+    }
+
+    fn create_web_search_tool(&self) -> openrouter::Tool {
+        openrouter::Tool {
+            name: "web_search_tool".to_string(),
+            description: "Use this to perform web search and gather online information.".to_string(),
+            schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The topic to search, expected to be started with What/Where/How..."
+                    }
+                },
+                "required": ["query"]
+            }),
+        }
+    }
+
+    fn create_crawl_tool(&self) -> openrouter::Tool {
+        openrouter::Tool {
+            name: "crawl_tool".to_string(),
+            description: "Use this to crawl a url and get a readable content in markdown format.".to_string(),
+            schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "The url to crawl."
+                    }
+                },
+                "required": ["url"]
+            }),
+        }
+    }
+
+    async fn execute_tool(&self, _name: &str, _args: &str) -> Result<String> {
+        // Tool execution is handled by OpenRouter with online mode
+        // This is a placeholder for potential local tool execution
+        Ok("Tool executed successfully".to_string())
     }
 
     async fn stream_step(&mut self, step_json: &str) -> Result<()> {
@@ -161,24 +335,50 @@ impl DeepPipeline {
         _plan: &DeepPlan,
         step_results: &[DeepStep],
     ) -> Result<DeepReport> {
-        // TODO: Call reporter agent with step results
-        // For now, create a simple summary report
-        let mut report_content = String::from("# Research Report\n\n");
-        report_content.push_str("## Summary\n\n");
-        
+        // Render reporter prompt
+        let system_prompt = self
+            .ctx
+            .prompt
+            .render(PromptKind::DeepReporter, &self.completion_ctx)
+            .context("Failed to render reporter prompt")?;
+
+        // Build context from step results
+        let mut context = String::from("# Research Results\n\n");
         for (idx, step) in step_results.iter().enumerate() {
-            report_content.push_str(&format!("### Step {}\n\n", idx + 1));
-            report_content.push_str(&format!("**Description**: {}\n\n", step.description));
+            context.push_str(&format!("## Step {}: {}\n\n", idx + 1, step.description));
+            
             if let Some(result) = &step.result {
-                report_content.push_str(&format!("**Result**: {}\n\n", result));
+                context.push_str(&format!("{}\n\n", result));
+            } else {
+                context.push_str("No results available.\n\n");
             }
+            
+            context.push_str("---\n\n");
         }
 
-        report_content.push_str("\n## Conclusion\n\n");
-        report_content.push_str("Research completed successfully. This is a demonstration of the deep research pipeline structure.\n");
+        // Call reporter agent
+        let messages = vec![
+            openrouter::Message::System(system_prompt),
+            openrouter::Message::User(context),
+        ];
+
+        let model_config = self
+            .completion_ctx
+            .model
+            .get_config()
+            .context("Failed to get model config")?;
+
+        let model: openrouter::Model = model_config.into();
+
+        let completion = self
+            .ctx
+            .openrouter
+            .complete(messages, model)
+            .await
+            .context("Failed to call reporter agent")?;
 
         Ok(DeepReport {
-            content: report_content,
+            content: completion.response,
         })
     }
 
