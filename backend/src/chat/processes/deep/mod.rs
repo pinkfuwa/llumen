@@ -24,8 +24,7 @@ impl ChatInner for Inner {
             .model
             .get_config()
             .context("Failed to get model config")?;
-        let mut model: openrouter::Model = model.into();
-        model.online = true;
+        let model: openrouter::Model = model.into();
 
         Ok(model)
     }
