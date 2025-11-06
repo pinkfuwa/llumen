@@ -84,7 +84,10 @@ export function CreateInternalQuery<D>(option: InternalQueryOption<D>): Internal
 	}
 
 	if (staleTime != undefined && staleTime != Infinity) {
-		let intervalId: NodeJS.Timeout | undefined = setInterval(revalidateIfVisible, staleTime);
+		let intervalId: ReturnType<typeof setInterval> | undefined = setInterval(
+			revalidateIfVisible,
+			staleTime
+		);
 
 		if (revalidateOnFocus) {
 			const visibilityStateHandler = () => {

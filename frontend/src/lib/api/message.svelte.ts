@@ -52,7 +52,7 @@ const Handlers: {
 	},
 
 	token: (token) => {
-		handleTokenChunk('text', { content: token.content });
+		handleTokenChunk('token', { content: token.content });
 	},
 
 	reasoning: (reasoning) => {
@@ -97,6 +97,18 @@ const Handlers: {
 				kind: { t: 'error', c: { content: err.content } }
 			});
 		}
+	},
+
+	deep_plan: (plan) => {
+		handleTokenChunk('deep_plan', { content: plan.content });
+	},
+
+	deep_step: (step) => {
+		handleTokenChunk('deep_step', { content: step.content });
+	},
+
+	deep_report: (report) => {
+		handleTokenChunk('deep_report', { content: report.content });
 	}
 };
 
@@ -178,16 +190,13 @@ async function syncMessages(chatId: number) {
 	}
 }
 
-function handleTokenChunk(
-	kind: 'text' | 'reasoning' | 'tool_call' | 'tool_result' | 'error',
-	chunkContent: any
-) {
+function handleTokenChunk(kind: SseResp['t'], chunkContent: any) {
 	const firstMsg = messages.at(0);
 	if (!firstMsg || !firstMsg.stream) return;
 
 	const lastChunk = firstMsg.chunks[firstMsg.chunks.length - 1];
 
-	if (kind === 'text') {
+	if (kind === 'token') {
 		if (lastChunk && lastChunk.kind.t === 'text') {
 			lastChunk.kind.c.content += chunkContent.content;
 		} else {
@@ -221,6 +230,33 @@ function handleTokenChunk(
 			id: Date.now(),
 			kind: { t: 'error', c: { content: chunkContent.content } }
 		});
+	} else if (kind === 'deep_plan') {
+		if (lastChunk && lastChunk.kind.t === 'plan') {
+			lastChunk.kind.c.content += chunkContent.content;
+		} else {
+			firstMsg.chunks.push({
+				id: Date.now(),
+				kind: { t: 'plan', c: { content: chunkContent.content } }
+			});
+		}
+	} else if (kind === 'deep_step') {
+		if (lastChunk && lastChunk.kind.t === 'step') {
+			lastChunk.kind.c.content += chunkContent.content;
+		} else {
+			firstMsg.chunks.push({
+				id: Date.now(),
+				kind: { t: 'step', c: { content: chunkContent.content } }
+			});
+		}
+	} else if (kind === 'deep_report') {
+		if (lastChunk && lastChunk.kind.t === 'report') {
+			lastChunk.kind.c.content += chunkContent.content;
+		} else {
+			firstMsg.chunks.push({
+				id: Date.now(),
+				kind: { t: 'report', c: { content: chunkContent.content } }
+			});
+		}
 	}
 }
 

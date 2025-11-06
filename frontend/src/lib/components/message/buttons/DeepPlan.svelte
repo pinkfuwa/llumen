@@ -1,18 +1,58 @@
 <script lang="ts">
 	import { CheckCircle, Circle, Loader2 } from '@lucide/svelte';
 
+	interface PlanStep {
+		description: string;
+		status: 'completed' | 'in_progress' | 'failed';
+		need_search?: boolean;
+	}
+
+	interface Plan {
+		steps: PlanStep[];
+		has_enough_context: boolean;
+	}
+
 	let { content }: { content: string } = $props();
 
-	let plan = $derived.by(() => {
+	const defaultPlan: Plan = {
+		steps: [],
+		has_enough_context: false
+	};
+
+	let plan = $state<Plan>(defaultPlan);
+
+	// Parse content and extract plan information
+	$effect(() => {
 		try {
-			return JSON.parse(content);
+			const parsed = JSON.parse(content);
+			if (parsed && typeof parsed === 'object') {
+				const steps = Array.isArray(parsed.steps)
+					? parsed.steps.map((step: unknown) => {
+							if (step && typeof step === 'object') {
+								const stepObj = step as Record<string, unknown>;
+								return {
+									description: String(stepObj.description || ''),
+									status: (['completed', 'in_progress', 'failed'].includes(String(stepObj.status))
+										? String(stepObj.status)
+										: 'in_progress') as PlanStep['status'],
+									need_search: Boolean(stepObj.need_search)
+								};
+							}
+							return { description: '', status: 'in_progress' as const, need_search: false };
+						})
+					: [];
+
+				plan = {
+					steps,
+					has_enough_context: Boolean(parsed.has_enough_context)
+				};
+			}
 		} catch {
-			return { steps: [], has_enough_context: false };
+			// Keep existing plan if parsing fails
 		}
 	});
 
-	// change type to keyof
-	const iconMap: Record<string, typeof Circle> = {
+	const iconMap: Record<PlanStep['status'], typeof Circle> = {
 		completed: CheckCircle,
 		in_progress: Loader2,
 		failed: Circle
@@ -25,7 +65,7 @@
 	<h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">Research Plan</h3>
 	<div class="space-y-2">
 		{#each plan.steps as step}
-			{@const Icon = iconMap[step.status] || Circle}
+			{@const Icon = iconMap[step.status]}
 			<div class="flex items-start gap-2">
 				<!-- FIXME: fix copilot's style with data-state= -->
 				<Icon class="mt-0.5 h-5 w-5 flex-shrink-0" />

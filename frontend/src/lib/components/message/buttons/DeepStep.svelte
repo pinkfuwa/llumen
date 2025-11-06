@@ -1,24 +1,55 @@
 <script lang="ts">
 	import { AlertCircle, CheckCircle, Loader2 } from '@lucide/svelte';
 
+	interface Step {
+		id: string;
+		description: string;
+		status: 'completed' | 'in_progress' | 'failed';
+		result: string | null;
+	}
+
 	let { content }: { content: string } = $props();
 
-	let step = $derived.by(() => {
+	let step = $state<Step>({
+		id: '',
+		description: '',
+		status: 'in_progress',
+		result: null
+	});
+
+	// Parse incrementally
+	$effect(() => {
 		try {
-			return JSON.parse(content);
+			// Try to parse as complete JSON first
+			const parsed = JSON.parse(content);
+			step = parsed as Step;
 		} catch {
-			return { id: '', description: '', status: 'in_progress', result: null };
+			// If incomplete, try to extract fields from partial JSON
+			try {
+				const idMatch = content.match(/"id"\s*:\s*"([^"]*)"/);
+				const descMatch = content.match(/"description"\s*:\s*"([^"]*)"/);
+				const statusMatch = content.match(/"status"\s*:\s*"(completed|in_progress|failed)"/);
+				const resultMatch = content.match(/"result"\s*:\s*"([^"]*)"/);
+
+				step = {
+					id: idMatch?.[1] ?? '',
+					description: descMatch?.[1] ?? '',
+					status: (statusMatch?.[1] as 'completed' | 'in_progress' | 'failed') ?? 'in_progress',
+					result: resultMatch?.[1] ?? null
+				};
+			} catch {
+				// Keep existing step if parsing fails
+			}
 		}
 	});
 
-	// change type to keyof
-	const iconMap: Record<string, typeof CheckCircle> = {
+	const iconMap: Record<'completed' | 'in_progress' | 'failed', typeof CheckCircle> = {
 		completed: CheckCircle,
 		in_progress: Loader2,
 		failed: AlertCircle
 	};
 
-	const Icon = $derived(iconMap[step.status] || Loader2);
+	const Icon = $derived(iconMap[step.status]);
 </script>
 
 <div
