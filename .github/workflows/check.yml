@@ -1,8 +1,8 @@
-name: PR Test
+name: statuc check
 
 on:
   pull_request:
-    types: [synchronize]
+  workflow_dispatch:
 
 permissions:
   contents: read
