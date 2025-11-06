@@ -18,6 +18,8 @@ use super::helper::{PlannerResponse, PlannerStep};
 
 use anyhow::Context as _;
 
+const SECOND_SYSTEM_MESSAGE: &str = "---\nTHIS IS THE SECOND SYSTEM MESSAGE, THERE ARE MULTIPLE SYSTEM PROMPT IN STEP INPUT\n\nIMPORTANT: DO NOT include inline citations in the text. Instead, track all sources and include a References section at the end using link reference format. Include an empty line between each citation for better readability. Use this format for each reference:\n- [Source Title](URL)\n\n- [Another Source](URL)";
+
 /// Deep research agent that orchestrates multiple agents for comprehensive research
 pub struct DeepAgent {
     ctx: Arc<Context>,
@@ -37,12 +39,22 @@ impl DeepAgent {
         let ctx = pipeline.ctx.clone();
         let mut completion_ctx = pipeline.completion_ctx;
         
-        // SAFETY: The agent and its completion context are used entirely within
-        // a single async context and are not actually sent across threads.
-        // The !Send constraint comes from EventSource in StreamCompletion,
-        // but we ensure all streams are fully consumed before any await points
-        // that could cause the future to migrate to another thread.
-        // The future is spawned on the current task and will not move between threads.
+        // SAFETY: SendFuture wrapper for BoxFuture<Send> requirement
+        //
+        // This wrapper is necessary because StreamCompletion (used for OpenRouter API streaming)
+        // contains EventSource which is !Sync. Even though we carefully scope all stream usage
+        // to ensure streams are fully consumed before any await points, the compiler cannot
+        // prove this at the async block level.
+        //
+        // Safety guarantees:
+        // 1. All StreamCompletion instances are scoped in blocks and fully consumed
+        //    before the block exits (see enhance(), plan(), execute_step(), generate_report())
+        // 2. The future never actually crosses thread boundaries - it executes within
+        //    the same async task that calls handoff_tool
+        // 3. All shared state uses proper synchronization (Arc, Mutex where needed)
+        // 4. CompletionContext uses watch::Sender which is Send (just not Sync)
+        //
+        // If stream usage patterns change, this wrapper must be carefully reviewed.
         struct SendFuture<F>(F);
         unsafe impl<F> Send for SendFuture<F> {}
         
@@ -219,6 +231,8 @@ impl DeepAgent {
         };
         
         // Create messages with two system prompts as shown in the example
+        // Note: We use self.plan.locale here instead of completion_ctx locale
+        // because the planner determines the appropriate locale for the research
         let step_description = format!(
             "# Research Topic\n\n{}\n\n# Current Step\n\n## Title\n\n{}\n\n## Description\n\n{}\n\n## Locale\n\n{}",
             self.plan.title,
@@ -227,7 +241,7 @@ impl DeepAgent {
             self.plan.locale
         );
         
-        let second_system = "---\nTHIS IS THE SECOND SYSTEM MESSAGE, THERE ARE MULTIPLE SYSTEM PROMPT IN STEP INPUT\n\nIMPORTANT: DO NOT include inline citations in the text. Instead, track all sources and include a References section at the end using link reference format. Include an empty line between each citation for better readability. Use this format for each reference:\n- [Source Title](URL)\n\n- [Another Source](URL)";
+        let second_system = SECOND_SYSTEM_MESSAGE;
         
         let messages = vec![
             openrouter::Message::System(system_prompt),
