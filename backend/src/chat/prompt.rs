@@ -11,6 +11,7 @@ pub enum PromptKind {
     Normal,
     Search,
     TitleGen,
+    Coordinator,
 }
 
 impl PromptKind {
@@ -19,6 +20,7 @@ impl PromptKind {
             PromptKind::Normal => "normal",
             PromptKind::Search => "search",
             PromptKind::TitleGen => "title",
+            PromptKind::Coordinator => "coordinator",
         }
     }
 }
@@ -39,6 +41,11 @@ impl Prompt {
             .unwrap();
         env.add_template("search", include_str!("../../../prompts/search.md"))
             .unwrap();
+        env.add_template(
+            "coordinator",
+            include_str!("../../../prompts/coordinator.md"),
+        )
+        .unwrap();
         env.add_global("repo_url", "https://github.com/pinkfuwa/llumen");
         env.add_global("repo_readme", include_str!("../../../README.md"));
         Self { env }

@@ -24,7 +24,13 @@ use super::helper;
 pub trait ChatInner {
     fn get_system_prompt(ctx: &Context, completion_ctx: &CompletionContext) -> Result<String>;
     fn get_model(ctx: &Context, completion_ctx: &CompletionContext) -> Result<openrouter::Model>;
-    fn solve_tool(name: &str, arg: &str) -> BoxFuture<'static, Result<String, anyhow::Error>> {
+    fn handoff_tool(
+        pipeline: ChatPipeline<Self>,
+        toolcall: openrouter::ToolCall,
+    ) -> BoxFuture<'static, Result<(), anyhow::Error>>
+    where
+        Self: Sized,
+    {
         Box::pin(async move {
             Err(anyhow::anyhow!(
                 "Tool calls are not supported in this pipeline"
@@ -40,10 +46,11 @@ pub trait ChatInner {
 }
 
 pub struct ChatPipeline<P: ChatInner> {
-    ctx: Arc<Context>,
-    completion_ctx: CompletionContext,
+    pub ctx: Arc<Context>,
+    pub completion_ctx: CompletionContext,
+    pub model: openrouter::Model,
+    // TODO: don't store message, compute when used
     messages: Vec<openrouter::Message>,
-    model: openrouter::Model,
     tools: Vec<openrouter::Tool>,
     pipeline: PhantomData<P>,
 }
@@ -94,7 +101,7 @@ impl<P: ChatInner> ChatPipeline<P> {
             pipeline: PhantomData,
         })
     }
-    fn update_tool_result(&mut self, output: String) -> Result<()> {
+    pub fn update_tool_result(&mut self, output: String) -> Result<()> {
         let last_chunk = self
             .completion_ctx
             .new_chunks
@@ -116,7 +123,7 @@ impl<P: ChatInner> ChatPipeline<P> {
 
         Ok(())
     }
-    async fn process(&mut self) -> Result<(), anyhow::Error> {
+    async fn process(mut self) -> Result<(), anyhow::Error> {
         let mut message = self.messages.clone();
         message.extend(helper::active_chunks_to_message(
             self.completion_ctx.new_chunks.clone().into_iter(),
@@ -172,20 +179,16 @@ impl<P: ChatInner> ChatPipeline<P> {
         self.completion_ctx.new_chunks.extend(chunks);
 
         match result.stop_reason {
-            FinishReason::Length => return Err(anyhow::anyhow!("The response is too long")),
+            FinishReason::Length => Err(anyhow::anyhow!("The response is too long")),
             FinishReason::ToolCalls => {
                 let tool_call = result
                     .toolcall
                     .context("No tool calls found, but finish reason is tool_calls")?;
 
-                let result = P::solve_tool(&tool_call.name, &tool_call.args).await?;
-
-                self.update_tool_result(result)?;
-
-                return Box::pin(self.process()).await;
+                P::handoff_tool(self, tool_call).await
             }
-            FinishReason::Stop => return Ok(()),
-        };
+            FinishReason::Stop => Ok(()),
+        }
     }
 }
 
@@ -200,7 +203,7 @@ impl<P: ChatInner + Send> super::Pipeline for ChatPipeline<P> {
                 .context("Failed to create chat pipeline")?;
 
             let err = pipeline.process().await.err();
-            pipeline.completion_ctx.save(err).await?;
+            log::error!("Error processing chat pipeline: {:?}", err);
 
             Ok(())
         })

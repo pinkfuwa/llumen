@@ -141,7 +141,7 @@ impl StreamCompletion {
                 expect.take();
             }
             (Some(x), expect) => {
-                if x != expect.as_ref().unwrap().as_str() {
+                if !x.starts_with(expect.as_ref().unwrap()) {
                     log::warn!(
                         "Model ID mismatch: expected {}, got {}",
                         expect.take().unwrap(),

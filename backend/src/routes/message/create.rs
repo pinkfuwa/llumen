@@ -9,7 +9,7 @@ use typeshare::typeshare;
 
 use crate::{
     AppState,
-    chat::{Normal, Pipeline, Search, DeepPipeline},
+    chat::{Deep, Normal, Pipeline, Search},
     errors::{ErrorKind, JsonResult, WithKind},
     middlewares::auth::UserId,
     utils::chat::ChatMode,
@@ -93,7 +93,7 @@ pub async fn route(
 
         match req.mode {
             ChatMode::Search => Search::process(app.processor.clone(), completion_ctx).await?,
-            ChatMode::Research => DeepPipeline::new(app.processor.clone(), completion_ctx).process().await?,
+            ChatMode::Research => Deep::process(app.processor.clone(), completion_ctx).await?,
             _ => Normal::process(app.processor.clone(), completion_ctx).await?,
         };
 

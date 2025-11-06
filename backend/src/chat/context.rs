@@ -9,13 +9,14 @@ use sea_orm::{
 use tokio::join;
 use tokio_stream::{Stream, StreamExt};
 
+use super::tools::{CrawlTool, LuaReplTool, WebSearchTool};
 use super::{
     channel::{self, Publisher},
     prompt::Prompt,
     token::Token,
 };
+use crate::chat::deep_prompt::{self, DeepPrompt};
 use crate::{chat::prompt::PromptKind, openrouter, utils::blob::BlobDB};
-use crate::chat::processes::deep::tools::{WebSearchTool, CrawlTool, LuaReplTool};
 
 #[derive(Debug, Clone, Copy)]
 pub enum StreamEndReason {
@@ -34,6 +35,7 @@ pub struct Context {
     pub(super) web_search_tool: Arc<WebSearchTool>,
     pub(super) crawl_tool: Arc<CrawlTool>,
     pub(super) lua_repl_tool: Arc<LuaReplTool>,
+    pub(super) deep_prompt: Arc<DeepPrompt>,
 }
 
 impl Context {
@@ -52,6 +54,7 @@ impl Context {
             web_search_tool: Arc::new(WebSearchTool::new()),
             crawl_tool: Arc::new(CrawlTool::new()),
             lua_repl_tool: Arc::new(LuaReplTool::new()),
+            deep_prompt: Arc::new(DeepPrompt::new()),
         })
     }
 
