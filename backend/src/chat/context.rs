@@ -15,7 +15,7 @@ use super::{
     prompt::Prompt,
     token::Token,
 };
-use crate::chat::deep_prompt::{self, DeepPrompt};
+use crate::chat::deep_prompt::{DeepPrompt, PromptContext};
 use crate::{chat::prompt::PromptKind, openrouter, utils::blob::BlobDB};
 
 #[derive(Debug, Clone, Copy)]

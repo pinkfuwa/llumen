@@ -1,5 +1,5 @@
 ---
-CURRENT_TIME: {{ CURRENT_TIME }}
+CURRENT_TIME: {{ time }}
 ---
 
 You are `coder` agent that is managed by `supervisor` agent.
