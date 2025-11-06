@@ -1,11 +1,13 @@
 mod helper;
 mod prompt;
+pub mod tools;
 
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result};
 use entity::{ChunkKind, DeepPlan, DeepReport, DeepStep, DeepStepStatus, chunk};
 use sea_orm::{ActiveValue::Set, EntityTrait};
+use serde::Deserialize;
 use tokio_stream::StreamExt;
 
 use crate::chat::{CompletionContext, Context, Token, context::StreamEndReason};
@@ -335,27 +337,24 @@ impl DeepPipeline {
         let step_json = serde_json::to_string(&current_step).unwrap();
         self.stream_step(&step_json).await?;
 
-        // If step doesn't need search, just mark as completed
-        if !step.need_search {
-            current_step.status = DeepStepStatus::Completed;
-            current_step.result = Some(format!("Processing step completed: {}", step.description));
+        // Execute the step based on whether it needs search
+        let result = if step.need_search {
+            // Research step - use researcher agent with web_search_tool and crawl_tool
+            self.execute_research_step(step, plan_title, completed_steps)
+                .await
+        } else {
+            // Processing step - use coder agent with lua_repl
+            self.execute_processing_step(step, plan_title, completed_steps)
+                .await
+        };
 
-            let step_json = serde_json::to_string(&current_step).unwrap();
-            self.stream_step(&step_json).await?;
-            return Ok(current_step);
-        }
-
-        // Execute research step with researcher agent
-        match self
-            .execute_research_step(step, plan_title, completed_steps)
-            .await
-        {
+        match result {
             Ok(result) => {
                 current_step.status = DeepStepStatus::Completed;
                 current_step.result = Some(result);
             }
             Err(e) => {
-                log::error!("Research step {} failed: {:?}", idx + 1, e);
+                log::error!("Step {} failed: {:?}", idx + 1, e);
                 current_step.status = DeepStepStatus::Failed;
                 current_step.result = Some(format!("Failed: {}", e));
             }
@@ -404,49 +403,306 @@ impl DeepPipeline {
             )
             .context("Failed to render researcher prompt")?;
 
-        let messages = vec![
+        // Create tools for researcher
+        let web_search_tool = openrouter::Tool {
+            name: "web_search_tool".to_string(),
+            description: "Use this to perform web search and gather online information.".to_string(),
+            schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The topic to search, expected to be started with What/Where/How..."
+                    }
+                },
+                "required": ["query"]
+            }),
+        };
+
+        let crawl_tool = openrouter::Tool {
+            name: "crawl_tool".to_string(),
+            description: "Use this to crawl a url and get a readable content in markdown format.".to_string(),
+            schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "The url to crawl."
+                    }
+                },
+                "required": ["url"]
+            }),
+        };
+
+        let tools = vec![web_search_tool, crawl_tool];
+
+        // Multi-turn conversation with researcher
+        let mut messages = vec![
             openrouter::Message::System(system_prompt),
             openrouter::Message::User(step.description.clone()),
         ];
 
-        let mut res = self
-            .ctx
-            .openrouter
-            .stream(messages, &self.model, vec![])
-            .await?;
+        let mut final_response = String::new();
+        let max_turns = 5; // Limit conversation turns
 
-        let halt = self
-            .completion_ctx
-            .put_stream((&mut res).map(|resp| resp.map(Into::into)))
-            .await?;
+        for turn in 0..max_turns {
+            let mut res = self
+                .ctx
+                .openrouter
+                .stream(messages.clone(), &self.model, tools.clone())
+                .await?;
 
-        if matches!(halt, StreamEndReason::Halt) {
-            log::debug!("The stream was halted");
+            let halt = self
+                .completion_ctx
+                .put_stream((&mut res).map(|resp| resp.map(Into::into)))
+                .await?;
+
+            if matches!(halt, StreamEndReason::Halt) {
+                log::debug!("The stream was halted");
+                break;
+            }
+
+            let result = res.get_result();
+
+            self.completion_ctx
+                .update_usage(result.usage.cost as f32, result.usage.token as i32);
+
+            // Collect the response
+            let response: String = result
+                .responses
+                .iter()
+                .filter_map(|r| match r {
+                    openrouter::StreamCompletionResp::ResponseToken(token) => Some(token.as_str()),
+                    _ => None,
+                })
+                .collect();
+
+            // Check if there's a tool call
+            if let Some(tool_call) = result.toolcall {
+                // Add assistant message with tool call
+                messages.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
+                    id: tool_call.id.clone(),
+                    name: tool_call.name.clone(),
+                    arguments: tool_call.args.clone(),
+                }));
+
+                // Execute the tool
+                let tool_result = self.execute_tool(&tool_call.name, &tool_call.args).await;
+                
+                let result_text = match tool_result {
+                    Ok(result) => result,
+                    Err(e) => format!("Error: {}", e),
+                };
+
+                // Add tool result message
+                messages.push(openrouter::Message::ToolResult(openrouter::MessageToolResult {
+                    id: tool_call.id,
+                    content: result_text,
+                }));
+
+                // Continue conversation
+                continue;
+            } else {
+                // No tool call, this is the final response
+                final_response = response;
+                break;
+            }
         }
 
-        let result = res.get_result();
-
-        self.completion_ctx
-            .update_usage(result.usage.cost as f32, result.usage.token as i32);
-
-        // Collect the research result
-        let response: String = result
-            .responses
-            .iter()
-            .filter_map(|r| match r {
-                openrouter::StreamCompletionResp::ResponseToken(token) => Some(token.as_str()),
-                _ => None,
-            })
-            .collect();
-
-        if response.is_empty() {
+        if final_response.is_empty() {
             return Ok(format!(
                 "No research results obtained for step: {}",
                 step.description
             ));
         }
 
-        Ok(response)
+        Ok(final_response)
+    }
+
+    async fn execute_processing_step(
+        &mut self,
+        step: &DeepStep,
+        plan_title: &str,
+        completed_steps: &[DeepStep],
+    ) -> Result<String> {
+        // Build completed steps section
+        let mut completed_steps_text = String::new();
+        for (idx, completed_step) in completed_steps.iter().enumerate() {
+            completed_steps_text.push_str(&format!(
+                "## Completed Step {}: {}\n<finding>{}</finding>\n\n",
+                idx + 1,
+                completed_step.description,
+                completed_step.result.as_deref().unwrap_or("No result")
+            ));
+        }
+
+        // Extract title and description from step
+        let parts: Vec<&str> = step.description.splitn(2, ": ").collect();
+        let (step_title, step_description) = if parts.len() == 2 {
+            (parts[0], parts[1])
+        } else {
+            ("", step.description.as_str())
+        };
+
+        let system_prompt = self
+            .prompt
+            .render_coder(
+                &self.completion_ctx,
+                plan_title,
+                &completed_steps_text,
+                step_title,
+                step_description,
+            )
+            .context("Failed to render coder prompt")?;
+
+        // Create lua_repl tool
+        let lua_repl_tool = openrouter::Tool {
+            name: "lua_repl".to_string(),
+            description: "Use this to execute lua code and do data analysis or calculation. If you want to see the output of a value, you should print it out with `print(...)`. This is visible to the user.".to_string(),
+            schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The lua code to execute to do further analysis or calculation."
+                    }
+                },
+                "required": ["code"]
+            }),
+        };
+
+        let tools = vec![lua_repl_tool];
+
+        // Multi-turn conversation with coder
+        let mut messages = vec![
+            openrouter::Message::System(system_prompt),
+            openrouter::Message::User(step.description.clone()),
+        ];
+
+        let mut final_response = String::new();
+        let max_turns = 10; // Allow more turns for processing
+
+        for turn in 0..max_turns {
+            let mut res = self
+                .ctx
+                .openrouter
+                .stream(messages.clone(), &self.model, tools.clone())
+                .await?;
+
+            let halt = self
+                .completion_ctx
+                .put_stream((&mut res).map(|resp| resp.map(Into::into)))
+                .await?;
+
+            if matches!(halt, StreamEndReason::Halt) {
+                log::debug!("The stream was halted");
+                break;
+            }
+
+            let result = res.get_result();
+
+            self.completion_ctx
+                .update_usage(result.usage.cost as f32, result.usage.token as i32);
+
+            // Collect the response
+            let response: String = result
+                .responses
+                .iter()
+                .filter_map(|r| match r {
+                    openrouter::StreamCompletionResp::ResponseToken(token) => Some(token.as_str()),
+                    _ => None,
+                })
+                .collect();
+
+            // Check if there's a tool call
+            if let Some(tool_call) = result.toolcall {
+                // Add assistant message with tool call
+                messages.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
+                    id: tool_call.id.clone(),
+                    name: tool_call.name.clone(),
+                    arguments: tool_call.args.clone(),
+                }));
+
+                // Execute the tool
+                let tool_result = self.execute_tool(&tool_call.name, &tool_call.args).await;
+                
+                let result_text = match tool_result {
+                    Ok(result) => result,
+                    Err(e) => format!("Error: {}", e),
+                };
+
+                // Add tool result message
+                messages.push(openrouter::Message::ToolResult(openrouter::MessageToolResult {
+                    id: tool_call.id,
+                    content: result_text,
+                }));
+
+                // Continue conversation
+                continue;
+            } else {
+                // No tool call, this is the final response
+                final_response = response;
+                break;
+            }
+        }
+
+        if final_response.is_empty() {
+            return Ok(format!(
+                "No processing results obtained for step: {}",
+                step.description
+            ));
+        }
+
+        Ok(final_response)
+    }
+
+    async fn execute_tool(&self, tool_name: &str, args: &str) -> Result<String> {
+        match tool_name {
+            "web_search_tool" => {
+                #[derive(Deserialize)]
+                struct WebSearchArgs {
+                    query: String,
+                }
+                let args: WebSearchArgs = serde_json::from_str(args)?;
+                let results = self.ctx.web_search_tool.search(&args.query).await?;
+                
+                let mut output = String::new();
+                for (i, result) in results.iter().enumerate().take(10) {
+                    output.push_str(&format!(
+                        "{}. [{}]({})\n   {}\n\n",
+                        i + 1,
+                        result.title,
+                        result.url,
+                        result.description
+                    ));
+                }
+                
+                if output.is_empty() {
+                    output = "No search results found.".to_string();
+                }
+                
+                Ok(output)
+            }
+            "crawl_tool" => {
+                #[derive(Deserialize)]
+                struct CrawlArgs {
+                    url: String,
+                }
+                let args: CrawlArgs = serde_json::from_str(args)?;
+                let content = self.ctx.crawl_tool.crawl(&args.url).await?;
+                Ok(content)
+            }
+            "lua_repl" => {
+                #[derive(Deserialize)]
+                struct LuaArgs {
+                    code: String,
+                }
+                let args: LuaArgs = serde_json::from_str(args)?;
+                let result = self.ctx.lua_repl_tool.execute(&args.code).await?;
+                Ok(result)
+            }
+            _ => anyhow::bail!("Unknown tool: {}", tool_name),
+        }
     }
 
     async fn stream_step(&mut self, step_json: &str) -> Result<()> {
@@ -471,24 +727,42 @@ impl DeepPipeline {
             .render_reporter(&self.completion_ctx)
             .context("Failed to render reporter prompt")?;
 
-        // Build context from step results
-        let mut context = String::from("# Research Results\n\n");
+        // Split the system prompt into two system messages
+        // The reporter prompt should have --- separator for two system messages
+        let system_messages: Vec<&str> = system_prompt.split("---").collect();
+        let first_system_msg = system_messages.get(0).map(|s| s.trim()).unwrap_or(&system_prompt);
+        let second_system_msg = if system_messages.len() > 1 {
+            system_messages.get(1).map(|s| s.trim()).unwrap_or("")
+        } else {
+            ""
+        };
+
+        // Build user message from step results
+        let mut user_context = String::new();
         for (idx, step) in step_results.iter().enumerate() {
-            context.push_str(&format!("## Step {}: {}\n\n", idx + 1, step.description));
-
+            user_context.push_str(&format!("Below are some observations for the research task:\n\n"));
+            
             if let Some(result) = &step.result {
-                context.push_str(&format!("{}\n\n", result));
+                user_context.push_str(&format!("{}\n", result));
             } else {
-                context.push_str("No results available.\n\n");
+                user_context.push_str("No results available.\n");
             }
-
-            context.push_str("---\n\n");
+            
+            if idx < step_results.len() - 1 {
+                user_context.push_str("\n");
+            }
         }
 
-        let messages = vec![
-            openrouter::Message::System(system_prompt),
-            openrouter::Message::User(context),
+        // Create messages with two system prompts
+        let mut messages = vec![
+            openrouter::Message::System(first_system_msg.to_string()),
         ];
+        
+        if !second_system_msg.is_empty() {
+            messages.push(openrouter::Message::System(second_system_msg.to_string()));
+        }
+        
+        messages.push(openrouter::Message::User(user_context));
 
         let mut res = self
             .ctx

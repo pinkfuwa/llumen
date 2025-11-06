@@ -2,7 +2,8 @@
 
 use crate::{ExecutionResult, LuaRunnerConfig, LuaRunnerError, Result};
 use mlua::{Lua, StdLib, Value};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 #[derive(Debug)]
 pub struct RunnerState {
@@ -66,10 +67,7 @@ impl LuaRunner {
             ));
         }
 
-        let guard = self
-            .runner_state
-            .lock()
-            .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
+        let guard = self.runner_state.lock().await;
 
         if guard.command_stack == *path {
             let output = guard.last_output.clone();
@@ -122,10 +120,7 @@ impl LuaRunner {
             command_stack.push(last_command.to_string());
         }
 
-        let mut guard = self
-            .runner_state
-            .lock()
-            .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
+        let mut guard = self.runner_state.lock().await;
         guard.command_stack = command_stack;
         guard.last_state = current_state;
         guard.penultimate_state = penultimate_state;
@@ -320,11 +315,8 @@ impl LuaRunner {
     }
 
     /// Clears all cached states.
-    pub fn clear_cache(&self) -> Result<()> {
-        let mut state = self
-            .runner_state
-            .lock()
-            .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
+    pub async fn clear_cache(&self) -> Result<()> {
+        let mut state = self.runner_state.lock().await;
         state.command_stack.clear();
         state.last_state = "{}".to_string();
         state.last_output = String::new();
@@ -333,11 +325,8 @@ impl LuaRunner {
     }
 
     /// Gets the current length of the command stack (number of cached commands).
-    pub fn cache_size(&self) -> Result<usize> {
-        let state = self
-            .runner_state
-            .lock()
-            .map_err(|e| LuaRunnerError::ExecutionError(format!("Lock error: {}", e)))?;
+    pub async fn cache_size(&self) -> Result<usize> {
+        let state = self.runner_state.lock().await;
         Ok(state.command_stack.len())
     }
 }

@@ -15,6 +15,7 @@ use super::{
     token::Token,
 };
 use crate::{chat::prompt::PromptKind, openrouter, utils::blob::BlobDB};
+use crate::chat::processes::deep::tools::{WebSearchTool, CrawlTool, LuaReplTool};
 
 #[derive(Debug, Clone, Copy)]
 pub enum StreamEndReason {
@@ -30,6 +31,9 @@ pub struct Context {
     pub(super) channel: Arc<channel::Context<Token>>,
     pub(super) prompt: Prompt,
     pub(super) blob: Arc<BlobDB>,
+    pub(super) web_search_tool: Arc<WebSearchTool>,
+    pub(super) crawl_tool: Arc<CrawlTool>,
+    pub(super) lua_repl_tool: Arc<LuaReplTool>,
 }
 
 impl Context {
@@ -45,6 +49,9 @@ impl Context {
             channel: Arc::new(channel::Context::new()),
             prompt: Prompt::new(),
             blob,
+            web_search_tool: Arc::new(WebSearchTool::new()),
+            crawl_tool: Arc::new(CrawlTool::new()),
+            lua_repl_tool: Arc::new(LuaReplTool::new()),
         })
     }
 

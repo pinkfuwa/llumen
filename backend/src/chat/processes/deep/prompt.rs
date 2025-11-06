@@ -72,6 +72,11 @@ impl DeepPrompt {
         )
         .unwrap();
         env.add_template(
+            "deep_coder",
+            include_str!("../../../../../prompts/deepresearch/coder.md"),
+        )
+        .unwrap();
+        env.add_template(
             "deep_reporter",
             include_str!("../../../../../prompts/deepresearch/reporter.md"),
         )
@@ -120,6 +125,38 @@ impl DeepPrompt {
         };
 
         let template = self.env.get_template("deep_researcher")?;
+        Ok(template.render(rendering_ctx)?)
+    }
+
+    pub fn render_coder(
+        &self,
+        ctx: &CompletionContext,
+        plan_title: &str,
+        completed_steps: &str,
+        current_step_title: &str,
+        current_step_description: &str,
+    ) -> Result<String> {
+        let time = UtcDateTime::now().format(&TIME_FORMAT).unwrap();
+        let locale = ctx
+            .user
+            .preference
+            .locale
+            .as_ref()
+            .map(|x| x.as_str())
+            .unwrap_or("en-US");
+
+        let rendering_ctx = DeepRenderingContext {
+            time,
+            locale,
+            max_step_num: 7,
+            user_prompt: None,
+            plan_title: Some(plan_title),
+            completed_steps: Some(completed_steps),
+            current_step_title: Some(current_step_title),
+            current_step_description: Some(current_step_description),
+        };
+
+        let template = self.env.get_template("deep_coder")?;
         Ok(template.render(rendering_ctx)?)
     }
 
