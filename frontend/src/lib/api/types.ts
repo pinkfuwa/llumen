@@ -201,7 +201,10 @@ export type MessagePaginateRespChunkKind =
 	| { t: 'file'; c: MessagePaginateRespChunkKindFile }
 	| { t: 'reasoning'; c: MessagePaginateRespChunkKindReasoning }
 	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall }
-	| { t: 'error'; c: MessagePaginateRespChunkKindError };
+	| { t: 'error'; c: MessagePaginateRespChunkKindError }
+	| { t: 'plan'; c: MessagePaginateRespChunkKindPlan }
+	| { t: 'step'; c: MessagePaginateRespChunkKindStep }
+	| { t: 'report'; c: MessagePaginateRespChunkKindReport };
 
 export interface MessagePaginateRespChunk {
 	id: number;
@@ -229,7 +232,19 @@ export interface MessagePaginateRespChunkKindFile {
 	id: number;
 }
 
+export interface MessagePaginateRespChunkKindPlan {
+	content: string;
+}
+
 export interface MessagePaginateRespChunkKindReasoning {
+	content: string;
+}
+
+export interface MessagePaginateRespChunkKindReport {
+	content: string;
+}
+
+export interface MessagePaginateRespChunkKindStep {
 	content: string;
 }
 

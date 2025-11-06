@@ -88,6 +88,9 @@ pub enum MessagePaginateRespChunkKind {
     Reasoning(MessagePaginateRespChunkKindReasoning),
     ToolCall(MessagePaginateRespChunkKindToolCall),
     Error(MessagePaginateRespChunkKindError),
+    Plan(MessagePaginateRespChunkKindPlan),
+    Step(MessagePaginateRespChunkKindStep),
+    Report(MessagePaginateRespChunkKindReport),
 }
 
 #[derive(Debug, Serialize)]
@@ -120,6 +123,24 @@ pub struct MessagePaginateRespChunkKindToolCall {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct MessagePaginateRespChunkKindError {
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindPlan {
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindStep {
+    pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct MessagePaginateRespChunkKindReport {
     pub content: String,
 }
 
@@ -188,8 +209,8 @@ pub async fn route(
             let role = match message.kind {
                 MessageKind::User => MessagePaginateRespRole::User,
                 MessageKind::Assistant => MessagePaginateRespRole::Assistant,
+                MessageKind::DeepResearch => MessagePaginateRespRole::Assistant,
                 MessageKind::Hidden => return None,
-                MessageKind::DeepResearch => todo!("Handle DeepResearch message kind"),
             };
             if chunks.is_empty() {
                 return None;
@@ -228,6 +249,21 @@ pub async fn route(
                         }
                         ChunkKind::Error => {
                             MessagePaginateRespChunkKind::Error(MessagePaginateRespChunkKindError {
+                                content: chunk.content,
+                            })
+                        }
+                        ChunkKind::Plan => {
+                            MessagePaginateRespChunkKind::Plan(MessagePaginateRespChunkKindPlan {
+                                content: chunk.content,
+                            })
+                        }
+                        ChunkKind::Step => {
+                            MessagePaginateRespChunkKind::Step(MessagePaginateRespChunkKindStep {
+                                content: chunk.content,
+                            })
+                        }
+                        ChunkKind::Report => {
+                            MessagePaginateRespChunkKind::Report(MessagePaginateRespChunkKindReport {
                                 content: chunk.content,
                             })
                         }
