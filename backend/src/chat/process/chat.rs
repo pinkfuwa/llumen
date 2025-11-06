@@ -188,7 +188,7 @@ impl<P: ChatInner> ChatPipeline<P> {
                     .toolcall
                     .context("No tool calls found, but finish reason is tool_calls")?;
 
-                P::handoff_tool(self, tool_call).await?;
+                return P::handoff_tool(self, tool_call).await;
             }
         }
 
@@ -206,9 +206,10 @@ impl<P: ChatInner + Send> super::Pipeline for ChatPipeline<P> {
                 .await
                 .context("Failed to create chat pipeline")?;
 
-            if let Some(err) = pipeline.process().await.err() {
+            if let Err(err) = pipeline.process().await {
                 pipeline.completion_ctx.add_error_chunk(err.to_string());
             }
+            
             pipeline.completion_ctx.save().await?;
 
             Ok(())
