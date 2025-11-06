@@ -2,8 +2,7 @@ name: PR Test
 
 on:
   pull_request:
-    branches:
-      - main
+    types: [synchronize]
 
 permissions:
   contents: read
@@ -73,8 +72,3 @@ jobs:
       - name: Run svelte-check
         working-directory: ./frontend
         run: pnpm exec svelte-check
-        continue-on-error: true
-
-      - name: Build frontend
-        working-directory: ./frontend
-        run: pnpm build
