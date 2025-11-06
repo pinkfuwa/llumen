@@ -1,8 +1,8 @@
-name: status check
+name: statuc check
 
 on:
-  push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
