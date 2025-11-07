@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PartialMessagePaginateRespChunk } from '$lib/api/patch';
-	import Assitant from './buttons/Assitant.svelte';
+	import Assistant from './buttons/Assistant.svelte';
 	import Reasoning from './buttons/Reasoning.svelte';
 	import ResponseError from './buttons/ResponseError.svelte';
 	import Result from './buttons/Result.svelte';
@@ -25,7 +25,7 @@
 	{#if kind == 'reasoning'}
 		<Reasoning {content} />
 	{:else if kind == 'text'}
-		<Assitant {content} {streaming} />
+		<Assistant {content} {streaming} />
 	{:else if kind == 'tool_call'}
 		<ToolBox toolname={chunk.kind.c.name}>
 			<Tool content={chunk.kind.c.args} />
