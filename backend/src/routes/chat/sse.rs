@@ -27,19 +27,23 @@ pub struct SseReq {
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum SseResp {
-    Version(SseRespVersion),
-    Token(SseRespToken),
-    Reasoning(SseRespReasoning),
+    Version(i32),
+    Token(String),
+    Reasoning(String),
     ToolCall(SseRespToolCall),
-    ToolToken(SseRespToolToken),
+    ToolToken(String),
     ToolResult(SseRespToolResult),
     Complete(SseRespMessageComplete),
-    Title(SseRespTitle),
-    Error(SseRespError),
+    Title(String),
+    Error(String),
     Start(SseStart),
-    DeepPlan(SseRespDeepPlan),
-    DeepStep(SseRespDeepStep),
-    DeepReport(SseRespDeepReport),
+    DeepPlan(String),
+    DeepStepStart(String),
+    DeepStepToken(String),
+    DeepStepReasoning(String),
+    DeepStepToolCall(SseRespToolCall),
+    DeepStepToolToken(String),
+    DeepReport(String),
 }
 
 #[derive(Debug, Serialize)]
@@ -156,10 +160,7 @@ pub async fn route(
         .kind(ErrorKind::Internal)?;
 
     let initial_event = if let Some(last_message) = last_message {
-        let event = SseResp::Version(SseRespVersion {
-            // FIXME: change version when revalidate is needed
-            version: last_message.id,
-        });
+        let event = SseResp::Version(last_message.id);
         let event = Event::default().json_data(event).unwrap();
         Some(Ok(event))
     } else {
@@ -168,10 +169,10 @@ pub async fn route(
 
     let st = stream::iter(initial_event).chain(stream.map(|token| {
         let event = match token {
-            Token::Assistant(content) => SseResp::Token(SseRespToken { content }),
-            Token::Reasoning(content) => SseResp::Reasoning(SseRespReasoning { content }),
+            Token::Assistant(content) => SseResp::Token(content),
+            Token::Reasoning(content) => SseResp::Reasoning(content),
             Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
-            Token::ToolToken(content) => SseResp::ToolToken(SseRespToolToken { content }),
+            Token::ToolToken(content) => SseResp::ToolToken(content),
             Token::Complete {
                 message_id,
                 token,
@@ -183,16 +184,16 @@ pub async fn route(
                 version: message_id,
             }),
             Token::ToolResult(content) => SseResp::ToolResult(SseRespToolResult { content }),
-            Token::Error(content) => SseResp::Error(SseRespError { content }),
-            Token::Title(title) => SseResp::Title(SseRespTitle { title }),
+            Token::Error(content) => SseResp::Error(content),
+            Token::Title(title) => SseResp::Title(title),
             Token::Start { id, user_msg_id } => SseResp::Start(SseStart {
                 id,
                 user_msg_id,
                 version: user_msg_id,
             }),
-            Token::ResearchPlan(content) => SseResp::DeepPlan(SseRespDeepPlan { content }),
-            Token::ResearchStep(content) => SseResp::DeepStep(SseRespDeepStep { content }),
-            Token::ResearchReport(content) => SseResp::DeepReport(SseRespDeepReport { content }),
+            // Token::ResearchPlan(content) => SseResp::DeepPlan(SseRespDeepPlan { content }),
+            // Token::ResearchStep(content) => SseResp::DeepStep(SseRespDeepStep { content }),
+            // Token::ResearchReport(content) => SseResp::DeepReport(SseRespDeepReport { content }),
             _ => return Ok(Event::default()),
         };
         Ok(Event::default().json_data(event).unwrap())

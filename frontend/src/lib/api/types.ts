@@ -87,6 +87,49 @@ export interface ChatUpdateResp {
 	wrote: boolean;
 }
 
+export enum StepKind {
+	Code = 'code',
+	Research = 'research'
+}
+
+export type AssistantChunk =
+	| { t: 'annotation'; c: string }
+	| { t: 'text'; c: string }
+	| { t: 'reasoning'; c: string }
+	| {
+			t: 'tool_call';
+			c: {
+				id: string;
+				arg: string;
+				name: string;
+			};
+	  }
+	| {
+			t: 'tool_result';
+			c: {
+				id: string;
+				response: string;
+			};
+	  }
+	| { t: 'error'; c: string }
+	| { t: 'deep_agent'; c: Deep };
+
+export interface Step {
+	need_search: boolean;
+	title: string;
+	description: string;
+	kind: StepKind;
+	progress: AssistantChunk[];
+}
+
+export interface Deep {
+	locale: string;
+	has_enough_context: boolean;
+	thought: string;
+	title: string;
+	steps: Step[];
+}
+
 export enum ErrorKind {
 	Unauthorized = 'unauthorized',
 	MalformedToken = 'malformed_token',
@@ -101,6 +144,11 @@ export enum ErrorKind {
 export interface Error {
 	error: ErrorKind;
 	reason: string;
+}
+
+export interface FileMetadata {
+	name: string;
+	id: number;
 }
 
 export interface FileUploadResp {
@@ -164,71 +212,25 @@ export interface MessagePaginateReqRange {
 	lower: number;
 }
 
-export enum MessagePaginateRespRole {
-	User = 'user',
-	Assistant = 'assistant'
-}
-
-export type MessagePaginateRespChunkKind =
-	| { t: 'text'; c: MessagePaginateRespChunkKindText }
-	| { t: 'file'; c: MessagePaginateRespChunkKindFile }
-	| { t: 'reasoning'; c: MessagePaginateRespChunkKindReasoning }
-	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall }
-	| { t: 'error'; c: MessagePaginateRespChunkKindError }
-	| { t: 'plan'; c: MessagePaginateRespChunkKindPlan }
-	| { t: 'step'; c: MessagePaginateRespChunkKindStep }
-	| { t: 'report'; c: MessagePaginateRespChunkKindReport };
-
-export interface MessagePaginateRespChunk {
-	id: number;
-	kind: MessagePaginateRespChunkKind;
-}
+export type MessageInner =
+	| {
+			t: 'user';
+			c: {
+				text: string;
+				files: FileMetadata[];
+			};
+	  }
+	| { t: 'assistant'; c: AssistantChunk[] };
 
 export interface MessagePaginateRespList {
 	id: number;
-	role: MessagePaginateRespRole;
-	chunks: MessagePaginateRespChunk[];
-	token: number;
+	token_count: number;
 	price: number;
+	inner: MessageInner;
 }
 
 export interface MessagePaginateResp {
 	list: MessagePaginateRespList[];
-}
-
-export interface MessagePaginateRespChunkKindError {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindFile {
-	name: string;
-	id: number;
-}
-
-export interface MessagePaginateRespChunkKindPlan {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindReasoning {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindReport {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindStep {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindText {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindToolCall {
-	name: string;
-	args: string;
-	content: string;
 }
 
 export interface ModelCheckReq {
@@ -326,7 +328,6 @@ export interface SseRespError {
 
 export interface SseRespMessageComplete {
 	id: number;
-	chunk_ids: number[];
 	token_count: number;
 	cost: number;
 	version: number;
@@ -427,28 +428,25 @@ export type ChatPaginateReq =
 	| { t: 'limit'; c: ChatPaginateReqLimit }
 	| { t: 'range'; c: ChatPaginateReqRange };
 
-/** Status of a deep research step */
-export enum DeepStepStatus {
-	InProgress = 'in_progress',
-	Completed = 'completed',
-	Failed = 'failed'
-}
-
 export type MessagePaginateReq =
 	| { t: 'limit'; c: MessagePaginateReqLimit }
 	| { t: 'range'; c: MessagePaginateReqRange };
 
 export type SseResp =
-	| { t: 'version'; c: SseRespVersion }
-	| { t: 'token'; c: SseRespToken }
-	| { t: 'reasoning'; c: SseRespReasoning }
+	| { t: 'version'; c: number }
+	| { t: 'token'; c: string }
+	| { t: 'reasoning'; c: string }
 	| { t: 'tool_call'; c: SseRespToolCall }
-	| { t: 'tool_token'; c: SseRespToolToken }
+	| { t: 'tool_token'; c: string }
 	| { t: 'tool_result'; c: SseRespToolResult }
 	| { t: 'complete'; c: SseRespMessageComplete }
-	| { t: 'title'; c: SseRespTitle }
-	| { t: 'error'; c: SseRespError }
+	| { t: 'title'; c: string }
+	| { t: 'error'; c: string }
 	| { t: 'start'; c: SseStart }
-	| { t: 'deep_plan'; c: SseRespDeepPlan }
-	| { t: 'deep_step'; c: SseRespDeepStep }
-	| { t: 'deep_report'; c: SseRespDeepReport };
+	| { t: 'deep_plan'; c: string }
+	| { t: 'deep_step_start'; c: string }
+	| { t: 'deep_step_token'; c: string }
+	| { t: 'deep_step_reasoning'; c: string }
+	| { t: 'deep_step_tool_call'; c: SseRespToolCall }
+	| { t: 'deep_step_tool_token'; c: string }
+	| { t: 'deep_report'; c: string };

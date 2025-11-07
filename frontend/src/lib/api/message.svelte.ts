@@ -12,11 +12,9 @@ import type {
 	MessagePaginateReq,
 	MessagePaginateRespList,
 	SseReq,
-	SseResp,
-	MessagePaginateRespChunkKindFile,
-	MessagePaginateRespChunkKind
+	SseResp
 } from './types';
-import { MessagePaginateReqOrder, MessagePaginateRespRole } from './types';
+import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
 import { UpdateInfiniteQueryDataById } from './state';
 import { untrack } from 'svelte';
@@ -41,9 +39,11 @@ const Handlers: {
 		if (!messages.some((m) => m.id == data.id)) {
 			messages.unshift({
 				id: data.id,
-				role: MessagePaginateRespRole.Assistant,
-				chunks: [],
-				token: 0,
+				inner: {
+					t: 'assistant',
+					c: []
+				},
+				token_count: 0,
 				price: 0,
 				stream: true
 			});
@@ -75,7 +75,7 @@ const Handlers: {
 		const lastMsg = messages.at(0);
 		if (lastMsg && lastMsg.stream) {
 			lastMsg.stream = false;
-			lastMsg.token = data.token_count;
+			lastMsg.token_count = data.token_count;
 			lastMsg.price = data.cost;
 		}
 		version = data.version;
@@ -92,9 +92,11 @@ const Handlers: {
 	error(err) {
 		const lastMsg = messages.at(-1);
 		if (lastMsg && lastMsg.stream) {
-			lastMsg.chunks.push({
-				id: Date.now(),
-				kind: { t: 'error', c: { content: err.content } }
+			if (lastMsg.inner.t == 'user') return;
+
+			lastMsg.inner.c.push({
+				t: 'error',
+				c: err.content
 			});
 		}
 	},
@@ -193,7 +195,7 @@ async function syncMessages(chatId: number) {
 	}
 }
 
-function handleTokenChunk(kind: SseResp['t'], chunkContent: any) {
+function handleTokenChunk(kind: SseResp['t'], content: string) {
 	const firstMsg = messages.at(0);
 	if (!firstMsg || !firstMsg.stream) return;
 

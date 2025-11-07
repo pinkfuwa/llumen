@@ -3,12 +3,15 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[typeshare]
+#[serde(rename_all = "snake_case")]
 pub enum StepKind {
     Code,
     Research,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[typeshare]
 pub struct Deep {
     pub locale: String,
     pub has_enough_context: bool,
@@ -18,6 +21,7 @@ pub struct Deep {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[typeshare]
 pub struct Step {
     pub need_search: bool,
     pub title: String,
@@ -27,6 +31,8 @@ pub struct Step {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[typeshare]
+#[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum AssistantChunk {
     Annotation(String),
     Text(String),
@@ -45,12 +51,15 @@ pub enum AssistantChunk {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[typeshare]
 pub struct FileMetadata {
     pub name: String,
     pub id: i32,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, FromJsonQueryResult)]
+#[typeshare]
+#[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum MessageInner {
     User {
         text: String,
