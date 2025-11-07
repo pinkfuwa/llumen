@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/message.svelte';
-	import {
-		MessagePaginateRespRole as Role,
-		type ChatReadResp,
-		type MessagePaginateRespChunk,
-		type MessagePaginateRespChunkKindFile,
-		type MessagePaginateRespChunkKindText
-	} from '$lib/api/types';
+	import { type ChatReadResp, type FileMetadata } from '$lib/api/types';
 	import { dispatchError } from '$lib/error';
 	import ResponseBox from './buttons/ResponseBox.svelte';
 	import ResponseEdit from './buttons/ResponseEdit.svelte';
@@ -21,27 +15,13 @@
 	let { mutate } = updateMessage();
 
 	useSSEEffect(() => chatId);
-
-	function getTextFromChunks(chunks: MessagePaginateRespChunk[]) {
-		return chunks
-			.filter((x) => x.kind.t == 'text')
-			.map((x) => (x.kind.c as MessagePaginateRespChunkKindText).content)
-			.join('\n')
-			.trim();
-	}
-
-	function getFileFromChunks(chunks: MessagePaginateRespChunk[]): { id: number; name: string }[] {
-		return chunks
-			.filter((x) => x.kind.t == 'file')
-			.map((x) => x.kind.c as MessagePaginateRespChunkKindFile);
-	}
 </script>
 
 {#each getMessages() as msg}
 	{#key msg.id}
-		{#if msg.role == Role.User}
-			{@const content = getTextFromChunks(msg.chunks)}
-			{@const files = getFileFromChunks(msg.chunks)}
+		{#if msg.inner.t == 'user'}
+			{@const content = msg.inner.c.text}
+			{@const files = msg.inner.c.files}
 			<User
 				{content}
 				{files}
@@ -59,10 +39,11 @@
 						});
 				}}
 			/>
-		{:else if msg.role == Role.Assistant}
+		{:else if msg.inner.t == 'assistant'}
 			{@const streaming = msg.stream}
+			{@const chunks = msg.inner.c}
 			<ResponseBox>
-				<Chunks chunks={msg.chunks} {streaming} />
+				<Chunks {chunks} {streaming} />
 
 				{#if streaming}
 					<div class="space-y-4">
@@ -70,11 +51,8 @@
 						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
 					</div>
 				{:else}
-					<ResponseEdit
-						content={getTextFromChunks(msg.chunks)}
-						token={msg.token}
-						cost={msg.price}
-					/>
+					{@const text = chunks.filter((x) => x.t == 'text').map((x) => x.c).join('\n').trim()}
+					<ResponseEdit content={text} token={msg.token_count} cost={msg.price} />
 				{/if}
 			</ResponseBox>
 		{/if}

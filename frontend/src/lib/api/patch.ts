@@ -1,6 +1,5 @@
-import type { MessagePaginateRespChunkKind } from './types';
+import type { AssistantChunk } from './types';
 
-export interface PartialMessagePaginateRespChunk {
-	kind: MessagePaginateRespChunkKind;
+export type PartialAssistantChunk = AssistantChunk & {
 	opened?: boolean;
-}
+};

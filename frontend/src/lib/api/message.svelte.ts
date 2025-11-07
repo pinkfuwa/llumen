@@ -12,7 +12,9 @@ import type {
 	MessagePaginateReq,
 	MessagePaginateRespList,
 	SseReq,
-	SseResp
+	SseResp,
+	AssistantChunk,
+	FileMetadata
 } from './types';
 import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
@@ -29,8 +31,8 @@ const Handlers: {
 	[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c'], chatId: number) => void;
 } = {
 	version(data, chatId) {
-		if (version !== data.version) {
-			version = data.version;
+		if (version !== data) {
+			version = data;
 			syncMessages(chatId);
 		}
 	},
@@ -52,23 +54,19 @@ const Handlers: {
 	},
 
 	token(token) {
-		handleTokenChunk('token', { content: token.content });
+		handleTokenChunk('text', token);
 	},
 
 	reasoning(reasoning) {
-		handleTokenChunk('reasoning', { content: reasoning.content });
+		handleTokenChunk('reasoning', reasoning);
 	},
 
 	tool_call(toolCall) {
-		handleTokenChunk('tool_call', {
-			name: toolCall.name,
-			args: toolCall.args,
-			content: ''
-		});
+		handleTokenChunk('tool_call', toolCall);
 	},
 
 	tool_result(toolResult) {
-		handleTokenChunk('tool_result', { content: toolResult.content });
+		handleToolResult(toolResult.content);
 	},
 
 	complete(data) {
@@ -85,32 +83,48 @@ const Handlers: {
 		UpdateInfiniteQueryDataById({
 			key: ['chatPaginate'],
 			id: chatId,
-			updater: (chat) => ({ ...chat, title: data.title })
+			updater: (chat) => ({ ...chat, title: data })
 		});
 	},
 
 	error(err) {
-		const lastMsg = messages.at(-1);
+		const lastMsg = messages.at(0);
 		if (lastMsg && lastMsg.stream) {
 			if (lastMsg.inner.t == 'user') return;
 
 			lastMsg.inner.c.push({
 				t: 'error',
-				c: err.content
+				c: err
 			});
 		}
 	},
 
 	deep_plan(plan) {
-		handleTokenChunk('deep_plan', { content: plan.content });
+		handleTokenChunk('annotation', plan);
 	},
 
-	deep_step(step) {
-		handleTokenChunk('deep_step', { content: step.content });
+	deep_step_start(step) {
+		handleTokenChunk('annotation', step);
+	},
+
+	deep_step_token(step) {
+		handleTokenChunk('annotation', step);
+	},
+
+	deep_step_reasoning(step) {
+		handleTokenChunk('reasoning', step);
+	},
+
+	deep_step_tool_call(toolCall) {
+		handleTokenChunk('tool_call', toolCall);
+	},
+
+	deep_step_tool_token(token) {
+		// Handle tool token if needed
 	},
 
 	deep_report(report) {
-		handleTokenChunk('deep_report', { content: report.content });
+		handleTokenChunk('annotation', report);
 	},
 
 	tool_token(token) {}
@@ -139,8 +153,8 @@ function startSSE(chatId: number, signal: AbortSignal) {
 					if (error) {
 						dispatchError(error.error, error.reason);
 					} else {
-						const handler = Handlers[resJson.t];
-						if (handler != undefined) handler(resJson.c as any, chatId);
+						const handler = Handlers[resJson.t] as (data: any, chatId: number) => void;
+						if (handler != undefined) handler(resJson.c, chatId);
 					}
 				} else {
 					console.log(data);
@@ -195,73 +209,66 @@ async function syncMessages(chatId: number) {
 	}
 }
 
-function handleTokenChunk(kind: SseResp['t'], content: string) {
+function handleTokenChunk(
+	kind: AssistantChunk['t'],
+	content: string | { name: string; args: string }
+) {
 	const firstMsg = messages.at(0);
-	if (!firstMsg || !firstMsg.stream) return;
+	if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
-	const lastChunk = firstMsg.chunks[firstMsg.chunks.length - 1];
+	const chunks = firstMsg.inner.c;
+	const lastChunk = chunks[chunks.length - 1];
 
-	if (kind === 'token') {
-		if (lastChunk && lastChunk.kind.t === 'text') {
-			lastChunk.kind.c.content += chunkContent.content;
+	if (kind === 'text') {
+		if (lastChunk && lastChunk.t === 'text') {
+			lastChunk.c += content as string;
 		} else {
-			firstMsg.chunks.push({
-				id: Date.now(),
-				kind: { t: 'text', c: { content: chunkContent.content } }
-			});
+			chunks.push({ t: 'text', c: content as string });
 		}
 	} else if (kind === 'reasoning') {
-		if (lastChunk && lastChunk.kind.t === 'reasoning') {
-			lastChunk.kind.c.content += chunkContent.content;
+		if (lastChunk && lastChunk.t === 'reasoning') {
+			lastChunk.c += content as string;
 		} else {
-			firstMsg.chunks.push({
-				id: Date.now(),
-				kind: { t: 'reasoning', c: { content: chunkContent.content } }
-			});
+			chunks.push({ t: 'reasoning', c: content as string });
+		}
+	} else if (kind === 'annotation') {
+		if (lastChunk && lastChunk.t === 'annotation') {
+			lastChunk.c += content as string;
+		} else {
+			chunks.push({ t: 'annotation', c: content as string });
 		}
 	} else if (kind === 'tool_call') {
-		firstMsg.chunks.push({
-			id: Date.now(),
-			kind: { t: 'tool_call', c: chunkContent }
+		const toolCall = content as { name: string; args: string };
+		chunks.push({
+			t: 'tool_call',
+			c: {
+				id: Date.now().toString(),
+				name: toolCall.name,
+				arg: toolCall.args
+			}
 		});
-	} else if (kind === 'tool_result') {
-		if (lastChunk && lastChunk.kind.t === 'tool_call') {
-			lastChunk.kind.c.content += chunkContent.content;
-		} else {
-			console.warn('Unexpected tool result without preceding tool call');
-		}
 	} else if (kind === 'error') {
-		firstMsg.chunks.push({
-			id: Date.now(),
-			kind: { t: 'error', c: { content: chunkContent.content } }
+		chunks.push({ t: 'error', c: content as string });
+	}
+}
+
+function handleToolResult(result: string) {
+	const firstMsg = messages.at(0);
+	if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+
+	const chunks = firstMsg.inner.c;
+	const lastChunk = chunks[chunks.length - 1];
+
+	if (lastChunk && lastChunk.t === 'tool_call') {
+		chunks.push({
+			t: 'tool_result',
+			c: {
+				id: lastChunk.c.id,
+				response: result
+			}
 		});
-	} else if (kind === 'deep_plan') {
-		if (lastChunk && lastChunk.kind.t === 'plan') {
-			lastChunk.kind.c.content += chunkContent.content;
-		} else {
-			firstMsg.chunks.push({
-				id: Date.now(),
-				kind: { t: 'plan', c: { content: chunkContent.content } }
-			});
-		}
-	} else if (kind === 'deep_step') {
-		if (lastChunk && lastChunk.kind.t === 'step') {
-			lastChunk.kind.c.content += chunkContent.content;
-		} else {
-			firstMsg.chunks.push({
-				id: Date.now(),
-				kind: { t: 'step', c: { content: chunkContent.content } }
-			});
-		}
-	} else if (kind === 'deep_report') {
-		if (lastChunk && lastChunk.kind.t === 'report') {
-			lastChunk.kind.c.content += chunkContent.content;
-		} else {
-			firstMsg.chunks.push({
-				id: Date.now(),
-				kind: { t: 'report', c: { content: chunkContent.content } }
-			});
-		}
+	} else {
+		console.warn('Unexpected tool result without preceding tool call');
 	}
 }
 
@@ -276,26 +283,19 @@ export function getStream(updater: (x: boolean) => void) {
 	});
 }
 
-export function pushUserMessage(
-	user_id: number,
-	content: string,
-	files: MessagePaginateRespChunkKindFile[]
-) {
-	let fileChunks = files.map((f) => ({
-		id: 0,
-		kind: {
-			t: 'file',
-			c: f
-		} as MessagePaginateRespChunkKind
-	}));
-
+export function pushUserMessage(user_id: number, content: string, files: FileMetadata[]) {
 	let streamingMessage = untrack(() => messages).filter((x) => x.stream);
 
 	messages.splice(streamingMessage.length, 0, {
 		id: user_id,
-		chunks: [{ id: -1, kind: { t: 'text', c: { content } } }, ...fileChunks],
-		role: MessagePaginateRespRole.User,
-		token: 0,
+		inner: {
+			t: 'user',
+			c: {
+				text: content,
+				files: files
+			}
+		},
+		token_count: 0,
 		price: 0
 	});
 }
