@@ -2,6 +2,48 @@ use crate::openrouter::{Message, Model, Openrouter, Tool};
 use std::env;
 use tokio_stream::StreamExt;
 
+#[test]
+fn test_tool_call_structure() {
+    // Test that ToolCall can hold multiple tool calls
+    let mut toolcalls = Vec::new();
+    
+    toolcalls.push(crate::openrouter::stream::ToolCall {
+        id: "call_1".to_string(),
+        name: "get_weather".to_string(),
+        args: r#"{"location": "Paris"}"#.to_string(),
+    });
+    
+    toolcalls.push(crate::openrouter::stream::ToolCall {
+        id: "call_2".to_string(),
+        name: "get_time".to_string(),
+        args: r#"{"location": "London"}"#.to_string(),
+    });
+    
+    assert_eq!(toolcalls.len(), 2);
+    assert_eq!(toolcalls[0].name, "get_weather");
+    assert_eq!(toolcalls[1].name, "get_time");
+}
+
+#[test]
+fn test_stream_completion_resp_variants() {
+    use crate::openrouter::StreamCompletionResp;
+    
+    // Test that all variants can be constructed
+    let token = StreamCompletionResp::ResponseToken("Hello".to_string());
+    let reasoning = StreamCompletionResp::ReasoningToken("Thinking...".to_string());
+    let tool_call = StreamCompletionResp::ToolCall {
+        name: "test".to_string(),
+        args: "{}".to_string(),
+        id: "1".to_string(),
+    };
+    let tool_token = StreamCompletionResp::ToolToken("partial".to_string());
+    
+    assert!(matches!(token, StreamCompletionResp::ResponseToken(_)));
+    assert!(matches!(reasoning, StreamCompletionResp::ReasoningToken(_)));
+    assert!(matches!(tool_call, StreamCompletionResp::ToolCall { .. }));
+    assert!(matches!(tool_token, StreamCompletionResp::ToolToken(_)));
+}
+
 #[tokio::test]
 async fn tool_calls() {
     let api_key = match env::var("API_KEY") {
