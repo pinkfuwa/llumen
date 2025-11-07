@@ -22,7 +22,7 @@ pub struct Usage {
 
 pub struct StreamCompletion {
     source: EventSource,
-    toolcall: Option<ToolCall>,
+    toolcalls: Vec<ToolCall>,
     usage: Usage,
     stop_reason: Option<raw::FinishReason>,
     responses: Vec<StreamCompletionResp>,
@@ -31,7 +31,7 @@ pub struct StreamCompletion {
 }
 
 pub struct StreamResult {
-    pub toolcall: Option<ToolCall>,
+    pub toolcalls: Vec<ToolCall>,
     pub usage: Usage,
     pub stop_reason: raw::FinishReason,
     pub responses: Vec<StreamCompletionResp>,
@@ -56,7 +56,7 @@ impl StreamCompletion {
         match EventSource::new(builder) {
             Ok(source) => Ok(Self {
                 source,
-                toolcall: None,
+                toolcalls: Vec::new(),
                 usage: Usage::default(),
                 stop_reason: None,
                 responses: vec![],
@@ -89,19 +89,33 @@ impl StreamCompletion {
             return StreamCompletionResp::ReasoningToken(reasoning);
         }
 
-        if let Some(call) = delta.tool_calls.map(|x| x.into_iter().next()).flatten() {
-            if let Some(id) = call.id {
-                self.toolcall = Some(ToolCall {
-                    id,
-                    ..Default::default()
-                });
-            }
-            if let Some(state) = &mut self.toolcall {
-                if let Some(name) = call.function.name {
-                    state.name.push_str(&name);
+        // Handle tool calls - support parallel tool calls
+        if let Some(tool_calls) = delta.tool_calls {
+            for call in tool_calls {
+                let index = call.index as usize;
+                
+                // Ensure we have enough space for this tool call
+                while self.toolcalls.len() <= index {
+                    self.toolcalls.push(ToolCall::default());
                 }
+                
+                // Initialize with id if present (first chunk for this tool call)
+                if let Some(id) = call.id {
+                    self.toolcalls[index].id = id;
+                }
+                
+                // Stream tool name tokens
+                if let Some(name) = call.function.name {
+                    self.toolcalls[index].name.push_str(&name);
+                    // Return tool token for streaming
+                    return StreamCompletionResp::ToolToken(name);
+                }
+                
+                // Stream tool arguments tokens
                 if let Some(args) = call.function.arguments {
-                    state.args.push_str(&args);
+                    self.toolcalls[index].args.push_str(&args);
+                    // Return tool token for streaming
+                    return StreamCompletionResp::ToolToken(args);
                 }
             }
         }
@@ -111,9 +125,15 @@ impl StreamCompletion {
             return match reason {
                 raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
                 raw::FinishReason::Length => StreamCompletionResp::ResponseToken(content),
-                raw::FinishReason::ToolCalls => match self.toolcall.clone() {
-                    Some(call) => call.into(),
-                    None => StreamCompletionResp::ResponseToken(content),
+                raw::FinishReason::ToolCalls => {
+                    // Return all tool calls when finish_reason is ToolCalls
+                    if !self.toolcalls.is_empty() {
+                        // Clone the first tool call to maintain backwards compatibility
+                        // The full list is available in get_result()
+                        self.toolcalls[0].clone().into()
+                    } else {
+                        StreamCompletionResp::ResponseToken(content)
+                    }
                 },
             };
         }
@@ -224,7 +244,7 @@ impl StreamCompletion {
         let stop_reason = self.stop_reason.take().unwrap_or(raw::FinishReason::Stop);
 
         StreamResult {
-            toolcall: std::mem::take(&mut self.toolcall),
+            toolcalls: std::mem::take(&mut self.toolcalls),
             usage: self.usage.clone(),
             stop_reason,
             responses: std::mem::take(&mut self.responses)
