@@ -38,6 +38,18 @@ pub struct StreamResult {
     pub annotations: Option<serde_json::Value>,
 }
 
+impl StreamResult {
+    pub fn get_text(&self) -> String {
+        self.responses
+            .iter()
+            .filter_map(|t| match t {
+                StreamCompletionResp::ResponseToken(token) => Some(token.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+}
+
 impl StreamCompletion {
     pub(super) async fn request(
         http_client: &Client,
@@ -92,33 +104,33 @@ impl StreamCompletion {
         // Handle tool calls - support parallel tool calls
         if let Some(tool_calls) = delta.tool_calls {
             let mut tokens = Vec::new();
-            
+
             for call in tool_calls {
                 let index = call.index as usize;
-                
+
                 // Ensure we have enough space for this tool call
                 if self.toolcalls.len() <= index {
                     self.toolcalls.resize(index + 1, ToolCall::default());
                 }
-                
+
                 // Initialize with id if present (first chunk for this tool call)
                 if let Some(id) = call.id {
                     self.toolcalls[index].id = id;
                 }
-                
+
                 // Accumulate tool name tokens
                 if let Some(name) = call.function.name {
                     self.toolcalls[index].name.push_str(&name);
                     tokens.push(name);
                 }
-                
+
                 // Accumulate tool arguments tokens
                 if let Some(args) = call.function.arguments {
                     self.toolcalls[index].args.push_str(&args);
                     tokens.push(args);
                 }
             }
-            
+
             // Return combined tokens if any were collected
             if !tokens.is_empty() {
                 return StreamCompletionResp::ToolToken(tokens.join(""));
@@ -142,7 +154,7 @@ impl StreamCompletion {
                     } else {
                         StreamCompletionResp::ResponseToken(content)
                     }
-                },
+                }
             };
         }
         StreamCompletionResp::ResponseToken(content)

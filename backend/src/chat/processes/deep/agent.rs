@@ -234,73 +234,52 @@ impl<'a> DeepAgent<'a> {
         ];
 
         // Execute with tool calls
-        let mut step_result;
+        let step_result;
         let mut current_messages = messages;
 
         loop {
-            let (assistant_text, tool_calls) = {
-                let mut stream = self
-                    .ctx
-                    .openrouter
-                    .stream(current_messages.clone(), &self.model, tools.clone())
-                    .await?;
+            let mut stream = self
+                .ctx
+                .openrouter
+                .stream(current_messages.clone(), &self.model, tools.clone())
+                .await?;
 
-                let mut text = String::new();
-                let mut calls = Vec::new();
-
-                while let Some(token) = StreamExt::next(&mut stream).await {
-                    match token? {
-                        openrouter::StreamCompletionResp::ResponseToken(delta) => {
-                            text.push_str(&delta);
-                            // Stream step output to user
-                            if self
-                                .completion_ctx
-                                .add_token(crate::chat::Token::ResearchStep(delta))
-                                .is_err()
-                            {
-                                return Ok(());
-                            }
-                        }
-                        openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
-                            calls.push(openrouter::ToolCall { id, name, args });
-                        }
-                        openrouter::StreamCompletionResp::Usage { .. } => {
-                            // Capture finish reason
-                            // The finish reason comes implicitly when the stream ends
-                        }
-                        _ => {}
+            while let Some(token) = StreamExt::next(&mut stream).await {
+                if let openrouter::StreamCompletionResp::ResponseToken(delta) = token? {
+                    if self
+                        .completion_ctx
+                        .add_token(crate::chat::Token::ResearchStep(delta))
+                        .is_err()
+                    {
+                        return Ok(());
                     }
                 }
+            }
 
-                (text, calls)
-            };
+            let mut result = stream.get_result();
 
-            // Check if we have tool calls
-            if !tool_calls.is_empty() {
-                // Process tool calls
+            let tool_calls = std::mem::take(&mut result.toolcalls);
+
+            if tool_calls.is_empty() {
+                let assistant_text = result.get_text();
                 current_messages.push(openrouter::Message::Assistant(assistant_text.clone()));
-
-                for tool_call in tool_calls {
-                    let result = self.execute_tool(&tool_call.name, &tool_call.args).await?;
-                    current_messages.push(openrouter::Message::ToolCall(
-                        openrouter::MessageToolCall {
-                            id: tool_call.id.clone(),
-                            name: tool_call.name,
-                            arguments: tool_call.args,
-                        },
-                    ));
-                    current_messages.push(openrouter::Message::ToolResult(
-                        openrouter::MessageToolResult {
-                            id: tool_call.id,
-                            content: result,
-                        },
-                    ));
-                }
-
-                continue;
-            } else {
                 step_result = assistant_text;
                 break;
+            }
+
+            for tool_call in tool_calls {
+                let result = self.execute_tool(&tool_call.name, &tool_call.args).await?;
+                current_messages.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
+                    id: tool_call.id.clone(),
+                    name: tool_call.name,
+                    arguments: tool_call.args,
+                }));
+                current_messages.push(openrouter::Message::ToolResult(
+                    openrouter::MessageToolResult {
+                        id: tool_call.id,
+                        content: result,
+                    },
+                ));
             }
         }
 
