@@ -341,24 +341,31 @@ impl<'a> DeepAgent<'a> {
                     query: String,
                 }
                 let args: WebSearchArgs = serde_json::from_str(args)?;
-                let results = self.ctx.web_search_tool.search(&args.query).await?;
+                match self.ctx.web_search_tool.search(&args.query).await {
+                    Ok(results) => {
+                        let mut output = String::new();
+                        for (i, result) in results.iter().enumerate().take(10) {
+                            output.push_str(&format!(
+                                "{}. [{}]({})\n   {}\n\n",
+                                i + 1,
+                                result.title,
+                                result.url,
+                                result.description
+                            ));
+                        }
 
-                let mut output = String::new();
-                for (i, result) in results.iter().enumerate().take(10) {
-                    output.push_str(&format!(
-                        "{}. [{}]({})\n   {}\n\n",
-                        i + 1,
-                        result.title,
-                        result.url,
-                        result.description
-                    ));
+                        if output.is_empty() {
+                            output = "No search results found.".to_string();
+                        }
+
+                        Ok(output)
+                    }
+                    Err(e) => {
+                        // Return error as string so agent can see it and potentially recover
+                        log::warn!("Web search error: {}", e);
+                        Ok(format!("Error: {}", e))
+                    }
                 }
-
-                if output.is_empty() {
-                    output = "No search results found.".to_string();
-                }
-
-                Ok(output)
             }
             "crawl_tool" => {
                 #[derive(Deserialize)]
@@ -366,8 +373,14 @@ impl<'a> DeepAgent<'a> {
                     url: String,
                 }
                 let args: CrawlArgs = serde_json::from_str(args)?;
-                let content = self.ctx.crawl_tool.crawl(&args.url).await?;
-                Ok(content)
+                match self.ctx.crawl_tool.crawl(&args.url).await {
+                    Ok(content) => Ok(content),
+                    Err(e) => {
+                        // Return error as string so agent can see it and potentially recover
+                        log::warn!("Crawl error for URL '{}': {}", args.url, e);
+                        Ok(format!("Error: {}", e))
+                    }
+                }
             }
             "lua_repl" => {
                 #[derive(Deserialize)]
@@ -375,8 +388,14 @@ impl<'a> DeepAgent<'a> {
                     code: String,
                 }
                 let args: LuaArgs = serde_json::from_str(args)?;
-                let result = self.ctx.lua_repl_tool.execute(&args.code).await?;
-                Ok(result)
+                match self.ctx.lua_repl_tool.execute(&args.code).await {
+                    Ok(result) => Ok(result),
+                    Err(e) => {
+                        // Return error as string so agent can see it and potentially recover
+                        log::warn!("Lua execution error: {}", e);
+                        Ok(format!("Error: {}", e))
+                    }
+                }
             }
             _ => anyhow::bail!("Unknown tool: {}", tool_name),
         }
