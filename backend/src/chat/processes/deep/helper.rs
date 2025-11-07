@@ -1,6 +1,4 @@
 use anyhow::Context;
-use entity::patch;
-use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::openrouter;
@@ -23,7 +21,7 @@ pub struct PlannerStep {
     pub step_type: String,
 }
 
-impl From<PlannerResponse> for entity::Deep {
+impl From<PlannerResponse> for protocol::Deep {
     fn from(value: PlannerResponse) -> Self {
         todo!()
     }

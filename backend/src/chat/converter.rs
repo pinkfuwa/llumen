@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use entity::{AssistantChunk, FileMetadata, MessageInner};
+use protocol::{AssistantChunk, FileMetadata, MessageInner};
 
 use crate::{chat::Context, openrouter, utils::blob::BlobDB};
 use anyhow::Result;

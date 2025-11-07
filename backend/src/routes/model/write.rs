@@ -2,11 +2,12 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::model;
+use protocol::ModelConfig;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId};
+use crate::{AppState, errors::*, middlewares::auth::UserId, utils::model::ModelChecker};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -29,7 +30,7 @@ pub async fn route(
 ) -> JsonResult<ModelWriteResp> {
     let config = req.config;
 
-    let display_name = model::Model::check_config(&config)
+    let display_name = <ModelConfig as ModelChecker>::from_toml(&config)
         .map_err(|e| {
             Json(Error {
                 error: ErrorKind::MalformedRequest,

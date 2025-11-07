@@ -10,17 +10,17 @@ pub enum ChatMode {
     Research,
 }
 
-impl From<entity::ModeKind> for ChatMode {
-    fn from(value: entity::ModeKind) -> Self {
+impl From<protocol::ModeKind> for ChatMode {
+    fn from(value: protocol::ModeKind) -> Self {
         match value {
-            entity::ModeKind::Normal => Self::Normal,
-            entity::ModeKind::Search => Self::Search,
-            entity::ModeKind::Research => Self::Research,
+            protocol::ModeKind::Normal => Self::Normal,
+            protocol::ModeKind::Search => Self::Search,
+            protocol::ModeKind::Research => Self::Research,
         }
     }
 }
 
-impl From<ChatMode> for entity::ModeKind {
+impl From<ChatMode> for protocol::ModeKind {
     fn from(value: ChatMode) -> Self {
         match value {
             ChatMode::Normal => Self::Normal,

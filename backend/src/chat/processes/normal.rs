@@ -1,8 +1,10 @@
 use crate::{
     chat::{CompletionContext, Context, process::chat::ChatInner, prompt::PromptKind},
     openrouter,
+    utils::model::ModelChecker,
 };
 use anyhow::{Context as _, Result};
+use protocol::ModelConfig;
 
 pub struct Inner;
 
@@ -14,9 +16,7 @@ impl ChatInner for Inner {
     }
 
     fn get_model(_: &Context, completion_ctx: &CompletionContext) -> Result<openrouter::Model> {
-        let model = completion_ctx
-            .model
-            .get_config()
+        let model = <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
             .context("Failed to get model config")?;
         Ok(model.into())
     }

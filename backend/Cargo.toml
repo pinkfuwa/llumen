@@ -12,7 +12,7 @@ opt-level = "s"
 lto = true
 
 [workspace]
-members = [".", "entity", "migration", "runner"]
+members = [".", "entity", "migration", "protocol", "runner"]
 
 [dependencies]
 dotenv = "0.15.0"
@@ -22,6 +22,7 @@ typeshare = "1.0.4"
 entity = { path = "entity" }
 migration = { path = "migration" }
 runner = { path = "runner" }
+protocol = { path = "protocol" }
 anyhow = "1.0.98"
 futures-util = "0.3.31"
 reqwest-eventsource = "0.6.0"

@@ -83,7 +83,6 @@ pub struct SseRespToolResult {
 #[typeshare]
 pub struct SseRespMessageComplete {
     pub id: i32,
-    pub chunk_ids: Vec<i32>,
     pub token_count: i32,
     pub cost: f32,
     pub version: i32,
@@ -152,7 +151,6 @@ pub async fn route(
     let last_message = Message::find()
         .filter(entity::message::Column::ChatId.eq(req.id))
         .order_by_desc(entity::message::Column::Id)
-        .inner_join(entity::chunk::Entity)
         .one(&app.conn)
         .await
         .kind(ErrorKind::Internal)?;
@@ -180,7 +178,6 @@ pub async fn route(
                 cost,
             } => SseResp::Complete(SseRespMessageComplete {
                 id: message_id,
-                chunk_ids,
                 token_count: token,
                 cost,
                 version: message_id,

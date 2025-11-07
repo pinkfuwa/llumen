@@ -3,12 +3,14 @@ mod helper;
 
 use anyhow::{Context as _, Result};
 use futures_util::future::BoxFuture;
+use protocol::ModelConfig;
 
 use crate::chat::process::chat::ChatPipeline;
 use crate::chat::{CompletionContext, Context};
 use crate::openrouter;
 
 use crate::chat::{process::chat::ChatInner, prompt::PromptKind};
+use crate::utils::model::ModelChecker;
 
 pub struct Inner;
 
@@ -20,9 +22,7 @@ impl ChatInner for Inner {
     }
 
     fn get_model(_: &Context, completion_ctx: &CompletionContext) -> Result<openrouter::Model> {
-        let model = completion_ctx
-            .model
-            .get_config()
+        let model = <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
             .context("Failed to get model config")?;
         let model: openrouter::Model = model.into();
 

@@ -2,11 +2,17 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::{model, prelude::*};
+use protocol::ModelConfig;
 use sea_orm::{ActiveValue::Set, EntityTrait};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId};
+use crate::{
+    AppState,
+    errors::*,
+    middlewares::auth::UserId,
+    utils::model::{ModelCapability, ModelChecker},
+};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -31,7 +37,7 @@ pub async fn route(
 ) -> JsonResult<ModelCreateResp> {
     let config = req.config;
 
-    match model::Model::check_config(&config) {
+    match <ModelConfig as ModelChecker>::from_toml(&config) {
         Ok(cfg) => {
             let id = Model::insert(model::ActiveModel {
                 config: Set(config),

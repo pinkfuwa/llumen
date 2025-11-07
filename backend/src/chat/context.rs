@@ -12,8 +12,10 @@ use super::{
     prompt::Prompt,
     token::Token,
 };
-use crate::chat::deep_prompt::{DeepPrompt, StepInputContext};
+use crate::chat::deep_prompt::DeepPrompt;
+use crate::utils::model::ModelChecker;
 use crate::{chat::prompt::PromptKind, openrouter, utils::blob::BlobDB};
+use protocol::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum StreamEndReason {
@@ -224,7 +226,8 @@ impl CompletionContext {
             MessageInner::Assistant(assistant_chunks) => todo!(),
         });
 
-        let model = self.model.get_config().context("invalid config")?;
+        let model = <ModelConfig as ModelChecker>::from_toml(&self.model.config)
+            .context("invalid config")?;
 
         let completion = self.ctx.openrouter.complete(messages, model.into()).await?;
 
@@ -309,7 +312,7 @@ impl CompletionContext {
         self.messages
             .iter()
             .filter_map(|m| {
-                if let MessageInner::User { text, file: _ } = &m.inner {
+                if let MessageInner::User { text, files: _ } = &m.inner {
                     return Some(text.as_str());
                 } else {
                     None

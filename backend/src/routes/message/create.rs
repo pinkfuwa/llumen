@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{FileMetadata, MessageInner};
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, TransactionTrait};
+use protocol::{FileMetadata, MessageInner};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use serde::{Deserialize, Serialize};
-use serde_json;
 use typeshare::typeshare;
 
 use crate::{

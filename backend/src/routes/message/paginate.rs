@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::{Extension, Json, extract::State};
 use entity::{message, prelude::*};
 use migration::ExprTrait;
+use protocol::MessageInner;
 use sea_orm::{QueryOrder, QuerySelect, prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -58,76 +59,9 @@ pub struct MessagePaginateResp {
 #[typeshare]
 pub struct MessagePaginateRespList {
     pub id: i32,
-    pub role: MessagePaginateRespRole,
-    pub chunks: Vec<MessagePaginateRespChunk>,
-    pub token: u32,
+    pub token_count: i32,
     pub price: f32,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunk {
-    pub id: i32,
-    pub kind: MessagePaginateRespChunkKind,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-#[serde(rename_all = "snake_case")]
-pub enum MessagePaginateRespRole {
-    User,
-    Assistant,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-#[serde(tag = "t", content = "c", rename_all = "snake_case")]
-pub enum MessagePaginateRespChunkKind {
-    Text(MessagePaginateRespChunkKindText),
-    File(MessagePaginateRespChunkKindFile),
-    Reasoning(MessagePaginateRespChunkKindReasoning),
-    ToolCall(MessagePaginateRespChunkKindToolCall),
-    Error(MessagePaginateRespChunkKindError),
-    Deep(MessagePaginateRespChunkKindDeep),
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindFile {
-    pub name: String,
-    pub id: i32,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindText {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindReasoning {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindToolCall {
-    pub name: String,
-    pub args: String,
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindError {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindDeep {
-    pub content: String,
+    pub inner: MessageInner,
 }
 
 pub async fn route(
@@ -187,11 +121,13 @@ pub async fn route(
 
     let list = msgs
         .into_iter()
-        .filter_map(|msg| match msg.inner {
-            entity::MessageInner::User { text, files } => todo!(),
-            entity::MessageInner::Assistant(assistant_chunks) => todo!(),
+        .map(|msg| MessagePaginateRespList {
+            id: msg.id,
+            token_count: msg.token_count,
+            price: msg.price,
+            inner: msg.inner,
         })
-        .collect::<Result<_, _>>()?;
+        .collect::<Vec<_>>();
 
     Ok(Json(MessagePaginateResp { list }))
 }

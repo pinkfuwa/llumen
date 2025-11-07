@@ -1,8 +1,11 @@
 use minijinja::Environment;
+use protocol::ModelConfig;
 use serde::Serialize;
 use time::UtcDateTime;
 use time::format_description::BorrowedFormatItem;
 use time::macros::format_description;
+
+use crate::utils::model::ModelChecker;
 
 use super::context::CompletionContext;
 
@@ -54,7 +57,7 @@ impl Prompt {
 
 #[derive(Serialize)]
 struct RenderingContext<'a> {
-    model: entity::ModelConfig,
+    model: protocol::ModelConfig,
     user_id: i32,
     username: &'a str,
     chat_id: i32,
@@ -73,7 +76,7 @@ impl Prompt {
         kind: PromptKind,
         ctx: &CompletionContext,
     ) -> Result<String, minijinja::Error> {
-        let config = ctx.model.get_config().unwrap();
+        let config = <ModelConfig as ModelChecker>::from_toml(&ctx.model.config).unwrap();
 
         let chat_title = ctx.chat.title.try_as_ref();
         let chat_title = chat_title.and_then(|x| x.as_deref());

@@ -277,6 +277,7 @@ dependencies = [
  "mimalloc",
  "minijinja",
  "pasetors",
+ "protocol",
  "redb",
  "regex",
  "reqwest",
@@ -847,13 +848,8 @@ dependencies = [
 name = "entity"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "reqwest",
+ "protocol",
  "sea-orm",
- "serde",
- "serde_json",
- "toml",
- "typeshare",
 ]
 
 [[package]]
@@ -2451,6 +2447,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "protocol"
+version = "0.1.0"
+dependencies = [
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "typeshare",
+]
+
+[[package]]
 name = "ptr_meta"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2621,7 +2627,6 @@ dependencies = [
  "base64",
  "bytes",
  "encoding_rs",
- "futures-channel",
  "futures-core",
  "futures-util",
  "h2",

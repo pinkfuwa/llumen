@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::model;
+use protocol::ModelConfig;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId};
+use crate::{AppState, errors::*, middlewares::auth::UserId, utils::model::ModelChecker};
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
@@ -27,9 +27,9 @@ pub async fn route(
 ) -> JsonResult<ModelCheckResp> {
     let config = req.config;
 
-    let check = model::Model::check_config(&config);
-
     Ok(Json(ModelCheckResp {
-        reason: check.err().map(|x| x.to_string()),
+        reason: <ModelConfig as ModelChecker>::from_toml(&config)
+            .err()
+            .map(|e| e.to_string()),
     }))
 }

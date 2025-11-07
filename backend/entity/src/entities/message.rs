@@ -2,8 +2,6 @@
 
 use sea_orm::entity::prelude::*;
 
-use crate::MessageInner;
-
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "message")]
 pub struct Model {
@@ -12,7 +10,7 @@ pub struct Model {
     pub chat_id: i32,
     pub price: f32,
     pub token_count: i32,
-    pub inner: MessageInner,
+    pub inner: protocol::MessageInner,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

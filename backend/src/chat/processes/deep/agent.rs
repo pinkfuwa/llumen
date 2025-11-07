@@ -1,18 +1,16 @@
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result};
-use entity::{AssistantChunk, Deep, MessageInner, Step, StepKind};
 use futures_util::future::BoxFuture;
+use protocol::*;
 use serde::Deserialize;
 use tokio_stream::StreamExt;
 
-use super::helper;
+use super::helper::*;
 use crate::chat::deep_prompt::{CompletedStep, ReportInputContext, StepInputContext};
 use crate::chat::process::chat::ChatPipeline;
 use crate::chat::{CompletionContext, Context};
 use crate::openrouter;
-
-use super::helper::{PlannerResponse, PlannerStep, from_str_error};
 
 /// Deep research agent that orchestrates multiple agents for comprehensive research
 pub struct DeepAgent<'a> {
@@ -178,13 +176,13 @@ impl<'a> DeepAgent<'a> {
         let plan = self.state.as_ref().unwrap();
 
         let (system_prompt, tools) = if step.kind == StepKind::Code {
-            let tools = vec![helper::get_lua_repl_def()];
+            let tools = vec![get_lua_repl_def()];
             let system_prompt = self.ctx.deep_prompt.render_coder(self.get_locale())?;
             (system_prompt, tools)
         } else {
-            let mut tools = vec![helper::get_crawl_tool_def()];
+            let mut tools = vec![get_crawl_tool_def()];
             if step.need_search {
-                tools.push(helper::get_web_search_tool_def());
+                tools.push(get_web_search_tool_def());
             }
             let system_prompt = self.ctx.deep_prompt.render_researcher(self.get_locale())?;
             (system_prompt, tools)
