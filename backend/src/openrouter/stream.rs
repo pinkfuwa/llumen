@@ -95,8 +95,8 @@ impl StreamCompletion {
                 let index = call.index as usize;
                 
                 // Ensure we have enough space for this tool call
-                while self.toolcalls.len() <= index {
-                    self.toolcalls.push(ToolCall::default());
+                if self.toolcalls.len() <= index {
+                    self.toolcalls.resize(index + 1, ToolCall::default());
                 }
                 
                 // Initialize with id if present (first chunk for this tool call)
@@ -126,11 +126,14 @@ impl StreamCompletion {
                 raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
                 raw::FinishReason::Length => StreamCompletionResp::ResponseToken(content),
                 raw::FinishReason::ToolCalls => {
-                    // Return all tool calls when finish_reason is ToolCalls
+                    // Return first tool call when finish_reason is ToolCalls
+                    // The full list is available in get_result()
                     if !self.toolcalls.is_empty() {
-                        // Clone the first tool call to maintain backwards compatibility
-                        // The full list is available in get_result()
-                        self.toolcalls[0].clone().into()
+                        StreamCompletionResp::ToolCall {
+                            name: self.toolcalls[0].name.clone(),
+                            args: self.toolcalls[0].args.clone(),
+                            id: self.toolcalls[0].id.clone(),
+                        }
                     } else {
                         StreamCompletionResp::ResponseToken(content)
                     }
