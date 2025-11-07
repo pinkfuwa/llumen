@@ -1,5 +1,5 @@
 use anyhow::Context;
-use entity::{ChunkKind, chunk, patch};
+use entity::patch;
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
@@ -23,43 +23,17 @@ pub struct PlannerStep {
     pub step_type: String,
 }
 
+impl From<PlannerResponse> for entity::Deep {
+    fn from(value: PlannerResponse) -> Self {
+        todo!()
+    }
+}
+
 /// Handoff tool call structure
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct HandoffToPlanner {
     pub research_topic: String,
     pub local: String,
-}
-
-pub fn tool_chunk(content: &patch::ToolCall) -> chunk::ActiveModel {
-    chunk::ActiveModel {
-        content: ActiveValue::Set(serde_json::to_string(&content).unwrap()),
-        kind: ActiveValue::Set(ChunkKind::ToolCall),
-        ..Default::default()
-    }
-}
-
-pub fn plan_chunk(content: String) -> chunk::ActiveModel {
-    chunk::ActiveModel {
-        content: ActiveValue::Set(content),
-        kind: ActiveValue::Set(ChunkKind::Plan),
-        ..Default::default()
-    }
-}
-
-pub fn step_chunk(content: String) -> chunk::ActiveModel {
-    chunk::ActiveModel {
-        content: ActiveValue::Set(content),
-        kind: ActiveValue::Set(ChunkKind::Step),
-        ..Default::default()
-    }
-}
-
-pub fn report_chunk(content: String) -> chunk::ActiveModel {
-    chunk::ActiveModel {
-        content: ActiveValue::Set(content),
-        kind: ActiveValue::Set(ChunkKind::Report),
-        ..Default::default()
-    }
 }
 
 pub fn from_str_error<T: DeserializeOwned>(s: &str, kind: &'static str) -> anyhow::Result<T> {

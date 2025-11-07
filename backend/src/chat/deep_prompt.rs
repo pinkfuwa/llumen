@@ -1,38 +1,56 @@
 use anyhow::Result;
 use minijinja::Environment;
 use serde::Serialize;
-use time::UtcDateTime;
 use time::format_description::BorrowedFormatItem;
 use time::macros::format_description;
 
-use crate::chat::CompletionContext;
+const TIME_FORMAT: &[BorrowedFormatItem<'static>] =
+    format_description!("[weekday], [hour]:[minute], [day] [month] [year]");
 
 #[derive(Serialize, Clone)]
-pub struct CompletedStep {
-    pub title: String,
-    pub content: String,
+pub struct CompletedStep<'a> {
+    pub title: &'a str,
+    pub content: &'a str,
 }
 
 #[derive(Serialize)]
-pub struct PromptContext {
+pub struct StepInputContext<'a> {
+    pub locale: &'a str,
+    pub plan_title: &'a str,
+    pub completed_steps: Vec<CompletedStep<'a>>,
+    pub current_step_title: &'a str,
+    pub current_step_description: &'a str,
+}
+
+#[derive(Serialize)]
+pub struct ReportInputContext<'a> {
+    pub locale: &'a str,
+    pub plan_title: &'a str,
+    pub completed_steps: Vec<CompletedStep<'a>>,
+    pub enhanced_prompt: &'a str,
+}
+
+#[derive(Serialize)]
+struct BasicContext {
     pub time: String,
     pub locale: String,
     pub max_step_num: usize,
-    pub user_prompt: Option<String>,
-    // For researcher and coder: completed steps and current step
-    pub plan_title: Option<String>,
-    pub completed_steps: Option<Vec<CompletedStep>>,
-    pub current_step_title: Option<String>,
-    pub current_step_description: Option<String>,
-    pub enhanced_prompt: Option<String>,
+}
+
+impl BasicContext {
+    pub fn new(locale: String) -> Self {
+        let time = time::OffsetDateTime::now_utc().format(TIME_FORMAT).unwrap();
+        BasicContext {
+            time,
+            locale,
+            max_step_num: 8,
+        }
+    }
 }
 
 pub struct DeepPrompt {
     env: Environment<'static>,
 }
-
-const TIME_FORMAT: &[BorrowedFormatItem<'static>] =
-    format_description!("[weekday], [hour]:[minute], [day] [month] [year]");
 
 impl DeepPrompt {
     pub fn new() -> Self {
@@ -85,55 +103,62 @@ impl DeepPrompt {
         Self { env }
     }
 
-    pub fn render_coordinator(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_coordinator(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
         let template = self.env.get_template("deep_coordinator")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
-    pub fn render_prompt_enhancer(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_prompt_enhancer(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
         let template = self.env.get_template("deep_prompt_enhancer")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
-    pub fn render_planner(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_planner(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
         let template = self.env.get_template("deep_planner")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
-    pub fn render_researcher(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_researcher(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
         let template = self.env.get_template("deep_researcher")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
-    pub fn render_coder(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_coder(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
         let template = self.env.get_template("deep_coder")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
-    pub fn render_reporter(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_reporter(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
         let template = self.env.get_template("deep_reporter")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
-    pub fn render_step_system_message(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_step_system_message(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
         let template = self.env.get_template("step_system_message")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
-    pub fn render_step_input(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_step_input(&self, ctx: &StepInputContext) -> Result<String> {
         let template = self.env.get_template("step_input")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
-    pub fn render_report_input(&self, ctx: &PromptContext) -> Result<String> {
+    pub fn render_report_input(&self, ctx: &ReportInputContext) -> Result<String> {
         let template = self.env.get_template("report_input")?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)

@@ -1,7 +1,6 @@
 use crate::openrouter::{self, StreamCompletionResp};
 
 use super::channel::Mergeable;
-use entity::{ChunkKind, chunk};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -26,14 +25,12 @@ pub enum Token {
     ToolResult(String),
     Reasoning(String),
     Empty,
-    // Research = Deep Research
     ResearchPlan(String),
     ResearchStep(String),
     ResearchReport(String),
     Error(String),
     Complete {
         message_id: i32,
-        chunk_ids: Vec<i32>,
         cost: f32,
         token: i32,
     },
@@ -107,118 +104,6 @@ impl Mergeable for Token {
             x if r.start == 0 => Some(x.clone()),
             _ => None,
         }
-    }
-}
-
-struct TokenChunkIterator<I>
-where
-    I: Iterator<Item = Token>,
-{
-    iter: I,
-    buffer: Option<Token>,
-}
-
-fn into_chunk(token: Token) -> Option<chunk::ActiveModel> {
-    match token {
-        Token::User(content) => Some(chunk::ActiveModel {
-            kind: sea_orm::Set(ChunkKind::Text),
-            content: sea_orm::Set(content),
-            ..Default::default()
-        }),
-        Token::Assistant(content) => Some(chunk::ActiveModel {
-            kind: sea_orm::Set(ChunkKind::Text),
-            content: sea_orm::Set(content),
-            ..Default::default()
-        }),
-        Token::Tool { name, args, id } => {
-            let tool_call_info = ToolCallInfo {
-                name,
-                id,
-                input: args,
-                output: None,
-            };
-            let content = serde_json::to_string(&tool_call_info).unwrap();
-            Some(chunk::ActiveModel {
-                kind: sea_orm::Set(ChunkKind::ToolCall),
-                content: sea_orm::Set(content),
-                ..Default::default()
-            })
-        }
-        Token::ToolToken(_) => None, // Tool tokens are for streaming display only, not saved as chunks
-        Token::ToolResult(_) => Some(chunk::ActiveModel {
-            kind: sea_orm::Set(ChunkKind::Error),
-            content: sea_orm::Set("ToolResult not followed by tool call".to_string()),
-            ..Default::default()
-        }),
-        Token::Reasoning(content) => Some(chunk::ActiveModel {
-            kind: sea_orm::Set(ChunkKind::Reasoning),
-            content: sea_orm::Set(content),
-            ..Default::default()
-        }),
-        Token::ResearchPlan(content) => Some(chunk::ActiveModel {
-            kind: sea_orm::Set(ChunkKind::Plan),
-            content: sea_orm::Set(content),
-            ..Default::default()
-        }),
-        Token::ResearchStep(content) => Some(chunk::ActiveModel {
-            kind: sea_orm::Set(ChunkKind::Step),
-            content: sea_orm::Set(content),
-            ..Default::default()
-        }),
-        Token::ResearchReport(content) => Some(chunk::ActiveModel {
-            kind: sea_orm::Set(ChunkKind::Report),
-            content: sea_orm::Set(content),
-            ..Default::default()
-        }),
-        Token::Error(content) => Some(chunk::ActiveModel {
-            kind: sea_orm::Set(ChunkKind::Error),
-            content: sea_orm::Set(content),
-            ..Default::default()
-        }),
-        _ => None,
-    }
-}
-
-impl<I> Iterator for TokenChunkIterator<I>
-where
-    I: Iterator<Item = Token>,
-{
-    type Item = chunk::ActiveModel;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.buffer.is_none() {
-            return None;
-        }
-        let mut current = self.buffer.take().unwrap();
-
-        let next = self.iter.next();
-        if next.is_none() {
-            return into_chunk(current).map(Some).unwrap_or_else(|| self.next());
-        }
-        let next = next.unwrap();
-
-        let remaining = current.merge(next);
-
-        // FIXME: special case => merge tool result with tool call
-
-        if remaining.is_some() {
-            self.buffer = remaining;
-            return into_chunk(current).map(Some).unwrap_or_else(|| self.next());
-        }
-
-        self.buffer = Some(current);
-        self.next()
-    }
-}
-
-impl Token {
-    pub fn into_chunks<I: Iterator<Item = Self>>(
-        mut tokens: I,
-    ) -> impl Iterator<Item = chunk::ActiveModel> {
-        return TokenChunkIterator {
-            buffer: tokens.next(),
-            iter: tokens,
-        };
     }
 }
 

@@ -292,6 +292,7 @@ pub enum FinishReason {
     Stop,
     Length,
     ToolCalls,
+    Error,
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -176,7 +176,6 @@ pub async fn route(
             Token::ToolToken(content) => SseResp::ToolToken(SseRespToolToken { content }),
             Token::Complete {
                 message_id,
-                chunk_ids,
                 token,
                 cost,
             } => SseResp::Complete(SseRespMessageComplete {

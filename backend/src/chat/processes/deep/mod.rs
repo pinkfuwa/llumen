@@ -55,7 +55,7 @@ impl ChatInner for Inner {
 
     fn handoff_tool<'a>(
         pipeline: &'a mut ChatPipeline<Self>,
-        toolcall: openrouter::ToolCall,
+        toolcall: Vec<openrouter::ToolCall>,
     ) -> BoxFuture<'a, Result<(), anyhow::Error>>
     where
         Self: Sized,

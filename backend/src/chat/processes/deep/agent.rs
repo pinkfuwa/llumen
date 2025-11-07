@@ -1,16 +1,14 @@
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result};
+use entity::{AssistantChunk, Deep, MessageInner, Step, StepKind};
 use futures_util::future::BoxFuture;
 use serde::Deserialize;
 use tokio_stream::StreamExt;
 
-use crate::chat::deep_prompt::{CompletedStep, PromptContext};
+use super::helper;
+use crate::chat::deep_prompt::{CompletedStep, ReportInputContext, StepInputContext};
 use crate::chat::process::chat::ChatPipeline;
-use crate::chat::processes::deep::helper::{
-    get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def, plan_chunk, report_chunk,
-    step_chunk,
-};
 use crate::chat::{CompletionContext, Context};
 use crate::openrouter;
 
@@ -21,15 +19,16 @@ pub struct DeepAgent<'a> {
     ctx: Arc<Context>,
     completion_ctx: &'a mut CompletionContext,
     model: openrouter::Model,
-    completed_steps: Vec<CompletedStep>,
-    plan: PlannerResponse,
+    // completed_steps: Vec<CompletedStep>,
+    // plan: PlannerResponse,
+    state: Option<Deep>,
     enhanced_prompt: String,
 }
 
 impl<'a> DeepAgent<'a> {
     pub fn handoff_tool(
         pipeline: &'a mut ChatPipeline<super::Inner>,
-        _toolcall: openrouter::ToolCall,
+        _toolcall: Vec<openrouter::ToolCall>,
     ) -> BoxFuture<'a, Result<()>> {
         let model = pipeline.model.clone();
         let ctx = pipeline.ctx.clone();
@@ -39,8 +38,9 @@ impl<'a> DeepAgent<'a> {
             ctx,
             completion_ctx,
             model,
-            completed_steps: Vec::new(),
-            plan: PlannerResponse::default(),
+            // completed_steps: Vec::new(),
+            // plan: PlannerResponse::default(),
+            state: None,
             enhanced_prompt: String::new(),
         };
 
@@ -48,7 +48,7 @@ impl<'a> DeepAgent<'a> {
             macro_rules! handle {
                 ($e:ident) => {
                     if let Err(err) = agent.$e().await {
-                        agent.completion_ctx.add_error_chunk(err.to_string());
+                        agent.completion_ctx.add_error(err.to_string());
                         return Ok(());
                     }
                 };
@@ -61,42 +61,22 @@ impl<'a> DeepAgent<'a> {
     }
 
     // Remove the separate run_agent method
-    fn get_prompt_context(&self) -> PromptContext {
-        use time::UtcDateTime;
-        use time::macros::format_description;
-
-        const TIME_FORMAT: &[time::format_description::BorrowedFormatItem<'static>] =
-            format_description!("[weekday], [hour]:[minute], [day] [month] [year]");
-
-        let time = UtcDateTime::now().format(&TIME_FORMAT).unwrap();
-        let locale = self
-            .completion_ctx
+    fn get_locale<'b>(&'b self) -> &'b str {
+        self.completion_ctx
             .user
             .preference
             .locale
-            .clone()
-            .unwrap_or_else(|| "en-US".to_string());
-
-        PromptContext {
-            time,
-            locale,
-            max_step_num: 6,
-            user_prompt: self
-                .completion_ctx
-                .latest_user_message()
-                .map(|s| s.to_string()),
-            plan_title: None,
-            completed_steps: None,
-            current_step_title: None,
-            current_step_description: None,
-            enhanced_prompt: None,
-        }
+            .as_ref()
+            .map(|x| x.as_str())
+            .unwrap_or_else(|| "en-US")
     }
     async fn enhance(&mut self) -> Result<()> {
         let original_prompt = self.completion_ctx.latest_user_message().unwrap_or("");
 
-        let prompt_ctx = self.get_prompt_context();
-        let system_prompt = self.ctx.deep_prompt.render_prompt_enhancer(&prompt_ctx)?;
+        let system_prompt = self
+            .ctx
+            .deep_prompt
+            .render_prompt_enhancer(self.get_locale())?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
@@ -138,10 +118,7 @@ impl<'a> DeepAgent<'a> {
         Ok(())
     }
     async fn plan(&mut self) -> Result<()> {
-        let mut prompt_ctx = self.get_prompt_context();
-        prompt_ctx.user_prompt = Some(self.enhanced_prompt.clone());
-
-        let system_prompt = self.ctx.deep_prompt.render_planner(&prompt_ctx)?;
+        let system_prompt = self.ctx.deep_prompt.render_planner(self.get_locale())?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
@@ -173,21 +150,23 @@ impl<'a> DeepAgent<'a> {
 
         log::debug!("Plan: {}", &plan_json);
         // Parse the JSON response
-        self.plan = from_str_error::<PlannerResponse>(&plan_json, "plan")?;
-        self.completion_ctx.new_chunks.push(plan_chunk(plan_json));
+        self.state = Some(from_str_error::<PlannerResponse>(&plan_json, "plan")?.into());
 
         Ok(())
     }
     async fn execute_steps(&mut self) -> Result<()> {
+        let plan = self.state.as_mut().unwrap();
         // If already has enough context, generate report directly
-        if self.plan.has_enough_context {
+        if plan.has_enough_context {
             self.generate_report().await?;
             return Ok(());
         }
 
         // Execute each step
-        for step in self.plan.steps.clone() {
-            self.execute_step(&step).await?;
+        for (i, mut step) in plan.steps.clone().into_iter().enumerate() {
+            self.execute_step(&mut step).await?;
+            let plan = self.state.as_mut().unwrap();
+            plan.steps[i] = step;
         }
 
         // Generate final report
@@ -195,37 +174,49 @@ impl<'a> DeepAgent<'a> {
 
         Ok(())
     }
-    async fn execute_step(&mut self, step: &PlannerStep) -> Result<()> {
-        let mut prompt_ctx = self.get_prompt_context();
-        prompt_ctx.plan_title = Some(self.plan.title.clone());
-        prompt_ctx.locale = self.plan.locale.clone();
-        prompt_ctx.current_step_title = Some(step.title.clone());
-        prompt_ctx.current_step_description = Some(step.description.clone());
+    async fn execute_step(&mut self, step: &mut Step) -> Result<()> {
+        let plan = self.state.as_ref().unwrap();
 
-        // Build completed steps context using the array
-        if !self.completed_steps.is_empty() {
-            prompt_ctx.completed_steps = Some(self.completed_steps.clone());
-        }
-
-        let (system_prompt, tools) = if step.step_type.starts_with("processing") {
-            let tools = vec![get_lua_repl_def()];
-            let system_prompt = self.ctx.deep_prompt.render_coder(&prompt_ctx)?;
+        let (system_prompt, tools) = if step.kind == StepKind::Code {
+            let tools = vec![helper::get_lua_repl_def()];
+            let system_prompt = self.ctx.deep_prompt.render_coder(self.get_locale())?;
             (system_prompt, tools)
         } else {
-            let mut tools = vec![get_crawl_tool_def()];
+            let mut tools = vec![helper::get_crawl_tool_def()];
             if step.need_search {
-                tools.push(get_web_search_tool_def());
+                tools.push(helper::get_web_search_tool_def());
             }
-            let system_prompt = self.ctx.deep_prompt.render_researcher(&prompt_ctx)?;
+            let system_prompt = self.ctx.deep_prompt.render_researcher(self.get_locale())?;
             (system_prompt, tools)
         };
 
+        let completed_steps = plan
+            .steps
+            .iter()
+            .filter_map(|s| {
+                if !s.progress.is_empty() {
+                    return None;
+                }
+                Some(CompletedStep {
+                    title: &s.title,
+                    content: s.progress.last().and_then(AssistantChunk::as_text)?,
+                })
+            })
+            .collect::<Vec<_>>();
+
+        let step_input_ctx = StepInputContext {
+            locale: self.get_locale(),
+            plan_title: plan.title.as_str(),
+            completed_steps,
+            current_step_title: step.title.as_str(),
+            current_step_description: step.description.as_str(),
+        };
         // Render step input using template
-        let step_input = self.ctx.deep_prompt.render_step_input(&prompt_ctx)?;
+        let step_input = self.ctx.deep_prompt.render_step_input(&step_input_ctx)?;
         let step_system_message = self
             .ctx
             .deep_prompt
-            .render_step_system_message(&prompt_ctx)?;
+            .render_step_system_message(self.get_locale())?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
@@ -233,11 +224,10 @@ impl<'a> DeepAgent<'a> {
             openrouter::Message::User(step_input),
         ];
 
-        // Execute with tool calls
-        let step_result;
         let mut current_messages = messages;
 
         loop {
+            // step
             let mut stream = self
                 .ctx
                 .openrouter
@@ -263,7 +253,6 @@ impl<'a> DeepAgent<'a> {
             if tool_calls.is_empty() {
                 let assistant_text = result.get_text();
                 current_messages.push(openrouter::Message::Assistant(assistant_text.clone()));
-                step_result = assistant_text;
                 break;
             }
 
@@ -283,22 +272,38 @@ impl<'a> DeepAgent<'a> {
             }
         }
 
-        self.completed_steps.push(CompletedStep {
-            title: step.title.clone(),
-            content: step_result,
-        });
         Ok(())
     }
 
     async fn generate_report(&mut self) -> Result<()> {
-        let mut prompt_ctx = self.get_prompt_context();
-        prompt_ctx.plan_title = Some(self.plan.title.clone());
-        prompt_ctx.locale = self.plan.locale.clone();
-        prompt_ctx.enhanced_prompt = Some(self.enhanced_prompt.clone());
-        prompt_ctx.completed_steps = Some(self.completed_steps.clone());
+        let plan = self.state.as_ref().unwrap();
 
-        let system_prompt = self.ctx.deep_prompt.render_reporter(&prompt_ctx)?;
-        let report_input = self.ctx.deep_prompt.render_report_input(&prompt_ctx)?;
+        let completed_steps = plan
+            .steps
+            .iter()
+            .filter_map(|s| {
+                if !s.progress.is_empty() {
+                    return None;
+                }
+                Some(CompletedStep {
+                    title: &s.title,
+                    content: s.progress.last().and_then(AssistantChunk::as_text)?,
+                })
+            })
+            .collect::<Vec<_>>();
+
+        let report_input_ctx = ReportInputContext {
+            locale: self.get_locale(),
+            plan_title: plan.title.as_str(),
+            completed_steps,
+            enhanced_prompt: self.enhanced_prompt.as_str(),
+        };
+
+        let system_prompt = self.ctx.deep_prompt.render_reporter(&self.get_locale())?;
+        let report_input = self
+            .ctx
+            .deep_prompt
+            .render_report_input(&report_input_ctx)?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
@@ -328,7 +333,9 @@ impl<'a> DeepAgent<'a> {
             }
         }
 
-        self.completion_ctx.new_chunks.push(report_chunk(text));
+        let chunks = self.completion_ctx.message.inner.as_assistant().unwrap();
+        chunks.push(AssistantChunk::DeepAgent(self.state.take().unwrap()));
+        chunks.push(AssistantChunk::Text(text));
 
         Ok(())
     }

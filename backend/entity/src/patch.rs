@@ -1,39 +1,127 @@
 use anyhow::{Result, bail};
-use sea_orm::{DeriveActiveEnum, FromJsonQueryResult, entity::prelude::*};
+use sea_orm::{ActiveValue, DeriveActiveEnum, FromJsonQueryResult, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::models;
+use crate::{message, models};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(rs_type = "i32", db_type = "Integer")]
-pub enum MessageKind {
-    Hidden = 0,
-    User = 1,
-    Assistant = 2,
-    DeepResearch = 3,
+// #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+// #[sea_orm(rs_type = "i32", db_type = "Integer")]
+// pub enum MessageKind {
+//     Hidden = 0,
+//     User = 1,
+//     Assistant = 2,
+//     DeepResearch = 3,
+// }
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub enum StepKind {
+    Code,
+    Research,
 }
 
-/// Chunk kinds
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(rs_type = "i32", db_type = "Integer")]
-pub enum ChunkKind {
-    /// Plain text content
-    Text = 0,
-    /// File contains metadata of the uploaded file, see [FileHandle]
-    File = 7,
-    /// Plain text content
-    Reasoning = 1,
-    /// Tool call request, see [ToolCall]
-    ToolCall = 2,
-    /// Plain text error result
-    Error = 3,
-    /// JSON annotations in array
-    Annotation = 8,
-    /// Reserved for future use
-    Report = 4,
-    Plan = 5,
-    Step = 6,
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct Deep {
+    pub locale: String,
+    pub has_enough_context: bool,
+    pub thought: String,
+    pub title: String,
+    pub steps: Vec<Step>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct Step {
+    pub need_search: bool,
+    pub title: String,
+    pub description: String,
+    pub kind: StepKind,
+    pub progress: Vec<AssistantChunk>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub enum AssistantChunk {
+    Annotation(String),
+    Text(String),
+    Reasoning(String),
+    ToolCall {
+        id: String,
+        arg: String,
+        name: String,
+    },
+    ToolResult {
+        id: String,
+        response: String,
+    },
+    Error(String),
+    DeepAgent(Deep),
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct FileMetadata {
+    pub name: String,
+    pub id: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, FromJsonQueryResult)]
+pub enum MessageInner {
+    User {
+        text: String,
+        files: Vec<FileMetadata>,
+    },
+    Assistant(Vec<AssistantChunk>),
+}
+
+impl AssistantChunk {
+    pub fn as_deep(&mut self) -> Option<&mut Deep> {
+        if let AssistantChunk::DeepAgent(deep) = self {
+            Some(deep)
+        } else {
+            None
+        }
+    }
+    pub fn as_text(&self) -> Option<&String> {
+        if let AssistantChunk::Text(text) = self {
+            Some(text)
+        } else {
+            None
+        }
+    }
+}
+
+impl MessageInner {
+    pub fn as_assistant(&mut self) -> Option<&mut Vec<AssistantChunk>> {
+        if let MessageInner::Assistant(assistant_chunks) = self {
+            Some(assistant_chunks)
+        } else {
+            None
+        }
+    }
+    pub fn last_assistant(&mut self) -> Option<&mut AssistantChunk> {
+        if let MessageInner::Assistant(assistant_chunks) = self {
+            assistant_chunks.last_mut()
+        } else {
+            None
+        }
+    }
+    pub fn add_error(&mut self, msg: String) {
+        match self {
+            MessageInner::User { .. } => {}
+            MessageInner::Assistant(assistant_chunks) => {
+                assistant_chunks.push(AssistantChunk::Error(msg))
+            }
+        };
+    }
+    pub fn add_annotation(&mut self, json_str: String) {
+        match self {
+            MessageInner::User { .. } => {}
+            MessageInner::Assistant(assistant_chunks) => {
+                assistant_chunks.push(AssistantChunk::Annotation(json_str))
+            }
+        }
+    }
+    pub fn is_empty(&self) -> bool {
+        todo!()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
@@ -174,12 +262,6 @@ pub struct ToolCall {
     pub content: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct FileHandle {
-    pub name: String,
-    pub id: i32,
-}
-
 /// Status of a deep research step
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 #[typeshare]
@@ -190,13 +272,15 @@ pub enum DeepStepStatus {
     Failed,
 }
 
-impl crate::chunk::Model {
-    pub fn as_tool_call(&self) -> Result<ToolCall> {
-        debug_assert_eq!(self.kind, ChunkKind::ToolCall);
-        Ok(serde_json::from_str(&self.content)?)
-    }
-    pub fn as_file(&self) -> Result<FileHandle> {
-        debug_assert_eq!(self.kind, ChunkKind::File);
-        Ok(serde_json::from_str(&self.content)?)
+impl message::ActiveModel {
+    pub fn full_change(&mut self) {
+        macro_rules! change {
+            ($i:ident) => {
+                self.$i = ActiveValue::set(self.$i.take().unwrap());
+            };
+        }
+        change!(inner);
+        change!(price);
+        change!(token_count);
     }
 }

@@ -1,5 +1,6 @@
 mod channel;
 mod context;
+pub mod converter;
 mod deep_prompt;
 mod process;
 mod processes;

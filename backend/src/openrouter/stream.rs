@@ -140,8 +140,9 @@ impl StreamCompletion {
         if let Some(reason) = choice.finish_reason {
             self.stop_reason = Some(reason.clone());
             return match reason {
-                raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
-                raw::FinishReason::Length => StreamCompletionResp::ResponseToken(content),
+                raw::FinishReason::Stop | raw::FinishReason::Length | raw::FinishReason::Error => {
+                    StreamCompletionResp::ResponseToken(content)
+                }
                 raw::FinishReason::ToolCalls => {
                     // Return first tool call when finish_reason is ToolCalls
                     // The full list is available in get_result()
