@@ -282,4 +282,32 @@ mod tests {
         let result = tool.execute("return 2 + 2").await.unwrap();
         assert_eq!(result, "4");
     }
+
+    #[tokio::test]
+    async fn test_lua_repl_error() {
+        let tool = LuaReplTool::new();
+        // Test that invalid Lua code returns an error
+        let result = tool.execute("this is invalid lua code !!@@##").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_crawl_tool_invalid_url() {
+        let tool = CrawlTool::new();
+        // Test that invalid URL returns an error
+        let result = tool.crawl("not-a-valid-url").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_crawl_tool_private_ip() {
+        let tool = CrawlTool::new();
+        // Test that private IP addresses are rejected
+        let result = tool.crawl("http://192.168.1.1/test").await;
+        assert!(result.is_err());
+        if let Err(e) = result {
+            let error_str = e.to_string().to_lowercase();
+            assert!(error_str.contains("private") || error_str.contains("invalid"));
+        }
+    }
 }
