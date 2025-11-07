@@ -279,6 +279,38 @@ impl From<Message> for raw::Message {
     }
 }
 
+pub fn check_message(message: &[Message]) {
+    #[cfg(not(debug_assertions))]
+    return;
+
+    // For each ToolResult, check for ToolCall and its order
+    let mut result_ids = message
+        .iter()
+        .filter(|m| matches!(m, Message::ToolResult(_)))
+        .map(|m| match m {
+            Message::ToolResult(result) => result.id.as_str(),
+            _ => unreachable!(),
+        });
+
+    let mut call_ids = message
+        .iter()
+        .filter(|m| matches!(m, Message::ToolCall(_)))
+        .map(|m| match m {
+            Message::ToolCall(call) => call.id.as_str(),
+            _ => unreachable!(),
+        });
+
+    loop {
+        match (call_ids.next(), result_ids.next()) {
+            (Some(call), Some(result)) => {
+                assert_eq!(result, call, "ToolResult and ToolCall IDs do not match")
+            }
+            (None, None) => break,
+            _ => panic!("Mismatched ToolCall and ToolResult IDs"),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Tool {
     pub name: String,

@@ -38,12 +38,32 @@ pub fn tool_chunk(content: &patch::ToolCall) -> chunk::ActiveModel {
     }
 }
 
-pub fn from_str_error<T: DeserializeOwned>(s: &str, kind: &'static str) -> anyhow::Result<T> {
-    let mut trim = s;
-    if trim.len() > 20 {
-        trim = &trim[0..20];
+pub fn plan_chunk(content: String) -> chunk::ActiveModel {
+    chunk::ActiveModel {
+        content: ActiveValue::Set(content),
+        kind: ActiveValue::Set(ChunkKind::Plan),
+        ..Default::default()
     }
-    serde_json::from_str(s).with_context(|| format!("{} is not a valid {}", trim, kind))
+}
+
+pub fn step_chunk(content: String) -> chunk::ActiveModel {
+    chunk::ActiveModel {
+        content: ActiveValue::Set(content),
+        kind: ActiveValue::Set(ChunkKind::Step),
+        ..Default::default()
+    }
+}
+
+pub fn report_chunk(content: String) -> chunk::ActiveModel {
+    chunk::ActiveModel {
+        content: ActiveValue::Set(content),
+        kind: ActiveValue::Set(ChunkKind::Report),
+        ..Default::default()
+    }
+}
+
+pub fn from_str_error<T: DeserializeOwned>(s: &str, kind: &'static str) -> anyhow::Result<T> {
+    serde_json::from_str(s).with_context(|| format!("\"{}\" is not a valid {}", s, kind))
 }
 
 pub fn get_web_search_tool_def() -> openrouter::Tool {

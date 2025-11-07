@@ -8,7 +8,8 @@ use tokio_stream::StreamExt;
 use crate::chat::deep_prompt::{CompletedStep, PromptContext};
 use crate::chat::process::chat::ChatPipeline;
 use crate::chat::processes::deep::helper::{
-    get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def,
+    get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def, plan_chunk, report_chunk,
+    step_chunk,
 };
 use crate::chat::{CompletionContext, Context};
 use crate::openrouter;
@@ -172,7 +173,8 @@ impl<'a> DeepAgent<'a> {
 
         log::debug!("Plan: {}", &plan_json);
         // Parse the JSON response
-        self.plan = from_str_error(&plan_json, "plan")?;
+        self.plan = from_str_error::<PlannerResponse>(&plan_json, "plan")?;
+        self.completion_ctx.new_chunks.push(plan_chunk(plan_json));
 
         Ok(())
     }
@@ -232,7 +234,7 @@ impl<'a> DeepAgent<'a> {
         ];
 
         // Execute with tool calls
-        let mut step_result = String::new();
+        let mut step_result;
         let mut current_messages = messages;
 
         loop {
@@ -278,11 +280,18 @@ impl<'a> DeepAgent<'a> {
                 // Process tool calls
                 current_messages.push(openrouter::Message::Assistant(assistant_text.clone()));
 
-                for tool_call in &tool_calls {
+                for tool_call in tool_calls {
                     let result = self.execute_tool(&tool_call.name, &tool_call.args).await?;
+                    current_messages.push(openrouter::Message::ToolCall(
+                        openrouter::MessageToolCall {
+                            id: tool_call.id.clone(),
+                            name: tool_call.name,
+                            arguments: tool_call.args,
+                        },
+                    ));
                     current_messages.push(openrouter::Message::ToolResult(
                         openrouter::MessageToolResult {
-                            id: tool_call.id.clone(),
+                            id: tool_call.id,
                             content: result,
                         },
                     ));
@@ -317,30 +326,30 @@ impl<'a> DeepAgent<'a> {
             openrouter::Message::User(report_input),
         ];
 
-        {
-            let mut stream = self
-                .ctx
-                .openrouter
-                .stream(messages, &self.model, vec![])
-                .await?;
+        let mut stream = self
+            .ctx
+            .openrouter
+            .stream(messages, &self.model, vec![])
+            .await?;
 
-            // Stream the report back to the user
-            while let Some(token) = StreamExt::next(&mut stream).await {
-                match token? {
-                    openrouter::StreamCompletionResp::ResponseToken(delta) => {
-                        // Send the delta using ResearchReport token
-                        if self
-                            .completion_ctx
-                            .add_token(crate::chat::Token::ResearchReport(delta))
-                            .is_err()
-                        {
-                            return Ok(());
-                        }
-                    }
-                    _ => {}
+        let mut text = "".to_string();
+
+        // Stream the report back to the user
+        while let Some(token) = StreamExt::next(&mut stream).await {
+            if let openrouter::StreamCompletionResp::ResponseToken(delta) = token? {
+                // Send the delta using ResearchReport token
+                text.push_str(&delta);
+                if self
+                    .completion_ctx
+                    .add_token(crate::chat::Token::ResearchReport(delta))
+                    .is_err()
+                {
+                    return Ok(());
                 }
             }
         }
+
+        self.completion_ctx.new_chunks.push(report_chunk(text));
 
         Ok(())
     }

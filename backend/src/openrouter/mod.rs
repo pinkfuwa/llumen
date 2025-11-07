@@ -3,6 +3,8 @@ mod error;
 #[allow(dead_code)]
 mod raw;
 mod stream;
+#[cfg(test)]
+mod test;
 
 static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
