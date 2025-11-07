@@ -9,14 +9,14 @@ use crate::{
     utils::blob::BlobDB,
 };
 
-/// Convert **assitant** chunks to openrouter messages
+/// Convert **assistant** chunks to openrouter messages
 pub(super) fn chunks_to_message(
     chunks: impl Iterator<Item = chunk::Model> + 'static,
 ) -> Vec<crate::openrouter::Message> {
     active_chunks_to_message(chunks.map(|c| c.into_active_model()))
 }
 
-/// Convert **assitant** chunks to openrouter messages
+/// Convert **assistant** chunks to openrouter messages
 pub(super) fn active_chunks_to_message(
     chunks: impl Iterator<Item = chunk::ActiveModel> + 'static,
 ) -> Vec<crate::openrouter::Message> {

@@ -16,12 +16,13 @@ pub struct ToolCallInfo {
 #[derive(Debug, Clone)]
 pub enum Token {
     User(String),
-    Assitant(String),
+    Assistant(String),
     Tool {
         name: String,
         args: String,
         id: String,
     },
+    ToolToken(String),
     ToolResult(String),
     Reasoning(String),
     Empty,
@@ -46,11 +47,15 @@ pub enum Token {
 impl Mergeable for Token {
     fn merge(&mut self, other: Self) -> Option<Self> {
         match (self, other) {
-            (Token::Assitant(s1), Token::Assitant(s2)) => {
+            (Token::Assistant(s1), Token::Assistant(s2)) => {
                 s1.push_str(&s2);
                 None
             }
             (Token::Reasoning(s1), Token::Reasoning(s2)) => {
+                s1.push_str(&s2);
+                None
+            }
+            (Token::ToolToken(s1), Token::ToolToken(s2)) => {
                 s1.push_str(&s2);
                 None
             }
@@ -73,7 +78,8 @@ impl Mergeable for Token {
     fn len(&self) -> usize {
         match self {
             Token::User(s)
-            | Token::Assitant(s)
+            | Token::Assistant(s)
+            | Token::ToolToken(s)
             | Token::Reasoning(s)
             | Token::ResearchPlan(s)
             | Token::ResearchStep(s)
@@ -91,7 +97,8 @@ impl Mergeable for Token {
     fn slice(&self, r: std::ops::Range<usize>) -> Option<Self> {
         match self {
             Token::User(s) => Some(Token::User(s[r].to_string())),
-            Token::Assitant(s) => Some(Token::Assitant(s[r].to_string())),
+            Token::Assistant(s) => Some(Token::Assistant(s[r].to_string())),
+            Token::ToolToken(s) => Some(Token::ToolToken(s[r].to_string())),
             Token::Reasoning(s) => Some(Token::Reasoning(s[r].to_string())),
             Token::ResearchPlan(s) => Some(Token::ResearchPlan(s[r].to_string())),
             Token::ResearchStep(s) => Some(Token::ResearchStep(s[r].to_string())),
@@ -118,7 +125,7 @@ fn into_chunk(token: Token) -> Option<chunk::ActiveModel> {
             content: sea_orm::Set(content),
             ..Default::default()
         }),
-        Token::Assitant(content) => Some(chunk::ActiveModel {
+        Token::Assistant(content) => Some(chunk::ActiveModel {
             kind: sea_orm::Set(ChunkKind::Text),
             content: sea_orm::Set(content),
             ..Default::default()
@@ -137,6 +144,7 @@ fn into_chunk(token: Token) -> Option<chunk::ActiveModel> {
                 ..Default::default()
             })
         }
+        Token::ToolToken(_) => None, // Tool tokens are for streaming display only, not saved as chunks
         Token::ToolResult(_) => Some(chunk::ActiveModel {
             kind: sea_orm::Set(ChunkKind::Error),
             content: sea_orm::Set("ToolResult not followed by tool call".to_string()),
@@ -218,8 +226,9 @@ impl From<openrouter::StreamCompletionResp> for Token {
     fn from(resp: openrouter::StreamCompletionResp) -> Self {
         match resp {
             StreamCompletionResp::ReasoningToken(reasoning) => Token::Reasoning(reasoning),
-            StreamCompletionResp::ResponseToken(content) => Token::Assitant(content),
+            StreamCompletionResp::ResponseToken(content) => Token::Assistant(content),
             StreamCompletionResp::ToolCall { name, args, id } => Token::Tool { name, args, id },
+            StreamCompletionResp::ToolToken(token) => Token::ToolToken(token),
             _ => Token::Empty,
         }
     }

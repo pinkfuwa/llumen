@@ -31,6 +31,7 @@ pub enum SseResp {
     Token(SseRespToken),
     Reasoning(SseRespReasoning),
     ToolCall(SseRespToolCall),
+    ToolToken(SseRespToolToken),
     ToolResult(SseRespToolResult),
     Complete(SseRespMessageComplete),
     Title(SseRespTitle),
@@ -64,6 +65,12 @@ pub struct SseRespReasoning {
 pub struct SseRespToolCall {
     pub name: String,
     pub args: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespToolToken {
+    pub content: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -163,9 +170,10 @@ pub async fn route(
 
     let st = stream::iter(initial_event).chain(stream.map(|token| {
         let event = match token {
-            Token::Assitant(content) => SseResp::Token(SseRespToken { content }),
+            Token::Assistant(content) => SseResp::Token(SseRespToken { content }),
             Token::Reasoning(content) => SseResp::Reasoning(SseRespReasoning { content }),
             Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
+            Token::ToolToken(content) => SseResp::ToolToken(SseRespToolToken { content }),
             Token::Complete {
                 message_id,
                 chunk_ids,

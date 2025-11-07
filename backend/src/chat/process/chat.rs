@@ -184,11 +184,17 @@ impl<P: ChatInner> ChatPipeline<P> {
                 log::warn!("The response is too long");
             }
             FinishReason::ToolCalls => {
-                let tool_call = result
-                    .toolcall
-                    .context("No tool calls found, but finish reason is tool_calls")?;
+                // Handle tool calls - for backward compatibility, process them sequentially
+                if result.toolcalls.is_empty() {
+                    return Err(anyhow::anyhow!(
+                        "No tool calls found, but finish reason is tool_calls"
+                    ));
+                }
 
-                P::handoff_tool(self, tool_call).await?;
+                // Process each tool call sequentially
+                for tool_call in result.toolcalls {
+                    P::handoff_tool(self, tool_call).await?;
+                }
             }
         }
 
