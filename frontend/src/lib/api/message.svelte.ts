@@ -30,14 +30,14 @@ let messages = $state<Array<MessagePaginateRespList & { stream?: boolean }>>([])
 const Handlers: {
 	[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c'], chatId: number) => void;
 } = {
-	version: (data, chatId) => {
+	version(data, chatId) {
 		if (version !== data.version) {
 			version = data.version;
 			syncMessages(chatId);
 		}
 	},
 
-	start: (data) => {
+	start(data) {
 		if (!messages.some((m) => m.id == data.id)) {
 			messages.unshift({
 				id: data.id,
@@ -51,15 +51,15 @@ const Handlers: {
 		version = data.version;
 	},
 
-	token: (token) => {
+	token(token) {
 		handleTokenChunk('token', { content: token.content });
 	},
 
-	reasoning: (reasoning) => {
+	reasoning(reasoning) {
 		handleTokenChunk('reasoning', { content: reasoning.content });
 	},
 
-	tool_call: (toolCall) => {
+	tool_call(toolCall) {
 		handleTokenChunk('tool_call', {
 			name: toolCall.name,
 			args: toolCall.args,
@@ -67,11 +67,11 @@ const Handlers: {
 		});
 	},
 
-	tool_result: (toolResult) => {
+	tool_result(toolResult) {
 		handleTokenChunk('tool_result', { content: toolResult.content });
 	},
 
-	complete: (data) => {
+	complete(data) {
 		const lastMsg = messages.at(0);
 		if (lastMsg && lastMsg.stream) {
 			lastMsg.stream = false;
@@ -81,7 +81,7 @@ const Handlers: {
 		version = data.version;
 	},
 
-	title: (data, chatId) => {
+	title(data, chatId) {
 		UpdateInfiniteQueryDataById({
 			key: ['chatPaginate'],
 			id: chatId,
@@ -89,7 +89,7 @@ const Handlers: {
 		});
 	},
 
-	error: (err) => {
+	error(err) {
 		const lastMsg = messages.at(-1);
 		if (lastMsg && lastMsg.stream) {
 			lastMsg.chunks.push({
@@ -99,17 +99,19 @@ const Handlers: {
 		}
 	},
 
-	deep_plan: (plan) => {
+	deep_plan(plan) {
 		handleTokenChunk('deep_plan', { content: plan.content });
 	},
 
-	deep_step: (step) => {
+	deep_step(step) {
 		handleTokenChunk('deep_step', { content: step.content });
 	},
 
-	deep_report: (report) => {
+	deep_report(report) {
 		handleTokenChunk('deep_report', { content: report.content });
-	}
+	},
+
+	tool_token(token) {}
 };
 
 function startSSE(chatId: number, signal: AbortSignal) {

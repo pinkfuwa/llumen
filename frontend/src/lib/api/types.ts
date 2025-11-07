@@ -87,33 +87,6 @@ export interface ChatUpdateResp {
 	wrote: boolean;
 }
 
-/** Status of a deep research step */
-export enum DeepStepStatus {
-	InProgress = 'in_progress',
-	Completed = 'completed',
-	Failed = 'failed'
-}
-
-/** Deep research step structure */
-export interface DeepStep {
-	id: string;
-	description: string;
-	need_search: boolean;
-	status: DeepStepStatus;
-	result?: string;
-}
-
-/** Deep research plan structure */
-export interface DeepPlan {
-	steps: DeepStep[];
-	has_enough_context: boolean;
-}
-
-/** Deep research report structure */
-export interface DeepReport {
-	content: string;
-}
-
 export enum ErrorKind {
 	Unauthorized = 'unauthorized',
 	MalformedToken = 'malformed_token',
@@ -380,6 +353,10 @@ export interface SseRespToolResult {
 	content: string;
 }
 
+export interface SseRespToolToken {
+	content: string;
+}
+
 export interface SseRespVersion {
 	version: number;
 }
@@ -450,6 +427,13 @@ export type ChatPaginateReq =
 	| { t: 'limit'; c: ChatPaginateReqLimit }
 	| { t: 'range'; c: ChatPaginateReqRange };
 
+/** Status of a deep research step */
+export enum DeepStepStatus {
+	InProgress = 'in_progress',
+	Completed = 'completed',
+	Failed = 'failed'
+}
+
 export type MessagePaginateReq =
 	| { t: 'limit'; c: MessagePaginateReqLimit }
 	| { t: 'range'; c: MessagePaginateReqRange };
@@ -459,6 +443,7 @@ export type SseResp =
 	| { t: 'token'; c: SseRespToken }
 	| { t: 'reasoning'; c: SseRespReasoning }
 	| { t: 'tool_call'; c: SseRespToolCall }
+	| { t: 'tool_token'; c: SseRespToolToken }
 	| { t: 'tool_result'; c: SseRespToolResult }
 	| { t: 'complete'; c: SseRespMessageComplete }
 	| { t: 'title'; c: SseRespTitle }
