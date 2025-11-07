@@ -22,6 +22,7 @@ pub enum Token {
         args: String,
         id: String,
     },
+    ToolToken(String),
     ToolResult(String),
     Reasoning(String),
     Empty,
@@ -54,6 +55,10 @@ impl Mergeable for Token {
                 s1.push_str(&s2);
                 None
             }
+            (Token::ToolToken(s1), Token::ToolToken(s2)) => {
+                s1.push_str(&s2);
+                None
+            }
             (Token::ResearchPlan(s1), Token::ResearchPlan(s2)) => {
                 s1.push_str(&s2);
                 None
@@ -74,6 +79,7 @@ impl Mergeable for Token {
         match self {
             Token::User(s)
             | Token::Assitant(s)
+            | Token::ToolToken(s)
             | Token::Reasoning(s)
             | Token::ResearchPlan(s)
             | Token::ResearchStep(s)
@@ -92,6 +98,7 @@ impl Mergeable for Token {
         match self {
             Token::User(s) => Some(Token::User(s[r].to_string())),
             Token::Assitant(s) => Some(Token::Assitant(s[r].to_string())),
+            Token::ToolToken(s) => Some(Token::ToolToken(s[r].to_string())),
             Token::Reasoning(s) => Some(Token::Reasoning(s[r].to_string())),
             Token::ResearchPlan(s) => Some(Token::ResearchPlan(s[r].to_string())),
             Token::ResearchStep(s) => Some(Token::ResearchStep(s[r].to_string())),
@@ -137,6 +144,7 @@ fn into_chunk(token: Token) -> Option<chunk::ActiveModel> {
                 ..Default::default()
             })
         }
+        Token::ToolToken(_) => None, // Tool tokens are for streaming display only, not saved as chunks
         Token::ToolResult(_) => Some(chunk::ActiveModel {
             kind: sea_orm::Set(ChunkKind::Error),
             content: sea_orm::Set("ToolResult not followed by tool call".to_string()),
@@ -220,6 +228,7 @@ impl From<openrouter::StreamCompletionResp> for Token {
             StreamCompletionResp::ReasoningToken(reasoning) => Token::Reasoning(reasoning),
             StreamCompletionResp::ResponseToken(content) => Token::Assitant(content),
             StreamCompletionResp::ToolCall { name, args, id } => Token::Tool { name, args, id },
+            StreamCompletionResp::ToolToken(token) => Token::ToolToken(token),
             _ => Token::Empty,
         }
     }
