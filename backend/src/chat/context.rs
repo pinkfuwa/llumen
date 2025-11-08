@@ -223,8 +223,26 @@ impl CompletionContext {
         let mut messages = vec![openrouter::Message::System(system_prompt)];
 
         self.messages.iter().for_each(|m| match &m.inner {
-            MessageInner::User { text, files } => todo!(),
-            MessageInner::Assistant(assistant_chunks) => todo!(),
+            MessageInner::User { text, .. } => {
+                messages.push(openrouter::Message::User(text.clone()));
+            }
+            MessageInner::Assistant(assistant_chunks) => {
+                // Concatenate all text chunks for the title generation
+                let text = assistant_chunks
+                    .iter()
+                    .filter_map(|chunk| {
+                        if let AssistantChunk::Text(t) = chunk {
+                            Some(t.as_str())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("");
+                if !text.is_empty() {
+                    messages.push(openrouter::Message::Assistant(text));
+                }
+            }
         });
 
         let model = <ModelConfig as ModelChecker>::from_toml(&self.model.config)
