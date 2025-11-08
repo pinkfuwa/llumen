@@ -13,8 +13,7 @@ import type {
 	MessagePaginateRespList,
 	SseReq,
 	SseResp,
-	FileMetadata,
-	SseRespToolResult
+	FileMetadata
 } from './types';
 import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
@@ -25,6 +24,8 @@ import { dev } from '$app/environment';
 let version = $state(-1);
 
 let messages = $state<Array<MessagePaginateRespList & { stream?: boolean }>>([]);
+
+// let deepState
 
 const Handlers: {
 	[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c'], chatId: number) => void;
@@ -127,15 +128,37 @@ const Handlers: {
 		}
 	},
 
-	deep_plan(plan) {},
+	// TODO: use deep_state to record delta, you can assume between start/complete, there is only one plan
+	deep_plan(plan) {
+		// record plan string to deep_state
+		// concatenated plan yield a json for plan
+		// use oboe.js to handle json stream(ie. display title/steps when the json is streaming)
+	},
 
-	deep_step_start(step) {},
+	deep_step_start(step) {
+		// start of step
+	},
 
-	deep_step_token(step) {},
+	deep_step_token(step) {
+		// token of step
+		// if last token po progress is text, concat string,
+		// otherwise record token to end of progress
+	},
 
-	deep_step_reasoning(step) {},
+	deep_step_reasoning(step) {
+		// similar to token, but for reasoning
+	},
 
-	deep_step_tool_call(toolCall) {},
+	deep_step_tool_call(toolCall) {
+		// tool call start, followed by a tool call result(or error chunk if critical error is encounter).
+		// Please note that our protocol allow is to stream unordered
+		// For example: call(A)->call(B)->result(A)->result(B)
+		// reorder=> call(A)->result(A)->call(B)->result(B)
+	},
+	deep_step_tool_result(data) {
+		// tool call result
+		// Find last step progress of tool_call with result empty
+	},
 
 	deep_report(report) {
 		const firstMsg = messages.at(0);
@@ -148,9 +171,6 @@ const Handlers: {
 		} else {
 			firstMsg.inner.c.push({ t: 'text', c: report as string });
 		}
-	},
-	deep_step_tool_result: function (data: SseRespToolResult, chatId: number): void {
-		throw new Error('Function not implemented.');
 	}
 };
 
