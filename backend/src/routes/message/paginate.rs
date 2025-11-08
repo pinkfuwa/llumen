@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{Extension, Json, extract::State};
 use entity::{message, prelude::*};
 use migration::ExprTrait;
-use protocol::MessageInner;
+use protocol::{AssistantChunk, MessageInner};
 use sea_orm::{QueryOrder, QuerySelect, prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -122,11 +122,15 @@ pub async fn route(
     let list = msgs
         .into_iter()
         .filter_map(|msg| {
-            let inner = msg.inner;
-            if let MessageInner::Assistant(chunks) = &inner {
+            let mut inner = msg.inner;
+            if let MessageInner::Assistant(chunks) = &mut inner {
                 if chunks.is_empty() {
                     return None;
                 }
+                *chunks = std::mem::take(chunks)
+                    .into_iter()
+                    .filter(|chunk| !matches!(chunk, AssistantChunk::Annotation(_)))
+                    .collect::<Vec<_>>();
             }
             Some(MessagePaginateRespList {
                 id: msg.id,

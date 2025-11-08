@@ -30,11 +30,6 @@ fn test_stream_completion_resp_variants() {
     // Test that all variants can be constructed
     let token = StreamCompletionResp::ResponseToken("Hello".to_string());
     let reasoning = StreamCompletionResp::ReasoningToken("Thinking...".to_string());
-    let tool_call = StreamCompletionResp::ToolCall {
-        name: "test".to_string(),
-        args: "{}".to_string(),
-        id: "1".to_string(),
-    };
     let tool_token = StreamCompletionResp::ToolToken {
         idx: 0,
         args: "partial".to_string(),
@@ -43,7 +38,6 @@ fn test_stream_completion_resp_variants() {
 
     assert!(matches!(token, StreamCompletionResp::ResponseToken(_)));
     assert!(matches!(reasoning, StreamCompletionResp::ReasoningToken(_)));
-    assert!(matches!(tool_call, StreamCompletionResp::ToolCall { .. }));
     assert!(matches!(tool_token, StreamCompletionResp::ToolToken { .. }));
 }
 

@@ -153,15 +153,8 @@ impl StreamCompletion {
                 raw::FinishReason::ToolCalls => {
                     // Return first tool call when finish_reason is ToolCalls
                     // The full list is available in get_result()
-                    if !self.toolcalls.is_empty() {
-                        StreamCompletionResp::ToolCall {
-                            name: self.toolcalls[0].name.clone(),
-                            args: self.toolcalls[0].args.clone(),
-                            id: self.toolcalls[0].id.clone(),
-                        }
-                    } else {
-                        StreamCompletionResp::ResponseToken(content)
-                    }
+
+                    StreamCompletionResp::ResponseToken(content)
                 }
             };
         }
@@ -320,11 +313,6 @@ impl Drop for StreamCompletion {
 pub enum StreamCompletionResp {
     ReasoningToken(String),
     ResponseToken(String),
-    ToolCall {
-        name: String,
-        args: String,
-        id: String,
-    },
     ToolToken {
         idx: usize,
         args: String,
@@ -342,16 +330,6 @@ impl StreamCompletionResp {
             StreamCompletionResp::ReasoningToken(s) => s.is_empty(),
             StreamCompletionResp::ResponseToken(s) => s.is_empty(),
             _ => false,
-        }
-    }
-}
-
-impl From<ToolCall> for StreamCompletionResp {
-    fn from(value: ToolCall) -> Self {
-        StreamCompletionResp::ToolCall {
-            name: value.name,
-            args: value.args,
-            id: value.id,
         }
     }
 }

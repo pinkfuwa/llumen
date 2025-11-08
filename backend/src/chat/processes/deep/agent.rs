@@ -8,10 +8,10 @@ use tokio_stream::StreamExt;
 
 use super::helper::*;
 use crate::chat::context::StreamEndReason;
-use crate::chat::converter::openrouter_to_buffer_token_deep_plan;
+use crate::chat::converter::*;
 use crate::chat::deep_prompt::{CompletedStep, ReportInputContext, StepInputContext};
 use crate::chat::process::chat::ChatPipeline;
-use crate::chat::{CompletionContext, Context};
+use crate::chat::{CompletionContext, Context, Token};
 use crate::openrouter;
 
 /// Deep research agent that orchestrates multiple agents for comprehensive research
@@ -19,8 +19,6 @@ pub struct DeepAgent<'a> {
     ctx: Arc<Context>,
     completion_ctx: &'a mut CompletionContext,
     model: openrouter::Model,
-    // completed_steps: Vec<CompletedStep>,
-    // plan: PlannerResponse,
     state: Option<Deep>,
     enhanced_prompt: String,
 }
@@ -38,8 +36,6 @@ impl<'a> DeepAgent<'a> {
             ctx,
             completion_ctx,
             model,
-            // completed_steps: Vec::new(),
-            // plan: PlannerResponse::default(),
             state: None,
             enhanced_prompt: String::new(),
         };
@@ -158,10 +154,8 @@ impl<'a> DeepAgent<'a> {
         }
 
         // Execute each step
-        for (i, mut step) in plan.steps.clone().into_iter().enumerate() {
-            self.execute_step(&mut step).await?;
-            let plan = self.state.as_mut().unwrap();
-            plan.steps[i] = step;
+        for i in 0..plan.steps.len() {
+            self.execute_step(i).await?;
         }
 
         // Generate final report
@@ -169,19 +163,21 @@ impl<'a> DeepAgent<'a> {
 
         Ok(())
     }
-    async fn execute_step(&mut self, step: &mut Step) -> Result<()> {
+    async fn execute_step(&mut self, step_idx: usize) -> Result<()> {
+        let locale = self.get_locale();
         let plan = self.state.as_ref().unwrap();
+        let step = plan.steps.get(step_idx).unwrap();
 
         let (system_prompt, tools) = if step.kind == StepKind::Code {
             let tools = vec![get_lua_repl_def()];
-            let system_prompt = self.ctx.deep_prompt.render_coder(self.get_locale())?;
+            let system_prompt = self.ctx.deep_prompt.render_coder(locale)?;
             (system_prompt, tools)
         } else {
             let mut tools = vec![get_crawl_tool_def()];
             if step.need_search {
                 tools.push(get_web_search_tool_def());
             }
-            let system_prompt = self.ctx.deep_prompt.render_researcher(self.get_locale())?;
+            let system_prompt = self.ctx.deep_prompt.render_researcher(locale)?;
             (system_prompt, tools)
         };
 
@@ -200,7 +196,7 @@ impl<'a> DeepAgent<'a> {
             .collect::<Vec<_>>();
 
         let step_input_ctx = StepInputContext {
-            locale: self.get_locale(),
+            locale: locale,
             plan_title: plan.title.as_str(),
             completed_steps,
             current_step_title: step.title.as_str(),
@@ -213,60 +209,76 @@ impl<'a> DeepAgent<'a> {
             .deep_prompt
             .render_step_system_message(self.get_locale())?;
 
-        let messages = vec![
+        let mut progress = Vec::new();
+
+        let mut messages = vec![
             openrouter::Message::System(system_prompt),
             openrouter::Message::System(step_system_message),
             openrouter::Message::User(step_input),
         ];
 
-        let mut current_messages = messages;
+        self.completion_ctx
+            .add_token_force(Token::DeepStepStart(step_idx as i32));
 
         loop {
-            // step
-            todo!("use convert to convert and stream, respect halting");
-            // let mut stream = self
-            //     .ctx
-            //     .openrouter
-            //     .stream(current_messages.clone(), &self.model, tools.clone())
-            //     .await?;
+            let mut stream = self
+                .ctx
+                .openrouter
+                .stream(messages.clone(), &self.model, tools.clone())
+                .await?;
 
-            // while let Some(token) = StreamExt::next(&mut stream).await {
-            //     if let openrouter::StreamCompletionResp::ResponseToken(delta) = token? {
-            //         if self
-            //             .completion_ctx
-            //             .add_token(crate::chat::Token::ResearchStep(delta))
-            //             .is_err()
-            //         {
-            //             return Ok(());
-            //         }
-            //     }
-            // }
+            let halt = self
+                .completion_ctx
+                .put_stream(
+                    (&mut stream).map(|resp| resp.map(openrouter_to_buffer_token_deep_step)),
+                )
+                .await?;
 
-            // let mut result = stream.get_result();
+            if matches!(halt, StreamEndReason::Halt) {
+                bail!("step interrupted");
+            }
 
-            // let tool_calls = std::mem::take(&mut result.toolcalls);
+            let mut result = stream.get_result();
 
-            // if tool_calls.is_empty() {
-            //     let assistant_text = result.get_text();
-            //     current_messages.push(openrouter::Message::Assistant(assistant_text.clone()));
-            //     break;
-            // }
+            let tool_calls = std::mem::take(&mut result.toolcalls);
 
-            // for tool_call in tool_calls {
-            //     let result = self.execute_tool(&tool_call.name, &tool_call.args).await?;
-            //     current_messages.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
-            //         id: tool_call.id.clone(),
-            //         name: tool_call.name,
-            //         arguments: tool_call.args,
-            //     }));
-            //     current_messages.push(openrouter::Message::ToolResult(
-            //         openrouter::MessageToolResult {
-            //             id: tool_call.id,
-            //             content: result,
-            //         },
-            //     ));
-            // }
+            let assistant_text = result.get_text();
+
+            progress.extend(openrouter_stream_to_assitant_chunk(&result.responses));
+            if tool_calls.is_empty() {
+                break;
+            }
+
+            messages.push(openrouter::Message::Assistant(assistant_text.clone()));
+
+            for tool_call in tool_calls {
+                messages.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
+                    id: tool_call.id.clone(),
+                    name: tool_call.name.clone(),
+                    arguments: tool_call.args.clone(),
+                }));
+
+                self.completion_ctx
+                    .add_token_force(Token::DeepStepToolCall {
+                        name: tool_call.name.clone(),
+                        arg: tool_call.args.clone(),
+                    });
+
+                let result = self.execute_tool(&tool_call.name, &tool_call.args).await?;
+
+                messages.push(openrouter::Message::ToolResult(
+                    openrouter::MessageToolResult {
+                        id: tool_call.id,
+                        content: result.clone(),
+                    },
+                ));
+
+                self.completion_ctx
+                    .add_token_force(Token::DeepStepToolResult(result))
+            }
         }
+
+        self.state.as_mut().unwrap().steps[step_idx].progress = progress;
 
         Ok(())
     }
@@ -312,23 +324,17 @@ impl<'a> DeepAgent<'a> {
             .stream(messages, &self.model, vec![])
             .await?;
 
-        let mut text = "".to_string();
+        let halt = self
+            .completion_ctx
+            .put_stream((&mut stream).map(|resp| resp.map(openrouter_to_buffer_token_deep_report)))
+            .await?;
 
-        todo!("use put_stream and respect halting");
-        // Stream the report back to the user
-        // while let Some(token) = StreamExt::next(&mut stream).await {
-        //     if let openrouter::StreamCompletionResp::ResponseToken(delta) = token? {
-        //         // Send the delta using ResearchReport token
-        //         text.push_str(&delta);
-        //         if self
-        //             .completion_ctx
-        //             .add_token(crate::chat::Token::ResearchReport(delta))
-        //             .is_err()
-        //         {
-        //             return Ok(());
-        //         }
-        //     }
-        // }
+        if matches!(halt, StreamEndReason::Halt) {
+            bail!("reporter interrupted");
+        }
+
+        let result = stream.get_result();
+        let text = result.get_text();
 
         let chunks = self.completion_ctx.message.inner.as_assistant().unwrap();
         chunks.push(AssistantChunk::DeepAgent(self.state.take().unwrap()));

@@ -13,13 +13,13 @@ pub enum Token {
     Reasoning(String),
     Empty,
     DeepPlan(String),
-    DeepStepStart(String),
+    DeepStepStart(i32),
     DeepStepReasoning(String),
     DeepStepToolCall {
         name: String,
         arg: String,
     },
-    DeepStepTokenResult(String),
+    DeepStepToolResult(String),
     DeepStepToken(String),
     DeepReport(String),
     Error(String),
@@ -78,7 +78,7 @@ impl Mergeable for Token {
             | Token::Empty
             | Token::DeepPlan(_)
             | Token::DeepStepStart(_)
-            | Token::DeepStepTokenResult(_)
+            | Token::DeepStepToolResult(_)
             | Token::Complete { .. }
             | Token::Title(_)
             | Token::Start { .. }

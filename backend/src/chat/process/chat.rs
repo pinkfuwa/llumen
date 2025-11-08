@@ -116,6 +116,7 @@ impl<P: ChatInner> ChatPipeline<P> {
                     ));
                 }
 
+                // handoff_tool should decide whether to insert tool_call or not
                 P::handoff_tool(self, result.toolcalls).await?;
                 if let Some(annotations) = annotations {
                     self.completion_ctx

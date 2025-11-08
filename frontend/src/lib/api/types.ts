@@ -445,7 +445,7 @@ export type SseResp =
 	| { t: 'error'; c: string }
 	| { t: 'start'; c: SseStart }
 	| { t: 'deep_plan'; c: string }
-	| { t: 'deep_step_start'; c: string }
+	| { t: 'deep_step_start'; c: number }
 	| { t: 'deep_step_token'; c: string }
 	| { t: 'deep_step_reasoning'; c: string }
 	| { t: 'deep_step_tool_result'; c: SseRespToolResult }

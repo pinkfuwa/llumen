@@ -133,46 +133,20 @@ const Handlers: {
 
 	deep_step_token(step) {},
 
-	deep_step_reasoning(step) {
-		const firstMsg = messages.at(0);
-		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+	deep_step_reasoning(step) {},
 
-		const lastChunk = firstMsg.inner.c.at(-1);
-
-		if (lastChunk && lastChunk.t === 'reasoning') {
-			lastChunk.c += step as string;
-		} else {
-			firstMsg.inner.c.push({ t: 'reasoning', c: step as string });
-		}
-	},
-
-	deep_step_tool_call(toolCall) {
-		// Inline handleTokenChunk('tool_call', toolCall)
-		const firstMsg = messages.at(0);
-		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
-
-		const toolCallObj = toolCall as { name: string; args: string };
-		firstMsg.inner.c.push({
-			t: 'tool_call',
-			c: {
-				id: Date.now().toString(),
-				name: toolCallObj.name,
-				arg: toolCallObj.args
-			}
-		});
-	},
+	deep_step_tool_call(toolCall) {},
 
 	deep_report(report) {
-		// Inline handleTokenChunk('annotation', report)
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
 		const lastChunk = firstMsg.inner.c.at(-1);
 
-		if (lastChunk && lastChunk.t === 'annotation') {
+		if (lastChunk && lastChunk.t === 'text') {
 			lastChunk.c += report as string;
 		} else {
-			firstMsg.inner.c.push({ t: 'annotation', c: report as string });
+			firstMsg.inner.c.push({ t: 'text', c: report as string });
 		}
 	},
 	deep_step_tool_result: function (data: SseRespToolResult, chatId: number): void {

@@ -61,7 +61,7 @@ pub async fn db_message_to_openrouter(
                 match chunk {
                     AssistantChunk::Annotation(_) => {
                         #[cfg(debug_assertions)]
-                        panic!("Annotation should not be present in assistant chunks");
+                        panic!("Annotation should be captured by Text chunk");
                     }
                     AssistantChunk::Text(x) => {
                         if matches!(iter.peek(), Some(AssistantChunk::Annotation(_))) {
@@ -127,13 +127,6 @@ pub fn openrouter_stream_to_assitant_chunk(
                     result.push(AssistantChunk::Text(x.clone()));
                 }
             }
-            openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
-                result.push(AssistantChunk::ToolCall {
-                    id: id.clone(),
-                    arg: args.clone(),
-                    name: name.clone(),
-                });
-            }
             openrouter::StreamCompletionResp::Usage { price, token } => {}
             openrouter::StreamCompletionResp::ToolToken { idx, args, name } => {
                 // ToolToken is for streaming chunks, typically merged into the final ToolCall
@@ -149,9 +142,6 @@ pub fn openrouter_to_buffer_token(token: openrouter::StreamCompletionResp) -> ch
         openrouter::StreamCompletionResp::ResponseToken(content) => chat::Token::Assistant(content),
         openrouter::StreamCompletionResp::ReasoningToken(content) => {
             chat::Token::Reasoning(content)
-        }
-        openrouter::StreamCompletionResp::ToolCall { name, args, id: _ } => {
-            chat::Token::ToolCall { name, arg: args }
         }
         openrouter::StreamCompletionResp::ToolToken { .. } => {
             // ToolToken is intermediate state during streaming, return empty
@@ -172,7 +162,6 @@ pub fn openrouter_to_buffer_token_deep_plan(
         openrouter::StreamCompletionResp::ReasoningToken(content) => {
             chat::Token::Reasoning(content)
         }
-        openrouter::StreamCompletionResp::ToolCall { .. } => chat::Token::Empty,
         openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
         openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
     }
@@ -187,9 +176,6 @@ pub fn openrouter_to_buffer_token_deep_step(
         }
         openrouter::StreamCompletionResp::ReasoningToken(content) => {
             chat::Token::DeepStepReasoning(content)
-        }
-        openrouter::StreamCompletionResp::ToolCall { name, args, id: _ } => {
-            chat::Token::DeepStepToolCall { name, arg: args }
         }
         openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
         openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
@@ -206,7 +192,6 @@ pub fn openrouter_to_buffer_token_deep_report(
         openrouter::StreamCompletionResp::ReasoningToken(content) => {
             chat::Token::Reasoning(content)
         }
-        openrouter::StreamCompletionResp::ToolCall { .. } => chat::Token::Empty,
         openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
         openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
     }

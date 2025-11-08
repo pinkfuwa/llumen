@@ -73,7 +73,7 @@ pub enum SseResp {
     Error(String),
     Start(SseStart),
     DeepPlan(String),
-    DeepStepStart(String),
+    DeepStepStart(i32),
     DeepStepToken(String),
     DeepStepReasoning(String),
     DeepStepToolResult(SseRespToolResult),
@@ -175,8 +175,12 @@ pub async fn route(
             Token::DeepPlan(content) => SseResp::DeepPlan(content),
             Token::DeepStepStart(content) => SseResp::DeepStepStart(content),
             Token::DeepStepReasoning(content) => SseResp::DeepStepReasoning(content),
-            Token::DeepStepToolCall { name, arg } => SseResp::DeepStepToolCall(SseRespToolCall { name, args: arg }),
-            Token::DeepStepTokenResult(content) => SseResp::DeepStepToolResult(SseRespToolResult { content }),
+            Token::DeepStepToolCall { name, arg } => {
+                SseResp::DeepStepToolCall(SseRespToolCall { name, args: arg })
+            }
+            Token::DeepStepToolResult(content) => {
+                SseResp::DeepStepToolResult(SseRespToolResult { content })
+            }
             Token::DeepStepToken(content) => SseResp::DeepStepToken(content),
             Token::DeepReport(content) => SseResp::DeepReport(content),
         };
