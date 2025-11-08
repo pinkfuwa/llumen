@@ -35,12 +35,6 @@ importers:
       '@lezer/markdown':
         specifier: ^1.5.1
         version: 1.5.1
-      '@streamparser/json':
-        specifier: ^0.0.22
-        version: 0.0.22
-      '@streamparser/json-whatwg':
-        specifier: ^0.0.22
-        version: 0.0.22
       '@sveltejs/adapter-auto':
         specifier: ^6.0.0
         version: 6.0.1(@sveltejs/kit@2.25.1(@sveltejs/vite-plugin-svelte@6.1.0(svelte@5.36.13)(vite@7.0.5(@types/node@24.10.0)(jiti@2.4.2)(lightningcss@1.30.1)))(svelte@5.36.13)(vite@7.0.5(@types/node@24.10.0)(jiti@2.4.2)(lightningcss@1.30.1)))
@@ -56,6 +50,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.0.0
         version: 4.1.11(vite@7.0.5(@types/node@24.10.0)(jiti@2.4.2)(lightningcss@1.30.1))
+      '@types/oboe':
+        specifier: ^2.1.4
+        version: 2.1.4
       bits-ui:
         specifier: ^2.9.9
         version: 2.9.9(@internationalized/date@3.9.0)(svelte@5.36.13)
@@ -68,6 +65,9 @@ importers:
       katex:
         specifier: ^0.16.22
         version: 0.16.22
+      oboe:
+        specifier: ^2.1.7
+        version: 2.1.7
       prettier:
         specifier: ^3.4.2
         version: 3.6.2
@@ -666,12 +666,6 @@ packages:
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
-  '@streamparser/json-whatwg@0.0.22':
-    resolution: {integrity: sha512-qRYYbaytZYXfGMFNtPAUrbK2CJ0KmGk2l+uLxW1hKVLOt3aBaWGsskiUCdGoaoSTeJBHswNqi59wSppg+IVWKQ==}
-
-  '@streamparser/json@0.0.22':
-    resolution: {integrity: sha512-b6gTSBjJ8G8SuO3Gbbj+zXbVx8NSs1EbpbMKpzGLWMdkR+98McH9bEjSz3+0mPJf68c5nxa3CrJHp5EQNXM6zQ==}
-
   '@sveltejs/acorn-typescript@1.0.5':
     resolution: {integrity: sha512-IwQk4yfwLdibDlrXVE04jTZYlLnwsTT2PIOQQGNLWfjavGifnk1JD1LcZjZaBTRcxZu2FfPfNLOE04DSu9lqtQ==}
     peerDependencies:
@@ -827,6 +821,9 @@ packages:
 
   '@types/node@24.10.0':
     resolution: {integrity: sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==}
+
+  '@types/oboe@2.1.4':
+    resolution: {integrity: sha512-bXt4BXSQy0N/buSIak1o0TjYAk2SAeK1aZV9xKcb+xVGWYP8NcMOFy2T7Um3kIvEcQJzrdgJ8R6fpbRcp/LEww==}
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
@@ -1080,6 +1077,9 @@ packages:
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
 
+  http-https@1.0.0:
+    resolution: {integrity: sha512-o0PWwVCSp3O0wS6FvNr6xfBCHgt0m1tvPLFOCc2iFDKTRAXhB7m8klDf7ErowFH8POa6dVdGatKU5I1YYwzUyg==}
+
   inline-style-parser@0.2.4:
     resolution: {integrity: sha512-0aO8FkhNZlj/ZIbNi7Lxxr12obT7cL1moPfE4tg1LkX7LlLfC6DeX4l2ZEud1ukP9jNQyNnfzQVqwbwmAATY4Q==}
 
@@ -1233,6 +1233,9 @@ packages:
 
   next-tick@1.1.0:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
+
+  oboe@2.1.7:
+    resolution: {integrity: sha512-Y2oCMU2xgITORaNvIDCvUyn2ZG/5NI19lLjMFThgYzCH+GA/fgYvVcwxAqnZPiMiUrPq64jLzCkBXqKSu/R6MA==}
 
   oniguruma-parser@0.12.1:
     resolution: {integrity: sha512-8Unqkvk1RYc6yq2WBYRj4hdnsAxVze8i7iPfQr8e4uSP3tRv0rpZcbGUDvxfQQcdwHt/e9PrMvGCsa8OqG9X3w==}
@@ -2033,12 +2036,6 @@ snapshots:
 
   '@standard-schema/spec@1.0.0': {}
 
-  '@streamparser/json-whatwg@0.0.22':
-    dependencies:
-      '@streamparser/json': 0.0.22
-
-  '@streamparser/json@0.0.22': {}
-
   '@sveltejs/acorn-typescript@1.0.5(acorn@8.15.0)':
     dependencies:
       acorn: 8.15.0
@@ -2190,6 +2187,10 @@ snapshots:
   '@types/node@24.10.0':
     dependencies:
       undici-types: 7.16.0
+
+  '@types/oboe@2.1.4':
+    dependencies:
+      '@types/node': 24.10.0
 
   '@types/unist@3.0.3': {}
 
@@ -2480,6 +2481,8 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
+  http-https@1.0.0: {}
+
   inline-style-parser@0.2.4: {}
 
   intl-messageformat@10.7.16:
@@ -2619,6 +2622,10 @@ snapshots:
   nanoid@3.3.11: {}
 
   next-tick@1.1.0: {}
+
+  oboe@2.1.7:
+    dependencies:
+      http-https: 1.0.0
 
   oniguruma-parser@0.12.1: {}
 

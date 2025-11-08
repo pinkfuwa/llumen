@@ -7,6 +7,6 @@
 
 <div>
 	{#each lines as line}
-		<p>line</p>
+		<p>{line}</p>
 	{/each}
 </div>

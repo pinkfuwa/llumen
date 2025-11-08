@@ -159,9 +159,7 @@ pub fn openrouter_to_buffer_token_deep_plan(
 ) -> chat::Token {
     match token {
         openrouter::StreamCompletionResp::ResponseToken(content) => chat::Token::DeepPlan(content),
-        openrouter::StreamCompletionResp::ReasoningToken(content) => {
-            chat::Token::Reasoning(content)
-        }
+        openrouter::StreamCompletionResp::ReasoningToken(_) => chat::Token::Empty,
         openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
         openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
     }

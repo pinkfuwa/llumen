@@ -21,6 +21,7 @@ pub trait ModelCapability {
     fn is_audio_capable(&self) -> bool;
     fn is_other_file_capable(&self) -> bool;
     fn is_tool_capable(&self) -> bool;
+    fn is_json_capable(&self) -> bool;
 }
 
 impl ModelCapability for ModelConfig {
@@ -42,6 +43,12 @@ impl ModelCapability for ModelConfig {
     fn is_tool_capable(&self) -> bool {
         if let Some(tool) = self.capability.tool {
             return tool;
+        }
+        true
+    }
+    fn is_json_capable(&self) -> bool {
+        if let Some(json) = self.capability.json {
+            return json;
         }
         true
     }
