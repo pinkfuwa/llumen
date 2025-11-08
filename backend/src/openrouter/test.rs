@@ -2,6 +2,45 @@ use crate::openrouter::{Message, Model, Openrouter, Tool};
 use std::env;
 
 #[test]
+fn test_model_builder() {
+    // Test basic builder
+    let model = Model::builder("openai/gpt-4")
+        .temperature(0.8)
+        .top_p(0.9)
+        .build();
+    
+    assert_eq!(model.id, "openai/gpt-4");
+    assert_eq!(model.temperature, Some(0.8));
+    assert_eq!(model.top_p, Some(0.9));
+    assert_eq!(model.online, false);
+    assert!(model.response_format.is_none());
+}
+
+#[test]
+fn test_model_builder_with_json_schema() {
+    // Test builder with JSON schema
+    let schema = serde_json::json!({
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "age": {"type": "number"}
+        },
+        "required": ["name"]
+    });
+    
+    let model = Model::builder("openai/gpt-4")
+        .temperature(0.7)
+        .json_schema("test_schema", schema)
+        .build();
+    
+    assert_eq!(model.id, "openai/gpt-4");
+    assert!(model.response_format.is_some());
+    
+    let format = model.response_format.unwrap();
+    assert_eq!(format.r#type, "json_schema");
+}
+
+#[test]
 fn test_tool_call_structure() {
     // Test that ToolCall can hold multiple tool calls
     let mut toolcalls = Vec::new();
@@ -86,20 +125,9 @@ async fn tool_calls() {
         .await
         .unwrap();
 
-    let mut tool_call_found = false;
-
     while let Some(result) = stream.next().await {
         match result {
             Ok(resp) => match resp {
-                crate::openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
-                    println!(
-                        "Tool call received: name={}, args={}, id={}",
-                        name, args, id
-                    );
-                    tool_call_found = true;
-                    assert!(!name.is_empty(), "Tool name should not be empty");
-                    assert!(!id.is_empty(), "Tool call id should not be empty");
-                }
                 crate::openrouter::StreamCompletionResp::ToolToken { idx, args, name } => {
                     println!("Tool token at idx {}: name={}, args={}", idx, name, args);
                 }
@@ -120,10 +148,14 @@ async fn tool_calls() {
     println!("Stop reason: {:?}", result.stop_reason);
 
     // If a tool call was made, verify it's in the result
-    if tool_call_found {
+    if !result.toolcalls.is_empty() {
         assert!(
-            !result.toolcalls.is_empty(),
-            "Tool calls should be present in result"
+            !result.toolcalls[0].name.is_empty(),
+            "Tool name should not be empty"
+        );
+        assert!(
+            !result.toolcalls[0].id.is_empty(),
+            "Tool call id should not be empty"
         );
     }
 }
@@ -188,20 +220,9 @@ async fn parallel_tool_calls() {
         .await
         .unwrap();
 
-    let mut tool_calls_count = 0;
-
     while let Some(result) = stream.next().await {
         match result {
             Ok(resp) => match resp {
-                crate::openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
-                    println!(
-                        "Tool call {}: name={}, args={}, id={}",
-                        tool_calls_count, name, args, id
-                    );
-                    tool_calls_count += 1;
-                    assert!(!name.is_empty(), "Tool name should not be empty");
-                    assert!(!id.is_empty(), "Tool call id should not be empty");
-                }
                 crate::openrouter::StreamCompletionResp::ToolToken { idx, args, name } => {
                     println!("Tool token at idx {}: name={}, args={}", idx, name, args);
                 }

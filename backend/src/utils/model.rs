@@ -12,6 +12,7 @@ impl From<ModelConfig> for openrouter::Model {
             top_k: value.parameter.top_k,
             top_p: value.parameter.top_p,
             online: false,
+            response_format: None,
         }
     }
 }
