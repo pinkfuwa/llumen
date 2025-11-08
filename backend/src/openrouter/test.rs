@@ -2,6 +2,45 @@ use crate::openrouter::{Message, Model, Openrouter, Tool};
 use std::env;
 
 #[test]
+fn test_model_builder() {
+    // Test basic builder
+    let model = Model::builder("openai/gpt-4")
+        .temperature(0.8)
+        .top_p(0.9)
+        .build();
+    
+    assert_eq!(model.id, "openai/gpt-4");
+    assert_eq!(model.temperature, Some(0.8));
+    assert_eq!(model.top_p, Some(0.9));
+    assert_eq!(model.online, false);
+    assert!(model.response_format.is_none());
+}
+
+#[test]
+fn test_model_builder_with_json_schema() {
+    // Test builder with JSON schema
+    let schema = serde_json::json!({
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "age": {"type": "number"}
+        },
+        "required": ["name"]
+    });
+    
+    let model = Model::builder("openai/gpt-4")
+        .temperature(0.7)
+        .json_schema("test_schema", schema)
+        .build();
+    
+    assert_eq!(model.id, "openai/gpt-4");
+    assert!(model.response_format.is_some());
+    
+    let format = model.response_format.unwrap();
+    assert_eq!(format.r#type, "json_schema");
+}
+
+#[test]
 fn test_tool_call_structure() {
     // Test that ToolCall can hold multiple tool calls
     let mut toolcalls = Vec::new();
