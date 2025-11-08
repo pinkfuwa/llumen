@@ -23,7 +23,27 @@ pub struct PlannerStep {
 
 impl From<PlannerResponse> for protocol::Deep {
     fn from(value: PlannerResponse) -> Self {
-        todo!()
+        protocol::Deep {
+            locale: value.locale,
+            has_enough_context: value.has_enough_context,
+            thought: value.thought,
+            title: value.title,
+            steps: value
+                .steps
+                .into_iter()
+                .map(|step| protocol::Step {
+                    need_search: step.need_search,
+                    title: step.title,
+                    description: step.description,
+                    kind: match step.step_type.to_lowercase().as_str() {
+                        "code" => protocol::StepKind::Code,
+                        "research" => protocol::StepKind::Research,
+                        _ => protocol::StepKind::Research, // Default to Research
+                    },
+                    progress: Vec::new(),
+                })
+                .collect(),
+        }
     }
 }
 

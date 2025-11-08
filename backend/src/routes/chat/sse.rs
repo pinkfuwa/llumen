@@ -152,8 +152,7 @@ pub async fn route(
         let event = match token {
             Token::Assistant(content) => SseResp::Token(content),
             Token::Reasoning(content) => SseResp::Reasoning(content),
-            // Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
-            // Token::ToolToken(content) => SseResp::ToolToken(content),
+            Token::ToolCall { name, arg } => SseResp::ToolCall(SseRespToolCall { name, args: arg }),
             Token::Complete {
                 message_id,
                 token,
@@ -172,7 +171,14 @@ pub async fn route(
                 user_msg_id,
                 version: user_msg_id,
             }),
-            _ => todo!(),
+            Token::Empty => SseResp::Token(String::new()),
+            Token::DeepPlan(content) => SseResp::DeepPlan(content),
+            Token::DeepStepStart(content) => SseResp::DeepStepStart(content),
+            Token::DeepStepReasoning(content) => SseResp::DeepStepReasoning(content),
+            Token::DeepStepToolCall { name, arg } => SseResp::DeepStepToolCall(SseRespToolCall { name, args: arg }),
+            Token::DeepStepTokenResult(content) => SseResp::DeepStepToolResult(SseRespToolResult { content }),
+            Token::DeepStepToken(content) => SseResp::DeepStepToken(content),
+            Token::DeepReport(content) => SseResp::DeepReport(content),
         };
         Ok(Event::default().json_data(event).unwrap())
     }));

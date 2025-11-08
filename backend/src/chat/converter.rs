@@ -44,19 +44,49 @@ pub async fn db_message_to_openrouter(
 ) -> Result<impl Iterator<Item = openrouter::Message>> {
     let mut result = Vec::new();
     match message {
-        MessageInner::User { text, files } => todo!(),
+        MessageInner::User { text, files } => {
+            if files.is_empty() {
+                result.push(openrouter::Message::User(text.clone()));
+            } else {
+                let file_data = load_files(ctx.blob.clone(), files).await?;
+                result.push(openrouter::Message::MultipartUser {
+                    text: text.clone(),
+                    files: file_data,
+                });
+            }
+        }
         MessageInner::Assistant(assistant_chunks) => {
             for chunk in assistant_chunks {
                 match chunk {
-                    AssistantChunk::Annotation(_) => todo!(),
+                    AssistantChunk::Annotation(_) => {
+                        // Annotations are not directly converted to OpenRouter messages
+                        // They are metadata that should be handled separately
+                    }
                     AssistantChunk::Text(x) => {
                         result.push(openrouter::Message::Assistant(x.clone()))
                     }
-                    AssistantChunk::Reasoning(_) => todo!(),
-                    AssistantChunk::ToolCall { id, arg, name } => todo!(),
-                    AssistantChunk::ToolResult { id, response } => todo!(),
-                    AssistantChunk::Error(_) => todo!(),
-                    AssistantChunk::DeepAgent(deep) => todo!(),
+                    AssistantChunk::Reasoning(_) => {
+                        // Reasoning is internal and not sent back to the model
+                    }
+                    AssistantChunk::ToolCall { id, arg, name } => {
+                        result.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
+                            id: id.clone(),
+                            name: name.clone(),
+                            arguments: arg.clone(),
+                        }));
+                    }
+                    AssistantChunk::ToolResult { id, response } => {
+                        result.push(openrouter::Message::ToolResult(openrouter::MessageToolResult {
+                            id: id.clone(),
+                            content: response.clone(),
+                        }));
+                    }
+                    AssistantChunk::Error(_) => {
+                        // Errors are not sent to the model
+                    }
+                    AssistantChunk::DeepAgent(_deep) => {
+                        // DeepAgent is internal state and not sent to the model
+                    }
                 }
             }
         }
@@ -84,32 +114,75 @@ pub fn openrouter_stream_to_assitant_chunk(
                     result.push(AssistantChunk::Text(x.clone()));
                 }
             }
-            openrouter::StreamCompletionResp::ToolCall { name, args, id } => todo!(),
+            openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
+                result.push(AssistantChunk::ToolCall {
+                    id: id.clone(),
+                    arg: args.clone(),
+                    name: name.clone(),
+                });
+            }
             openrouter::StreamCompletionResp::Usage { price, token } => {}
-            openrouter::StreamCompletionResp::ToolToken { idx, args, name } => todo!(),
+            openrouter::StreamCompletionResp::ToolToken { idx, args, name } => {
+                // ToolToken is for streaming chunks, typically merged into the final ToolCall
+                // For now, we can skip them as they're intermediate states
+            }
         }
     }
     result.into_iter()
 }
 
 pub fn openrouter_to_buffer_token(token: openrouter::StreamCompletionResp) -> chat::Token {
-    todo!()
+    match token {
+        openrouter::StreamCompletionResp::ResponseToken(content) => chat::Token::Assistant(content),
+        openrouter::StreamCompletionResp::ReasoningToken(content) => chat::Token::Reasoning(content),
+        openrouter::StreamCompletionResp::ToolCall { name, args, id: _ } => {
+            chat::Token::ToolCall { name, arg: args }
+        }
+        openrouter::StreamCompletionResp::ToolToken { .. } => {
+            // ToolToken is intermediate state during streaming, return empty
+            chat::Token::Empty
+        }
+        openrouter::StreamCompletionResp::Usage { .. } => {
+            // Usage info is handled separately
+            chat::Token::Empty
+        }
+    }
 }
 
 pub fn openrouter_to_buffer_token_deep_plan(
     token: openrouter::StreamCompletionResp,
 ) -> chat::Token {
-    todo!()
+    match token {
+        openrouter::StreamCompletionResp::ResponseToken(content) => chat::Token::DeepPlan(content),
+        openrouter::StreamCompletionResp::ReasoningToken(content) => chat::Token::Reasoning(content),
+        openrouter::StreamCompletionResp::ToolCall { .. } => chat::Token::Empty,
+        openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
+        openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
+    }
 }
 
 pub fn openrouter_to_buffer_token_deep_step(
     token: openrouter::StreamCompletionResp,
 ) -> chat::Token {
-    todo!()
+    match token {
+        openrouter::StreamCompletionResp::ResponseToken(content) => chat::Token::DeepStepToken(content),
+        openrouter::StreamCompletionResp::ReasoningToken(content) => chat::Token::DeepStepReasoning(content),
+        openrouter::StreamCompletionResp::ToolCall { name, args, id: _ } => {
+            chat::Token::DeepStepToolCall { name, arg: args }
+        }
+        openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
+        openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
+    }
 }
 
 pub fn openrouter_to_buffer_token_deep_report(
     token: openrouter::StreamCompletionResp,
 ) -> chat::Token {
-    todo!()
+    match token {
+        openrouter::StreamCompletionResp::ResponseToken(content) => chat::Token::DeepReport(content),
+        openrouter::StreamCompletionResp::ReasoningToken(content) => chat::Token::Reasoning(content),
+        openrouter::StreamCompletionResp::ToolCall { .. } => chat::Token::Empty,
+        openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
+        openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
+    }
 }
