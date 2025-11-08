@@ -13,6 +13,7 @@ use crate::chat::deep_prompt::{CompletedStep, ReportInputContext, StepInputConte
 use crate::chat::process::chat::ChatPipeline;
 use crate::chat::{CompletionContext, Context, Token};
 use crate::openrouter;
+use crate::utils::model::{ModelCapability, ModelChecker};
 
 /// Deep research agent that orchestrates multiple agents for comprehensive research
 pub struct DeepAgent<'a> {
@@ -65,6 +66,29 @@ impl<'a> DeepAgent<'a> {
             .as_ref()
             .map(|x| x.as_str())
             .unwrap_or_else(|| "en-US")
+    }
+
+    fn get_model_with_schema(
+        &self,
+        schema_name: &str,
+        schema: serde_json::Value,
+    ) -> openrouter::Model {
+        // Check if model supports JSON structured output
+        let supports_json = ModelConfig::from_toml(&self.completion_ctx.model.config)
+            .ok()
+            .map(|config| config.is_json_capable())
+            .unwrap_or(false);
+
+        if supports_json {
+            log::debug!("Model supports JSON, using structured output for {}", schema_name);
+            openrouter::Model::builder(self.model.id.clone())
+                .temperature(self.model.temperature.unwrap_or(0.7))
+                .json_schema(schema_name, schema)
+                .build()
+        } else {
+            log::debug!("Model does not support JSON, using regular output");
+            self.model.clone()
+        }
     }
     async fn enhance(&mut self) -> Result<()> {
         let original_prompt = self.completion_ctx.latest_user_message().unwrap_or("");
@@ -121,10 +145,65 @@ impl<'a> DeepAgent<'a> {
             openrouter::Message::User(self.enhanced_prompt.clone()),
         ];
 
+        // Define the JSON schema for the planner response
+        let plan_schema = serde_json::json!({
+            "type": "object",
+            "properties": {
+                "locale": {
+                    "type": "string",
+                    "description": "The detected language locale"
+                },
+                "has_enough_context": {
+                    "type": "boolean",
+                    "description": "Whether the current context is sufficient to answer the query"
+                },
+                "thought": {
+                    "type": "string",
+                    "description": "Internal reasoning about the plan"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Title of the research plan"
+                },
+                "steps": {
+                    "type": "array",
+                    "description": "List of research steps",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "need_search": {
+                                "type": "boolean",
+                                "description": "Whether this step requires web search"
+                            },
+                            "title": {
+                                "type": "string",
+                                "description": "Title of the step"
+                            },
+                            "description": {
+                                "type": "string",
+                                "description": "Detailed description of what to do in this step"
+                            },
+                            "step_type": {
+                                "type": "string",
+                                "enum": ["code", "research"],
+                                "description": "Type of step: code or research"
+                            }
+                        },
+                        "required": ["need_search", "title", "description", "step_type"],
+                        "additionalProperties": false
+                    }
+                }
+            },
+            "required": ["locale", "has_enough_context", "thought", "title", "steps"],
+            "additionalProperties": false
+        });
+
+        let model_with_schema = self.get_model_with_schema("planner_response", plan_schema);
+
         let mut stream = self
             .ctx
             .openrouter
-            .stream(messages, &self.model, vec![])
+            .stream(messages, &model_with_schema, vec![])
             .await?;
 
         let halt = self
