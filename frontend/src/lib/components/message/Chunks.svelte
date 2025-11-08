@@ -6,9 +6,7 @@
 	import Result from './buttons/Result.svelte';
 	import Tool from './buttons/Tool.svelte';
 	import ToolBox from './buttons/ToolBox.svelte';
-	import DeepPlan from './buttons/DeepPlan.svelte';
-	import DeepStep from './buttons/DeepStep.svelte';
-	import DeepReport from './buttons/DeepReport.svelte';
+	import DeepResearch from './buttons/DeepResearch.svelte';
 
 	let {
 		chunks,
@@ -26,11 +24,14 @@
 	{:else if kind == 'text'}
 		<Assistant content={chunk.c} {streaming} />
 	{:else if kind == 'annotation'}
-		<DeepPlan content={chunk.c} />
+		<!-- annotation was pruned on server-->
 	{:else if kind == 'tool_call'}
 		{@const toolCall = chunk.c}
 		{@const nextChunk = chunks[chunks.indexOf(chunk) + 1]}
-		{@const result = nextChunk && nextChunk.t == 'tool_result' && nextChunk.c.id == toolCall.id ? nextChunk.c.response : ''}
+		{@const result =
+			nextChunk && nextChunk.t == 'tool_result' && nextChunk.c.id == toolCall.id
+				? nextChunk.c.response
+				: ''}
 		<ToolBox toolname={toolCall.name}>
 			<Tool content={toolCall.arg} />
 			<Result content={result} />
@@ -38,6 +39,6 @@
 	{:else if kind == 'error'}
 		<ResponseError content={chunk.c} />
 	{:else if kind == 'deep_agent'}
-		<!-- Handle deep agent if needed -->
+		<DeepResearch plan={chunk.c} />
 	{/if}
 {/each}
