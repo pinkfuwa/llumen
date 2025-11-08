@@ -23,6 +23,42 @@ pub struct SseReq {
     pub id: i32,
 }
 
+/// Represents a message sent over the SSE (Server-Sent Events) stream in the chat API.
+///
+/// Each enum variant corresponds to a specific event or data payload that can be emitted to the
+/// client during a chat session. The enum is serialized in a tagged form with fields
+/// `{ "t": "<variant>", "c": <content> }` (snake_case variant names).
+///
+/// Concatenation semantics for assembling a complete assistant message:
+/// - Assistant-generated text is streamed as a sequence of `Token(String)` events.
+/// - The assistant's internal reasoning is streamed as `Reasoning(String)` events.
+/// - In "deep" research mode, higher-level plans and final reports are streamed as
+///   `DeepPlan(String)` and `DeepReport(String)` respectively, and individual deep-step
+///   outputs use `DeepStep*` variants.
+///
+/// To reconstruct a full, human-facing message the client SHOULD concatenate the textual
+/// chunks in the order they are received:
+/// - For normal assistant responses: append `Token` chunks (and optionally interleave
+///   `Reasoning` chunks if the client wants to surface reasoning). When a `Complete` event
+///   arrives it indicates the assistant finished producing the message and provides final
+///   metadata (message id, token count, cost, version).
+/// - For deep-research messages: concatenate `DeepPlan` (if any), `DeepStepToken` and
+///   `DeepStepReasoning` chunks as they arrive, and finally include `DeepReport` when it is
+///   emitted. `Complete` is still used to indicate the message is finalized and carries
+///   the canonical metadata for the completed message.
+///
+/// Other variants represent discrete non-textual events:
+/// - `Version(i32)`: an initial signal of the latest message/version id for the chat.
+/// - `ToolCall(SseRespToolCall)`: a tool invocation with name and args.
+/// - `ToolResult(SseRespToolResult)` / `DeepStepToolResult(SseRespToolResult)`: tool outputs.
+/// - `Start(SseStart)`: indicates the beginning of processing for a new assistant message.
+/// - `Title(String)`: an updated or generated title for the chat.
+/// - `Error(String)`: an error message to surface to the client.
+///
+/// Important: the client should treat text-bearing variants (`Token`, `Reasoning`,
+/// `DeepPlan`, `DeepStepToken`, `DeepStepReasoning`, `DeepReport`) as streamable fragments
+/// that together form the final content; `Complete` is the canonical signal that final
+/// assembly is complete and includes definitive metadata.
 #[derive(Debug, Serialize)]
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
@@ -31,7 +67,6 @@ pub enum SseResp {
     Token(String),
     Reasoning(String),
     ToolCall(SseRespToolCall),
-    ToolToken(String),
     ToolResult(SseRespToolResult),
     Complete(SseRespMessageComplete),
     Title(String),
@@ -41,27 +76,9 @@ pub enum SseResp {
     DeepStepStart(String),
     DeepStepToken(String),
     DeepStepReasoning(String),
+    DeepStepToolResult(SseRespToolResult),
     DeepStepToolCall(SseRespToolCall),
-    DeepStepToolToken(String),
     DeepReport(String),
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespVersion {
-    pub version: i32,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespToken {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespReasoning {
-    pub content: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -69,12 +86,6 @@ pub struct SseRespReasoning {
 pub struct SseRespToolCall {
     pub name: String,
     pub args: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespToolToken {
-    pub content: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -94,40 +105,10 @@ pub struct SseRespMessageComplete {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct SseRespTitle {
-    pub title: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespError {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
 pub struct SseStart {
     pub id: i32,
     pub user_msg_id: i32,
     pub version: i32,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespDeepPlan {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespDeepStep {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct SseRespDeepReport {
-    pub content: String,
 }
 
 pub async fn route(
@@ -171,8 +152,8 @@ pub async fn route(
         let event = match token {
             Token::Assistant(content) => SseResp::Token(content),
             Token::Reasoning(content) => SseResp::Reasoning(content),
-            Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
-            Token::ToolToken(content) => SseResp::ToolToken(content),
+            // Token::Tool { name, args, .. } => SseResp::ToolCall(SseRespToolCall { name, args }),
+            // Token::ToolToken(content) => SseResp::ToolToken(content),
             Token::Complete {
                 message_id,
                 token,
@@ -191,10 +172,7 @@ pub async fn route(
                 user_msg_id,
                 version: user_msg_id,
             }),
-            // Token::ResearchPlan(content) => SseResp::DeepPlan(SseRespDeepPlan { content }),
-            // Token::ResearchStep(content) => SseResp::DeepStep(SseRespDeepStep { content }),
-            // Token::ResearchReport(content) => SseResp::DeepReport(SseRespDeepReport { content }),
-            _ => return Ok(Event::default()),
+            _ => todo!(),
         };
         Ok(Event::default().json_data(event).unwrap())
     }));

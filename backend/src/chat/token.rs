@@ -1,33 +1,27 @@
-use crate::openrouter::{self, StreamCompletionResp};
-
 use super::channel::Mergeable;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-pub struct ToolCallInfo {
-    pub name: String,
-    pub id: String,
-    pub input: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output: Option<String>,
-}
 
 #[derive(Debug, Clone)]
 pub enum Token {
-    User(String),
     Assistant(String),
-    Tool {
+    ToolCall {
         name: String,
-        args: String,
-        id: String,
+        arg: String,
     },
-    ToolToken(String),
+    // result json of tool, tools are called sequentially
+    // For example, ToolCall(1)->ToolCall(2)->ToolCall(3), then first ToolResult are for first call
     ToolResult(String),
     Reasoning(String),
     Empty,
-    ResearchPlan(String),
-    ResearchStep(String),
-    ResearchReport(String),
+    DeepPlan(String),
+    DeepStepStart(String),
+    DeepStepReasoning(String),
+    DeepStepToolCall {
+        name: String,
+        arg: String,
+    },
+    DeepStepTokenResult(String),
+    DeepStepToken(String),
+    DeepReport(String),
     Error(String),
     Complete {
         message_id: i32,
@@ -52,19 +46,19 @@ impl Mergeable for Token {
                 s1.push_str(&s2);
                 None
             }
-            (Token::ToolToken(s1), Token::ToolToken(s2)) => {
+            (Token::DeepStepToken(s1), Token::DeepStepToken(s2)) => {
                 s1.push_str(&s2);
                 None
             }
-            (Token::ResearchPlan(s1), Token::ResearchPlan(s2)) => {
+            (Token::DeepStepReasoning(s1), Token::DeepStepReasoning(s2)) => {
                 s1.push_str(&s2);
                 None
             }
-            (Token::ResearchStep(s1), Token::ResearchStep(s2)) => {
+            (Token::DeepReport(s1), Token::DeepReport(s2)) => {
                 s1.push_str(&s2);
                 None
             }
-            (Token::ResearchReport(s1), Token::ResearchReport(s2)) => {
+            (Token::DeepPlan(s1), Token::DeepPlan(s2)) => {
                 s1.push_str(&s2);
                 None
             }
@@ -74,47 +68,35 @@ impl Mergeable for Token {
 
     fn len(&self) -> usize {
         match self {
-            Token::User(s)
-            | Token::Assistant(s)
-            | Token::ToolToken(s)
+            Token::Assistant(s)
             | Token::Reasoning(s)
-            | Token::ResearchPlan(s)
-            | Token::ResearchStep(s)
-            | Token::ResearchReport(s)
+            | Token::DeepStepToken(s)
+            | Token::DeepStepReasoning(s)
+            | Token::DeepReport(s)
             | Token::Error(s) => s.len(),
-            Token::Tool { .. }
-            | Token::ToolResult { .. }
+            Token::ToolResult(_)
             | Token::Empty
-            | Token::Start { .. }
+            | Token::DeepPlan(_)
+            | Token::DeepStepStart(_)
+            | Token::DeepStepTokenResult(_)
             | Token::Complete { .. }
-            | Token::Title { .. } => 1,
+            | Token::Title(_)
+            | Token::Start { .. }
+            | Token::ToolCall { .. }
+            | Token::DeepStepToolCall { .. } => 1,
         }
     }
 
     fn slice(&self, r: std::ops::Range<usize>) -> Option<Self> {
         match self {
-            Token::User(s) => Some(Token::User(s[r].to_string())),
             Token::Assistant(s) => Some(Token::Assistant(s[r].to_string())),
-            Token::ToolToken(s) => Some(Token::ToolToken(s[r].to_string())),
             Token::Reasoning(s) => Some(Token::Reasoning(s[r].to_string())),
-            Token::ResearchPlan(s) => Some(Token::ResearchPlan(s[r].to_string())),
-            Token::ResearchStep(s) => Some(Token::ResearchStep(s[r].to_string())),
-            Token::ResearchReport(s) => Some(Token::ResearchReport(s[r].to_string())),
+            Token::DeepStepToken(s) => Some(Token::DeepStepToken(s[r].to_string())),
+            Token::DeepStepReasoning(s) => Some(Token::DeepStepReasoning(s[r].to_string())),
+            Token::DeepReport(s) => Some(Token::DeepReport(s[r].to_string())),
             Token::Error(s) => Some(Token::Error(s[r].to_string())),
             x if r.start == 0 => Some(x.clone()),
             _ => None,
-        }
-    }
-}
-
-impl From<openrouter::StreamCompletionResp> for Token {
-    fn from(resp: openrouter::StreamCompletionResp) -> Self {
-        match resp {
-            StreamCompletionResp::ReasoningToken(reasoning) => Token::Reasoning(reasoning),
-            StreamCompletionResp::ResponseToken(content) => Token::Assistant(content),
-            StreamCompletionResp::ToolCall { name, args, id } => Token::Tool { name, args, id },
-            StreamCompletionResp::ToolToken(token) => Token::ToolToken(token),
-            _ => Token::Empty,
         }
     }
 }

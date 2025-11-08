@@ -2,7 +2,11 @@ use std::sync::Arc;
 
 use protocol::{AssistantChunk, FileMetadata, MessageInner};
 
-use crate::{chat::Context, openrouter, utils::blob::BlobDB};
+use crate::{
+    chat::{self, Context},
+    openrouter,
+    utils::blob::BlobDB,
+};
 use anyhow::Result;
 
 async fn load_files(
@@ -81,9 +85,31 @@ pub fn openrouter_stream_to_assitant_chunk(
                 }
             }
             openrouter::StreamCompletionResp::ToolCall { name, args, id } => todo!(),
-            openrouter::StreamCompletionResp::ToolToken(_) => todo!(),
             openrouter::StreamCompletionResp::Usage { price, token } => {}
+            openrouter::StreamCompletionResp::ToolToken { idx, args, name } => todo!(),
         }
     }
     result.into_iter()
+}
+
+pub fn openrouter_to_buffer_token(token: openrouter::StreamCompletionResp) -> chat::Token {
+    todo!()
+}
+
+pub fn openrouter_to_buffer_token_deep_plan(
+    token: openrouter::StreamCompletionResp,
+) -> chat::Token {
+    todo!()
+}
+
+pub fn openrouter_to_buffer_token_deep_step(
+    token: openrouter::StreamCompletionResp,
+) -> chat::Token {
+    todo!()
+}
+
+pub fn openrouter_to_buffer_token_deep_report(
+    token: openrouter::StreamCompletionResp,
+) -> chat::Token {
+    todo!()
 }

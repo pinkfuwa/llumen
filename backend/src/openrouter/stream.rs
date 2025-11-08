@@ -131,9 +131,13 @@ impl StreamCompletion {
                 }
             }
 
-            // Return combined tokens if any were collected
             if !tokens.is_empty() {
-                return StreamCompletionResp::ToolToken(tokens.join(""));
+                // leave empty string if no
+                return StreamCompletionResp::ToolToken {
+                    idx: todo!(),
+                    args: todo!(),
+                    name: todo!(),
+                };
             }
         }
 
@@ -318,7 +322,11 @@ pub enum StreamCompletionResp {
         args: String,
         id: String,
     },
-    ToolToken(String),
+    ToolToken {
+        idx: usize,
+        args: String,
+        name: String,
+    },
     Usage {
         price: f64,
         token: usize,
@@ -330,7 +338,6 @@ impl StreamCompletionResp {
         match self {
             StreamCompletionResp::ReasoningToken(s) => s.is_empty(),
             StreamCompletionResp::ResponseToken(s) => s.is_empty(),
-            StreamCompletionResp::ToolToken(s) => s.is_empty(),
             _ => false,
         }
     }

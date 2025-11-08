@@ -9,8 +9,7 @@ use tokio_stream::StreamExt;
 use crate::chat::context::CompletionContext;
 use crate::chat::context::Context;
 use crate::chat::context::StreamEndReason;
-use crate::chat::converter::db_message_to_openrouter;
-use crate::chat::converter::openrouter_stream_to_assitant_chunk;
+use crate::chat::converter::*;
 use crate::openrouter::{self, FinishReason};
 
 pub trait ChatInner {
@@ -80,7 +79,7 @@ impl<P: ChatInner> ChatPipeline<P> {
 
         let halt = self
             .completion_ctx
-            .put_stream((&mut res).map(|resp| resp.map(Into::into)))
+            .put_stream((&mut res).map(|resp| resp.map(openrouter_to_buffer_token)))
             .await?;
 
         if matches!(halt, StreamEndReason::Halt) {

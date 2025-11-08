@@ -114,6 +114,7 @@ impl CompletionContext {
             model::Entity::find_by_id(model_id).one(db),
             message::ActiveModel {
                 chat_id: ActiveValue::Set(chat_id),
+                inner: ActiveValue::Set(MessageInner::default()),
                 ..Default::default()
             }
             .insert(db)

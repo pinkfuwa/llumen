@@ -68,6 +68,12 @@ pub enum MessageInner {
     Assistant(Vec<AssistantChunk>),
 }
 
+impl Default for MessageInner {
+    fn default() -> Self {
+        MessageInner::Assistant(Vec::new())
+    }
+}
+
 impl AssistantChunk {
     pub fn as_deep(&mut self) -> Option<&mut Deep> {
         if let AssistantChunk::DeepAgent(deep) = self {
