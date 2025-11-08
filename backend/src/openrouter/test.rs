@@ -86,20 +86,9 @@ async fn tool_calls() {
         .await
         .unwrap();
 
-    let mut tool_call_found = false;
-
     while let Some(result) = stream.next().await {
         match result {
             Ok(resp) => match resp {
-                crate::openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
-                    println!(
-                        "Tool call received: name={}, args={}, id={}",
-                        name, args, id
-                    );
-                    tool_call_found = true;
-                    assert!(!name.is_empty(), "Tool name should not be empty");
-                    assert!(!id.is_empty(), "Tool call id should not be empty");
-                }
                 crate::openrouter::StreamCompletionResp::ToolToken { idx, args, name } => {
                     println!("Tool token at idx {}: name={}, args={}", idx, name, args);
                 }
@@ -120,10 +109,14 @@ async fn tool_calls() {
     println!("Stop reason: {:?}", result.stop_reason);
 
     // If a tool call was made, verify it's in the result
-    if tool_call_found {
+    if !result.toolcalls.is_empty() {
         assert!(
-            !result.toolcalls.is_empty(),
-            "Tool calls should be present in result"
+            !result.toolcalls[0].name.is_empty(),
+            "Tool name should not be empty"
+        );
+        assert!(
+            !result.toolcalls[0].id.is_empty(),
+            "Tool call id should not be empty"
         );
     }
 }
@@ -188,20 +181,9 @@ async fn parallel_tool_calls() {
         .await
         .unwrap();
 
-    let mut tool_calls_count = 0;
-
     while let Some(result) = stream.next().await {
         match result {
             Ok(resp) => match resp {
-                crate::openrouter::StreamCompletionResp::ToolCall { name, args, id } => {
-                    println!(
-                        "Tool call {}: name={}, args={}, id={}",
-                        tool_calls_count, name, args, id
-                    );
-                    tool_calls_count += 1;
-                    assert!(!name.is_empty(), "Tool name should not be empty");
-                    assert!(!id.is_empty(), "Tool call id should not be empty");
-                }
                 crate::openrouter::StreamCompletionResp::ToolToken { idx, args, name } => {
                     println!("Tool token at idx {}: name={}, args={}", idx, name, args);
                 }
