@@ -89,6 +89,13 @@ impl AssistantChunk {
             None
         }
     }
+    pub fn as_annotation(&self) -> Option<&String> {
+        if let AssistantChunk::Annotation(annotation) = self {
+            Some(annotation)
+        } else {
+            None
+        }
+    }
 }
 
 impl MessageInner {

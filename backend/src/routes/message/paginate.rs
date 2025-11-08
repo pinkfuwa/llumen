@@ -121,11 +121,19 @@ pub async fn route(
 
     let list = msgs
         .into_iter()
-        .map(|msg| MessagePaginateRespList {
-            id: msg.id,
-            token_count: msg.token_count,
-            price: msg.price,
-            inner: msg.inner,
+        .filter_map(|msg| {
+            let inner = msg.inner;
+            if let MessageInner::Assistant(chunks) = &inner {
+                if chunks.is_empty() {
+                    return None;
+                }
+            }
+            Some(MessagePaginateRespList {
+                id: msg.id,
+                token_count: msg.token_count,
+                price: msg.price,
+                inner,
+            })
         })
         .collect::<Vec<_>>();
 

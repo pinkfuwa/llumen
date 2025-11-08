@@ -13,19 +13,18 @@ import type {
 	MessagePaginateRespList,
 	SseReq,
 	SseResp,
-	AssistantChunk,
-	FileMetadata
+	FileMetadata,
+	SseRespToolResult
 } from './types';
 import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
 import { UpdateInfiniteQueryDataById } from './state';
 import { untrack } from 'svelte';
+import { dev } from '$app/environment';
 
 let version = $state(-1);
 
 let messages = $state<Array<MessagePaginateRespList & { stream?: boolean }>>([]);
-
-// let streaming = $derived(!!messages.at(0)?.stream);
 
 const Handlers: {
 	[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c'], chatId: number) => void;
@@ -54,15 +53,44 @@ const Handlers: {
 	},
 
 	token(token) {
-		handleTokenChunk('text', token);
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+
+		const lastChunk = firstMsg.inner.c.at(-1);
+
+		if (lastChunk && lastChunk.t === 'text') {
+			lastChunk.c += token as string;
+		} else {
+			firstMsg.inner.c.push({ t: 'text', c: token as string });
+		}
 	},
 
 	reasoning(reasoning) {
-		handleTokenChunk('reasoning', reasoning);
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+
+		const lastChunk = firstMsg.inner.c.at(-1);
+
+		if (lastChunk && lastChunk.t === 'reasoning') {
+			lastChunk.c += reasoning as string;
+		} else {
+			firstMsg.inner.c.push({ t: 'reasoning', c: reasoning as string });
+		}
 	},
 
 	tool_call(toolCall) {
-		handleTokenChunk('tool_call', toolCall);
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+
+		const toolCallObj = toolCall as { name: string; args: string };
+		firstMsg.inner.c.push({
+			t: 'tool_call',
+			c: {
+				id: Date.now().toString(),
+				name: toolCallObj.name,
+				arg: toolCallObj.args
+			}
+		});
 	},
 
 	tool_result(toolResult) {
@@ -99,35 +127,57 @@ const Handlers: {
 		}
 	},
 
-	deep_plan(plan) {
-		handleTokenChunk('annotation', plan);
-	},
+	deep_plan(plan) {},
 
-	deep_step_start(step) {
-		handleTokenChunk('annotation', step);
-	},
+	deep_step_start(step) {},
 
-	deep_step_token(step) {
-		handleTokenChunk('annotation', step);
-	},
+	deep_step_token(step) {},
 
 	deep_step_reasoning(step) {
-		handleTokenChunk('reasoning', step);
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+
+		const lastChunk = firstMsg.inner.c.at(-1);
+
+		if (lastChunk && lastChunk.t === 'reasoning') {
+			lastChunk.c += step as string;
+		} else {
+			firstMsg.inner.c.push({ t: 'reasoning', c: step as string });
+		}
 	},
 
 	deep_step_tool_call(toolCall) {
-		handleTokenChunk('tool_call', toolCall);
-	},
+		// Inline handleTokenChunk('tool_call', toolCall)
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
-	deep_step_tool_token(token) {
-		// Handle tool token if needed
+		const toolCallObj = toolCall as { name: string; args: string };
+		firstMsg.inner.c.push({
+			t: 'tool_call',
+			c: {
+				id: Date.now().toString(),
+				name: toolCallObj.name,
+				arg: toolCallObj.args
+			}
+		});
 	},
 
 	deep_report(report) {
-		handleTokenChunk('annotation', report);
-	},
+		// Inline handleTokenChunk('annotation', report)
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
-	tool_token(token) {}
+		const lastChunk = firstMsg.inner.c.at(-1);
+
+		if (lastChunk && lastChunk.t === 'annotation') {
+			lastChunk.c += report as string;
+		} else {
+			firstMsg.inner.c.push({ t: 'annotation', c: report as string });
+		}
+	},
+	deep_step_tool_result: function (data: SseRespToolResult, chatId: number): void {
+		throw new Error('Function not implemented.');
+	}
 };
 
 function startSSE(chatId: number, signal: AbortSignal) {
@@ -139,22 +189,17 @@ function startSSE(chatId: number, signal: AbortSignal) {
 		try {
 			for await (const event of stream) {
 				// Check if this connection has been aborted before processing the event
-				// This prevents duplicate chunks when a new connection starts while old one is still processing
-				if (signal.aborted) {
-					console.log('SSE connection aborted, stopping event processing');
-					break;
-				}
+				if (signal.aborted) break;
 
 				const data = event.data;
 
 				if (data != undefined && data.trim() != ':') {
 					const resJson = JSON.parse(data) as SseResp;
 					const error = getError(resJson);
-					if (error) {
-						dispatchError(error.error, error.reason);
-					} else {
-						const handler = Handlers[resJson.t] as (data: any, chatId: number) => void;
-						if (handler != undefined) handler(resJson.c, chatId);
+					if (error) dispatchError(error.error, error.reason);
+					else {
+						if (dev) console.log('resJson', resJson);
+						(Handlers[resJson.t] as (data: any, chatId: number) => void)(resJson.c, chatId);
 					}
 				} else {
 					console.log(data);
@@ -206,49 +251,6 @@ async function syncMessages(chatId: number) {
 	if (resp != undefined) {
 		let streamingMessage = messages.filter((m) => m.stream && !resp.list.some((x) => x.id == m.id));
 		messages = [...streamingMessage, ...resp.list];
-	}
-}
-
-function handleTokenChunk(
-	kind: AssistantChunk['t'],
-	content: string | { name: string; args: string }
-) {
-	const firstMsg = messages.at(0);
-	if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
-
-	const chunks = firstMsg.inner.c;
-	const lastChunk = chunks[chunks.length - 1];
-
-	if (kind === 'text') {
-		if (lastChunk && lastChunk.t === 'text') {
-			lastChunk.c += content as string;
-		} else {
-			chunks.push({ t: 'text', c: content as string });
-		}
-	} else if (kind === 'reasoning') {
-		if (lastChunk && lastChunk.t === 'reasoning') {
-			lastChunk.c += content as string;
-		} else {
-			chunks.push({ t: 'reasoning', c: content as string });
-		}
-	} else if (kind === 'annotation') {
-		if (lastChunk && lastChunk.t === 'annotation') {
-			lastChunk.c += content as string;
-		} else {
-			chunks.push({ t: 'annotation', c: content as string });
-		}
-	} else if (kind === 'tool_call') {
-		const toolCall = content as { name: string; args: string };
-		chunks.push({
-			t: 'tool_call',
-			c: {
-				id: Date.now().toString(),
-				name: toolCall.name,
-				arg: toolCall.args
-			}
-		});
-	} else if (kind === 'error') {
-		chunks.push({ t: 'error', c: content as string });
 	}
 }
 
