@@ -103,7 +103,7 @@ impl StreamCompletion {
 
         // Handle tool calls - support parallel tool calls
         if let Some(tool_calls) = delta.tool_calls {
-            let mut tokens = Vec::new();
+            let mut last_tool_token: Option<(usize, String, String)> = None;
 
             for call in tool_calls {
                 let index = call.index as usize;
@@ -118,26 +118,29 @@ impl StreamCompletion {
                     self.toolcalls[index].id = id;
                 }
 
+                let mut name_token = String::new();
+                let mut args_token = String::new();
+
                 // Accumulate tool name tokens
                 if let Some(name) = call.function.name {
                     self.toolcalls[index].name.push_str(&name);
-                    tokens.push(name);
+                    name_token = name;
                 }
 
                 // Accumulate tool arguments tokens
                 if let Some(args) = call.function.arguments {
                     self.toolcalls[index].args.push_str(&args);
-                    tokens.push(args);
+                    args_token = args;
+                }
+
+                // Track the last non-empty token
+                if !name_token.is_empty() || !args_token.is_empty() {
+                    last_tool_token = Some((index, name_token, args_token));
                 }
             }
 
-            if !tokens.is_empty() {
-                // leave empty string if no
-                return StreamCompletionResp::ToolToken {
-                    idx: todo!(),
-                    args: todo!(),
-                    name: todo!(),
-                };
+            if let Some((idx, name, args)) = last_tool_token {
+                return StreamCompletionResp::ToolToken { idx, name, args };
             }
         }
 
