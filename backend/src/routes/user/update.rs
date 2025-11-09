@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{UserPreference, prelude::*};
+use entity::prelude::*;
+use protocol::UserPreference;
 use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;

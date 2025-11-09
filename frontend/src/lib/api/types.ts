@@ -87,6 +87,49 @@ export interface ChatUpdateResp {
 	wrote: boolean;
 }
 
+export enum StepKind {
+	Code = 'code',
+	Research = 'research'
+}
+
+export type AssistantChunk =
+	| { t: 'annotation'; c: string }
+	| { t: 'text'; c: string }
+	| { t: 'reasoning'; c: string }
+	| {
+			t: 'tool_call';
+			c: {
+				id: string;
+				arg: string;
+				name: string;
+			};
+	  }
+	| {
+			t: 'tool_result';
+			c: {
+				id: string;
+				response: string;
+			};
+	  }
+	| { t: 'error'; c: string }
+	| { t: 'deep_agent'; c: Deep };
+
+export interface Step {
+	need_search: boolean;
+	title: string;
+	description: string;
+	kind: StepKind;
+	progress: AssistantChunk[];
+}
+
+export interface Deep {
+	locale: string;
+	has_enough_context: boolean;
+	thought: string;
+	title: string;
+	steps: Step[];
+}
+
 export enum ErrorKind {
 	Unauthorized = 'unauthorized',
 	MalformedToken = 'malformed_token',
@@ -101,6 +144,11 @@ export enum ErrorKind {
 export interface Error {
 	error: ErrorKind;
 	reason: string;
+}
+
+export interface FileMetadata {
+	name: string;
+	id: number;
 }
 
 export interface FileUploadResp {
@@ -164,56 +212,25 @@ export interface MessagePaginateReqRange {
 	lower: number;
 }
 
-export enum MessagePaginateRespRole {
-	User = 'user',
-	Assistant = 'assistant'
-}
-
-export type MessagePaginateRespChunkKind =
-	| { t: 'text'; c: MessagePaginateRespChunkKindText }
-	| { t: 'file'; c: MessagePaginateRespChunkKindFile }
-	| { t: 'reasoning'; c: MessagePaginateRespChunkKindReasoning }
-	| { t: 'tool_call'; c: MessagePaginateRespChunkKindToolCall }
-	| { t: 'error'; c: MessagePaginateRespChunkKindError };
-
-export interface MessagePaginateRespChunk {
-	id: number;
-	kind: MessagePaginateRespChunkKind;
-}
+export type MessageInner =
+	| {
+			t: 'user';
+			c: {
+				text: string;
+				files: FileMetadata[];
+			};
+	  }
+	| { t: 'assistant'; c: AssistantChunk[] };
 
 export interface MessagePaginateRespList {
 	id: number;
-	role: MessagePaginateRespRole;
-	chunks: MessagePaginateRespChunk[];
-	token: number;
+	token_count: number;
 	price: number;
+	inner: MessageInner;
 }
 
 export interface MessagePaginateResp {
 	list: MessagePaginateRespList[];
-}
-
-export interface MessagePaginateRespChunkKindError {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindFile {
-	name: string;
-	id: number;
-}
-
-export interface MessagePaginateRespChunkKindReasoning {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindText {
-	content: string;
-}
-
-export interface MessagePaginateRespChunkKindToolCall {
-	name: string;
-	args: string;
-	content: string;
 }
 
 export interface ModelCheckReq {
@@ -293,28 +310,11 @@ export interface SseReq {
 	id: number;
 }
 
-export interface SseRespError {
-	content: string;
-}
-
 export interface SseRespMessageComplete {
 	id: number;
-	chunk_ids: number[];
 	token_count: number;
 	cost: number;
 	version: number;
-}
-
-export interface SseRespReasoning {
-	content: string;
-}
-
-export interface SseRespTitle {
-	title: string;
-}
-
-export interface SseRespToken {
-	content: string;
 }
 
 export interface SseRespToolCall {
@@ -324,10 +324,6 @@ export interface SseRespToolCall {
 
 export interface SseRespToolResult {
 	content: string;
-}
-
-export interface SseRespVersion {
-	version: number;
 }
 
 export interface SseStart {
@@ -400,13 +396,58 @@ export type MessagePaginateReq =
 	| { t: 'limit'; c: MessagePaginateReqLimit }
 	| { t: 'range'; c: MessagePaginateReqRange };
 
+/**
+ * Represents a message sent over the SSE (Server-Sent Events) stream in the chat API.
+ *
+ * Each enum variant corresponds to a specific event or data payload that can be emitted to the
+ * client during a chat session. The enum is serialized in a tagged form with fields
+ * `{ "t": "<variant>", "c": <content> }` (snake_case variant names).
+ *
+ * Concatenation semantics for assembling a complete assistant message:
+ * - Assistant-generated text is streamed as a sequence of `Token(String)` events.
+ * - The assistant's internal reasoning is streamed as `Reasoning(String)` events.
+ * - In "deep" research mode, higher-level plans and final reports are streamed as
+ * `DeepPlan(String)` and `DeepReport(String)` respectively, and individual deep-step
+ * outputs use `DeepStep*` variants.
+ *
+ * To reconstruct a full, human-facing message the client SHOULD concatenate the textual
+ * chunks in the order they are received:
+ * - For normal assistant responses: append `Token` chunks (and optionally interleave
+ * `Reasoning` chunks if the client wants to surface reasoning). When a `Complete` event
+ * arrives it indicates the assistant finished producing the message and provides final
+ * metadata (message id, token count, cost, version).
+ * - For deep-research messages: concatenate `DeepPlan` (if any), `DeepStepToken` and
+ * `DeepStepReasoning` chunks as they arrive, and finally include `DeepReport` when it is
+ * emitted. `Complete` is still used to indicate the message is finalized and carries
+ * the canonical metadata for the completed message.
+ *
+ * Other variants represent discrete non-textual events:
+ * - `Version(i32)`: an initial signal of the latest message/version id for the chat.
+ * - `ToolCall(SseRespToolCall)`: a tool invocation with name and args.
+ * - `ToolResult(SseRespToolResult)` / `DeepStepToolResult(SseRespToolResult)`: tool outputs.
+ * - `Start(SseStart)`: indicates the beginning of processing for a new assistant message.
+ * - `Title(String)`: an updated or generated title for the chat.
+ * - `Error(String)`: an error message to surface to the client.
+ *
+ * Important: the client should treat text-bearing variants (`Token`, `Reasoning`,
+ * `DeepPlan`, `DeepStepToken`, `DeepStepReasoning`, `DeepReport`) as streamable fragments
+ * that together form the final content; `Complete` is the canonical signal that final
+ * assembly is complete and includes definitive metadata.
+ */
 export type SseResp =
-	| { t: 'version'; c: SseRespVersion }
-	| { t: 'token'; c: SseRespToken }
-	| { t: 'reasoning'; c: SseRespReasoning }
+	| { t: 'version'; c: number }
+	| { t: 'token'; c: string }
+	| { t: 'reasoning'; c: string }
 	| { t: 'tool_call'; c: SseRespToolCall }
 	| { t: 'tool_result'; c: SseRespToolResult }
 	| { t: 'complete'; c: SseRespMessageComplete }
-	| { t: 'title'; c: SseRespTitle }
-	| { t: 'error'; c: SseRespError }
-	| { t: 'start'; c: SseStart };
+	| { t: 'title'; c: string }
+	| { t: 'error'; c: string }
+	| { t: 'start'; c: SseStart }
+	| { t: 'deep_plan'; c: string }
+	| { t: 'deep_step_start'; c: number }
+	| { t: 'deep_step_token'; c: string }
+	| { t: 'deep_step_reasoning'; c: string }
+	| { t: 'deep_step_tool_result'; c: SseRespToolResult }
+	| { t: 'deep_step_tool_call'; c: SseRespToolCall }
+	| { t: 'deep_report'; c: string };

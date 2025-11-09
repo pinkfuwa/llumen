@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{ChunkKind, MessageKind, chunk, patch::FileHandle};
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, TransactionTrait};
+use protocol::{FileMetadata, MessageInner};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use serde::{Deserialize, Serialize};
-use serde_json;
 use typeshare::typeshare;
 
 use crate::{
     AppState,
-    chat::{Normal, Pipeline, Search},
+    chat::{Deep, Normal, Pipeline, Search},
     errors::{ErrorKind, JsonResult, WithKind},
     middlewares::auth::UserId,
     utils::chat::ChatMode,
@@ -44,41 +43,26 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageCreateReq>,
 ) -> JsonResult<MessageCreateResp> {
-    let txn = app.conn.begin().await.raw_kind(ErrorKind::Internal)?;
-    let user_msg = entity::message::ActiveModel {
-        chat_id: Set(req.chat_id),
-        kind: Set(MessageKind::User),
-        ..Default::default()
-    }
-    .insert(&txn)
-    .await
-    .raw_kind(ErrorKind::Internal)?;
-
-    let mut chunks = vec![chunk::ActiveModel {
-        message_id: Set(user_msg.id),
-        content: Set(req.text),
-        kind: Set(ChunkKind::Text),
-        ..Default::default()
-    }];
-    chunks.extend(req.files.into_iter().map(|f| {
-        let file_handle = FileHandle {
+    let files = req
+        .files
+        .into_iter()
+        .map(|f| FileMetadata {
             name: f.name,
             id: f.id,
-        };
-        chunk::ActiveModel {
-            message_id: Set(user_msg.id),
-            content: Set(serde_json::to_string(&file_handle).unwrap()),
-            kind: Set(ChunkKind::File),
-            ..Default::default()
-        }
-    }));
+        })
+        .collect::<Vec<_>>();
 
-    chunk::Entity::insert_many(chunks)
-        .exec(&txn)
-        .await
-        .raw_kind(ErrorKind::Internal)?;
-
-    txn.commit().await.raw_kind(ErrorKind::Internal)?;
+    let user_msg = entity::message::ActiveModel {
+        chat_id: Set(req.chat_id),
+        inner: Set(MessageInner::User {
+            text: req.text,
+            files,
+        }),
+        ..Default::default()
+    }
+    .insert(&app.conn)
+    .await
+    .raw_kind(ErrorKind::Internal)?;
 
     let mut completion_ctx = app
         .processor
@@ -93,6 +77,7 @@ pub async fn route(
 
         match req.mode {
             ChatMode::Search => Search::process(app.processor.clone(), completion_ctx).await?,
+            ChatMode::Research => Deep::process(app.processor.clone(), completion_ctx).await?,
             _ => Normal::process(app.processor.clone(), completion_ctx).await?,
         };
 

@@ -2,11 +2,17 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::model;
+use protocol::ModelConfig;
 use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*, middlewares::auth::UserId};
+use crate::{
+    AppState,
+    errors::*,
+    middlewares::auth::UserId,
+    utils::model::{ModelCapability, ModelChecker},
+};
 
 #[derive(Debug, Serialize)]
 #[typeshare]
@@ -40,7 +46,8 @@ pub async fn route(
     let list = models
         .into_iter()
         .filter_map(|m| {
-            let config = m.get_config()?;
+            let config =
+                <ModelConfig as ModelChecker>::from_toml(&m.config).expect("corruptted database");
             Some(ModelList {
                 id: m.id,
                 image_input: config.is_image_capable(),

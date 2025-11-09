@@ -25,7 +25,41 @@ pub struct CompletionReq {
     pub plugins: Option<Vec<Plugin>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub usage: Option<UsageReq>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<ResponseFormat>,
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ResponseFormat {
+    pub r#type: String,
+    pub json_schema: serde_json::Value,
+}
+// "response_format": {
+//   "type": "json_schema",
+//   "json_schema": {
+//     "name": "weather",
+//     "strict": true,
+//     "schema": {
+//       "type": "object",
+//       "properties": {
+//         "location": {
+//           "type": "string",
+//           "description": "City or location name"
+//         },
+//         "temperature": {
+//           "type": "number",
+//           "description": "Temperature in Celsius"
+//         },
+//         "conditions": {
+//           "type": "string",
+//           "description": "Weather conditions description"
+//         }
+//       },
+//       "required": ["location", "temperature", "conditions"],
+//       "additionalProperties": false
+//     }
+//   }
+// }
 
 impl Default for CompletionReq {
     fn default() -> Self {
@@ -45,6 +79,7 @@ impl Default for CompletionReq {
                 },
             }]),
             usage: Some(UsageReq { include: true }),
+            response_format: None,
         }
     }
 }
@@ -292,6 +327,7 @@ pub enum FinishReason {
     Stop,
     Length,
     ToolCalls,
+    Error,
 }
 
 #[derive(Debug, Clone, Deserialize)]

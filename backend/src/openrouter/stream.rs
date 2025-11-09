@@ -22,7 +22,7 @@ pub struct Usage {
 
 pub struct StreamCompletion {
     source: EventSource,
-    toolcall: Option<ToolCall>,
+    toolcalls: Vec<ToolCall>,
     usage: Usage,
     stop_reason: Option<raw::FinishReason>,
     responses: Vec<StreamCompletionResp>,
@@ -31,11 +31,23 @@ pub struct StreamCompletion {
 }
 
 pub struct StreamResult {
-    pub toolcall: Option<ToolCall>,
+    pub toolcalls: Vec<ToolCall>,
     pub usage: Usage,
     pub stop_reason: raw::FinishReason,
     pub responses: Vec<StreamCompletionResp>,
     pub annotations: Option<serde_json::Value>,
+}
+
+impl StreamResult {
+    pub fn get_text(&self) -> String {
+        self.responses
+            .iter()
+            .filter_map(|t| match t {
+                StreamCompletionResp::ResponseToken(token) => Some(token.clone()),
+                _ => None,
+            })
+            .collect()
+    }
 }
 
 impl StreamCompletion {
@@ -56,7 +68,7 @@ impl StreamCompletion {
         match EventSource::new(builder) {
             Ok(source) => Ok(Self {
                 source,
-                toolcall: None,
+                toolcalls: Vec::new(),
                 usage: Usage::default(),
                 stop_reason: None,
                 responses: vec![],
@@ -89,32 +101,61 @@ impl StreamCompletion {
             return StreamCompletionResp::ReasoningToken(reasoning);
         }
 
-        if let Some(call) = delta.tool_calls.map(|x| x.into_iter().next()).flatten() {
-            if let Some(id) = call.id {
-                self.toolcall = Some(ToolCall {
-                    id,
-                    ..Default::default()
-                });
-            }
-            if let Some(state) = &mut self.toolcall {
+        // Handle tool calls - support parallel tool calls
+        if let Some(tool_calls) = delta.tool_calls {
+            let mut last_tool_token: Option<(usize, String, String)> = None;
+
+            for call in tool_calls {
+                let index = call.index as usize;
+
+                // Ensure we have enough space for this tool call
+                if self.toolcalls.len() <= index {
+                    self.toolcalls.resize(index + 1, ToolCall::default());
+                }
+
+                // Initialize with id if present (first chunk for this tool call)
+                if let Some(id) = call.id {
+                    self.toolcalls[index].id = id;
+                }
+
+                let mut name_token = String::new();
+                let mut args_token = String::new();
+
+                // Accumulate tool name tokens
                 if let Some(name) = call.function.name {
-                    state.name.push_str(&name);
+                    self.toolcalls[index].name.push_str(&name);
+                    name_token = name;
                 }
+
+                // Accumulate tool arguments tokens
                 if let Some(args) = call.function.arguments {
-                    state.args.push_str(&args);
+                    self.toolcalls[index].args.push_str(&args);
+                    args_token = args;
                 }
+
+                // Track the last non-empty token
+                if !name_token.is_empty() || !args_token.is_empty() {
+                    last_tool_token = Some((index, name_token, args_token));
+                }
+            }
+
+            if let Some((idx, name, args)) = last_tool_token {
+                return StreamCompletionResp::ToolToken { idx, name, args };
             }
         }
 
         if let Some(reason) = choice.finish_reason {
             self.stop_reason = Some(reason.clone());
             return match reason {
-                raw::FinishReason::Stop => StreamCompletionResp::ResponseToken(content),
-                raw::FinishReason::Length => StreamCompletionResp::ResponseToken(content),
-                raw::FinishReason::ToolCalls => match self.toolcall.clone() {
-                    Some(call) => call.into(),
-                    None => StreamCompletionResp::ResponseToken(content),
-                },
+                raw::FinishReason::Stop | raw::FinishReason::Length | raw::FinishReason::Error => {
+                    StreamCompletionResp::ResponseToken(content)
+                }
+                raw::FinishReason::ToolCalls => {
+                    // Return first tool call when finish_reason is ToolCalls
+                    // The full list is available in get_result()
+
+                    StreamCompletionResp::ResponseToken(content)
+                }
             };
         }
         StreamCompletionResp::ResponseToken(content)
@@ -141,7 +182,7 @@ impl StreamCompletion {
                 expect.take();
             }
             (Some(x), expect) => {
-                if x != expect.as_ref().unwrap().as_str() {
+                if !x.starts_with(expect.as_ref().unwrap()) {
                     log::warn!(
                         "Model ID mismatch: expected {}, got {}",
                         expect.take().unwrap(),
@@ -224,7 +265,7 @@ impl StreamCompletion {
         let stop_reason = self.stop_reason.take().unwrap_or(raw::FinishReason::Stop);
 
         StreamResult {
-            toolcall: std::mem::take(&mut self.toolcall),
+            toolcalls: std::mem::take(&mut self.toolcalls),
             usage: self.usage.clone(),
             stop_reason,
             responses: std::mem::take(&mut self.responses)
@@ -272,12 +313,11 @@ impl Drop for StreamCompletion {
 pub enum StreamCompletionResp {
     ReasoningToken(String),
     ResponseToken(String),
-    ToolCall {
-        name: String,
+    ToolToken {
+        idx: usize,
         args: String,
-        id: String,
+        name: String,
     },
-    ToolToken(String),
     Usage {
         price: f64,
         token: usize,
@@ -290,16 +330,6 @@ impl StreamCompletionResp {
             StreamCompletionResp::ReasoningToken(s) => s.is_empty(),
             StreamCompletionResp::ResponseToken(s) => s.is_empty(),
             _ => false,
-        }
-    }
-}
-
-impl From<ToolCall> for StreamCompletionResp {
-    fn from(value: ToolCall) -> Self {
-        StreamCompletionResp::ToolCall {
-            name: value.name,
-            args: value.args,
-            id: value.id,
         }
     }
 }

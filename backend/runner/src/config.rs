@@ -45,6 +45,7 @@ impl LuaRunnerConfig {
     pub fn sandboxed() -> Self {
         Self {
             enable_std_lib: true,
+            sandboxed: true,
             ..Default::default()
         }
     }

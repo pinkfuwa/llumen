@@ -1,20 +1,21 @@
 use std::sync::Arc;
 
+use ::entity::*;
 use anyhow::Context as _;
-use entity::{ChunkKind, MessageKind, chat, chunk, message, model, user};
-use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
-    IntoActiveModel, ModelTrait, QueryFilter,
-};
+use sea_orm::*;
 use tokio::join;
 use tokio_stream::{Stream, StreamExt};
 
+use super::tools::{CrawlTool, LuaReplTool, WebSearchTool};
 use super::{
     channel::{self, Publisher},
     prompt::Prompt,
     token::Token,
 };
+use crate::chat::deep_prompt::DeepPrompt;
+use crate::utils::model::ModelChecker;
 use crate::{chat::prompt::PromptKind, openrouter, utils::blob::BlobDB};
+use protocol::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum StreamEndReason {
@@ -30,6 +31,10 @@ pub struct Context {
     pub(super) channel: Arc<channel::Context<Token>>,
     pub(super) prompt: Prompt,
     pub(super) blob: Arc<BlobDB>,
+    pub(super) web_search_tool: Arc<WebSearchTool>,
+    pub(super) crawl_tool: Arc<CrawlTool>,
+    pub(super) lua_repl_tool: Arc<LuaReplTool>,
+    pub(super) deep_prompt: Arc<DeepPrompt>,
 }
 
 impl Context {
@@ -45,6 +50,10 @@ impl Context {
             channel: Arc::new(channel::Context::new()),
             prompt: Prompt::new(),
             blob,
+            web_search_tool: Arc::new(WebSearchTool::new()),
+            crawl_tool: Arc::new(CrawlTool::new()),
+            lua_repl_tool: Arc::new(LuaReplTool::new()),
+            deep_prompt: Arc::new(DeepPrompt::new()),
         })
     }
 
@@ -67,16 +76,6 @@ impl Context {
     }
 }
 
-/// Creates a new error chunk with the given message.
-fn error_chunk(msg: String, message_id: i32) -> chunk::ActiveModel {
-    chunk::ActiveModel {
-        message_id: ActiveValue::Set(message_id),
-        content: ActiveValue::Set(msg),
-        kind: ActiveValue::Set(ChunkKind::Error),
-        ..Default::default()
-    }
-}
-
 /// The context for a single completion request.
 ///
 /// It holds the state for the completion, including the model, chat, message, chunks, tokens, and user.
@@ -86,11 +85,9 @@ pub struct CompletionContext {
     /// The chat the completion belongs to.
     pub(super) chat: chat::ActiveModel,
     /// The message the completion belongs to.
-    pub(super) message: message::ActiveModel,
-    /// New chunks generated during the completion.
-    pub(super) new_chunks: Vec<chunk::ActiveModel>,
+    pub(super) message: message::Model,
     /// The previous chunks in the chat.
-    pub(super) messages_with_chunks: Vec<(message::Model, Vec<chunk::Model>)>,
+    pub(super) messages: Vec<message::Model>,
     /// The user who initiated the completion.
     pub(super) user: user::Model,
     /// The publisher for the completion's tokens.
@@ -109,31 +106,27 @@ impl CompletionContext {
     ) -> Result<Self, anyhow::Error> {
         let db = &ctx.db;
 
-        let (user, chat, model) = join!(
+        let (user, chat_with_msgs, model, msg) = join!(
             user::Entity::find_by_id(user_id).one(db),
             chat::Entity::find_by_id(chat_id)
-                .filter(chat::Column::OwnerId.eq(user_id))
-                .one(db),
-            model::Entity::find_by_id(model_id).one(db)
+                .find_with_related(message::Entity)
+                .all(db),
+            model::Entity::find_by_id(model_id).one(db),
+            message::ActiveModel {
+                chat_id: ActiveValue::Set(chat_id),
+                inner: ActiveValue::Set(MessageInner::default()),
+                ..Default::default()
+            }
+            .insert(db)
         );
 
+        let msg = msg?;
         let user = user?.ok_or_else(|| anyhow::anyhow!("User not found"))?;
-        let chat = chat?.ok_or_else(|| anyhow::anyhow!("Chat not found"))?;
+        let (chat, msgs) = chat_with_msgs?
+            .into_iter()
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Chat not found"))?;
         let model = model?.ok_or_else(|| anyhow::anyhow!("Model not found"))?;
-
-        let messages_with_chunks = chat
-            .find_related(message::Entity)
-            .find_with_related(chunk::Entity)
-            .all(db)
-            .await?;
-
-        let message = message::ActiveModel {
-            chat_id: ActiveValue::Set(chat.id),
-            kind: ActiveValue::Set(MessageKind::Assistant),
-            ..Default::default()
-        }
-        .insert(db)
-        .await?;
 
         let mut publisher = ctx
             .channel
@@ -141,17 +134,16 @@ impl CompletionContext {
             .publish(chat_id)
             .context("only one publisher is allow at same time")?;
 
-        let user_msg_id = messages_with_chunks
+        let user_msg_id = msgs
             .iter()
-            .filter(|(m, _)| m.kind == MessageKind::User)
+            .filter(|m| matches!(m.inner, MessageInner::User { .. }))
             .last()
             .context("no user message found")?
-            .0
             .id;
 
         if publisher
             .publish(Token::Start {
-                id: message.id,
+                id: msg.id,
                 user_msg_id,
             })
             .is_err()
@@ -162,20 +154,19 @@ impl CompletionContext {
         Ok(Self {
             model,
             chat: chat.into_active_model(),
-            message: message.into_active_model(),
-            messages_with_chunks,
+            message: msg,
+            messages: msgs,
             user,
             publisher,
-            new_chunks: Vec::new(),
             ctx,
         })
     }
 
-    pub fn set_mode(&mut self, mode: entity::ModeKind) {
+    pub fn set_mode(&mut self, mode: ModeKind) {
         self.chat.mode = ActiveValue::Set(mode);
     }
 
-    pub fn get_mode(&self) -> entity::ModeKind {
+    pub fn get_mode(&self) -> ModeKind {
         self.chat.mode.clone().unwrap()
     }
 
@@ -183,8 +174,9 @@ impl CompletionContext {
         self.chat.id.clone().unwrap()
     }
 
+    /// get user assistant id
     pub fn get_message_id(&self) -> i32 {
-        self.message.id.clone().unwrap()
+        self.message.id
     }
 
     /// Adds a token to the completion context and publishes it to the channel.
@@ -214,11 +206,8 @@ impl CompletionContext {
     }
 
     pub fn update_usage(&mut self, price: f32, token_count: i32) {
-        let new_price = self.message.price.take().unwrap_or(0.0) + price;
-        self.message.price = ActiveValue::Set(new_price);
-
-        let new_token = self.message.token_count.take().unwrap_or(0) + token_count;
-        self.message.token_count = ActiveValue::Set(new_token);
+        self.message.price += price;
+        self.message.token_count += token_count;
     }
 
     /// Generates a title for the chat if it doesn't have one.
@@ -231,43 +220,35 @@ impl CompletionContext {
         }
         let system_prompt = self.ctx.prompt.render(PromptKind::TitleGen, self)?;
 
-        let mut message = vec![openrouter::Message::System(system_prompt)];
+        let mut messages = vec![openrouter::Message::System(system_prompt)];
 
-        message.extend(self.messages_with_chunks.iter().filter_map(|(m, chunks)| {
-            // We ignore tool call or such, this is intentional.
-            let text = chunks
-                .iter()
-                .filter_map(|c| match c.kind {
-                    ChunkKind::Text => Some(c.content.as_str()),
-                    ChunkKind::Report => Some(c.content.as_str()),
-                    _ => None,
-                })
-                .collect::<String>();
-
-            match m.kind {
-                MessageKind::Hidden => None,
-                MessageKind::User => Some(openrouter::Message::User(
-                    text.chars().take(500).collect::<String>(),
-                )),
-                MessageKind::Assistant | MessageKind::DeepResearch => Some(
-                    openrouter::Message::Assistant(text.chars().take(1000).collect::<String>()),
-                ),
+        self.messages.iter().for_each(|m| match &m.inner {
+            MessageInner::User { text, .. } => {
+                messages.push(openrouter::Message::User(text.clone()));
             }
-        }));
-
-        self.new_chunks.iter().for_each(|c| {
-            if let ChunkKind::Text | ChunkKind::Report = c.kind.clone().unwrap() {
-                if let Some(text) = c.content.try_as_ref() {
-                    message.push(openrouter::Message::Assistant(
-                        text.chars().take(1000).collect::<String>(),
-                    ));
+            MessageInner::Assistant(assistant_chunks) => {
+                // Concatenate all text chunks for the title generation
+                let text = assistant_chunks
+                    .iter()
+                    .filter_map(|chunk| {
+                        if let AssistantChunk::Text(t) = chunk {
+                            Some(t.as_str())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("");
+                if !text.is_empty() {
+                    messages.push(openrouter::Message::Assistant(text));
                 }
             }
         });
 
-        let model = self.model.get_config().context("invalid config")?;
+        let model = <ModelConfig as ModelChecker>::from_toml(&self.model.config)
+            .context("invalid config")?;
 
-        let completion = self.ctx.openrouter.complete(message, model.into()).await?;
+        let completion = self.ctx.openrouter.complete(messages, model.into()).await?;
 
         self.update_usage(completion.price as f32, completion.token as i32);
 
@@ -299,72 +280,31 @@ impl CompletionContext {
         Ok(())
     }
 
-    pub fn add_error_chunk(&mut self, msg: String) {
-        self.new_chunks
-            .push(error_chunk(msg.clone(), self.message.id.clone().unwrap()));
+    pub fn add_error(&mut self, msg: String) {
+        self.message.inner.add_error(msg.clone());
         self.add_token_force(Token::Error(msg));
     }
 
     /// Saves the completion to the database.
-    pub async fn save<E>(mut self, err: Option<E>) -> Result<(), anyhow::Error>
-    where
-        E: ToString,
-    {
-        let message_id = self.message.id.clone().unwrap();
-
-        if let Some(err) = err {
-            let err = err.to_string();
-            self.add_error_chunk(err);
-        }
+    pub async fn save(mut self) -> Result<(), anyhow::Error> {
+        let message_id = self.message.id;
 
         if let Err(err) = self.generate_title().await {
-            self.add_error_chunk(err.to_string());
+            self.add_error(err.to_string());
         }
 
-        if self.new_chunks.is_empty() {
-            self.add_error_chunk("No content generated, it's likely a bug of llumen.\nReport Here: https://github.com/pinkfuwa/llumen/issues/new".to_string());
+        if self.message.inner.is_empty() {
+            self.add_error("No content generated, it's likely a bug of llumen.\nReport Here: https://github.com/pinkfuwa/llumen/issues/new".to_string());
         }
-
-        let new_chunks = std::mem::take(&mut self.new_chunks);
-
-        let new_chunks = new_chunks
-            .into_iter()
-            .map(|mut c| {
-                c.message_id = ActiveValue::Set(message_id);
-                c
-            })
-            .collect::<Vec<_>>();
 
         let db = &self.ctx.db;
 
-        let chunks_affected = new_chunks.len();
-
-        let last_insert_id = chunk::Entity::insert_many(new_chunks)
-            .exec(db)
-            .await?
-            .last_insert_id;
-        let chunk_ids =
-            (last_insert_id - chunks_affected as i32 + 1..=last_insert_id).collect::<Vec<_>>();
-
-        let token_count = self
-            .message
-            .token_count
-            .clone()
-            .try_as_ref()
-            .copied()
-            .unwrap_or(0);
-        let cost = self
-            .message
-            .price
-            .clone()
-            .try_as_ref()
-            .copied()
-            .unwrap_or(0.0);
+        let token_count = self.message.token_count;
+        let cost = self.message.price;
 
         log::trace!("publish complete token");
         self.publisher.publish_force(Token::Complete {
             message_id,
-            chunk_ids,
             cost,
             token: token_count,
         });
@@ -376,7 +316,9 @@ impl CompletionContext {
                 return Err(err.into());
             }
         }
-        if let Err(err) = self.message.update(db).await {
+        let mut msg = self.message.into_active_model();
+        msg.full_change();
+        if let Err(err) = msg.update(db).await {
             if !matches!(err, DbErr::RecordNotUpdated) {
                 return Err(err.into());
             }
@@ -386,20 +328,15 @@ impl CompletionContext {
     }
 
     pub fn latest_user_message(&self) -> Option<&str> {
-        self.messages_with_chunks.last().and_then(|(m, chunks)| {
-            if m.kind == MessageKind::User {
-                let slice_vec: Vec<&str> = chunks
-                    .iter()
-                    .filter_map(|c| match c.kind {
-                        ChunkKind::Text => Some(c.content.as_str()),
-                        _ => None,
-                    })
-                    .collect();
-
-                slice_vec.iter().copied().last()
-            } else {
-                None
-            }
-        })
+        self.messages
+            .iter()
+            .filter_map(|m| {
+                if let MessageInner::User { text, files: _ } = &m.inner {
+                    return Some(text.as_str());
+                } else {
+                    None
+                }
+            })
+            .last()
     }
 }

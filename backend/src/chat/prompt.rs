@@ -1,8 +1,11 @@
 use minijinja::Environment;
+use protocol::ModelConfig;
 use serde::Serialize;
 use time::UtcDateTime;
 use time::format_description::BorrowedFormatItem;
 use time::macros::format_description;
+
+use crate::utils::model::ModelChecker;
 
 use super::context::CompletionContext;
 
@@ -11,6 +14,7 @@ pub enum PromptKind {
     Normal,
     Search,
     TitleGen,
+    Coordinator,
 }
 
 impl PromptKind {
@@ -19,6 +23,7 @@ impl PromptKind {
             PromptKind::Normal => "normal",
             PromptKind::Search => "search",
             PromptKind::TitleGen => "title",
+            PromptKind::Coordinator => "coordinator",
         }
     }
 }
@@ -39,6 +44,11 @@ impl Prompt {
             .unwrap();
         env.add_template("search", include_str!("../../../prompts/search.md"))
             .unwrap();
+        env.add_template(
+            "coordinator",
+            include_str!("../../../prompts/coordinator.md"),
+        )
+        .unwrap();
         env.add_global("repo_url", "https://github.com/pinkfuwa/llumen");
         env.add_global("repo_readme", include_str!("../../../README.md"));
         Self { env }
@@ -47,7 +57,7 @@ impl Prompt {
 
 #[derive(Serialize)]
 struct RenderingContext<'a> {
-    model: entity::ModelConfig,
+    model: protocol::ModelConfig,
     user_id: i32,
     username: &'a str,
     chat_id: i32,
@@ -66,7 +76,7 @@ impl Prompt {
         kind: PromptKind,
         ctx: &CompletionContext,
     ) -> Result<String, minijinja::Error> {
-        let config = ctx.model.get_config().unwrap();
+        let config = <ModelConfig as ModelChecker>::from_toml(&ctx.model.config).unwrap();
 
         let chat_title = ctx.chat.title.try_as_ref();
         let chat_title = chat_title.and_then(|x| x.as_deref());

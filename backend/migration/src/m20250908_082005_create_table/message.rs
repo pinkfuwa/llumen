@@ -15,9 +15,9 @@ impl MigrationTrait for Migration {
                     .table(Message::Table)
                     .col(pk_auto(Message::Id))
                     .col(integer(Message::ChatId))
-                    .col(integer(Message::Kind))
                     .col(float(Message::Price).default(0.0))
                     .col(integer(Message::TokenCount).default(0))
+                    .col(string(Message::Inner))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-message-chat_id-chat")
