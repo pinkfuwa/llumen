@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ChatMode as Mode } from '$lib/api/types';
-	import { Atom, SearchCode, ZapOff, CalendarSync } from '@lucide/svelte';
+	import { Atom, SearchCode, ZapOff } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
 	import Tooltip from '../buttons/Tooltip.svelte';

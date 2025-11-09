@@ -30,10 +30,9 @@ let messages = $state<Array<MessagePaginateRespList & { stream?: boolean }>>([])
 
 // State for tracking deep research plan being built during streaming
 let deepState = $state<{
-	planJson: string;
-	plan: Partial<Deep> | null;
 	currentStepIndex: number;
-	oboeInstance: any;
+	oboeInstance: oboe.Oboe;
+	fullJson: string;
 } | null>(null);
 
 const Handlers: {
@@ -65,6 +64,7 @@ const Handlers: {
 	},
 
 	token(token) {
+		if (token.length == 0) return;
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
@@ -115,26 +115,6 @@ const Handlers: {
 			lastMsg.stream = false;
 			lastMsg.token_count = data.token_count;
 			lastMsg.price = data.cost;
-
-			// If deepState exists, add the deep_agent chunk to the message
-			if (deepState && deepState.plan && lastMsg.inner.t === 'assistant') {
-				// Ensure the plan has all required fields
-				const completePlan: Deep = {
-					locale: deepState.plan.locale || '',
-					has_enough_context: deepState.plan.has_enough_context || false,
-					thought: deepState.plan.thought || '',
-					title: deepState.plan.title || '',
-					steps: deepState.plan.steps || []
-				};
-
-				lastMsg.inner.c.push({
-					t: 'deep_agent',
-					c: completePlan
-				});
-
-				// Clean up deepState
-				deepState = null;
-			}
 		}
 		version = data.version;
 	},
@@ -163,71 +143,87 @@ const Handlers: {
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
+		const lastChunk = firstMsg.inner.c.at(-1);
+
+		if (!lastChunk || lastChunk.t != 'deep_agent') {
+			firstMsg.inner.c.push({
+				t: 'deep_agent',
+				c: {
+					locale: '',
+					has_enough_context: false,
+					thought: '',
+					title: '',
+					steps: []
+				}
+			});
+		}
+
+		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
+
 		// Initialize deepState if not already initialized
 		if (!deepState) {
 			deepState = {
-				planJson: '',
-				plan: { steps: [] },
 				currentStepIndex: -1,
-				oboeInstance: null
-			};
-
-			// Create oboe instance for streaming JSON parsing
-			deepState.oboeInstance = oboe()
-				.node('locale', function (value) {
-					if (deepState?.plan) deepState.plan.locale = value;
-				})
-				.node('has_enough_context', function (value) {
-					if (deepState?.plan) deepState.plan.has_enough_context = value;
-				})
-				.node('thought', function (value) {
-					if (deepState?.plan) deepState.plan.thought = value;
-				})
-				.node('title', function (value) {
-					if (deepState?.plan) deepState.plan.title = value;
-				})
-				.node('steps[*]', function (step) {
-					if (deepState?.plan?.steps) {
-						// Initialize progress array for this step
-						deepState.plan.steps.push({
+				oboeInstance: oboe()
+					.node('locale', function (value) {
+						plan.locale = value;
+					})
+					.node('has_enough_context', function (value) {
+						plan.has_enough_context = value;
+					})
+					.node('thought', function (value) {
+						plan.thought = value;
+					})
+					.node('title', function (value) {
+						plan.title = value;
+					})
+					.node('steps[*]', function (step) {
+						plan.steps.push({
 							...step,
 							progress: []
 						});
-					}
-				});
+					}),
+				fullJson: ''
+			};
 		}
 
-		// Append the plan chunk to the accumulated JSON string
-		deepState.planJson += planChunk as string;
-
-		// Feed the chunk to oboe for progressive parsing
-		deepState.oboeInstance.emit('data', planChunk as string);
+		deepState!.fullJson += planChunk;
+		deepState!.oboeInstance.emit('data', planChunk);
 	},
 
 	deep_step_start(stepIndex) {
-		if (!deepState || !deepState.plan) return;
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+		if (!deepState) throw new Error('deepState is not initialized');
+
+		const lastChunk = firstMsg.inner.c.at(-1)!;
+
+		if (deepState.currentStepIndex == -1) {
+			console.log(deepState!.fullJson);
+			lastChunk.c = JSON.parse(deepState!.fullJson);
+		}
+
+		let plan = lastChunk.c as Deep;
+		console.log('lastChunk', JSON.parse(JSON.stringify(lastChunk)));
 
 		deepState.currentStepIndex = stepIndex as number;
 
-		// Ensure the step exists in the plan
-		if (!deepState.plan.steps) deepState.plan.steps = [];
-		if (!deepState.plan.steps[stepIndex as number]) {
-			deepState.plan.steps[stepIndex as number] = {
-				need_search: false,
-				title: '',
-				description: '',
-				kind: 'research' as any,
-				progress: []
-			};
-		}
+		plan.steps[stepIndex as number] = {
+			need_search: false,
+			title: '',
+			description: '',
+			kind: 'research' as any,
+			progress: []
+		};
 	},
 
 	deep_step_token(token) {
-		if (!deepState || !deepState.plan || deepState.currentStepIndex < 0) return;
-		if (!deepState.plan.steps) return;
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
-		const step = deepState.plan.steps[deepState.currentStepIndex];
-		if (!step) return;
+		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
+
+		const step = plan.steps[deepState!.currentStepIndex];
 
 		const lastChunk = step.progress.at(-1);
 
@@ -239,11 +235,12 @@ const Handlers: {
 	},
 
 	deep_step_reasoning(reasoning) {
-		if (!deepState || !deepState.plan || deepState.currentStepIndex < 0) return;
-		if (!deepState.plan.steps) return;
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
-		const step = deepState.plan.steps[deepState.currentStepIndex];
-		if (!step) return;
+		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
+
+		const step = plan.steps[deepState!.currentStepIndex];
 
 		const lastChunk = step.progress.at(-1);
 
@@ -255,11 +252,12 @@ const Handlers: {
 	},
 
 	deep_step_tool_call(toolCall) {
-		if (!deepState || !deepState.plan || deepState.currentStepIndex < 0) return;
-		if (!deepState.plan.steps) return;
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
-		const step = deepState.plan.steps[deepState.currentStepIndex];
-		if (!step) return;
+		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
+
+		const step = plan.steps[deepState!.currentStepIndex];
 
 		const toolCallObj = toolCall as { name: string; args: string };
 		step.progress.push({
@@ -273,11 +271,12 @@ const Handlers: {
 	},
 
 	deep_step_tool_result(toolResult) {
-		if (!deepState || !deepState.plan || deepState.currentStepIndex < 0) return;
-		if (!deepState.plan.steps) return;
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
-		const step = deepState.plan.steps[deepState.currentStepIndex];
-		if (!step) return;
+		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
+
+		const step = plan.steps[deepState!.currentStepIndex];
 
 		const result = (toolResult as { content: string }).content;
 
@@ -342,7 +341,7 @@ function startSSE(chatId: number, signal: AbortSignal) {
 				}
 			}
 		} catch (e) {
-			console.log('SSE aborted');
+			console.log('SSE aborted', e);
 		}
 	});
 }

@@ -39,6 +39,6 @@
 	{:else if kind == 'error'}
 		<ResponseError content={chunk.c} />
 	{:else if kind == 'deep_agent'}
-		<DeepResearch plan={chunk.c} />
+		<DeepResearch plan={chunk.c} {streaming} />
 	{/if}
 {/each}

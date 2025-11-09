@@ -143,6 +143,8 @@ impl Openrouter {
         }
     }
 
+    /// Use [`ModelBuilder`] instead.
+    #[deprecated]
     pub fn stream(
         &self,
         mut messages: Vec<Message>,
