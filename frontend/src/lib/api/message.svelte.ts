@@ -46,7 +46,8 @@ const Handlers: {
 	},
 
 	start(data) {
-		if (!messages.some((m) => m.id == data.id)) {
+		const message = messages.find((m) => m.id == data.id);
+		if (message == undefined) {
 			messages.unshift({
 				id: data.id,
 				inner: {
@@ -57,6 +58,8 @@ const Handlers: {
 				price: 0,
 				stream: true
 			});
+		} else {
+			message.inner.c = [];
 		}
 		version = data.version;
 		// Reset deepState for the new message
