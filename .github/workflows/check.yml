@@ -1,4 +1,4 @@
-name: statuc check
+name: status check
 
 on:
   pull_request:
