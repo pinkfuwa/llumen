@@ -73,10 +73,10 @@ impl Mergeable for Token {
             | Token::DeepStepToken(s)
             | Token::DeepStepReasoning(s)
             | Token::DeepReport(s)
-            | Token::Error(s) => s.len(),
+            | Token::Error(s)
+            | Token::DeepPlan(s) => s.len(),
             Token::ToolResult(_)
             | Token::Empty
-            | Token::DeepPlan(_)
             | Token::DeepStepStart(_)
             | Token::DeepStepToolResult(_)
             | Token::Complete { .. }
@@ -95,6 +95,7 @@ impl Mergeable for Token {
             Token::DeepStepReasoning(s) => Some(Token::DeepStepReasoning(s[r].to_string())),
             Token::DeepReport(s) => Some(Token::DeepReport(s[r].to_string())),
             Token::Error(s) => Some(Token::Error(s[r].to_string())),
+            Token::DeepPlan(s) => Some(Token::DeepPlan(s[r].to_string())),
             x if r.start == 0 => Some(x.clone()),
             _ => None,
         }

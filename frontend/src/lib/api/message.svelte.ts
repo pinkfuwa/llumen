@@ -64,7 +64,6 @@ const Handlers: {
 	},
 
 	token(token) {
-		if (token.length == 0) return;
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
@@ -142,9 +141,7 @@ const Handlers: {
 	deep_plan(planChunk) {
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
-
 		const lastChunk = firstMsg.inner.c.at(-1);
-
 		if (!lastChunk || lastChunk.t != 'deep_agent') {
 			firstMsg.inner.c.push({
 				t: 'deep_agent',
@@ -157,9 +154,7 @@ const Handlers: {
 				}
 			});
 		}
-
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
-
 		// Initialize deepState if not already initialized
 		if (!deepState) {
 			deepState = {
@@ -174,10 +169,10 @@ const Handlers: {
 					.node('thought', function (value) {
 						plan.thought = value;
 					})
-					.node('title', function (value) {
-						plan.title = value;
+					.node('title', function (value, path) {
+						if (path.length === 1) plan.title = value;
 					})
-					.node('steps[*]', function (step) {
+					.node('steps[*]', function (step, path) {
 						plan.steps.push({
 							...step,
 							progress: []
@@ -186,7 +181,6 @@ const Handlers: {
 				fullJson: ''
 			};
 		}
-
 		deepState!.fullJson += planChunk;
 		deepState!.oboeInstance.emit('data', planChunk);
 	},
@@ -195,38 +189,21 @@ const Handlers: {
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		if (!deepState) throw new Error('deepState is not initialized');
-
 		const lastChunk = firstMsg.inner.c.at(-1)!;
-
 		if (deepState.currentStepIndex == -1) {
-			console.log(deepState!.fullJson);
-			lastChunk.c = JSON.parse(deepState!.fullJson);
+			const agentCall = JSON.parse(deepState!.fullJson) as Deep;
+			for (const step of agentCall.steps) step.progress = [];
+			lastChunk.c = agentCall;
 		}
-
-		let plan = lastChunk.c as Deep;
-		console.log('lastChunk', JSON.parse(JSON.stringify(lastChunk)));
-
 		deepState.currentStepIndex = stepIndex as number;
-
-		plan.steps[stepIndex as number] = {
-			need_search: false,
-			title: '',
-			description: '',
-			kind: 'research' as any,
-			progress: []
-		};
 	},
 
 	deep_step_token(token) {
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
-
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
-
 		const step = plan.steps[deepState!.currentStepIndex];
-
 		const lastChunk = step.progress.at(-1);
-
 		if (lastChunk && lastChunk.t === 'text') {
 			lastChunk.c += token as string;
 		} else {
@@ -237,13 +214,9 @@ const Handlers: {
 	deep_step_reasoning(reasoning) {
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
-
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
-
 		const step = plan.steps[deepState!.currentStepIndex];
-
 		const lastChunk = step.progress.at(-1);
-
 		if (lastChunk && lastChunk.t === 'reasoning') {
 			lastChunk.c += reasoning as string;
 		} else {
@@ -254,11 +227,8 @@ const Handlers: {
 	deep_step_tool_call(toolCall) {
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
-
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
-
 		const step = plan.steps[deepState!.currentStepIndex];
-
 		const toolCallObj = toolCall as { name: string; args: string };
 		step.progress.push({
 			t: 'tool_call',
@@ -273,13 +243,9 @@ const Handlers: {
 	deep_step_tool_result(toolResult) {
 		const firstMsg = messages.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
-
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
-
 		const step = plan.steps[deepState!.currentStepIndex];
-
 		const result = (toolResult as { content: string }).content;
-
 		// Find the last tool_call in progress that doesn't have a matching tool_result yet
 		for (let i = step.progress.length - 1; i >= 0; i--) {
 			const chunk = step.progress[i];
@@ -347,7 +313,7 @@ function startSSE(chatId: number, signal: AbortSignal) {
 }
 
 export function useSSEEffect(chatId: () => number) {
-	$inspect('messages', messages);
+	if (dev) $inspect('messages', messages);
 	$effect(() => {
 		let controller = new AbortController();
 

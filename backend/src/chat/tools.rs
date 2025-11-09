@@ -97,6 +97,7 @@ impl WebSearchTool {
 
     /// Performs a web search using DuckDuckGo HTML search API
     pub async fn search(&self, query: &str) -> Result<Vec<WebSearchResult>> {
+        log::debug!("searching for {}", query);
         // Acquire semaphore permit to limit concurrent requests
         let _permit = self
             .semaphore
@@ -267,7 +268,7 @@ mod tests {
     #[tokio::test]
     async fn test_web_search() {
         let tool = WebSearchTool::new();
-        let results = tool.search("rust programming language").await;
+        let results = tool.search("benchmark GPU memory usage inference latency sparse models structured unstructured pruning schedules training stability report").await;
 
         // May fail due to rate limiting or network issues
         if let Ok(results) = results {

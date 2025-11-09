@@ -80,7 +80,10 @@ impl<'a> DeepAgent<'a> {
             .unwrap_or(false);
 
         if supports_json {
-            log::debug!("Model supports JSON, using structured output for {}", schema_name);
+            log::debug!(
+                "Model supports JSON, using structured output for {}",
+                schema_name
+            );
             openrouter::Model::builder(self.model.id.clone())
                 .temperature(self.model.temperature.unwrap_or(0.7))
                 .json_schema(schema_name, schema)
@@ -216,6 +219,9 @@ impl<'a> DeepAgent<'a> {
         }
 
         let result = stream.get_result();
+        self.completion_ctx
+            .update_usage(result.usage.cost as f32, result.usage.token as i32);
+
         let plan_json = result.get_text();
 
         log::debug!("Plan: {}", &plan_json);
@@ -318,6 +324,8 @@ impl<'a> DeepAgent<'a> {
             }
 
             let mut result = stream.get_result();
+            self.completion_ctx
+                .update_usage(result.usage.cost as f32, result.usage.token as i32);
 
             let tool_calls = std::mem::take(&mut result.toolcalls);
 
@@ -413,6 +421,8 @@ impl<'a> DeepAgent<'a> {
         }
 
         let result = stream.get_result();
+        self.completion_ctx
+            .update_usage(result.usage.cost as f32, result.usage.token as i32);
         let text = result.get_text();
 
         let chunks = self.completion_ctx.message.inner.as_assistant().unwrap();
@@ -429,7 +439,11 @@ impl<'a> DeepAgent<'a> {
                 struct WebSearchArgs {
                     query: String,
                 }
-                let args: WebSearchArgs = serde_json::from_str(args)?;
+                let args: Option<WebSearchArgs> = serde_json::from_str(args).ok();
+                if args.is_none() {
+                    return Ok("Invalid arguments for web_search_tool".to_string());
+                }
+                let args = args.unwrap();
                 match self.ctx.web_search_tool.search(&args.query).await {
                     Ok(results) => {
                         let mut output = String::new();
@@ -461,7 +475,11 @@ impl<'a> DeepAgent<'a> {
                 struct CrawlArgs {
                     url: String,
                 }
-                let args: CrawlArgs = serde_json::from_str(args)?;
+                let args: Option<CrawlArgs> = serde_json::from_str(args).ok();
+                if args.is_none() {
+                    return Ok("Invaild arguments".to_string());
+                }
+                let args = args.unwrap();
                 match self.ctx.crawl_tool.crawl(&args.url).await {
                     Ok(content) => Ok(content),
                     Err(e) => {
@@ -476,7 +494,11 @@ impl<'a> DeepAgent<'a> {
                 struct LuaArgs {
                     code: String,
                 }
-                let args: LuaArgs = serde_json::from_str(args)?;
+                let args: Option<LuaArgs> = serde_json::from_str(args).ok();
+                if args.is_none() {
+                    return Ok("Invaild arguments".to_string());
+                }
+                let args = args.unwrap();
                 match self.ctx.lua_repl_tool.execute(&args.code).await {
                     Ok(result) => Ok(result),
                     Err(e) => {
