@@ -20,10 +20,9 @@ Its design goal is simplicity: you only need a single **OpenRouter** API key to 
 
 - :handshake: We provide windows executable, docker image, linux binary
 - :ship: Single API key requirement (OpenRouter) for model calls.
-- :rocket: starting time < 1s, disk usage < 100 MiB, memory usage < 128MB
+- :rocket: starting time < 1s, memory usage < 128MB
 - :blue_book: Markdown rendering with code and math support.
-- :mag: Multiple chat modes (normal, web-search-enabled).
-- :brain: Deep-research and agentic modes (WIP :construction: ).
+- :mag: Multiple chat modes (normal, web-search-enabled, deep-research :brain:).
 
 ## :star2: Screenshots
 
