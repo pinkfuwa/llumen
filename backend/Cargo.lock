@@ -263,6 +263,7 @@ dependencies = [
  "axum",
  "base64",
  "bytes",
+ "csv",
  "dotenv",
  "entity",
  "fastrand",
@@ -271,24 +272,26 @@ dependencies = [
  "html2text",
  "html5ever 0.35.0",
  "http",
+ "ipnetwork",
  "log",
  "log_err",
  "migration",
  "mimalloc",
  "minijinja",
+ "mlua",
  "pasetors",
  "protocol",
  "redb",
  "regex",
  "reqwest",
  "reqwest-eventsource",
- "runner",
  "rust-argon2",
  "schemars",
  "scraper",
  "sea-orm",
  "serde",
  "serde_json",
+ "sqlx",
  "time",
  "tokio",
  "tokio-stream",
@@ -2738,22 +2741,6 @@ dependencies = [
  "spki",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "runner"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "csv",
- "futures-util",
- "ipnetwork",
- "mlua",
- "reqwest",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
 ]
 
 [[package]]
