@@ -148,7 +148,7 @@ pub async fn route(
         None
     };
 
-    let st = stream::iter(initial_event).chain(stream.map(|token| {
+    let st = stream::iter(initial_event).chain(stream.filter_map(|token| {
         let event = match token {
             Token::Assistant(content) => SseResp::Token(content),
             Token::Reasoning(content) => SseResp::Reasoning(content),
@@ -171,7 +171,7 @@ pub async fn route(
                 user_msg_id,
                 version: user_msg_id,
             }),
-            Token::Empty => SseResp::Token(String::new()),
+            Token::Empty => return None,
             Token::DeepPlan(content) => SseResp::DeepPlan(content),
             Token::DeepStepStart(content) => SseResp::DeepStepStart(content),
             Token::DeepStepReasoning(content) => SseResp::DeepStepReasoning(content),
@@ -184,7 +184,7 @@ pub async fn route(
             Token::DeepStepToken(content) => SseResp::DeepStepToken(content),
             Token::DeepReport(content) => SseResp::DeepReport(content),
         };
-        Ok(Event::default().json_data(event).unwrap())
+        Some(Ok(Event::default().json_data(event).unwrap()))
     }));
 
     Ok(Sse::new(st).keep_alive(
