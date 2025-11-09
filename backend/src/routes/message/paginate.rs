@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
-use entity::{ChunkKind, MessageKind, message, prelude::*};
+use entity::{message, prelude::*};
 use migration::ExprTrait;
+use protocol::{AssistantChunk, MessageInner};
 use sea_orm::{QueryOrder, QuerySelect, prelude::*};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -58,69 +59,9 @@ pub struct MessagePaginateResp {
 #[typeshare]
 pub struct MessagePaginateRespList {
     pub id: i32,
-    pub role: MessagePaginateRespRole,
-    pub chunks: Vec<MessagePaginateRespChunk>,
-    pub token: u32,
+    pub token_count: i32,
     pub price: f32,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunk {
-    pub id: i32,
-    pub kind: MessagePaginateRespChunkKind,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-#[serde(rename_all = "snake_case")]
-pub enum MessagePaginateRespRole {
-    User,
-    Assistant,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-#[serde(tag = "t", content = "c", rename_all = "snake_case")]
-pub enum MessagePaginateRespChunkKind {
-    Text(MessagePaginateRespChunkKindText),
-    File(MessagePaginateRespChunkKindFile),
-    Reasoning(MessagePaginateRespChunkKindReasoning),
-    ToolCall(MessagePaginateRespChunkKindToolCall),
-    Error(MessagePaginateRespChunkKindError),
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindFile {
-    pub name: String,
-    pub id: i32,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindText {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindReasoning {
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindToolCall {
-    pub name: String,
-    pub args: String,
-    pub content: String,
-}
-
-#[derive(Debug, Serialize)]
-#[typeshare]
-pub struct MessagePaginateRespChunkKindError {
-    pub content: String,
+    pub inner: MessageInner,
 }
 
 pub async fn route(
@@ -176,80 +117,29 @@ pub async fn route(
         }
     };
 
-    let res = q
-        .find_with_related(Chunk)
-        .all(&app.conn)
-        .await
-        .kind(ErrorKind::Internal)?;
+    let msgs = q.all(&app.conn).await.kind(ErrorKind::Internal)?;
 
-    let list = res
+    let list = msgs
         .into_iter()
-        .filter_map(|(message, chunks)| {
-            let role = match message.kind {
-                MessageKind::User => MessagePaginateRespRole::User,
-                MessageKind::Assistant => MessagePaginateRespRole::Assistant,
-                MessageKind::Hidden => return None,
-                MessageKind::DeepResearch => todo!("Handle DeepResearch message kind"),
-            };
-            if chunks.is_empty() {
-                return None;
+        .filter_map(|msg| {
+            let mut inner = msg.inner;
+            if let MessageInner::Assistant(chunks) = &mut inner {
+                if chunks.is_empty() {
+                    return None;
+                }
+                *chunks = std::mem::take(chunks)
+                    .into_iter()
+                    .filter(|chunk| !matches!(chunk, AssistantChunk::Annotation(_)))
+                    .collect::<Vec<_>>();
             }
-
-            let chunks: Result<_, Json<Error>> = chunks
-                .into_iter()
-                .filter_map(|chunk| {
-                    let resp = match chunk.kind {
-                        ChunkKind::File => {
-                            let file = chunk.as_file().kind(ErrorKind::Internal).ok()?;
-                            MessagePaginateRespChunkKind::File(MessagePaginateRespChunkKindFile {
-                                name: file.name,
-                                id: file.id,
-                            })
-                        }
-                        ChunkKind::Text => {
-                            MessagePaginateRespChunkKind::Text(MessagePaginateRespChunkKindText {
-                                content: chunk.content,
-                            })
-                        }
-                        ChunkKind::Reasoning => MessagePaginateRespChunkKind::Reasoning(
-                            MessagePaginateRespChunkKindReasoning {
-                                content: chunk.content,
-                            },
-                        ),
-                        ChunkKind::ToolCall => {
-                            let tool_call = chunk.as_tool_call().kind(ErrorKind::Internal).ok()?;
-                            MessagePaginateRespChunkKind::ToolCall(
-                                MessagePaginateRespChunkKindToolCall {
-                                    name: tool_call.name,
-                                    args: tool_call.args,
-                                    content: tool_call.content,
-                                },
-                            )
-                        }
-                        ChunkKind::Error => {
-                            MessagePaginateRespChunkKind::Error(MessagePaginateRespChunkKindError {
-                                content: chunk.content,
-                            })
-                        }
-                        _ => return None,
-                    };
-
-                    Some(Ok(MessagePaginateRespChunk {
-                        id: chunk.id,
-                        kind: resp,
-                    }))
-                })
-                .collect();
-
-            Some(chunks.map(|chunks| MessagePaginateRespList {
-                id: message.id,
-                role,
-                chunks,
-                token: message.token_count as u32,
-                price: message.price,
-            }))
+            Some(MessagePaginateRespList {
+                id: msg.id,
+                token_count: msg.token_count,
+                price: msg.price,
+                inner,
+            })
         })
-        .collect::<Result<_, _>>()?;
+        .collect::<Vec<_>>();
 
     Ok(Json(MessagePaginateResp { list }))
 }

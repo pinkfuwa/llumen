@@ -4,16 +4,10 @@
 	// Extract URL from Link node structure
 	// Lezer Link nodes typically have LinkMark children containing the URL
 	function extractUrl(node: any): string {
-		if (node.url) return node.url;
-
 		// Look for URL in children or text content
 		// This is a simplified extraction - may need refinement based on actual structure
-		const linkMarkChild = node.children?.find(
-			(c: any) => c.type === 'LinkMark' || c.type === 'URL'
-		);
-		if (linkMarkChild) {
-			return linkMarkChild.text || '';
-		}
+		const urlChild = node.children?.find((c: any) => c.type === 'URL');
+		if (urlChild) return urlChild.text || '';
 
 		return node.text || '#';
 	}

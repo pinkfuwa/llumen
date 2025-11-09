@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { LoaderCircle } from '@lucide/svelte';
-	import { useModels } from '$lib/api/model';
 	import Select from '$lib/ui/Select.svelte';
 	import { getSupportedFileTypes } from './fileTypes';
 	import { getContext, untrack } from 'svelte';

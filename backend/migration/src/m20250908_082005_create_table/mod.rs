@@ -8,8 +8,7 @@ mod tool;
 mod user;
 
 mod chat;
-mod chunk;
-pub mod file;
+mod file;
 mod message;
 
 mod default;
@@ -33,7 +32,6 @@ impl MigrationTrait for Migration {
         model::Migration.up(manager).await?;
 
         chat::Migration.up(manager).await?;
-        chunk::Migration.up(manager).await?;
         message::Migration.up(manager).await?;
 
         default::Migration.up(manager).await?;
@@ -45,7 +43,6 @@ impl MigrationTrait for Migration {
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         default::Migration.down(manager).await?;
 
-        chunk::Migration.down(manager).await?;
         message::Migration.down(manager).await?;
         chat::Migration.down(manager).await?;
         model::Migration.down(manager).await?;

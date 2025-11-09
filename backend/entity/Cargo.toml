@@ -5,23 +5,4 @@ edition = "2024"
 
 [dependencies]
 sea-orm = "1.1.14"
-serde_json = "1.0.141"
-typeshare = "1.0.4"
-toml = "0.9.4"
-anyhow = "1.0.99"
-
-[dependencies.serde]
-version = "1.0.219"
-features = ["derive"]
-
-[build-dependencies]
-serde_json = "1.0.141"
-
-[build-dependencies.reqwest]
-version = "0.12.22"
-default-features = false
-features = ["json", "native-tls-vendored", "blocking"]
-
-[build-dependencies.serde]
-version = "1.0.219"
-features = ["derive"]
+protocol = { path = "../protocol" }

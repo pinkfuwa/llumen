@@ -3,28 +3,25 @@ use std::sync::Arc;
 
 use anyhow::{Context as _, Result};
 
-use entity::ChunkKind;
-use entity::FileHandle;
-use entity::MessageKind;
-use entity::chunk;
 use futures_util::future::BoxFuture;
-use sea_orm::ActiveValue;
-use sea_orm::ActiveValue::Set;
 use tokio_stream::StreamExt;
 
 use crate::chat::context::CompletionContext;
 use crate::chat::context::Context;
 use crate::chat::context::StreamEndReason;
-use crate::chat::token::Token;
-use crate::chat::token::ToolCallInfo;
+use crate::chat::converter::*;
 use crate::openrouter::{self, FinishReason};
-
-use super::helper;
 
 pub trait ChatInner {
     fn get_system_prompt(ctx: &Context, completion_ctx: &CompletionContext) -> Result<String>;
     fn get_model(ctx: &Context, completion_ctx: &CompletionContext) -> Result<openrouter::Model>;
-    fn solve_tool(name: &str, arg: &str) -> BoxFuture<'static, Result<String, anyhow::Error>> {
+    fn handoff_tool<'a>(
+        pipeline: &'a mut ChatPipeline<Self>,
+        toolcall: Vec<openrouter::ToolCall>,
+    ) -> BoxFuture<'a, Result<(), anyhow::Error>>
+    where
+        Self: Sized,
+    {
         Box::pin(async move {
             Err(anyhow::anyhow!(
                 "Tool calls are not supported in this pipeline"
@@ -40,10 +37,11 @@ pub trait ChatInner {
 }
 
 pub struct ChatPipeline<P: ChatInner> {
-    ctx: Arc<Context>,
-    completion_ctx: CompletionContext,
+    pub ctx: Arc<Context>,
+    pub completion_ctx: CompletionContext,
+    pub model: openrouter::Model,
+    // TODO: don't store message, compute when used
     messages: Vec<openrouter::Message>,
-    model: openrouter::Model,
     tools: Vec<openrouter::Tool>,
     pipeline: PhantomData<P>,
 }
@@ -54,32 +52,8 @@ impl<P: ChatInner> ChatPipeline<P> {
 
         let mut messages = vec![openrouter::Message::System(system_prompt)];
 
-        for (message, chunks) in &completion_ctx.messages_with_chunks {
-            match message.kind {
-                MessageKind::Hidden => continue,
-                MessageKind::User => {
-                    let files = chunks
-                        .iter()
-                        .filter(|x| matches!(x.kind, ChunkKind::File))
-                        .filter_map(|x| serde_json::from_str::<FileHandle>(&x.content).ok())
-                        .collect::<Vec<_>>();
-                    let files = helper::load_files(ctx.blob.clone(), &files).await?;
-
-                    let text = chunks
-                        .iter()
-                        .filter(|x| matches!(x.kind, ChunkKind::Text))
-                        .map(|x| x.content.as_str())
-                        .collect::<String>();
-                    match files.is_empty() {
-                        true => messages.push(openrouter::Message::User(text)),
-                        false => messages.push(openrouter::Message::MultipartUser { text, files }),
-                    };
-                }
-                MessageKind::Assistant => {
-                    messages.extend(helper::chunks_to_message(chunks.clone().into_iter()))
-                }
-                MessageKind::DeepResearch => todo!("Handle DeepResearch message kind"),
-            };
+        for m in &completion_ctx.messages {
+            messages.extend(db_message_to_openrouter(&ctx, &m.inner).await?);
         }
 
         let model = P::get_model(&ctx, &completion_ctx)?;
@@ -94,33 +68,8 @@ impl<P: ChatInner> ChatPipeline<P> {
             pipeline: PhantomData,
         })
     }
-    fn update_tool_result(&mut self, output: String) -> Result<()> {
-        let last_chunk = self
-            .completion_ctx
-            .new_chunks
-            .last_mut()
-            .context("No tool chunks found")?;
-
-        debug_assert!(matches!(last_chunk.kind.as_ref(), ChunkKind::ToolCall));
-
-        let content = last_chunk.content.take().unwrap();
-
-        let mut info: ToolCallInfo =
-            serde_json::from_str(&content).context("Failed to parse tool call info")?;
-
-        info.output = Some(output);
-
-        last_chunk.content = ActiveValue::set(
-            serde_json::to_string(&info).context("Failed to serialize tool call info")?,
-        );
-
-        Ok(())
-    }
     async fn process(&mut self) -> Result<(), anyhow::Error> {
         let mut message = self.messages.clone();
-        message.extend(helper::active_chunks_to_message(
-            self.completion_ctx.new_chunks.clone().into_iter(),
-        ));
 
         let mut res = self
             .ctx
@@ -130,7 +79,7 @@ impl<P: ChatInner> ChatPipeline<P> {
 
         let halt = self
             .completion_ctx
-            .put_stream((&mut res).map(|resp| resp.map(Into::into)))
+            .put_stream((&mut res).map(|resp| resp.map(openrouter_to_buffer_token)))
             .await?;
 
         if matches!(halt, StreamEndReason::Halt) {
@@ -142,50 +91,43 @@ impl<P: ChatInner> ChatPipeline<P> {
         self.completion_ctx
             .update_usage(result.usage.cost as f32, result.usage.token as i32);
 
-        let tokens = result
-            .responses
-            .into_iter()
-            .map(Into::into)
-            .collect::<Vec<_>>();
-        let mut chunks = Token::into_chunks(tokens.into_iter()).collect::<Vec<_>>();
+        self.completion_ctx
+            .message
+            .inner
+            .as_assistant()
+            .unwrap()
+            .extend(openrouter_stream_to_assitant_chunk(&result.responses));
 
-        if let Some(annotations) = result
+        let annotations = result
             .annotations
             .map(|v| serde_json::to_string(&v).ok())
-            .flatten()
-        {
-            if let Some(idx) = chunks
-                .iter()
-                .rposition(|elem| matches!(elem.kind, ActiveValue::Set(ChunkKind::Text)))
-            {
-                chunks.insert(
-                    idx + 1,
-                    chunk::ActiveModel {
-                        content: Set(annotations),
-                        kind: Set(ChunkKind::Annotation),
-                        ..Default::default()
-                    },
-                );
-            }
-        }
+            .flatten();
 
-        self.completion_ctx.new_chunks.extend(chunks);
+        // todo!("store token in message");
 
         match result.stop_reason {
-            FinishReason::Length => return Err(anyhow::anyhow!("The response is too long")),
+            FinishReason::Stop => {}
+            FinishReason::Error => log::warn!("cannot capture error"),
+            FinishReason::Length => log::warn!("The response is too long"),
             FinishReason::ToolCalls => {
-                let tool_call = result
-                    .toolcall
-                    .context("No tool calls found, but finish reason is tool_calls")?;
+                if result.toolcalls.is_empty() {
+                    return Err(anyhow::anyhow!(
+                        "No tool calls found, but finish reason is tool_calls"
+                    ));
+                }
 
-                let result = P::solve_tool(&tool_call.name, &tool_call.args).await?;
-
-                self.update_tool_result(result)?;
-
-                return Box::pin(self.process()).await;
+                // handoff_tool should decide whether to insert tool_call or not
+                P::handoff_tool(self, result.toolcalls).await?;
+                if let Some(annotations) = annotations {
+                    self.completion_ctx
+                        .message
+                        .inner
+                        .add_annotation(annotations);
+                }
             }
-            FinishReason::Stop => return Ok(()),
         };
+
+        Ok(())
     }
 }
 
@@ -199,8 +141,10 @@ impl<P: ChatInner + Send> super::Pipeline for ChatPipeline<P> {
                 .await
                 .context("Failed to create chat pipeline")?;
 
-            let err = pipeline.process().await.err();
-            pipeline.completion_ctx.save(err).await?;
+            if let Some(err) = pipeline.process().await.err() {
+                pipeline.completion_ctx.add_error(err.to_string());
+            }
+            pipeline.completion_ctx.save().await?;
 
             Ok(())
         })

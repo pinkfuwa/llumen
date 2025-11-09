@@ -2,3 +2,4 @@
 /.env
 /db.sqlite*
 /*.redb
+/*.log

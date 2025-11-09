@@ -109,6 +109,7 @@ pub const DEFAULT_INSTRUCTION_LIMIT: usize = 10000;
 mod config;
 mod error;
 mod runner;
+pub mod tools;
 
 pub use config::LuaRunnerConfig;
 pub use error::LuaRunnerError;

@@ -15,7 +15,7 @@ import type {
 	ChatUpdateResp,
 	MessageCreateReqFile
 } from './types';
-import { ChatPaginateReqOrder, MessagePaginateRespRole, ChatMode } from './types';
+import { ChatPaginateReqOrder, ChatMode } from './types';
 import {
 	CreateInfiniteQuery,
 	CreateMutation,

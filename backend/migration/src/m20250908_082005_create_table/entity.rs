@@ -55,16 +55,7 @@ pub enum Message {
     Table,
     Id,
     ChatId,
-    Kind,
     Price,
     TokenCount,
-}
-
-#[derive(DeriveIden)]
-pub enum Chunk {
-    Table,
-    Id,
-    MessageId,
-    Content,
-    Kind,
+    Inner,
 }
