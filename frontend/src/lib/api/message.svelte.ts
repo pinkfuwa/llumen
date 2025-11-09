@@ -1,4 +1,5 @@
 import { events } from 'fetch-event-stream';
+import oboe from 'oboe';
 
 import { APIFetch, getError, RawAPIFetch } from './state/errorHandle';
 
@@ -13,7 +14,9 @@ import type {
 	MessagePaginateRespList,
 	SseReq,
 	SseResp,
-	FileMetadata
+	FileMetadata,
+	Deep,
+	Step
 } from './types';
 import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
@@ -25,7 +28,13 @@ let version = $state(-1);
 
 let messages = $state<Array<MessagePaginateRespList & { stream?: boolean }>>([]);
 
-// let deepState
+// State for tracking deep research plan being built during streaming
+let deepState = $state<{
+	planJson: string;
+	plan: Partial<Deep> | null;
+	currentStepIndex: number;
+	oboeInstance: any;
+} | null>(null);
 
 const Handlers: {
 	[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c'], chatId: number) => void;
@@ -51,6 +60,8 @@ const Handlers: {
 			});
 		}
 		version = data.version;
+		// Reset deepState for the new message
+		deepState = null;
 	},
 
 	token(token) {
@@ -104,6 +115,26 @@ const Handlers: {
 			lastMsg.stream = false;
 			lastMsg.token_count = data.token_count;
 			lastMsg.price = data.cost;
+
+			// If deepState exists, add the deep_agent chunk to the message
+			if (deepState && deepState.plan && lastMsg.inner.t === 'assistant') {
+				// Ensure the plan has all required fields
+				const completePlan: Deep = {
+					locale: deepState.plan.locale || '',
+					has_enough_context: deepState.plan.has_enough_context || false,
+					thought: deepState.plan.thought || '',
+					title: deepState.plan.title || '',
+					steps: deepState.plan.steps || []
+				};
+
+				lastMsg.inner.c.push({
+					t: 'deep_agent',
+					c: completePlan
+				});
+
+				// Clean up deepState
+				deepState = null;
+			}
 		}
 		version = data.version;
 	},
@@ -128,36 +159,147 @@ const Handlers: {
 		}
 	},
 
-	// TODO: use deep_state to record delta, you can assume between start/complete, there is only one plan
-	deep_plan(plan) {
-		// record plan string to deep_state
-		// concatenated plan yield a json for plan
-		// use oboe.js to handle json stream(ie. display title/steps when the json is streaming)
+	deep_plan(planChunk) {
+		const firstMsg = messages.at(0);
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+
+		// Initialize deepState if not already initialized
+		if (!deepState) {
+			deepState = {
+				planJson: '',
+				plan: { steps: [] },
+				currentStepIndex: -1,
+				oboeInstance: null
+			};
+
+			// Create oboe instance for streaming JSON parsing
+			deepState.oboeInstance = oboe()
+				.node('locale', function (value) {
+					if (deepState?.plan) deepState.plan.locale = value;
+				})
+				.node('has_enough_context', function (value) {
+					if (deepState?.plan) deepState.plan.has_enough_context = value;
+				})
+				.node('thought', function (value) {
+					if (deepState?.plan) deepState.plan.thought = value;
+				})
+				.node('title', function (value) {
+					if (deepState?.plan) deepState.plan.title = value;
+				})
+				.node('steps[*]', function (step) {
+					if (deepState?.plan?.steps) {
+						// Initialize progress array for this step
+						deepState.plan.steps.push({
+							...step,
+							progress: []
+						});
+					}
+				});
+		}
+
+		// Append the plan chunk to the accumulated JSON string
+		deepState.planJson += planChunk as string;
+
+		// Feed the chunk to oboe for progressive parsing
+		deepState.oboeInstance.emit('data', planChunk as string);
 	},
 
-	deep_step_start(step) {
-		// start of step
+	deep_step_start(stepIndex) {
+		if (!deepState || !deepState.plan) return;
+
+		deepState.currentStepIndex = stepIndex as number;
+
+		// Ensure the step exists in the plan
+		if (!deepState.plan.steps) deepState.plan.steps = [];
+		if (!deepState.plan.steps[stepIndex as number]) {
+			deepState.plan.steps[stepIndex as number] = {
+				need_search: false,
+				title: '',
+				description: '',
+				kind: 'research' as any,
+				progress: []
+			};
+		}
 	},
 
-	deep_step_token(step) {
-		// token of step
-		// if last token po progress is text, concat string,
-		// otherwise record token to end of progress
+	deep_step_token(token) {
+		if (!deepState || !deepState.plan || deepState.currentStepIndex < 0) return;
+		if (!deepState.plan.steps) return;
+
+		const step = deepState.plan.steps[deepState.currentStepIndex];
+		if (!step) return;
+
+		const lastChunk = step.progress.at(-1);
+
+		if (lastChunk && lastChunk.t === 'text') {
+			lastChunk.c += token as string;
+		} else {
+			step.progress.push({ t: 'text', c: token as string });
+		}
 	},
 
-	deep_step_reasoning(step) {
-		// similar to token, but for reasoning
+	deep_step_reasoning(reasoning) {
+		if (!deepState || !deepState.plan || deepState.currentStepIndex < 0) return;
+		if (!deepState.plan.steps) return;
+
+		const step = deepState.plan.steps[deepState.currentStepIndex];
+		if (!step) return;
+
+		const lastChunk = step.progress.at(-1);
+
+		if (lastChunk && lastChunk.t === 'reasoning') {
+			lastChunk.c += reasoning as string;
+		} else {
+			step.progress.push({ t: 'reasoning', c: reasoning as string });
+		}
 	},
 
 	deep_step_tool_call(toolCall) {
-		// tool call start, followed by a tool call result(or error chunk if critical error is encounter).
-		// Please note that our protocol allow is to stream unordered
-		// For example: call(A)->call(B)->result(A)->result(B)
-		// reorder=> call(A)->result(A)->call(B)->result(B)
+		if (!deepState || !deepState.plan || deepState.currentStepIndex < 0) return;
+		if (!deepState.plan.steps) return;
+
+		const step = deepState.plan.steps[deepState.currentStepIndex];
+		if (!step) return;
+
+		const toolCallObj = toolCall as { name: string; args: string };
+		step.progress.push({
+			t: 'tool_call',
+			c: {
+				id: Date.now().toString(),
+				name: toolCallObj.name,
+				arg: toolCallObj.args
+			}
+		});
 	},
-	deep_step_tool_result(data) {
-		// tool call result
-		// Find last step progress of tool_call with result empty
+
+	deep_step_tool_result(toolResult) {
+		if (!deepState || !deepState.plan || deepState.currentStepIndex < 0) return;
+		if (!deepState.plan.steps) return;
+
+		const step = deepState.plan.steps[deepState.currentStepIndex];
+		if (!step) return;
+
+		const result = (toolResult as { content: string }).content;
+
+		// Find the last tool_call in progress that doesn't have a matching tool_result yet
+		for (let i = step.progress.length - 1; i >= 0; i--) {
+			const chunk = step.progress[i];
+			if (chunk.t === 'tool_call') {
+				// Check if next chunk is already a tool_result for this tool_call
+				const nextChunk = step.progress[i + 1];
+				if (!nextChunk || nextChunk.t !== 'tool_result' || nextChunk.c.id !== chunk.c.id) {
+					// Add tool_result right after the tool_call
+					step.progress.splice(i + 1, 0, {
+						t: 'tool_result',
+						c: {
+							id: chunk.c.id,
+							response: result
+						}
+					});
+					break;
+				}
+			}
+		}
 	},
 
 	deep_report(report) {
