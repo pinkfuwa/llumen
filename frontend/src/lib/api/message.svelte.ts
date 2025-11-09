@@ -199,6 +199,8 @@ const Handlers: {
 		const lastChunk = firstMsg.inner.c.at(-1)!;
 
 		if (deepState.currentStepIndex == -1) {
+			// Signal to oboe that we're done sending data so it can finalize parsing
+			deepState.oboeInstance.emit('end');
 			console.log(deepState!.fullJson);
 			lastChunk.c = JSON.parse(deepState!.fullJson);
 		}
