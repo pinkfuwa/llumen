@@ -1,6 +1,6 @@
 //! Configuration options for the Lua runner.
 
-use crate::{DEFAULT_INSTRUCTION_LIMIT, DEFAULT_MEMORY_LIMIT};
+use super::{DEFAULT_INSTRUCTION_LIMIT, DEFAULT_MEMORY_LIMIT};
 
 /// Configuration for the Lua runner.
 #[derive(Debug, Clone)]
