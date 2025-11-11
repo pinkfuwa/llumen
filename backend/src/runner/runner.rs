@@ -1,6 +1,6 @@
 //! Main Lua runner implementation with tree-based state caching.
 
-use crate::{ExecutionResult, LuaRunnerConfig, LuaRunnerError, Result};
+use super::{ExecutionResult, LuaRunnerConfig, LuaRunnerError, Result};
 use mlua::{Lua, StdLib, Value};
 use std::sync::Arc;
 use tokio::sync::Mutex;

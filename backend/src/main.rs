@@ -4,6 +4,7 @@ mod errors;
 mod middlewares;
 mod openrouter;
 mod routes;
+mod runner;
 mod utils;
 
 use std::sync::Arc;

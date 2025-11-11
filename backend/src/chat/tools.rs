@@ -2,6 +2,7 @@ use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
+use crate::runner;
 
 /// Web search tool for searching the web using DuckDuckGo API
 #[derive(Debug, Clone, Serialize, Deserialize)]
