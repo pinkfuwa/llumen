@@ -32,9 +32,6 @@ Its design goal is simplicity: you only need a single **OpenRouter** API key to 
 
 ## :point_right: Quickstart
 
-> [!TIP]
-> Use [reasoning-proxy](https://github.com/Eason0729/reasoning-proxy) to unlock advance feature(search, OCR) with normal openai endpoint
-
 > [!IMPORTANT]
 > The default account is `admin`, password is `P@88w0rd`
 
@@ -72,6 +69,5 @@ We also provided prebuild binary, download it and extract from [release](https:/
 
 ## :book: Where to look for more documentation
 
-- Development and build-from-source steps, advanced type generation and other developer-focused docs were moved to `DEV.md`. If you want to build locally or contribute code, read `DEV.md` first.
-- Backend source: `backend/` (Rust).
-- Frontend source: `frontend/` (SvelteKit).
+- Development and build-from-source steps and other developer-focused docs were moved to `./docs/overview.md`
+- User guide at `./docs/user.md`

@@ -1,3 +1,34 @@
+//! Llumen Backend - LLM Chat Application Server
+//!
+//! This is the main entry point for the Llumen backend service. The backend is built with:
+//! - Axum: web framework for handling HTTP requests
+//! - SeaORM: database ORM for SQLite
+//! - Tokio: async runtime
+//! - OpenRouter: LLM API integration
+//!
+//! The server exposes REST APIs for chat management, user authentication, message handling,
+//! and model discovery. It also serves the compiled frontend as static files.
+//!
+//! # Architecture Overview
+//!
+//! ## Core Components
+//!
+//! 1. **AppState**: Global application state containing database connection, encryption keys,
+//!    and the main chat processing pipeline (Context).
+//!
+//! 2. **Chat Pipeline (chat/context.rs)**: Manages LLM completion requests, handles streaming
+//!    responses, and coordinates between multiple chat modes (normal, search, deep research).
+//!
+//! 3. **API Routes**: Organized into modules for chat, user, message, model, file, and auth
+//!    operations. Each route validates requests and interacts with the database and LLM API.
+//!
+//! 4. **Middlewares**: Handles authentication (PASETO tokens), compression (Zstd), and logging.
+//!
+//! 5. **OpenRouter Client**: Abstracts interactions with OpenRouter's LLM API, including
+//!    streaming completions and tool calling.
+//!
+//! The MiMalloc allocator is used for better performance on memory-constrained systems.
+
 mod chat;
 mod config;
 mod errors;
@@ -24,6 +55,7 @@ use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
 use utils::{blob::BlobDB, password_hash::Hasher};
 
+/// Use MiMalloc allocator for better performance on memory-constrained systems
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
@@ -32,6 +64,18 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 
 // TODO: musl allocator sucks, but compile time is important, too.
 
+/// AppState contains all shared server state accessible to request handlers.
+///
+/// It's wrapped in Arc<AppState> and passed through Axum middleware to all route handlers.
+/// This enables stateful operations across async request handling.
+///
+/// # Fields
+///
+/// * `conn`: Database connection pool for all database operations via SeaORM
+/// * `key`: Encryption key for PASETO token generation/validation used in authentication
+/// * `hasher`: Password hasher for user authentication and security
+/// * `processor`: Main chat processing pipeline context managing LLM completions
+/// * `blob`: Blob database for storing binary data and file uploads
 pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
@@ -40,7 +84,10 @@ pub struct AppState {
     pub blob: Arc<BlobDB>,
 }
 
-// immediately exit confuse user
+/// Attempts to load the OpenRouter API key from environment variables.
+///
+/// The API key is required to make requests to the OpenRouter API for LLM completions.
+/// If not found, prints instructions for obtaining a key and exits gracefully.
 fn load_api_key() -> String {
     match var("API_KEY") {
         Ok(key) => key,
@@ -58,6 +105,10 @@ fn load_api_key() -> String {
     }
 }
 
+/// Handles graceful shutdown signals.
+///
+/// Listens for either Ctrl+C (SIGINT) on all platforms or SIGTERM on Unix systems.
+/// This allows the server to clean up resources and finish in-flight requests before stopping.
 async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()
@@ -111,12 +162,6 @@ async fn main() {
         .await
         .expect("Cannot migrate database");
 
-    // Some side note about memory:
-    // llumen is design to run on 1GB memory
-    // 1. sqlite page cache: 128MB
-    // 2. backend thread: 4MB * 4 = 16MB
-    // 3. heap memory: 256MB
-    // 4. lua runtime: 64MB * 8 = 512MB
     conn.execute(sea_orm::Statement::from_string(
         conn.get_database_backend(),
         "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;".to_owned(),
