@@ -29,6 +29,12 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<ChatReadReq>,
 ) -> JsonResult<ChatReadResp> {
+    #[cfg(feature = "tracing")]
+    {
+        use tracing::info;
+        info!(user_id = user_id, chat_id = req.id, "reading chat");
+    }
+
     let res = chat::Entity::find_by_id(req.id)
         .filter(chat::Column::OwnerId.eq(user_id))
         .find_also_related(model::Entity)

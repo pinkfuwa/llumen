@@ -45,6 +45,13 @@ where
     fn call(&mut self, req: Request<T>) -> Self::Future {
         let uri = req.uri().clone();
         let method = req.method().clone();
+
+        #[cfg(feature = "tracing")]
+        {
+            use tracing::info;
+            info!(method = ?method, uri = %uri, "incoming http request");
+        }
+
         let response_future = self.inner.call(req);
 
         ResponseFuture {
@@ -66,6 +73,16 @@ where
         let response: Response<B> = ready!(pin_response_future.poll(cx))?;
 
         if matches!(self.method, Method::POST) {
+            #[cfg(feature = "tracing")]
+            {
+                use tracing::info;
+                info!(
+                    status = response.status().as_u16(),
+                    path = %self.uri.path(),
+                    "api request completed"
+                );
+            }
+
             log::info!(
                 "serving api {} {}",
                 self.uri.path(),

@@ -26,6 +26,12 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<ChatCreateReq>,
 ) -> JsonResult<ChatCreateResp> {
+    #[cfg(feature = "tracing")]
+    {
+        use tracing::info;
+        info!(user_id = user_id, mode = ?req.mode, "creating chat");
+    }
+
     let chat_id = Chat::insert(chat::ActiveModel {
         owner_id: Set(user_id),
         model_id: Set(Some(req.model_id)),

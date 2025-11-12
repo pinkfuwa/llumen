@@ -55,6 +55,9 @@ use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
 use utils::{blob::BlobDB, password_hash::Hasher};
 
+#[cfg(feature = "tracing")]
+use tracing::info_span;
+
 /// Use MiMalloc allocator for better performance on memory-constrained systems
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -139,6 +142,9 @@ async fn main() {
 
     crate::utils::logger::init();
 
+    #[cfg(feature = "tracing")]
+    let _main_span = info_span!("llumen_backend_startup").entered();
+
     let api_key = load_api_key();
     let api_base = var("OPENAI_API_BASE").unwrap_or("https://openrouter.ai/api".to_string());
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
@@ -149,6 +155,9 @@ async fn main() {
             .to_owned(),
     );
     let blob_url = var("BLOB_URL").unwrap_or("./blobs.redb".to_owned());
+
+    #[cfg(feature = "tracing")]
+    let _db_span = info_span!("database_initialization").entered();
 
     migration::migrate(&database_url)
         .await
@@ -207,6 +216,9 @@ async fn main() {
         log::warn!("Fail to load svelte kit's build version. {}", err);
     }
 
+    #[cfg(feature = "tracing")]
+    let _router_span = info_span!("router_setup").entered();
+
     let var_name = Router::new();
     let app = var_name
         .nest(
@@ -252,6 +264,9 @@ async fn main() {
     );
 
     log::info!("Listening on http://{}", bind_addr);
+
+    #[cfg(feature = "tracing")]
+    let _server_span = info_span!("server_startup", bind_addr = %bind_addr).entered();
 
     let tcp = TcpListener::bind(bind_addr).await.unwrap();
     axum::serve(tcp, app)

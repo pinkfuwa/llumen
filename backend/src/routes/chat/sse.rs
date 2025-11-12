@@ -116,6 +116,16 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<SseReq>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, axum::Error>>>, Json<Error>> {
+    #[cfg(feature = "tracing")]
+    {
+        use tracing::info;
+        info!(
+            user_id = user_id,
+            chat_id = req.id,
+            "subscribing to chat events"
+        );
+    }
+
     let pipeline = app.processor.clone();
     let res = Chat::find_by_id(req.id)
         .one(&app.conn)
@@ -178,18 +188,15 @@ pub async fn route(
             Token::DeepStepToolCall { name, arg } => {
                 SseResp::DeepStepToolCall(SseRespToolCall { name, args: arg })
             }
+            Token::DeepStepToken(content) => SseResp::DeepStepToken(content),
             Token::DeepStepToolResult(content) => {
                 SseResp::DeepStepToolResult(SseRespToolResult { content })
             }
-            Token::DeepStepToken(content) => SseResp::DeepStepToken(content),
             Token::DeepReport(content) => SseResp::DeepReport(content),
         };
+
         Some(Ok(Event::default().json_data(event).unwrap()))
     }));
 
-    Ok(Sse::new(st).keep_alive(
-        KeepAlive::new()
-            .interval(Duration::from_secs(10))
-            .text("keep-alive"),
-    ))
+    Ok(Sse::new(st).keep_alive(KeepAlive::default().interval(Duration::from_secs(30))))
 }

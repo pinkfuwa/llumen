@@ -23,6 +23,7 @@ llumen is a LLM chat application. featuring three mode: normal chat, search and 
   - For error cause by false output of LLM, place insert chunk to top-level message.
 * Never create files with `mod.rs` paths - prefer `src/some_module.rs` instead of `src/some_module/mod.rs`.
 * Use full words for variable names (no abbreviations like "q" for "queue")
+* Always use `cargo add` to add new dependency, which should automatically chose latest version
 * Use variable shadowing to scope clones in async contexts for clarity, minimizing the lifetime of borrowed references.
   Example:
   ```rust

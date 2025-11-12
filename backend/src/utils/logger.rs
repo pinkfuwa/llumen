@@ -4,6 +4,28 @@ use dotenv::var;
 use flexi_logger::{DeferredNow, LogSpecification, Logger};
 use log::LevelFilter;
 
+#[cfg(feature = "tracing")]
+pub fn init() {
+    use console_subscriber::ConsoleLayer;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_writer(std::io::stderr)
+        .with_thread_ids(true)
+        .with_target(true);
+
+    let console_layer = ConsoleLayer::builder().spawn();
+
+    tracing_subscriber::registry()
+        .with(fmt_layer)
+        .with(console_layer)
+        .init();
+
+    log::info!("tracing + console_subscriber initialized");
+}
+
+#[cfg(not(feature = "tracing"))]
 fn custom_format(
     w: &mut dyn Write,
     now: &mut DeferredNow,
@@ -15,7 +37,9 @@ fn custom_format(
     write!(w, "{} {:<5}| {}", ts, record.level(), record.args())
 }
 
+#[cfg(not(feature = "tracing"))]
 pub fn init() {
+    // Only run flexi_logger if tracing is NOT enabled
     let level = match var("RUST_LOG").map(|x| LevelFilter::from_str(&x.to_lowercase())) {
         Ok(Ok(level)) => level,
         _ => LevelFilter::Info,
