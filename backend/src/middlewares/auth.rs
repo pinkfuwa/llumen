@@ -42,6 +42,13 @@ impl FromRequestParts<Arc<AppState>> for Middleware {
         let user_id = claim
             .ok_or("Missing claim")
             .kind(ErrorKind::MalformedToken)? as i32;
+
+        #[cfg(feature = "tracing")]
+        {
+            use tracing::info;
+            info!(user_id = user_id, "authentication successful");
+        }
+
         parts.extensions.insert(UserId(user_id));
 
         Ok(Self)

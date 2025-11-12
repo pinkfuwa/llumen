@@ -26,6 +26,12 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<ChatUpdateReq>,
 ) -> JsonResult<ChatUpdateResp> {
+    #[cfg(feature = "tracing")]
+    {
+        use tracing::info;
+        info!(user_id = user_id, chat_id = req.chat_id, "updating chat");
+    }
+
     // TODO: sync Mode with remote
 
     if req.title.is_none() {

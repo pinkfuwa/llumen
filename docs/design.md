@@ -605,6 +605,59 @@ Benefits:
 - Halting support
 - Memory-efficient (doesn't buffer entire response)
 
+### 6. Tracing and Observability
+
+**Non-default Feature: `tracing`**
+
+Enable with: `cargo build --features tracing`
+
+The application supports distributed tracing using the `tracing` crate with `tokio-console` integration. This feature provides detailed observability of async operations throughout the application.
+
+**Key Components:**
+
+1. **Logger Middleware** (`src/middlewares/logger.rs`)
+   - Logs incoming HTTP requests with method and URI
+   - Logs HTTP response status codes and paths
+   - Records timing information when tracing is enabled
+
+2. **Authentication Middleware** (`src/middlewares/auth.rs`)
+   - Traces token validation and parsing
+   - Records successful authentication with user IDs
+   - Helps debug authorization issues
+
+3. **Route Handlers** (`src/routes/chat/*.rs`)
+   - Create, read, update operations emit trace events with context
+   - SSE subscriptions traced for real-time monitoring
+   - Chat operations include user_id and chat_id in spans
+
+4. **Startup Process** (`src/main.rs`)
+   - Database initialization phase traced separately
+   - Router setup phase tracked for startup debugging
+   - Server startup and binding events recorded
+
+**Usage:**
+
+```bash
+# Build with tracing feature
+cargo build --features tracing
+
+# Run with tracing enabled
+RUST_LOG=backend=debug ./backend
+
+# Connect with tokio-console (requires tokio-console CLI tool)
+tokio-console
+```
+
+**Output:**
+
+Tracing events are emitted to stderr with thread IDs and target module information:
+- HTTP requests logged at INFO level
+- Authentication events logged at INFO level
+- Chat operations logged at INFO level
+- Can be filtered using RUST_LOG environment variable
+
+When disabled (default), the application uses standard `log` crate only, keeping the binary size minimal and runtime overhead low.
+
 ---
 
 ## Development Guidelines
