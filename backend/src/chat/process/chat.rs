@@ -12,13 +12,15 @@ use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::openrouter::{self, FinishReason};
 
+#[allow(unused_variables)]
 pub trait ChatInner {
     fn get_system_prompt(ctx: &Context, completion_ctx: &CompletionContext) -> Result<String>;
     fn get_model(ctx: &Context, completion_ctx: &CompletionContext) -> Result<openrouter::Model>;
+    /// return true if the tool call finalize this completion
     fn handoff_tool<'a>(
         pipeline: &'a mut ChatPipeline<Self>,
         toolcall: Vec<openrouter::ToolCall>,
-    ) -> BoxFuture<'a, Result<(), anyhow::Error>>
+    ) -> BoxFuture<'a, Result<bool, anyhow::Error>>
     where
         Self: Sized,
     {
@@ -69,7 +71,7 @@ impl<P: ChatInner> ChatPipeline<P> {
         })
     }
     async fn process(&mut self) -> Result<(), anyhow::Error> {
-        let mut message = self.messages.clone();
+        let message = self.messages.clone();
 
         let mut res = self
             .ctx
@@ -103,8 +105,7 @@ impl<P: ChatInner> ChatPipeline<P> {
             .map(|v| serde_json::to_string(&v).ok())
             .flatten();
 
-        // todo!("store token in message");
-
+        let mut finalized = true;
         match result.stop_reason {
             FinishReason::Stop => {}
             FinishReason::Error => log::warn!("cannot capture error"),
@@ -117,7 +118,7 @@ impl<P: ChatInner> ChatPipeline<P> {
                 }
 
                 // handoff_tool should decide whether to insert tool_call or not
-                P::handoff_tool(self, result.toolcalls).await?;
+                finalized = P::handoff_tool(self, result.toolcalls).await?;
                 if let Some(annotations) = annotations {
                     self.completion_ctx
                         .message
@@ -127,7 +128,10 @@ impl<P: ChatInner> ChatPipeline<P> {
             }
         };
 
-        Ok(())
+        if finalized {
+            return Ok(());
+        }
+        Box::pin(self.process()).await
     }
 }
 

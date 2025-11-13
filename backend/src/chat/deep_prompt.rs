@@ -103,13 +103,6 @@ impl DeepPrompt {
         Self { env }
     }
 
-    pub fn render_coordinator(&self, locale: &str) -> Result<String> {
-        let ctx = BasicContext::new(locale.to_string());
-        let template = self.env.get_template("deep_coordinator")?;
-        let rendered = template.render(&ctx)?;
-        Ok(rendered)
-    }
-
     pub fn render_prompt_enhancer(&self, locale: &str) -> Result<String> {
         let ctx = BasicContext::new(locale.to_string());
         let template = self.env.get_template("deep_prompt_enhancer")?;

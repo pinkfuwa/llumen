@@ -127,8 +127,8 @@ pub fn openrouter_stream_to_assitant_chunk(
                     result.push(AssistantChunk::Text(x.clone()));
                 }
             }
-            openrouter::StreamCompletionResp::Usage { price, token } => {}
-            openrouter::StreamCompletionResp::ToolToken { idx, args, name } => {
+            openrouter::StreamCompletionResp::Usage { .. } => {}
+            openrouter::StreamCompletionResp::ToolToken { .. } => {
                 // ToolToken is for streaming chunks, typically merged into the final ToolCall
                 // For now, we can skip them as they're intermediate states
             }
