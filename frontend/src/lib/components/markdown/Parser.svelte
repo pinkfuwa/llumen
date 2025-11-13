@@ -183,17 +183,15 @@
 			Unmapped node type: {ast.type}
 		</p>
 	{:else}
-		{#key (monochrome && ast.type.includes('Code') ? 'm' : 'u') + ast.text}
-			{@const MappedComponent = nodeMap[ast.type]}
-			<MappedComponent node={ast} {monochrome}>
-				{#each segments as seg}
-					{#if seg.type === 'text'}
-						{seg.text}
-					{:else if seg.type === 'node'}
-						<Parser ast={seg.node} {monochrome} />
-					{/if}
-				{/each}
-			</MappedComponent>
-		{/key}
+		{@const MappedComponent = nodeMap[ast.type]}
+		<MappedComponent node={ast} {monochrome}>
+			{#each segments as seg}
+				{#if seg.type === 'text'}
+					{seg.text}
+				{:else if seg.type === 'node'}
+					<Parser ast={seg.node} {monochrome} />
+				{/if}
+			{/each}
+		</MappedComponent>
 	{/if}
 {/if}
