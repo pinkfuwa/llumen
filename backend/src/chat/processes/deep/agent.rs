@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result, bail};
-use futures_util::future::BoxFuture;
 use protocol::*;
 use serde::Deserialize;
 use tokio_stream::StreamExt;
@@ -25,10 +24,10 @@ pub struct DeepAgent<'a> {
 }
 
 impl<'a> DeepAgent<'a> {
-    pub fn handoff_tool(
+    pub async fn handoff_tool(
         pipeline: &'a mut ChatPipeline<super::Inner>,
         _toolcall: Vec<openrouter::ToolCall>,
-    ) -> BoxFuture<'a, Result<()>> {
+    ) -> Result<()> {
         let model = pipeline.model.clone();
         let ctx = pipeline.ctx.clone();
         let completion_ctx = &mut pipeline.completion_ctx;
@@ -41,20 +40,18 @@ impl<'a> DeepAgent<'a> {
             enhanced_prompt: String::new(),
         };
 
-        Box::pin(async move {
-            macro_rules! handle {
-                ($e:ident) => {
-                    if let Err(err) = agent.$e().await {
-                        agent.completion_ctx.add_error(err.to_string());
-                        return Ok(());
-                    }
-                };
-            }
-            handle!(enhance);
-            handle!(plan);
-            handle!(execute_steps);
-            Ok(())
-        })
+        macro_rules! handle {
+            ($e:ident) => {
+                if let Err(err) = agent.$e().await {
+                    agent.completion_ctx.add_error(err.to_string());
+                    return Ok(());
+                }
+            };
+        }
+        handle!(enhance);
+        handle!(plan);
+        handle!(execute_steps);
+        Ok(())
     }
 
     // Remove the separate run_agent method

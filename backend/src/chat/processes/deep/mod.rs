@@ -56,10 +56,13 @@ impl ChatInner for Inner {
     fn handoff_tool<'a>(
         pipeline: &'a mut ChatPipeline<Self>,
         toolcall: Vec<openrouter::ToolCall>,
-    ) -> BoxFuture<'a, Result<(), anyhow::Error>>
+    ) -> BoxFuture<'a, Result<bool, anyhow::Error>>
     where
         Self: Sized,
     {
-        agent::DeepAgent::handoff_tool(pipeline, toolcall)
+        Box::pin(async move {
+            agent::DeepAgent::handoff_tool(pipeline, toolcall).await?;
+            Ok(true)
+        })
     }
 }

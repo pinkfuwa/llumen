@@ -47,12 +47,12 @@ impl From<PlannerResponse> for protocol::Deep {
     }
 }
 
-/// Handoff tool call structure
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct HandoffToPlanner {
-    pub research_topic: String,
-    pub local: String,
-}
+// TODO: provide different prompt to different topic
+// #[derive(Debug, Clone, Deserialize, Serialize)]
+// pub struct HandoffToPlanner {
+//     pub research_topic: String,
+//     pub local: String,
+// }
 
 pub fn from_str_error<T: DeserializeOwned>(s: &str, kind: &'static str) -> anyhow::Result<T> {
     serde_json::from_str(s).with_context(|| format!("\"{}\" is not a valid {}", s, kind))

@@ -1,4 +1,4 @@
-use sea_orm::{ActiveValue, entity::prelude::*};
+use sea_orm::ActiveValue;
 
 impl crate::message::ActiveModel {
     pub fn full_change(&mut self) {
