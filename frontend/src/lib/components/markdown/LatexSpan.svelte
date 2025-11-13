@@ -6,6 +6,9 @@
 	let { node, monochrome = false } = $props();
 </script>
 
-<button onclick={() => copy(node.text)} class="rounded-md p-2 font-semibold break-all">
+<button
+	onclick={() => copy(node.text)}
+	class="max-w-full overflow-x-auto rounded-md p-2 font-semibold"
+>
 	<Latex text={node.text} />
 </button>
