@@ -74,6 +74,10 @@ impl Context {
     pub fn is_streaming(&self, chat_id: i32) -> bool {
         !self.channel.publishable(chat_id)
     }
+
+    pub fn get_model_ids(&self) -> Vec<String> {
+        self.openrouter.get_model_ids()
+    }
 }
 
 /// The context for a single completion request.
@@ -240,7 +244,7 @@ impl CompletionContext {
                     .collect::<Vec<_>>()
                     .join("");
                 if !text.is_empty() {
-                    messages.push(openrouter::Message::Assistant(text));
+                    messages.push(openrouter::Message::User(text));
                 }
             }
         });
@@ -296,8 +300,6 @@ impl CompletionContext {
         if self.message.inner.is_empty() {
             self.add_error("No content generated, it's likely a bug of llumen.\nReport Here: https://github.com/pinkfuwa/llumen/issues/new".to_string());
         }
-
-        let db = &self.ctx.db;
 
         let token_count = self.message.token_count;
         let cost = self.message.price;

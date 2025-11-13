@@ -378,6 +378,7 @@ pub struct CompletionResponse {
     pub choices: Option<Vec<FullChoice>>,
     pub error: Option<ErrorInfo>,
     pub model: Option<String>,
+    pub usage: Option<Usage>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

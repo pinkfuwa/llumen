@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { isLightTheme } from '$lib/preference';
 	import { onDestroy } from 'svelte';
-	import { get, toStore, writable } from 'svelte/store';
+	import { derived, get, toStore, writable } from 'svelte/store';
+	import { useModelIds } from '$lib/api/model';
 
 	const useCodeMirrorPromise = import('./index');
+	const modelIdsQuery = useModelIds();
 
 	let {
 		value = $bindable('# defaultConfig'),
@@ -22,7 +24,8 @@
 			isLightTheme: get(isLightTheme),
 			value: valWritable,
 			element: toStore(() => div!),
-			onDestroy: (x) => (callback = x)
+			onDestroy: (x) => (callback = x),
+			modelIds: derived(modelIdsQuery.data, (res) => res?.ids ?? [])
 		});
 		loaded = true;
 	});

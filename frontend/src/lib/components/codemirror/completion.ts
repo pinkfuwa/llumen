@@ -1,4 +1,5 @@
 import type { CompletionContext } from '@codemirror/autocomplete';
+import { get, writable, type Readable } from 'svelte/store';
 
 // Constants for TOML completion
 export const TOP_LEVEL_FIELDS = ['model_id', 'display_name'];
@@ -9,20 +10,11 @@ export const TOML_TABLE_HEADERS = ['[capability]', '[parameter]'];
 // Known boolean fields for autocomplete
 export const BOOLEAN_FIELDS = ['image', 'audio', 'ocr', 'tool'];
 
-// Model IDs are expected to be injected from outside (e.g., CodeMirror setup)
-export let modelIds: string[] = [];
-export let modelIdsFetched = false;
+// Model IDs getter - will be set by the Svelte component
+let modelIds: Readable<string[]> = writable([]);
 
-export async function fetchModelIds() {
-	try {
-		const resp = await fetch('https://openrouter.ai/api/v1/models');
-		const { data: models } = await resp.json();
-		modelIds = models.map((m: any) => m.id);
-		modelIdsFetched = true;
-	} catch (e) {
-		modelIds = [];
-		modelIdsFetched = true;
-	}
+export function setModelIds(models: Readable<string[]>) {
+	modelIds = models;
 }
 
 /**
@@ -38,6 +30,7 @@ export function tomlCompletion(context: CompletionContext) {
 	const lineObj = state.doc.lineAt(pos);
 	const lineText = lineObj.text;
 	const before = lineText.slice(0, pos - lineObj.from);
+	const models = get(modelIds);
 
 	// Gather all table headers in the document
 	const tableHeaders = new Set<string>();
@@ -89,7 +82,7 @@ export function tomlCompletion(context: CompletionContext) {
 		// If user typed provider/model, filter models. If only provider, show provider list.
 		if (afterQuote.length === 0 || !/[a-zA-Z0-9]/.test(afterQuote)) {
 			// Show only unique providers
-			const providers = Array.from(new Set(modelIds.map((id) => id.split('/')[0])));
+			const providers = Array.from(new Set(models.map((id) => id.split('/')[0])));
 			return {
 				from: word.from,
 				options: providers.map((provider) => ({
@@ -101,7 +94,7 @@ export function tomlCompletion(context: CompletionContext) {
 		} else if (!afterQuote.includes('/')) {
 			// Show providers matching prefix
 			const prefix = afterQuote;
-			const providers = Array.from(new Set(modelIds.map((id) => id.split('/')[0]))).filter(
+			const providers = Array.from(new Set(models.map((id) => id.split('/')[0]))).filter(
 				(provider) => provider.startsWith(prefix)
 			);
 			return {
@@ -115,7 +108,7 @@ export function tomlCompletion(context: CompletionContext) {
 		} else {
 			// Show models matching provider/model prefix
 			const prefix = afterQuote;
-			const filteredModels = modelIds.filter((id) => id.startsWith(prefix));
+			const filteredModels = models.filter((id) => id.startsWith(prefix));
 			return {
 				from: word.from,
 				options: filteredModels.map((id) => ({

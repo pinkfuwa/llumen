@@ -49,22 +49,27 @@ llumen is a LLM chat application. featuring three mode: normal chat, search and 
   - Propagate critical errors (backend disconnect/reachable) with `dispatchError` from `frontend/src/lib/error.ts`.
   - For user-input errors (e.g., form validation), display inline messages without crashing the app.
 
-## query management library
+## Query Management Library
 
 `frontend/src/lib/api/state/index.ts` emphasizes small bundle sizes by omitting advanced features like automatic deduplication in queries and signal-based inputs.
 Instead, it relies on manual top-level invocation (e.g., via setContext) for sharing queries across components.
 
-```ts
-export function useRoom(id: number): QueryResult<ChatReadResp> {
-	return CreateQuery<ChatReadReq, ChatReadResp>({
-		key: ['chatRead', id.toString()],
-		path: 'chat/read',
-		body: { id },
-		revalidateOnFocus: false,
-		staleTime: Infinity
-	});
-}
-```
+Following are step to connect new endpoint:
+1. run codegen to generate typescript type from rust code.
+2. Create file for corresponding resource type in `frontend/src/lib/api/<resource>(.svelte).ts`
+3. use custom query management library
+  ```ts
+  export function useRoom(id: number): QueryResult<ChatReadResp> {
+  	return CreateQuery<ChatReadReq, ChatReadResp>({
+  		key: ['chatRead', id.toString()],
+  		path: 'chat/read', // hit /api/chat/read
+  		body: { id }, // request body, matching ChatReadReq
+  		revalidateOnFocus: false,
+  		staleTime: Infinity
+  	});
+  }
+  ```
+4. call the function just created inside reactivity context(must be called during component initialization)
 
 ## Database government
 

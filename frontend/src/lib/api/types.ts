@@ -3,9 +3,9 @@
 */
 
 export enum ChatMode {
-	Normal = 'normal',
-	Search = 'search',
-	Research = 'research'
+	Normal = "normal",
+	Search = "search",
+	Research = "research",
 }
 
 export interface ChatCreateReq {
@@ -29,13 +29,14 @@ export interface ChatHaltReq {
 	id: number;
 }
 
-export interface ChatHaltResp {}
+export interface ChatHaltResp {
+}
 
 export enum ChatPaginateReqOrder {
 	/** greater than */
-	Gt = 'gt',
+	Gt = "gt",
 	/** less than */
-	Lt = 'lt'
+	Lt = "lt",
 }
 
 export interface ChatPaginateReqLimit {
@@ -88,31 +89,25 @@ export interface ChatUpdateResp {
 }
 
 export enum StepKind {
-	Code = 'code',
-	Research = 'research'
+	Code = "code",
+	Research = "research",
 }
 
-export type AssistantChunk =
-	| { t: 'annotation'; c: string }
-	| { t: 'text'; c: string }
-	| { t: 'reasoning'; c: string }
-	| {
-			t: 'tool_call';
-			c: {
-				id: string;
-				arg: string;
-				name: string;
-			};
-	  }
-	| {
-			t: 'tool_result';
-			c: {
-				id: string;
-				response: string;
-			};
-	  }
-	| { t: 'error'; c: string }
-	| { t: 'deep_agent'; c: Deep };
+export type AssistantChunk = 
+	| { t: "annotation", c: string }
+	| { t: "text", c: string }
+	| { t: "reasoning", c: string }
+	| { t: "tool_call", c: {
+	id: string;
+	arg: string;
+	name: string;
+}}
+	| { t: "tool_result", c: {
+	id: string;
+	response: string;
+}}
+	| { t: "error", c: string }
+	| { t: "deep_agent", c: Deep };
 
 export interface Step {
 	need_search: boolean;
@@ -130,19 +125,96 @@ export interface Deep {
 	steps: Step[];
 }
 
+/**
+ * Enumeration of all possible error types in the Llumen API.
+ * 
+ * Each variant represents a category of error that can occur during request processing.
+ * The frontend uses these to implement error-specific handling (e.g., redirecting to
+ * login on Unauthorized).
+ * 
+ * When adding new error types:
+ * 1. Consider if an existing variant applies first
+ * 2. Add to the enum with a clear, descriptive name
+ * 3. Update error conversion logic in route handlers
+ * 4. Consider what frontend UI behavior should result from this error
+ */
 export enum ErrorKind {
-	Unauthorized = 'unauthorized',
-	MalformedToken = 'malformed_token',
-	MalformedRequest = 'malformed_request',
-	Internal = 'internal',
-	LoginFail = 'login_fail',
-	ResourceNotFound = 'resource_not_found',
-	ApiFail = 'api_fail',
-	ToolCallFail = 'tool_call_fail'
+	/**
+	 * User is not authenticated or session token is missing.
+	 * Frontend should redirect to login page.
+	 */
+	Unauthorized = "unauthorized",
+	/**
+	 * Session token is malformed, expired, or tampered with.
+	 * Usually means the user needs to log in again.
+	 */
+	MalformedToken = "malformed_token",
+	/**
+	 * Request body doesn't match expected schema.
+	 * Indicates a client-side bug or API version mismatch.
+	 */
+	MalformedRequest = "malformed_request",
+	/**
+	 * Unexpected internal server error.
+	 * Indicates a bug in Llumen or an unhandled edge case.
+	 * Frontend should show generic error message and suggest reporting.
+	 */
+	Internal = "internal",
+	/**
+	 * User login failed (incorrect credentials).
+	 * Frontend should show specific error message to user.
+	 */
+	LoginFail = "login_fail",
+	/**
+	 * Requested resource (chat, message, user, etc.) not found.
+	 * May indicate:
+	 * - Resource was deleted by another client
+	 * - User lacks permission to access resource
+	 * - Resource ID is invalid
+	 */
+	ResourceNotFound = "resource_not_found",
+	/**
+	 * OpenRouter API request failed.
+	 * Indicates network issue, rate limiting, or API problem.
+	 * Frontend should suggest retrying or checking API status.
+	 */
+	ApiFail = "api_fail",
+	/**
+	 * Tool execution failed (web search, code execution, etc.).
+	 * May indicate:
+	 * - Network connectivity issue
+	 * - Tool service is down
+	 * - Tool rejected input parameters
+	 * Frontend should show tool-specific error context.
+	 */
+	ToolCallFail = "tool_call_fail",
 }
 
+/**
+ * Error response structure sent to the frontend.
+ * 
+ * This is the standard JSON response for all error cases.
+ * The frontend uses the `error` field to determine error handling behavior,
+ * and the `reason` field to display user-friendly messages.
+ * 
+ * # Example
+ * ```json
+ * {
+ * "error": "unauthorized",
+ * "reason": "Invalid or expired token"
+ * }
+ * ```
+ */
 export interface Error {
+	/**
+	 * Error classification used for client-side error handling.
+	 * Determines UI behavior, logging level, and user messaging.
+	 */
 	error: ErrorKind;
+	/**
+	 * Human-readable error description from the underlying error context.
+	 * Should be descriptive enough for logging but safe to show users.
+	 */
 	reason: string;
 }
 
@@ -189,9 +261,9 @@ export interface MessageDeleteReq {
 
 export enum MessagePaginateReqOrder {
 	/** greater than */
-	Gt = 'gt',
+	Gt = "gt",
 	/** less than */
-	Lt = 'lt'
+	Lt = "lt",
 }
 
 export interface MessagePaginateReqLimit {
@@ -212,15 +284,12 @@ export interface MessagePaginateReqRange {
 	lower: number;
 }
 
-export type MessageInner =
-	| {
-			t: 'user';
-			c: {
-				text: string;
-				files: FileMetadata[];
-			};
-	  }
-	| { t: 'assistant'; c: AssistantChunk[] };
+export type MessageInner = 
+	| { t: "user", c: {
+	text: string;
+	files: FileMetadata[];
+}}
+	| { t: "assistant", c: AssistantChunk[] };
 
 export interface MessagePaginateRespList {
 	id: number;
@@ -261,6 +330,13 @@ export interface ModelDeleteResp {
 	deleted: boolean;
 }
 
+export interface ModelIdsReq {
+}
+
+export interface ModelIdsResp {
+	ids: string[];
+}
+
 export interface ModelList {
 	id: number;
 	display_name: string;
@@ -269,7 +345,8 @@ export interface ModelList {
 	other_file_input: boolean;
 }
 
-export interface ModelListReq {}
+export interface ModelListReq {
+}
 
 export interface ModelListResp {
 	list: ModelList[];
@@ -354,7 +431,8 @@ export interface UserList {
 	name: string;
 }
 
-export interface UserListReq {}
+export interface UserListReq {
+}
 
 export interface UserListResp {
 	list: UserList[];
@@ -388,28 +466,28 @@ export interface UserUpdateResp {
 	user_id: number;
 }
 
-export type ChatPaginateReq =
-	| { t: 'limit'; c: ChatPaginateReqLimit }
-	| { t: 'range'; c: ChatPaginateReqRange };
+export type ChatPaginateReq = 
+	| { t: "limit", c: ChatPaginateReqLimit }
+	| { t: "range", c: ChatPaginateReqRange };
 
-export type MessagePaginateReq =
-	| { t: 'limit'; c: MessagePaginateReqLimit }
-	| { t: 'range'; c: MessagePaginateReqRange };
+export type MessagePaginateReq = 
+	| { t: "limit", c: MessagePaginateReqLimit }
+	| { t: "range", c: MessagePaginateReqRange };
 
 /**
  * Represents a message sent over the SSE (Server-Sent Events) stream in the chat API.
- *
+ * 
  * Each enum variant corresponds to a specific event or data payload that can be emitted to the
  * client during a chat session. The enum is serialized in a tagged form with fields
  * `{ "t": "<variant>", "c": <content> }` (snake_case variant names).
- *
+ * 
  * Concatenation semantics for assembling a complete assistant message:
  * - Assistant-generated text is streamed as a sequence of `Token(String)` events.
  * - The assistant's internal reasoning is streamed as `Reasoning(String)` events.
  * - In "deep" research mode, higher-level plans and final reports are streamed as
  * `DeepPlan(String)` and `DeepReport(String)` respectively, and individual deep-step
  * outputs use `DeepStep*` variants.
- *
+ * 
  * To reconstruct a full, human-facing message the client SHOULD concatenate the textual
  * chunks in the order they are received:
  * - For normal assistant responses: append `Token` chunks (and optionally interleave
@@ -420,7 +498,7 @@ export type MessagePaginateReq =
  * `DeepStepReasoning` chunks as they arrive, and finally include `DeepReport` when it is
  * emitted. `Complete` is still used to indicate the message is finalized and carries
  * the canonical metadata for the completed message.
- *
+ * 
  * Other variants represent discrete non-textual events:
  * - `Version(i32)`: an initial signal of the latest message/version id for the chat.
  * - `ToolCall(SseRespToolCall)`: a tool invocation with name and args.
@@ -428,26 +506,27 @@ export type MessagePaginateReq =
  * - `Start(SseStart)`: indicates the beginning of processing for a new assistant message.
  * - `Title(String)`: an updated or generated title for the chat.
  * - `Error(String)`: an error message to surface to the client.
- *
+ * 
  * Important: the client should treat text-bearing variants (`Token`, `Reasoning`,
  * `DeepPlan`, `DeepStepToken`, `DeepStepReasoning`, `DeepReport`) as streamable fragments
  * that together form the final content; `Complete` is the canonical signal that final
  * assembly is complete and includes definitive metadata.
  */
-export type SseResp =
-	| { t: 'version'; c: number }
-	| { t: 'token'; c: string }
-	| { t: 'reasoning'; c: string }
-	| { t: 'tool_call'; c: SseRespToolCall }
-	| { t: 'tool_result'; c: SseRespToolResult }
-	| { t: 'complete'; c: SseRespMessageComplete }
-	| { t: 'title'; c: string }
-	| { t: 'error'; c: string }
-	| { t: 'start'; c: SseStart }
-	| { t: 'deep_plan'; c: string }
-	| { t: 'deep_step_start'; c: number }
-	| { t: 'deep_step_token'; c: string }
-	| { t: 'deep_step_reasoning'; c: string }
-	| { t: 'deep_step_tool_result'; c: SseRespToolResult }
-	| { t: 'deep_step_tool_call'; c: SseRespToolCall }
-	| { t: 'deep_report'; c: string };
+export type SseResp = 
+	| { t: "version", c: number }
+	| { t: "token", c: string }
+	| { t: "reasoning", c: string }
+	| { t: "tool_call", c: SseRespToolCall }
+	| { t: "tool_result", c: SseRespToolResult }
+	| { t: "complete", c: SseRespMessageComplete }
+	| { t: "title", c: string }
+	| { t: "error", c: string }
+	| { t: "start", c: SseStart }
+	| { t: "deep_plan", c: string }
+	| { t: "deep_step_start", c: number }
+	| { t: "deep_step_token", c: string }
+	| { t: "deep_step_reasoning", c: string }
+	| { t: "deep_step_tool_result", c: SseRespToolResult }
+	| { t: "deep_step_tool_call", c: SseRespToolCall }
+	| { t: "deep_report", c: string };
+
