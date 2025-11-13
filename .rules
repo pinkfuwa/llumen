@@ -79,17 +79,19 @@ We use sea-orm without entity-codegen. When modifying migration files, ensure th
 
 Our project emphasizes performance and binary-size. We choose minimal dependency for both frontend and backend.
 
-## Sub Agent
+## Agent and subagent
 
-The **sub agent pattern** is the superset of simple tool for handling complex, multi-step tasks in LLM applications.
+There are three agent: normal/search/deep-research
 
-To create new sub agent
+The **subagent pattern** is the superset of simple tool for handling complex, multi-step tasks in LLM applications.
 
+To create new subagent:
 1. Define a tool in `get_tools` with a unique name and schema.
 2. On tool call, invoke `handoff_tool`, passing the pipeline and tool arguments.
 3. Use mutable `CompletionContext` for all state updates.
 4. On error, append an **error chunk** to the assistant output.
 5. When sub-agent finished its job, return ture is agent take the final output, or return false to trigger next completion(common pattern for simple tool call).
+6. create/modify agent to wire subagent to agent
 
 ### backend tech stack
 * Rust

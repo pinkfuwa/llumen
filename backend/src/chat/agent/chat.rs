@@ -43,7 +43,7 @@ pub struct ChatPipeline<P: ChatInner> {
     pub completion_ctx: CompletionContext,
     pub model: openrouter::Model,
     // TODO: don't store message, compute when used
-    messages: Vec<openrouter::Message>,
+    pub messages: Vec<openrouter::Message>,
     tools: Vec<openrouter::Tool>,
     pipeline: PhantomData<P>,
 }

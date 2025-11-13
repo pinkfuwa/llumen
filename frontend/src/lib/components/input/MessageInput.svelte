@@ -10,10 +10,11 @@
 	import { _ } from 'svelte-i18n';
 	import StopBtn from './StopBtn.svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { ChatMode as Mode } from '$lib/api/types';
-	import { onMount, setContext } from 'svelte';
-	import { writable } from 'svelte/store';
+	import { ChatMode as Mode, type ModelListResp } from '$lib/api/types';
+	import { getContext, setContext, untrack } from 'svelte';
+	import { get, writable, type Readable } from 'svelte/store';
 	import { FileUp } from '@lucide/svelte';
+	import { dispatchError } from '$lib/error';
 
 	let {
 		mode = $bindable(Mode.Normal),
@@ -45,6 +46,19 @@
 	afterNavigate((after) => {
 		if (after.to?.route.id == '/chat/[id]') content = '';
 		editable = true;
+	});
+
+	// reset mode when tool is not supported
+	// FIXME: model isn't sync when updated, only sync on delete/create
+	$effect(() => {
+		if (mode == Mode.Normal) return;
+		const models = get(getContext<Readable<ModelListResp | undefined>>('models'));
+		if (models == undefined) return;
+		const model = models.list.find((m) => m.id == modelId);
+		if (model == undefined) return;
+		if (model.tool) return;
+		untrack(() => (mode = Mode.Normal));
+		dispatchError('internal', "the model doesn't support tool");
 	});
 
 	function submit() {

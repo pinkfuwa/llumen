@@ -28,6 +28,7 @@ pub struct ModelCreateResp {
     pub image_input: bool,
     pub audio_input: bool,
     pub other_file_input: bool,
+    pub tool: bool,
 }
 
 pub async fn route(
@@ -53,6 +54,7 @@ pub async fn route(
                 image_input: cfg.is_image_capable(),
                 audio_input: cfg.is_audio_capable(),
                 other_file_input: cfg.is_other_file_capable(),
+                tool: cfg.is_tool_capable(),
                 display_name: cfg.display_name,
             }))
         }

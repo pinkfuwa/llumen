@@ -32,28 +32,35 @@ pub struct Openrouter {
     api_key: String,
     chat_completion_endpoint: String,
     model_ids: Arc<RwLock<Vec<String>>>,
-    default_req: raw::CompletionReq,
     http_client: reqwest::Client,
+    // true if not openrouter
+    compatibility_mode: bool,
 }
 
 impl Openrouter {
+    fn get_request(&self) -> raw::CompletionReq {
+        let mut default_req = raw::CompletionReq::default();
+        if self.compatibility_mode {
+            default_req.plugins = None;
+            default_req.usage = None;
+        }
+        default_req
+    }
     pub fn new(api_key: impl AsRef<str>, api_base: impl AsRef<str>) -> Self {
         let api_base = api_base.as_ref();
         let api_key = api_key.as_ref().to_string();
 
         let chat_completion_endpoint =
             format!("{}/v1/chat/completions", api_base.trim_end_matches('/'));
-        let mut default_req = raw::CompletionReq::default();
 
         log::info!(
             "Using endpoint {} for completions",
             &chat_completion_endpoint
         );
 
-        if !api_base.contains("openrouter") {
+        let compatibility_mode = !api_base.contains("openrouter");
+        if compatibility_mode {
             log::warn!("Custom API_BASE detected, disabling plugin support");
-            default_req.plugins = None;
-            default_req.usage = None;
         }
 
         let model_ids = Arc::new(RwLock::new(Vec::new()));
@@ -76,9 +83,9 @@ impl Openrouter {
         Self {
             api_key,
             chat_completion_endpoint,
-            default_req,
             model_ids,
             http_client: reqwest::Client::new(),
+            compatibility_mode,
         }
     }
 
@@ -112,14 +119,14 @@ impl Openrouter {
 
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.get_model_id(),
+            model: model.get_full_id(self.compatibility_mode),
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
             top_p: model.top_p,
             tools,
             response_format: model.response_format.clone(),
-            ..self.default_req.clone()
+            ..self.get_request()
         };
 
         req.log();
@@ -155,14 +162,14 @@ impl Openrouter {
 
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.get_model_id(),
+            model: model.id,
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
             top_p: model.top_p,
             stream: false,
             response_format: model.response_format.clone(),
-            ..self.default_req.clone()
+            ..self.get_request()
         };
 
         req.log();

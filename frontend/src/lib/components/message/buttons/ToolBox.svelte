@@ -13,7 +13,7 @@
 	<Accordion.Item>
 		<Accordion.Header>
 			<Accordion.Trigger
-				class="flex flex-row flex-nowrap rounded p-2 duration-150 hover:bg-primary hover:text-text-hover"
+				class="flex flex-row flex-nowrap items-center rounded p-2 duration-150 hover:bg-primary hover:text-text-hover"
 			>
 				<ToolCase class="mr-2" />
 				{#if !open}

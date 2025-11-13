@@ -28,6 +28,7 @@ pub struct ModelList {
     pub image_input: bool,
     pub audio_input: bool,
     pub other_file_input: bool,
+    pub tool: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -53,6 +54,7 @@ pub async fn route(
                 image_input: config.is_image_capable(),
                 audio_input: config.is_audio_capable(),
                 other_file_input: config.is_other_file_capable(),
+                tool: config.is_tool_capable(),
                 display_name: config.display_name,
             })
         })
