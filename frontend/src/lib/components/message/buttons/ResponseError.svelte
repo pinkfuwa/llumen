@@ -6,5 +6,7 @@
 
 <Warning>
 	<CloudAlert class="mr-2 inline-block h-7 w-7" />
-	{content}
+	<span class="break-all">
+		{content}
+	</span>
 </Warning>
