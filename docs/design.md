@@ -459,43 +459,72 @@ Direct conversation with the LLM.
 
 ### Search Mode
 
-Augments responses with web search results.
+Augments responses with web search, content crawling, and code execution capabilities.
 
 **Flow:**
 1. Load chat history
-2. Web search for user's query
-3. Render search system prompt with results
-4. Call LLM with search context
-5. Stream tokens to client
-6. Save message
+2. Render search system prompt with online mode enabled
+3. Call LLM with available tools
+4. LLM may use tools to search, crawl URLs, or execute Lua code
+5. Execute tool calls and return results to LLM
+6. Continue conversation loop until LLM completes response
+7. Stream tokens to client
+8. Save message
 
 **System Prompt:** `prompts/search.md`
 
 **Tools:**
-- WebSearchTool: Queries search API
+- WebSearchTool: Search the web using DuckDuckGo API
+- CrawlTool: Fetch and convert web page content to markdown
+- LuaReplTool: Execute Lua code for data analysis or calculations
+
+**Features:**
+- Tool calling with automatic handling and result integration
+- Multiple tool calls in a single response supported
+- Online mode enables real-time information retrieval
+- LLM decides when and how to use tools based on user queries
 
 ### Deep Research Mode
 
 Multi-step research with multiple tools and LLM reasoning.
 
+---
+
+### Sub Agent Pattern in Deep Research Mode
+
+Deep research mode in Llumen is architected using a **sub agent pattern**. This pattern enables complex, multi-step reasoning and tool usage by delegating specific tasks to specialized sub-agents within a coordinated workflow.
+
+**Structure:**
+- The main agent (coordinator) receives the user's research query.
+- It enhances the prompt for clarity and context.
+- The coordinator then delegates planning and execution to sub-agents:
+  - **Planner Sub-Agent:** Generates a structured research plan, breaking the task into actionable steps.
+  - **Step Executor Sub-Agent:** Executes each step, selecting appropriate tools (web search, crawling, code execution) and reasoning over results.
+  - **Reporter Sub-Agent:** Synthesizes findings into a comprehensive report.
+
 **Flow:**
-1. Load chat history
-2. Use Deep Research coordinator prompt
-3. Multiple LLM calls with tools:
-   - Web search for information
-   - Crawl URLs for full content
-   - Execute code for analysis
-   - Reason over results
-4. Return comprehensive response
+1. Load chat history and user prompt.
+2. Enhance the prompt using LLM for better context.
+3. Planner sub-agent creates a multi-step research plan.
+4. For each step:
+   - Step executor sub-agent chooses tools and interacts with LLM.
+   - Executes web search, crawls URLs, or runs code as needed.
+   - Integrates tool results and LLM reasoning.
+5. Reporter sub-agent generates a final, comprehensive response.
 
 **System Prompts:**
 - `prompts/coordinator.md` - Orchestrates multi-step process
-- Various tool prompts
+- Planner, step executor, and reporter prompts for sub-agents
 
 **Tools:**
 - WebSearchTool: Search
 - CrawlTool: Fetch page content
 - LuaReplTool: Code execution
+
+**Benefits of Sub Agent Pattern:**
+- Modularizes complex research tasks
+- Enables specialized reasoning and tool usage per step
+- Improves maintainability and extensibility for future agents or tools
 
 ---
 

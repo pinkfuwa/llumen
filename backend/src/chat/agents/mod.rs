@@ -1,4 +1,4 @@
-use super::process::chat::ChatPipeline;
+use super::agent::chat::ChatPipeline;
 
 mod deep;
 mod normal;

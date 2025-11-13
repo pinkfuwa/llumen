@@ -12,9 +12,10 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn get_model_id(&self) -> String {
+    /// get id with suffix
+    pub fn get_full_id(&self, compatibility_mode: bool) -> String {
         let mut id = self.id.clone();
-        if self.online {
+        if self.online && !compatibility_mode {
             id.push_str(":online");
         }
         id

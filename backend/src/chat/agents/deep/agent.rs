@@ -6,10 +6,11 @@ use serde::Deserialize;
 use tokio_stream::StreamExt;
 
 use super::helper::*;
+use crate::chat::agent::chat::ChatPipeline;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::chat::deep_prompt::{CompletedStep, ReportInputContext, StepInputContext};
-use crate::chat::process::chat::ChatPipeline;
+use crate::chat::tools::{get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def};
 use crate::chat::{CompletionContext, Context, Token};
 use crate::openrouter;
 use crate::utils::model::{ModelCapability, ModelChecker};

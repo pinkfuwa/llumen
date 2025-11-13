@@ -5,11 +5,11 @@ use anyhow::{Context as _, Result};
 use futures_util::future::BoxFuture;
 use protocol::ModelConfig;
 
-use crate::chat::process::chat::ChatPipeline;
+use crate::chat::agent::chat::ChatPipeline;
 use crate::chat::{CompletionContext, Context};
 use crate::openrouter;
 
-use crate::chat::{process::chat::ChatInner, prompt::PromptKind};
+use crate::chat::{agent::chat::ChatInner, prompt::PromptKind};
 use crate::utils::model::ModelChecker;
 
 pub struct Inner;
