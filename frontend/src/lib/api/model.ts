@@ -18,7 +18,9 @@ import type {
 	ModelCreateReq,
 	ModelCreateResp,
 	ModelWriteReq,
-	ModelWriteResp
+	ModelWriteResp,
+	ModelIdsReq,
+	ModelIdsResp
 } from './types';
 
 export enum Mode {
@@ -99,6 +101,14 @@ export function updateModel(): CreateMutationResult<ModelWriteReq, ModelWriteRes
 				}
 			});
 		}
+	});
+}
+
+export function useModelIds(): QueryResult<ModelIdsResp> {
+	return CreateQuery({
+		path: 'model/ids',
+		body: {},
+		key: ['modelIds']
 	});
 }
 

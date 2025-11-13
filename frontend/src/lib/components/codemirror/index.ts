@@ -9,15 +9,16 @@ import { get, type Readable, type Writable } from 'svelte/store';
 import { autocompletion, acceptCompletion } from '@codemirror/autocomplete';
 import { minimalSetup } from 'codemirror';
 
-import { modelIdsFetched, fetchModelIds, tomlCompletion } from './completion';
+import { setModelIds, tomlCompletion } from './completion';
 
 export default function useCodeMirror(option: {
 	isLightTheme: boolean;
 	value: Writable<string>;
 	element: Readable<HTMLDivElement>;
 	onDestroy: (callback: () => void) => void;
+	modelIds: Readable<string[]>;
 }) {
-	const { isLightTheme, value, element, onDestroy } = option;
+	const { isLightTheme, value, element, onDestroy, modelIds } = option;
 
 	const div = get(element);
 
@@ -27,9 +28,7 @@ export default function useCodeMirror(option: {
 		value.set(newValue);
 	});
 
-	if (!modelIdsFetched) {
-		fetchModelIds();
-	}
+	setModelIds(modelIds);
 
 	const autocompleteTheme = EditorView.theme({
 		'.cm-tooltip-autocomplete': {

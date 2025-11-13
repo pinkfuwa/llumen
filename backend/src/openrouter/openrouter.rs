@@ -1,116 +1,37 @@
-use crate::openrouter::error::Error;
-use crate::openrouter::raw;
-use crate::openrouter::stream::StreamCompletion;
+use std::sync::{Arc, RwLock};
+
+use super::{Model, StreamCompletion, error::Error, raw};
 
 static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
 
-#[derive(Clone, Default)]
-pub struct Model {
-    pub id: String,
-    pub temperature: Option<f32>,
-    pub repeat_penalty: Option<f32>,
-    pub top_k: Option<i32>,
-    pub top_p: Option<f32>,
-    pub online: bool,
-    pub response_format: Option<raw::ResponseFormat>,
-}
-
-impl Model {
-    pub fn get_model_id(&self) -> String {
-        let mut id = self.id.clone();
-        if self.online {
-            id.push_str(":online");
-        }
-        id
+async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<String>, Error> {
+    #[derive(serde::Deserialize)]
+    struct Model {
+        id: String,
+    }
+    #[derive(serde::Deserialize)]
+    struct Response {
+        data: Vec<Model>,
     }
 
-    pub fn builder(id: impl Into<String>) -> ModelBuilder {
-        ModelBuilder::new(id)
-    }
-}
+    let client = reqwest::Client::new();
+    let response = client
+        .get(url)
+        .bearer_auth(api_key)
+        .header("HTTP-Referer", HTTP_REFERER)
+        .header("X-Title", X_TITLE)
+        .send()
+        .await?;
 
-pub struct ModelBuilder {
-    id: String,
-    temperature: Option<f32>,
-    repeat_penalty: Option<f32>,
-    top_k: Option<i32>,
-    top_p: Option<f32>,
-    online: bool,
-    response_format: Option<raw::ResponseFormat>,
-}
-
-impl ModelBuilder {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self {
-            id: id.into(),
-            temperature: None,
-            repeat_penalty: None,
-            top_k: None,
-            top_p: None,
-            online: false,
-            response_format: None,
-        }
-    }
-
-    pub fn temperature(mut self, temperature: f32) -> Self {
-        self.temperature = Some(temperature);
-        self
-    }
-
-    pub fn repeat_penalty(mut self, repeat_penalty: f32) -> Self {
-        self.repeat_penalty = Some(repeat_penalty);
-        self
-    }
-
-    pub fn top_k(mut self, top_k: i32) -> Self {
-        self.top_k = Some(top_k);
-        self
-    }
-
-    pub fn top_p(mut self, top_p: f32) -> Self {
-        self.top_p = Some(top_p);
-        self
-    }
-
-    pub fn online(mut self, online: bool) -> Self {
-        self.online = online;
-        self
-    }
-
-    pub fn response_format(mut self, response_format: raw::ResponseFormat) -> Self {
-        self.response_format = Some(response_format);
-        self
-    }
-
-    pub fn json_schema(mut self, name: impl Into<String>, schema: serde_json::Value) -> Self {
-        self.response_format = Some(raw::ResponseFormat {
-            r#type: "json_schema".to_string(),
-            json_schema: serde_json::json!({
-                "name": name.into(),
-                "strict": true,
-                "schema": schema
-            }),
-        });
-        self
-    }
-
-    pub fn build(self) -> Model {
-        Model {
-            id: self.id,
-            temperature: self.temperature,
-            repeat_penalty: self.repeat_penalty,
-            top_k: self.top_k,
-            top_p: self.top_p,
-            online: self.online,
-            response_format: self.response_format,
-        }
-    }
+    let model: Response = response.json().await?;
+    Ok(model.data.into_iter().map(|m| m.id).collect())
 }
 
 pub struct Openrouter {
     api_key: String,
     chat_completion_endpoint: String,
+    model_ids: Arc<RwLock<Vec<String>>>,
     default_req: raw::CompletionReq,
     http_client: reqwest::Client,
 }
@@ -135,15 +56,38 @@ impl Openrouter {
             default_req.usage = None;
         }
 
+        let model_ids = Arc::new(RwLock::new(Vec::new()));
+
+        {
+            let model_ids = model_ids.clone();
+            let api_key = api_key.clone();
+            let endpoint = format!("{}/v1/models", api_base.trim_end_matches('/'));
+            tokio::spawn(async move {
+                match fetch_models(&endpoint, &api_key).await {
+                    Ok(models) => {
+                        log::info!("{} models available", models.len());
+                        *model_ids.write().unwrap() = models;
+                    }
+                    Err(err) => log::error!("Failed to fetch models: {}", err),
+                }
+            });
+        }
+
         Self {
             api_key,
             chat_completion_endpoint,
             default_req,
+            model_ids,
             http_client: reqwest::Client::new(),
         }
     }
 
-    /// Use [`ModelBuilder`] instead.
+    /// Get a list of available model IDs
+    pub fn get_model_ids(&self) -> Vec<String> {
+        self.model_ids.read().unwrap().clone()
+    }
+
+    /// Use [`super::builder::ModelBuilder`] instead.
     #[deprecated]
     pub fn stream(
         &self,
@@ -157,6 +101,9 @@ impl Openrouter {
             true => None,
             false => Some(tools.into_iter().map(|t| t.into()).collect()),
         };
+
+        #[cfg(debug_assertions)]
+        check_message(&messages);
 
         // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
         if matches!(messages.last(), Some(Message::Assistant(_))) {
@@ -192,9 +139,14 @@ impl Openrouter {
     ) -> Result<ChatCompletion, Error> {
         log::debug!("start completion with model {}", &model.id);
 
-        if model.online {
-            log::warn!("Online models should not be used in non-streaming completions.");
-        }
+        debug_assert!(
+            !model.online,
+            "Online models should not be used in non-streaming completions."
+        );
+        debug_assert!(
+            !messages.iter().any(|x| matches!(x, Message::ToolCall(_))),
+            "Tool calls should not be used in non-streaming completions."
+        );
 
         // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
         if matches!(messages.last(), Some(Message::Assistant(_))) {
@@ -236,6 +188,11 @@ impl Openrouter {
             return Err(Error::from(error));
         }
 
+        let (token, price) = json
+            .usage
+            .map(|x| (x.total_tokens, x.cost))
+            .unwrap_or_default();
+
         let choice =
             json.choices
                 .unwrap_or_default()
@@ -248,8 +205,8 @@ impl Openrouter {
         let text = choice.message.content;
 
         Ok(ChatCompletion {
-            price: 0.0,
-            token: 0,
+            price,
+            token: token.unwrap_or_default() as usize,
             response: text,
         })
     }
@@ -366,10 +323,8 @@ impl From<Message> for raw::Message {
     }
 }
 
+#[cfg(debug_assertions)]
 pub fn check_message(message: &[Message]) {
-    #[cfg(not(debug_assertions))]
-    return;
-
     // For each ToolResult, check for ToolCall and its order
     let mut result_ids = message
         .iter()
