@@ -51,7 +51,11 @@
 						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
 					</div>
 				{:else}
-					{@const text = chunks.filter((x) => x.t == 'text').map((x) => x.c).join('\n').trim()}
+					{@const text = chunks
+						.filter((x) => x.t == 'text')
+						.map((x) => x.c)
+						.join('\n')
+						.trim()}
 					<ResponseEdit content={text} token={msg.token_count} cost={msg.price} />
 				{/if}
 			</ResponseBox>

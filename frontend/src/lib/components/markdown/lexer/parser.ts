@@ -8,7 +8,12 @@ import {
 	type DelimiterType
 } from '@lezer/markdown';
 import { tags } from '@lezer/highlight';
-import { parseCitation, isCitationBlock, type CitationData } from './citation-parser';
+import {
+	parseCitation,
+	isCitationBlock,
+	splitCitations,
+	type CitationData
+} from './citation-parser';
 
 // Mathematical expression node names
 const INLINE_MATH_DOLLAR = 'InlineMathDollar';
@@ -608,14 +613,36 @@ export function walkTree(tree: Tree | null, source: string): any | null {
 			children
 		};
 
-		// Check if this is an HTMLBlock that contains a citation
+		// Check if this is an HTMLBlock that contains citations
 		if (node.type.name === 'HTMLBlock' && isCitationBlock(text)) {
-			const citationData = parseCitation(text);
-			return {
-				...baseNode,
-				type: 'Citation',
-				citationData
-			};
+			// Split the text into individual citations
+			const citations = splitCitations(text, node.from);
+
+			if (citations.length === 1) {
+				// Single citation - return as a Citation node
+				const citationData = parseCitation(citations[0].text);
+				return {
+					...baseNode,
+					type: 'Citation',
+					citationData
+				};
+			} else if (citations.length > 1) {
+				// Multiple citations - create a wrapper node with Citation children
+				const citationChildren = citations.map((citation) => ({
+					type: 'Citation',
+					from: citation.from,
+					to: citation.to,
+					text: citation.text,
+					children: [],
+					citationData: parseCitation(citation.text)
+				}));
+
+				return {
+					...baseNode,
+					type: 'HTMLBlock',
+					children: citationChildren
+				};
+			}
 		}
 
 		return baseNode;
