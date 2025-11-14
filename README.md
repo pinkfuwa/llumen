@@ -17,12 +17,13 @@ llumen is a lightweight, self-hostable LLM chat application (frontend + backend)
 
 ## :question: Why choose llumen?
 
-- :electric_plug: OpenAI Compatible: Works with any OpenAI-compatible endpoint (OpenRouter, local models, etc.)
+- :electric_plug: OpenAI Compatible: Works with any **OpenAI-compatible** endpoint (OpenRouter, local models, etc.)
 - :ship: Zero-Config Setup: Pre-integrated with OpenRouter for instant deployment
-- :handshake: Multiple Deployment Options: Windows executables, Docker images, Linux binaries
-- :rocket: Blazing Fast: Sub-second cold start, 1/30 website asset size and <128MB RAM usage
+- :handshake: Multi-Platform Distribution: Windows executables, Docker images, Linux binaries with Arm64 support
+- :rocket: Blazing Fast: Sub-second cold start, **30× smaller asset footprint** and <128MB RAM usage
 - :blue_book: Rich Markdown: Full code syntax highlighting and LaTeX math support
-- :mag: Advanced Modes: Normal chat, web-search integration, and deep-research capabilities :brain:
+- :mag: Advanced Modes: Standard chat, web-search integration, and **deep-research** capabilities :brain:
+- :computer: Rich Features: **Message editing**, file uploads (PDFs, images, code)
 
 ## :star2: Screenshots
 
