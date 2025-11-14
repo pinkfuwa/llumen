@@ -42,8 +42,6 @@ jobs:
         with:
           path: backend/target
           key: backend-target-${{ runner.os }}-${{ steps.lockfile_hash.outputs.cargo_lock_hash }}
-          restore-keys: |
-            backend-target-${{ runner.os }}-
 
       - name: Cache frontend node_modules
         if: steps.git_log.outputs.changed == 'true'
@@ -51,8 +49,6 @@ jobs:
         with:
           path: frontend/node_modules
           key: frontend-node-modules-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
-          restore-keys: |
-            frontend-node-modules-${{ runner.os }}-
 
       - name: Cache frontend .svelte-kit
         if: steps.git_log.outputs.changed == 'true'
@@ -60,8 +56,6 @@ jobs:
         with:
           path: frontend/.svelte-kit
           key: frontend-svelte-kit-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
-          restore-keys: |
-            frontend-svelte-kit-${{ runner.os }}-
 
       - name: Install Rust toolchain
         if: steps.git_log.outputs.changed == 'true'
@@ -108,8 +102,6 @@ jobs:
         with:
           path: ~/.cargo/bin
           key: cargo-bin-${{ runner.os }}-cargo-zigbuild
-          restore-keys: |
-            cargo-bin-${{ runner.os }}-
 
       - name: Install cargo-zigbuild
         if: steps.git_log.outputs.changed == 'true'
