@@ -16,13 +16,40 @@
 	}
 
 	function extractCodeText(node: any): string {
-		if (node.type === 'FencedCode' || node.type === 'CodeBlock') {
-			const codeTextChild = node.children?.find((c: any) => c.type === 'CodeText');
-			if (codeTextChild) {
-				return codeTextChild.text;
+		const children = node.children as { text: string; type: string }[];
+
+		// Find indices of first and second CodeMark
+		let firstIndex = -1;
+		let secondIndex = -1;
+		for (let i = 0; i < children.length; i++) {
+			if (children[i].type === 'CodeMark') {
+				if (firstIndex === -1) {
+					firstIndex = i;
+				} else if (secondIndex === -1) {
+					secondIndex = i;
+					break; // No need to look further after finding the second
+				}
 			}
 		}
-		return node.text || '';
+
+		// If no first CodeMark, return empty string
+		if (firstIndex === -1) {
+			return '';
+		}
+
+		// Determine the range for extracting text
+		const start = firstIndex + 1;
+		const end = secondIndex === -1 ? children.length : secondIndex;
+
+		// Extract text from text nodes in the range
+		let result = '';
+		for (let i = start; i < end; i++) {
+			if (children[i].type === 'CodeText') {
+				result += children[i].text;
+			}
+		}
+
+		return result;
 	}
 
 	const lang = $derived(extractLanguage(node));

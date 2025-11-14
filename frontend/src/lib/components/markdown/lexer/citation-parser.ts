@@ -58,3 +58,41 @@ export function parseCitation(text: string): CitationData {
 export function isCitationBlock(text: string): boolean {
 	return text.trimStart().startsWith('<citation>') && text.includes('</citation>');
 }
+
+/**
+ * Split a text block containing multiple citation blocks into individual citations.
+ * Returns an array of citation text blocks with their positions.
+ */
+export function splitCitations(
+	text: string,
+	startOffset: number = 0
+): Array<{ text: string; from: number; to: number }> {
+	const citations: Array<{ text: string; from: number; to: number }> = [];
+	let pos = 0;
+
+	while (pos < text.length) {
+		const openIndex = text.indexOf('<citation>', pos);
+		if (openIndex === -1) break;
+
+		const closeIndex = text.indexOf('</citation>', openIndex + 10);
+		if (closeIndex === -1) {
+			// Unclosed citation, include from opening to end
+			citations.push({
+				text: text.slice(openIndex),
+				from: startOffset + openIndex,
+				to: startOffset + text.length
+			});
+			break;
+		}
+
+		const blockEnd = closeIndex + 11; // Length of '</citation>'
+		citations.push({
+			text: text.slice(openIndex, blockEnd),
+			from: startOffset + openIndex,
+			to: startOffset + blockEnd
+		});
+		pos = blockEnd;
+	}
+
+	return citations;
+}
