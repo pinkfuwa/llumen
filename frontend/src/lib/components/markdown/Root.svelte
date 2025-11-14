@@ -38,7 +38,6 @@
 	}
 
 	$effect(() => {
-		console.log('eff');
 		pendingSource = source;
 
 		if (!incremental) {
