@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="frontend/static/web-app-manifest-512x512.png" alt="Shimmy Logo" width="200" height="auto" />
+  <img src="frontend/static/web-app-manifest-512x512.png" alt="llumen Logo" width="200" height="auto" />
 
-  # llumen
+  # Llumen
 
   ### :zap: a lightweight, performant LLM chat application with effortless setup :rocket:
 
@@ -10,25 +10,25 @@
   [![Nightly Docker](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml)
   [![Release Binaries](https://github.com/pinkfuwa/llumen/actions/workflows/build-binaries.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/build-binaries.yml)
 
+  <img src="https://skillicons.dev/icons?i=rust,ts,svelte,tailwind" alt="llumen Logo" width="auto" height="70" />
 </div>
 
 llumen is a lightweight, self-hostable LLM chat application (frontend + backend) that aims to provide an out-of-the-box experience for self-hosting users.
 
-Its design goal is simplicity: you only need a single **OpenRouter** API key to use LLM features — no separate keys for OCR, search, embeddings, image generation, or other services.
-
 ## :question: Why choose llumen?
 
-- :handshake: We provide windows executable, docker image, linux binary
-- :ship: Single API key requirement (OpenRouter) for model calls.
-- :rocket: starting time < 1s, memory usage < 128MB
-- :blue_book: Markdown rendering with code and math support.
-- :mag: Multiple chat modes (normal, web-search-enabled, deep-research :brain:).
+- :electric_plug: OpenAI Compatible: Works with any OpenAI-compatible endpoint (OpenRouter, local models, etc.)
+- :ship: Zero-Config Setup: Pre-integrated with OpenRouter for instant deployment
+- :handshake: Multiple Deployment Options: Windows executables, Docker images, Linux binaries
+- :rocket: Blazing Fast: Sub-second cold start, 1/30 website asset size and <128MB RAM usage
+- :blue_book: Rich Markdown: Full code syntax highlighting and LaTeX math support
+- :mag: Advanced Modes: Normal chat, web-search integration, and deep-research capabilities :brain:
 
 ## :star2: Screenshots
 
-![in-chat](./docs/screenshots/in-chat.png)
+![deep-research](./docs/screenshots/deep-research.png)
 
-![Demo](./docs/screenshots/demo.gif)
+![search](./docs/screenshots/search.gif)
 
 ## :point_right: Quickstart
 
@@ -37,20 +37,23 @@ Its design goal is simplicity: you only need a single **OpenRouter** API key to 
 
 ### :whale: Docker (Recommended)
 
-- The repository includes a multi-stage `Dockerfile` that builds the frontend and the backend and produces a small image that serves static files and runs the server.
-- Example: build and run the container (binds port 80 by default).
+- The repository includes a multi-stage [Dockerfile](./package/Dockerfile) that builds the frontend and the backend and produces a small image that serves static files and runs the server.
+- Example: run the container (binds port 80 by default).
 
 ```bash
 docker run -it --rm \
   -e API_KEY="<YOUR_OPENROUTER_API_KEY>" \
   -p 80:80 \
   -v "$(pwd)/data:/data" \
-  ghcr.io/pinkfuwa/llumen:latest
+  ghcr.io/pinkfuwa/llumen:nightly
 ```
 ```
-06:46:48.654Z INFO | Using endpoint https://openrouter.ai/api/v1/chat/completions for completions
-06:46:48.675Z INFO | Listening on http://127.0.0.1:8001
+09:25:46.117Z INFO | Using endpoint https://openrouter.ai/api/v1/chat/completions for completions
+09:25:46.180Z INFO | Listening on http://127.0.0.1:8001
+09:25:46.295Z INFO | 344 models available
 ```
+
+More docker-compose deployment sample [here](./docs/sample) :point_left:
 
 ### :package: Without docker
 
