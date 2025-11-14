@@ -25,24 +25,18 @@ jobs:
         with:
           path: backend/target
           key: backend-target-${{ runner.os }}-${{ steps.lockfile_hash.outputs.cargo_lock_hash }}
-          restore-keys: |
-            backend-target-${{ runner.os }}-
 
       - name: Cache frontend node_modules
         uses: actions/cache@v4
         with:
           path: frontend/node_modules
           key: frontend-node-modules-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
-          restore-keys: |
-            frontend-node-modules-${{ runner.os }}-
 
       - name: Cache frontend .svelte-kit
         uses: actions/cache@v4
         with:
           path: frontend/.svelte-kit
           key: frontend-svelte-kit-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
-          restore-keys: |
-            frontend-svelte-kit-${{ runner.os }}-
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
