@@ -19,12 +19,14 @@
 
 {#each getMessages() as msg}
 	{#key msg.id}
+		{@const streaming = msg.stream}
 		{#if msg.inner.t == 'user'}
 			{@const content = msg.inner.c.text}
 			{@const files = msg.inner.c.files}
 			<User
 				{content}
 				{files}
+				{streaming}
 				onupdate={(text) => {
 					if (room == undefined) return;
 					if (room.model_id == undefined) dispatchError('internal', 'select a model first');
@@ -40,7 +42,6 @@
 				}}
 			/>
 		{:else if msg.inner.t == 'assistant'}
-			{@const streaming = msg.stream}
 			{@const chunks = msg.inner.c}
 			<ResponseBox>
 				<Chunks {chunks} {streaming} />
@@ -51,7 +52,11 @@
 						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
 					</div>
 				{:else}
-					{@const text = chunks.filter((x) => x.t == 'text').map((x) => x.c).join('\n').trim()}
+					{@const text = chunks
+						.filter((x) => x.t == 'text')
+						.map((x) => x.c)
+						.join('\n')
+						.trim()}
 					<ResponseEdit content={text} token={msg.token_count} cost={msg.price} />
 				{/if}
 			</ResponseBox>

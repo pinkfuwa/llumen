@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Code from '$lib/components/shiki/Code.svelte';
 
-	let { content } = $props() as { content: string };
+	let { content }: { content: string } = $props();
 
 	let trimmedContent = $derived.by(() => {
 		let trim = content.trim();
