@@ -62,7 +62,7 @@
 	});
 
 	function submit() {
-		if (onsubmit) {
+		if (onsubmit && content.length > 0) {
 			disabled = true;
 			onsubmit();
 		}
