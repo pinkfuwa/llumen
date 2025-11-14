@@ -402,7 +402,8 @@ export function pushUserMessage(user_id: number, content: string, files: FileMet
 			}
 		},
 		token_count: 0,
-		price: 0
+		price: 0,
+		stream: true
 	});
 }
 

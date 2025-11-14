@@ -6,7 +6,8 @@
 	let {
 		content = $bindable(''),
 		files = $bindable([] as Array<{ name: string; id: number }>),
-		onupdate = (() => {}) as (text: string) => void
+		onupdate = (() => {}) as (text: string) => void,
+		streaming = false
 	} = $props();
 
 	// TODO: use component lib
@@ -25,6 +26,17 @@
 	const actualHeight = $derived.by(() => {
 		const contentHeight = (content.split('\n').length + 1) * 24;
 		return Math.max(contentHeight, renderHeight);
+	});
+
+	let btnGroup = $state<null | HTMLDivElement>(null);
+	let scrolled = false;
+	$effect(() => {
+		if (streaming && !scrolled) {
+			btnGroup?.scrollIntoView({
+				behavior: 'instant'
+			});
+			scrolled = true;
+		}
 	});
 </script>
 
@@ -57,7 +69,7 @@
 				<Markdown source={editBuffer} />
 			</div>
 		</div>
-		<div class="mt-1 flex justify-end">
+		<div class="mt-1 flex justify-end" bind:this={btnGroup}>
 			<Button.Root
 				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=close]:hidden"
 				onclick={() => {
