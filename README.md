@@ -29,7 +29,7 @@ llumen is a lightweight, self-hostable LLM chat application (frontend + backend)
 
 ![deep-research](./docs/screenshots/deep-research.png)
 
-![search](./docs/screenshots/search.gif)
+![search](./docs/screenshots/search.png)
 
 ## :point_right: Quickstart
 
