@@ -4,11 +4,13 @@
 	import MessagePagination from '$lib/components/message/MessagePagination.svelte';
 	import Copyright from '$lib/components/Copyright.svelte';
 	import { _ } from 'svelte-i18n';
-	import { ChatMode as Mode } from '$lib/api/types';
+	import { ChatMode as Mode, type ChatReadResp } from '$lib/api/types';
 	import { haltCompletion, useRoom } from '$lib/api/chatroom.svelte';
 	import { UploadManager } from '$lib/api/files.js';
 	import Scroll from '$lib/ui/Scroll.svelte';
 	import { createMessage, getStream } from '$lib/api/message.svelte.js';
+	import { untrack } from 'svelte';
+	import { get } from 'svelte/store';
 
 	let id = $derived(Number(params.id));
 
@@ -22,11 +24,24 @@
 	let { data: room } = $derived(useRoom(id));
 
 	let modelId = $state<string | undefined>(undefined);
+
+	let inited = false;
+	function initRoom(room: ChatReadResp) {
+		if (inited) return;
+		inited = true;
+		if (room?.model_id) modelId = room?.model_id.toString();
+		if (mode == null) mode = room.mode;
+	}
+
+	function uselessFn(a: any) {}
+	$effect(() => {
+		uselessFn(id);
+		inited = false;
+	});
+
 	$effect(() => {
 		if ($room == undefined) return;
-		// FIXME: revaildate cause user's selection to fail
-		if ($room?.model_id) modelId = $room?.model_id.toString();
-		if (mode == null) mode = $room.mode;
+		untrack(() => initRoom(get(room)!));
 	});
 
 	let uploadManager = $derived(new UploadManager(id));
