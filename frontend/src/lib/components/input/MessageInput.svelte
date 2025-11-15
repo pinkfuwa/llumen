@@ -82,7 +82,7 @@
 >
 	{#if dropZone.isOver && editable}
 		<div
-			class="absolute top-0 -left-0 flex h-full w-full items-center justify-center rounded-lg bg-primary text-2xl"
+			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-lg bg-primary text-2xl"
 		>
 			<FileUp />
 			Upload File
