@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { copy } from '$lib/copy';
+	import type { ASTNode } from './lexer/parser';
 
 	let { node }: { node: ASTNode } = $props();
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ASTNode } from './lexer/parser';
 	import { BookX } from '@lucide/svelte';
 
 	let { node }: { node: ASTNode } = $props();

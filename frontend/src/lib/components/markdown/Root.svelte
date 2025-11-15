@@ -4,7 +4,7 @@
 	import { parseIncremental, walkTree } from './lexer';
 	import { parseAst } from './worker';
 
-	const { source, monochrome = false, incremental = false } = $props();
+	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
 
 	let prevSource: string = $state('');
 	let prevTree: import('@lezer/common').Tree | null = null;

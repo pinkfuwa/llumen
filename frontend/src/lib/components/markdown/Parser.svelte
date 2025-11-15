@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { ASTNode, CitationNode } from './lexer/parser';
+
 	import Blockquote from './Blockquote.svelte';
 	import Br from './Br.svelte';
 	import Citation from './Citation.svelte';
@@ -146,8 +148,8 @@
 		{#each ast.children ?? [] as child}
 			<Parser ast={child} />
 		{/each}
-	{:else if ast.type === 'Citation' && ast.citationData}
-		{@const data = ast.citationData}
+	{:else if ast.type === 'Citation'}
+		{@const data = (ast as CitationNode).citationData}
 		<Citation
 			raw={data.raw}
 			title={data.title}

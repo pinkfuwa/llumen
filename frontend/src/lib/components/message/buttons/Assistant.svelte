@@ -9,5 +9,5 @@
 </script>
 
 <div class="space-y-2">
-	<Markdown source={content} monochrome={streaming} incremental={everStream} />
+	<Markdown source={content} incremental={everStream} />
 </div>

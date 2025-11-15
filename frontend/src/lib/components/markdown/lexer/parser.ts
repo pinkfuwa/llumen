@@ -8,7 +8,12 @@ import {
 	type DelimiterType
 } from '@lezer/markdown';
 import { tags } from '@lezer/highlight';
-import { parseCitation, isCitationBlock, splitCitations } from './citation-parser';
+import {
+	parseCitation,
+	isCitationBlock,
+	splitCitations,
+	type CitationData
+} from './citation-parser';
 
 // Mathematical expression node names
 const INLINE_MATH_DOLLAR = 'InlineMathDollar';
@@ -587,20 +592,35 @@ export function parseIncremental(prevTree: Tree, prevSource: string, newSource: 
  * Each node contains its type, text, and children.
  * Special handling for citation blocks to extract structured data.
  */
-export function walkTree(tree: Tree | null, source: string): any | null {
+export type ASTNodeBase = {
+	type: string;
+	from: number;
+	to: number;
+	text: string;
+	children: ASTNode[];
+};
+
+export type CitationNode = ASTNodeBase & {
+	type: 'Citation';
+	citationData: CitationData;
+};
+
+export type ASTNode = ASTNodeBase | CitationNode;
+
+export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 	if (!tree) {
 		return null;
 	}
 	const nodeTypes = new Set<string>();
-	function walk(node: SyntaxNode): any {
+	function walk(node: SyntaxNode): ASTNode {
 		nodeTypes.add(node.type.name);
-		const children = [];
+		const children: ASTNode[] = [];
 		for (let child = node.firstChild; child; child = child.nextSibling) {
 			children.push(walk(child));
 		}
 
 		const text = source.slice(node.from, node.to);
-		const baseNode = {
+		const baseNode: ASTNodeBase = {
 			type: node.type.name,
 			from: node.from,
 			to: node.to,
@@ -616,14 +636,15 @@ export function walkTree(tree: Tree | null, source: string): any | null {
 			if (citations.length === 1) {
 				// Single citation - return as a Citation node
 				const citationData = parseCitation(citations[0].text);
-				return {
+				const citationNode: CitationNode = {
 					...baseNode,
 					type: 'Citation',
 					citationData
 				};
+				return citationNode;
 			} else if (citations.length > 1) {
 				// Multiple citations - create a wrapper node with Citation children
-				const citationChildren = citations.map((citation) => ({
+				const citationChildren: CitationNode[] = citations.map((citation) => ({
 					type: 'Citation',
 					from: citation.from,
 					to: citation.to,
