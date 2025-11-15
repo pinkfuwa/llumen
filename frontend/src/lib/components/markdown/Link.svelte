@@ -1,5 +1,7 @@
 <script lang="ts">
-	let { node, monochrome = false, children } = $props();
+	import type { Snippet } from 'svelte';
+
+	let { node, children }: { node: ASTNode; children: Snippet } = $props();
 
 	// Extract URL from Link node structure
 	// Lezer Link nodes typically have LinkMark children containing the URL
@@ -12,7 +14,7 @@
 		return node.text || '#';
 	}
 
-	const href = extractUrl(node);
+	const href = $derived(extractUrl(node));
 </script>
 
 <span class="pb-1">

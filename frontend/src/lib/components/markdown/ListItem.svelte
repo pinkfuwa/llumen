@@ -1,5 +1,7 @@
 <script lang="ts">
-	let { node, children } = $props();
+	import type { Snippet } from 'svelte';
+
+	let { children }: { children: Snippet } = $props();
 </script>
 
 <li class="items-center">

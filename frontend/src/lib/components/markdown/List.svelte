@@ -1,5 +1,7 @@
 <script lang="ts">
-	let { node, children } = $props();
+	import type { Snippet } from 'svelte';
+
+	let { node, children }: { node: ASTNode; children: Snippet } = $props();
 
 	const isOrdered = node.type === 'OrderedList';
 </script>

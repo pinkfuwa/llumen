@@ -26,33 +26,10 @@
 	import Parser from './Parser.svelte';
 	import Empty from './Empty.svelte';
 
-	interface CitationData {
-		title?: string;
-		url?: string;
-		favicon?: string;
-		authoritative?: boolean;
-		raw: string;
-	}
-
-	interface ASTNode {
-		type: string;
-		from?: number;
-		to?: number;
-		text?: string;
-		children?: ASTNode[];
-		citationData?: CitationData;
-	}
-
 	type Segment = { type: 'text'; text: string } | { type: 'node'; node: ASTNode };
 
-	interface Props {
-		ast: ASTNode;
-		monochrome?: boolean;
-	}
+	let { ast }: { ast: ASTNode } = $props();
 
-	let { ast, monochrome = false }: Props = $props();
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const nodeMap: Record<string, any> = {
 		Blockquote,
 		HardBreak: Br,
@@ -167,7 +144,7 @@
 {#if ast}
 	{#if ast.type === 'Document'}
 		{#each ast.children ?? [] as child}
-			<Parser ast={child} {monochrome} />
+			<Parser ast={child} />
 		{/each}
 	{:else if ast.type === 'Citation' && ast.citationData}
 		{@const data = ast.citationData}
@@ -184,12 +161,12 @@
 		</p>
 	{:else}
 		{@const MappedComponent = nodeMap[ast.type]}
-		<MappedComponent node={ast} {monochrome}>
+		<MappedComponent node={ast}>
 			{#each segments as seg}
 				{#if seg.type === 'text'}
 					{seg.text}
 				{:else if seg.type === 'node'}
-					<Parser ast={seg.node} {monochrome} />
+					<Parser ast={seg.node} />
 				{/if}
 			{/each}
 		</MappedComponent>

@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { copy } from '$lib/copy';
 
-	let { node } = $props();
+	let { node }: { node: ASTNode } = $props();
 
 	// Extract code text, excluding the backtick markers
-	function extractCodeText(node: any): string {
+	function extractCodeText(node: ASTNode): string {
 		// InlineCode nodes may have CodeMark children (the backticks)
 		// We want the actual text content between them
 		const codeTextChild = node.children?.find(
-			(c: any) => c.type === 'CodeText' || c.type === 'InlineCode'
+			(c) => c.type === 'CodeText' || c.type === 'InlineCode'
 		);
 		if (codeTextChild) {
-			return codeTextChild.text;
+			return codeTextChild.text!;
 		}
 		return node.text || '';
 	}

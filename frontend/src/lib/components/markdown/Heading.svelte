@@ -1,5 +1,7 @@
 <script lang="ts">
-	let { node, children } = $props();
+	import type { Snippet } from 'svelte';
+
+	let { node, children }: { node: ASTNode; children: Snippet } = $props();
 
 	const classMap: Record<string, string> = {
 		ATXHeading1: 'mt-1 text-2xl font-bold',

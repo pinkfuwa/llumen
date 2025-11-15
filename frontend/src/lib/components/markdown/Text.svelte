@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { node } = $props();
+	let { node }: { node: ASTNode } = $props();
 </script>
 
 <span>{node.text}</span>

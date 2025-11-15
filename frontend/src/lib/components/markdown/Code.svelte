@@ -5,7 +5,7 @@
 	import Root from './Root.svelte';
 	import Latex from './Latex.svelte';
 
-	let { node, monochrome = false } = $props();
+	let { node }: { node: ASTNode } = $props();
 
 	function extractLanguage(node: any): string {
 		const infoChild = node.children?.find((c: any) => c.type === 'CodeInfo');
@@ -15,45 +15,31 @@
 		return '';
 	}
 
-	function extractCodeText(node: any): string {
+	const [text, monochrome] = $derived.by(() => {
 		const children = node.children as { text: string; type: string }[];
 
-		// Find indices of first and second CodeMark
-		let firstIndex = -1;
-		let secondIndex = -1;
-		for (let i = 0; i < children.length; i++) {
-			if (children[i].type === 'CodeMark') {
-				if (firstIndex === -1) {
-					firstIndex = i;
-				} else if (secondIndex === -1) {
-					secondIndex = i;
-					break; // No need to look further after finding the second
-				}
-			}
-		}
+		const [first, second] = children
+			.map((x, index) => (x.type === 'CodeMark' ? index : -1))
+			.filter((item) => item !== -1);
 
-		// If no first CodeMark, return empty string
-		if (firstIndex === -1) {
-			return '';
-		}
+		if (first === undefined) return ['', true];
 
-		// Determine the range for extracting text
-		const start = firstIndex + 1;
-		const end = secondIndex === -1 ? children.length : secondIndex;
+		const monochrome = second === undefined;
 
-		// Extract text from text nodes in the range
-		let result = '';
-		for (let i = start; i < end; i++) {
-			if (children[i].type === 'CodeText') {
-				result += children[i].text;
-			}
-		}
+		const code = children
+			.map((x, i) => {
+				if (x.type != 'CodeText') return '';
+				if (i <= first) return '';
+				if (second !== undefined && i >= second) return '';
 
-		return result;
-	}
+				return x.text;
+			})
+			.join('');
+
+		return [code, monochrome];
+	});
 
 	const lang = $derived(extractLanguage(node));
-	const text = $derived(extractCodeText(node));
 </script>
 
 {#if lang == 'markdown'}

@@ -1,7 +1,9 @@
 <script lang="ts">
-	let { monochrome = false, children } = $props();
+	import type { Snippet } from 'svelte';
+
+	let { children }: { children: Snippet } = $props();
 </script>
 
-<tr class:monochrome>
+<tr>
 	{@render children?.()}
 </tr>

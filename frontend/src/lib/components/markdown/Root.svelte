@@ -70,6 +70,6 @@
 	</div>
 {:else}
 	<div class="space-y-2">
-		<Parser {ast} {monochrome} />
+		<Parser {ast} />
 	</div>
 {/if}

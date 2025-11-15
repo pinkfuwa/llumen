@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Root from './Root.svelte';
+	import type { Snippet } from 'svelte';
 
-	let { node, children } = $props();
+	let { children }: { children: Snippet } = $props();
 </script>
 
 <td class="px-6 py-4 font-semibold">
