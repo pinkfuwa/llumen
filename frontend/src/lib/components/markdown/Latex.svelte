@@ -2,7 +2,7 @@
 	import { copy } from '$lib/copy';
 	import Latex from '../latex/Latex.svelte';
 
-	let { node }: { node: ASTNode } = $props();
+	let { node }: { node: { text?: string } } = $props();
 </script>
 
 <div class="flex justify-center overflow-x-auto">

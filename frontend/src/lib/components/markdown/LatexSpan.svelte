@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ASTNode } from './lexer/parser';
 	import { copy } from '$lib/copy';
 
 	import Latex from '../latex/Latex.svelte';

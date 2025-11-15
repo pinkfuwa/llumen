@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ASTNode } from './lexer/parser';
 	import type { Snippet } from 'svelte';
 
 	let { node, children }: { node: ASTNode; children: Snippet } = $props();

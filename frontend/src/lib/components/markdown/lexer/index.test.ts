@@ -90,6 +90,55 @@ describe('Lexer - parse', () => {
 		expect(tree.length).toBeGreaterThan(0);
 	});
 
+	it('should not treat dollar amounts as inline math when no surrounding spaces exist', async () => {
+		const source = 'It costs $1, and that cost $2';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		// Recursively search for a node type in the walked AST
+		const containsType = (node: any, typeName: string): boolean => {
+			if (!node) return false;
+			if (node.type === typeName) return true;
+			if (!Array.isArray(node.children)) return false;
+			return node.children.some((child: any) => containsType(child, typeName));
+		};
+
+		// Ensure no InlineMathDollar or InlineMathBracket nodes are present
+		expect(containsType(walked, 'InlineMathDollar')).toBe(false);
+		expect(containsType(walked, 'InlineMathBracket')).toBe(false);
+	});
+
+	it('should parse standard inline LaTeX with spaced dollar delimiters', async () => {
+		const source = '$ \\text{A} $';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const containsType = (node: any, typeName: string): boolean => {
+			if (!node) return false;
+			if (node.type === typeName) return true;
+			if (!Array.isArray(node.children)) return false;
+			return node.children.some((child: any) => containsType(child, typeName));
+		};
+
+		// With spaces around the dollar delimiters this should be detected as inline math
+		expect(containsType(walked, 'InlineMathDollar')).toBe(true);
+	});
+
+	it('should parse inline LaTeX using \\( \\) delimiters', async () => {
+		const source = '\\(\\text{A}\\)';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const containsType = (node: any, typeName: string): boolean => {
+			if (!node) return false;
+			if (node.type === typeName) return true;
+			if (!Array.isArray(node.children)) return false;
+			return node.children.some((child: any) => containsType(child, typeName));
+		};
+
+		expect(containsType(walked, 'InlineMathBracket')).toBe(true);
+	});
+
 	it('should parse markdown with mixed content', async () => {
 		const source = `# Title
 
@@ -243,8 +292,8 @@ describe('Lexer - walkTree', () => {
 		expect(walked).toBeDefined();
 		expect(walked.children.length).toBeGreaterThan(0);
 		// Verify nested children exist
-		const hasNestedChildren = walked.children.some((child: any) =>
-			Array.isArray(child.children) && child.children.length > 0
+		const hasNestedChildren = walked.children.some(
+			(child: any) => Array.isArray(child.children) && child.children.length > 0
 		);
 		expect(hasNestedChildren).toBe(true);
 	});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ASTNode } from './lexer/parser';
 	import { ClipboardCopy } from '@lucide/svelte';
 	import { copy } from '$lib/copy';
 	import Code from '../shiki/Code.svelte';
