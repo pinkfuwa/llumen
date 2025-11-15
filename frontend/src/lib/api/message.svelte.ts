@@ -15,8 +15,7 @@ import type {
 	SseReq,
 	SseResp,
 	FileMetadata,
-	Deep,
-	Step
+	Deep
 } from './types';
 import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';

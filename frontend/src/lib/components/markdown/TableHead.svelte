@@ -1,5 +1,7 @@
 <script lang="ts">
-	let { node, monochrome = false, children } = $props();
+	import type { Snippet } from 'svelte';
+
+	let { children }: { children: Snippet } = $props();
 </script>
 
 <thead>{@render children?.()}</thead>

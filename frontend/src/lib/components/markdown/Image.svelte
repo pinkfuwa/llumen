@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { BookX } from '@lucide/svelte';
 
-	let { node, monochrome = false } = $props();
+	let { node }: { node: ASTNode } = $props();
 
 	// Extract image attributes from Lezer node structure
 	function extractImageAttributes(node: any): { src: string; alt: string; title?: string } {
@@ -38,7 +38,7 @@
 		return { src, alt, title };
 	}
 
-	const { src, alt, title } = extractImageAttributes(node);
+	const { src, alt, title } = $derived(extractImageAttributes(node));
 
 	let errored = $state(false);
 </script>
@@ -49,7 +49,6 @@
 		{alt}
 		{title}
 		style="max-width: 100%;"
-		class:monochrome
 		onerror={() => (errored = true)}
 		class="max-h-[70vh] data-[state=error]:hidden"
 	/>
