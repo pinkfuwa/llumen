@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { BookX } from '@lucide/svelte';
+
 	let { node, monochrome = false } = $props();
 
 	// Extract image attributes from Lezer node structure
@@ -37,6 +39,24 @@
 	}
 
 	const { src, alt, title } = extractImageAttributes(node);
+
+	let errored = $state(false);
 </script>
 
-<img {src} {alt} {title} style="max-width: 100%;" class:monochrome />
+<div data-state={errored ? 'error' : 'normal'} class="inline-block align-middle">
+	<img
+		{src}
+		{alt}
+		{title}
+		style="max-width: 100%;"
+		class:monochrome
+		onerror={() => (errored = true)}
+		class="max-h-[70vh] data-[state=error]:hidden"
+	/>
+	<div
+		class="flex h-50 w-60 flex-col items-center justify-center rounded-md border border-outline text-lg data-[state=normal]:hidden"
+	>
+		<BookX class="h-10 w-10" />
+		<span class="mt-1">Image not found</span>
+	</div>
+</div>
