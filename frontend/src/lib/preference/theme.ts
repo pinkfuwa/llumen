@@ -20,5 +20,12 @@ export function getTitleGrad(theme: Theme) {
 }
 
 export function setTheme(theme: Theme) {
-	document.body.setAttribute('data-theme', theme);
+	document.documentElement.setAttribute('data-theme', theme);
+
+	requestAnimationFrame(() => {
+		const meta = document.querySelector('meta[name="theme-color"]')!;
+		const style = window.getComputedStyle(document.documentElement);
+		const color = style.getPropertyValue('--color-login-bg');
+		meta.setAttribute('content', color);
+	});
 }

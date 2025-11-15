@@ -1,6 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+html {
+	background: var(--color-login-bg);
+}
+
+/* default theme (light)*/
 @theme {
 	--color-primary: #ef7722;
 	--color-secondary: #fdbea9;
