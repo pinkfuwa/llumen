@@ -92,6 +92,14 @@ const latexExtension: MarkdownConfig = {
 					}
 				}
 
+				// Require a space, newline, tab, or a backslash immediately after the opening $
+				// to avoid matching non-LaTeX usages like monetary amounts ($1), while still
+				// allowing constructions like `$\\text{A}$`.
+				const nextChar = cx.char(pos + 1);
+				if (nextChar !== 32 && nextChar !== 10 && nextChar !== 9 && nextChar !== 92) {
+					return -1;
+				}
+
 				return cx.addDelimiter(
 					DELIMITERS[INLINE_MATH_DOLLAR],
 					pos,
@@ -432,13 +440,17 @@ const latexDetector: BlockDetector = {
 			pos = blockEnd;
 		}
 
-		// Scan for $ ... $ inline math (space required before and after)
+		// Scan for $ ... $ inline math (allow start-of-line or whitespace before, and
+		// whitespace or end-of-line after). This helps incremental reparse by matching
+		// cases like `$ \text{A} $` as well as `$x$` when delimited by whitespace or start/end.
 		pos = 0;
-		const dollarInlineRegex = /(\s)\$(.+?)\$(\s)/gs;
+		const dollarInlineRegex = /(^|\s)\$(.+?)\$(?=\s|$)/gs;
 		let match;
 		while ((match = dollarInlineRegex.exec(source)) !== null) {
+			// match[1] is either empty (start of string) or the leading whitespace
 			const start = match.index + match[1].length;
-			const end = dollarInlineRegex.lastIndex - match[3].length;
+			// lastIndex points right after the matched $...$ (lookahead doesn't consume trailing whitespace)
+			const end = dollarInlineRegex.lastIndex;
 			if (end >= changeStart) {
 				regions.push({
 					start,
