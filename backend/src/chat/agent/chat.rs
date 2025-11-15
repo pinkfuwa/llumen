@@ -79,14 +79,10 @@ impl<P: ChatInner> ChatPipeline<P> {
             .stream(message, &self.model, self.tools.clone())
             .await?;
 
-        let halt = self
+        let halt_with_error = self
             .completion_ctx
             .put_stream((&mut res).map(|resp| resp.map(openrouter_to_buffer_token)))
-            .await?;
-
-        if matches!(halt, StreamEndReason::Halt) {
-            log::debug!("The stream was halted");
-        }
+            .await;
 
         let result = res.get_result();
 
@@ -104,6 +100,11 @@ impl<P: ChatInner> ChatPipeline<P> {
             .annotations
             .map(|v| serde_json::to_string(&v).ok())
             .flatten();
+
+        let halt = halt_with_error?;
+        if matches!(halt, StreamEndReason::Halt) {
+            log::debug!("The stream was halted");
+        }
 
         let mut finalized = true;
         match result.stop_reason {

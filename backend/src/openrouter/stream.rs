@@ -212,17 +212,11 @@ impl StreamCompletion {
         if let EventErr::InvalidStatusCode(code, res) = err {
             match res.json::<raw::ErrorResp>().await {
                 Ok(error) => Error::Api {
-                    message: format!(
-                        "Openrouter return status code {}, message: {}",
-                        code, error.error.message
-                    ),
+                    message: error.error.message,
                     code: Some(code.as_u16() as i32),
                 },
                 Err(e) => Error::Api {
-                    message: format!(
-                        "Openrouter return status code {}, cannot parse error message: {}",
-                        code, e
-                    ),
+                    message: format!("cannot parse error message: {}", e),
                     code: Some(code.as_u16() as i32),
                 },
             }

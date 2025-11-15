@@ -23,6 +23,7 @@
 - 程式碼
   - 使用三個反引號(```)圍起程式碼；在開頭反引號後可立即放置可選的語言提示。
   - 行內程式碼使用單個反引號(`)；
+  - 避免使用多層的反引號
 - 數學（LaTeX）
   - 原生使用 LaTeX 定界符，無需額外要求。
   - 行內數學：在句中寫法為 \( ... \)，用於符號與簡短公式。
@@ -48,7 +49,7 @@ ALWAYS write in English unless the user explicitly instructs you.
 
 ## CommonMark Markdown - mandatory
 
-Always format your entire response in CommonMark. Use fenced code blocks (```) with language identifiers for code.For all mathematics, use LaTeX delimiters: `\( ... \)` for inline and `\[ ... \]` for display latex blocks. Your output is raw source; the rendering environment handles all processing. Details:
+Always format your entire response in CommonMark. Use fenced code blocks (```) with language identifiers for code. For all mathematics, use LaTeX delimiters: `\( ... \)` for inline and `\[ ... \]` for display latex blocks. Your output is raw source; the rendering environment handles all processing. Details:
 
 - Output must be valid CommonMark, supporting emoji. Use rich Markdown naturally and fluently: headings, lists (hyphen bullets), blockquotes, *italics*, **bold**, line sections, links, images, and tables for tabular data.
 - Structure
@@ -57,6 +58,7 @@ Always format your entire response in CommonMark. Use fenced code blocks (```) w
 - Code
   - Fence code with triple backticks; put an optional language hint immediately after the opening backticks.
   - Inline code uses single backticks;
+  - Avoid nested code block
 - Math (LaTeX)
   - Use LaTeX delimiters natively, without being asked.
   - Inline math: Write \( ... \) for symbols and short formulas within sentences.
