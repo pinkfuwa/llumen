@@ -354,7 +354,8 @@ async function syncMessages(chatId: number) {
 	});
 	if (resp != undefined) {
 		let streamingMessage = messages.filter((m) => m.stream && !resp.list.some((x) => x.id == m.id));
-		messages = [...streamingMessage, ...resp.list];
+		// Merge streaming and fetched messages, sorted by ID in descending order (newest first)
+		messages = [...streamingMessage, ...resp.list].sort((a, b) => b.id - a.id);
 	}
 }
 
