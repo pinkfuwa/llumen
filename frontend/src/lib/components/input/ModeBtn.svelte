@@ -5,7 +5,11 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Tooltip from '../buttons/Tooltip.svelte';
 
-	let { value = $bindable(Mode.Normal) as Mode, disabled = false } = $props();
+	let {
+		value = $bindable(Mode.Normal) as Mode,
+		disabled = false,
+		limited = false
+	}: { value: Mode; disabled?: boolean; limited?: boolean } = $props();
 
 	// TODO: enable Mode.Research when ready
 	const modes = [Mode.Normal, Mode.Search, Mode.Research];
@@ -13,12 +17,16 @@
 		const nextIndex = modes.indexOf(value) + 1;
 		value = modes[nextIndex % modes.length];
 	}
+
+	$effect(() => {
+		if (limited) value = Mode.Normal;
+	});
 </script>
 
 <Button
 	onclick={nextStage}
 	class="aspect-square h-full shrink-0"
-	{disabled}
+	disabled={disabled || limited}
 	aria-label="change mode"
 >
 	{#if value == Mode.Research}
