@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/message.svelte';
-	import { type ChatReadResp, type FileMetadata } from '$lib/api/types';
+	import { type ChatReadResp } from '$lib/api/types';
 	import { dispatchError } from '$lib/error';
 	import ResponseBox from './buttons/ResponseBox.svelte';
 	import ResponseEdit from './buttons/ResponseEdit.svelte';

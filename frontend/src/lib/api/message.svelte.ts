@@ -119,6 +119,8 @@ const Handlers: {
 		firstMsg.token_count = data.token_count;
 		firstMsg.price = data.cost;
 		version = data.version;
+
+		if (messages.length > 1) messages[1].stream = false;
 	},
 
 	title(data, chatId) {
