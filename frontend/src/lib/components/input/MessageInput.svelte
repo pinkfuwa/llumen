@@ -39,6 +39,14 @@
 	let container = $state<HTMLElement | null>();
 
 	const models = getContext<Readable<ModelListResp | undefined>>('models');
+
+	const modelIdValid = $derived(
+		modelId != null &&
+			($models == undefined || $models.list.some((m) => m.id.toString() == modelId))
+	);
+
+	$inspect('modelIdValid', modelIdValid);
+
 	let selectModelCap = $derived.by(() => {
 		let uselessFn = (a: any) => {};
 		uselessFn(modelId);
@@ -64,7 +72,7 @@
 	});
 
 	function submit() {
-		if (onsubmit && content.length > 0) {
+		if (onsubmit && content.length > 0 && modelIdValid) {
 			disabled = true;
 			onsubmit();
 		}
@@ -108,7 +116,7 @@
 		{#if disabled}
 			<StopBtn onclick={oncancel} />
 		{:else}
-			<SendBtn onclick={submit} />
+			<SendBtn onclick={submit} disabled={content.length == 0 || !modelIdValid} />
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">

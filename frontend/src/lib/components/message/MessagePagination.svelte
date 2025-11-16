@@ -10,7 +10,8 @@
 
 	const { room }: { room: ChatReadResp | undefined } = $props();
 
-	const chatId = $derived(parseInt(page.params.id));
+	// FIXME: only use when if is presented
+	const chatId = $derived(parseInt(page.params.id!));
 
 	let { mutate } = updateMessage();
 

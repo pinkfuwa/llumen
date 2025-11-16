@@ -1,26 +1,12 @@
 <script lang="ts">
 	import { LoaderCircle } from '@lucide/svelte';
 	import Select from '$lib/ui/Select.svelte';
-	import { getContext, untrack } from 'svelte';
+	import { getContext } from 'svelte';
 	import type { Readable } from 'svelte/store';
-	import { lastModel } from '$lib/preference';
 	import type { ModelListResp } from '$lib/api/types';
 	let { value = $bindable<string | undefined>(), disabled = false } = $props();
 
 	const data = getContext<Readable<ModelListResp | undefined>>('models');
-
-	$effect(() => {
-		if (!disabled && $data) {
-			let lastModelId = untrack(() => $lastModel);
-
-			if (value == undefined) {
-				const list = $data.list;
-				let model = list.find((x) => x.id == lastModelId) || list.at(-1);
-
-				if (model) value = model.id;
-			}
-		}
-	});
 
 	let selectData = $derived(
 		$data?.list.map((x) => ({
