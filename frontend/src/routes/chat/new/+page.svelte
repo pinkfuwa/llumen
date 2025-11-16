@@ -6,11 +6,12 @@
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { page } from '$app/state';
+	import { PersistedState } from 'runed';
 
 	let { mutate } = createRoom();
 
 	let content = $state('');
-	let modelId = $state<string | undefined>(undefined);
+	const modelId = new PersistedState<null | string>('DefaultModelId', null);
 	let files = $state([]);
 	let mode = $state(Mode.Normal);
 
@@ -33,22 +34,20 @@
 	</h1>
 	<MessageInput
 		bind:content
-		bind:modelId
+		bind:modelId={modelId.current}
 		bind:mode
 		bind:files
 		onsubmit={() => {
-			if (modelId == null) return;
+			if (modelId.current == null) return;
 
 			mutate(
 				{
 					message: content,
-					modelId: parseInt(modelId),
+					modelId: parseInt(modelId.current),
 					files,
 					mode
 				},
-				(data) => {
-					goto('/chat/' + encodeURIComponent(data.id));
-				}
+				(data) => goto('/chat/' + encodeURIComponent(data.id))
 			);
 		}}
 	/>

@@ -32,7 +32,17 @@ const OTHER_TYPES = [
 ];
 
 // file that will directly upload without any processing
-const LITERAL_FILE = ['text/*', 'image/svg+xml'];
+const LITERAL_FILE = [
+	'text/*',
+	'image/svg+xml',
+	'.md',
+	'.ts',
+	'.txt',
+	'.rs',
+	'.svelte',
+	'.json',
+	'.csv'
+];
 
 export function getSupportedFileTypes(capability: CapabilityFileType): string {
 	const parts: string[] = [];

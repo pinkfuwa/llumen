@@ -1,13 +1,11 @@
 <script lang="ts">
-	let { files = $bindable([] as File[]) } = $props();
 	import { Upload } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
 	import Tooltip from '../buttons/Tooltip.svelte';
-	import { getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
 
-	const filetypes = getContext<Writable<string>>('filetypes');
+	let { files = $bindable([] as File[]), filetypes }: { files: File[]; filetypes: string } =
+		$props();
 
 	let inputElement: HTMLInputElement | null = null;
 
@@ -36,7 +34,7 @@
 	type="file"
 	class="hidden"
 	bind:this={inputElement}
-	accept={$filetypes}
+	accept={filetypes}
 	multiple={false}
 	onchange={onChange}
 />

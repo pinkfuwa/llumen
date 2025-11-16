@@ -11,30 +11,45 @@
 	import StopBtn from './StopBtn.svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { ChatMode as Mode, type ModelListResp } from '$lib/api/types';
-	import { getContext, setContext, untrack } from 'svelte';
-	import { get, writable, type Readable } from 'svelte/store';
+	import { getContext } from 'svelte';
+	import { type Readable } from 'svelte/store';
 	import { FileUp } from '@lucide/svelte';
-	import { dispatchError } from '$lib/error';
+	import { getSupportedFileTypes } from './fileTypes';
 
 	let {
 		mode = $bindable(Mode.Normal),
 		files = $bindable([] as Array<File>),
-		modelId = $bindable<string | undefined>(undefined),
+		modelId = $bindable<string | null>(null),
 		content = $bindable(''),
 		onsubmit = undefined as undefined | (() => void),
 		oncancel = undefined as undefined | (() => void),
 		disabled = false
+	}: {
+		mode?: Mode;
+		files?: Array<File>;
+		modelId: string | null;
+		content?: string;
+		onsubmit?: () => void;
+		oncancel?: () => void;
+		disabled?: boolean;
 	} = $props();
 
 	let editable = $state(true);
 
 	let container = $state<HTMLElement | null>();
 
-	const filetypes = writable('*');
-	setContext('filetypes', filetypes);
+	const models = getContext<Readable<ModelListResp | undefined>>('models');
+	let selectModelCap = $derived.by(() => {
+		let uselessFn = (a: any) => {};
+		uselessFn(modelId);
+		return $models?.list.find((x) => x.id.toString() == modelId);
+	});
+	let filetypes = $derived(
+		selectModelCap == undefined ? '*' : getSupportedFileTypes(selectModelCap)
+	);
 
 	const dropZone = createDropZone(() => container, {
-		allowedDataTypes: () => $filetypes,
+		allowedDataTypes: () => filetypes,
 		multiple: false,
 		onDrop(newFiles: File[] | null) {
 			if (newFiles == null) return;
@@ -42,23 +57,10 @@
 		}
 	});
 
-	// FIXME: should clear state on upper layer with props
 	afterNavigate((after) => {
-		if (after.to?.route.id == '/chat/[id]') content = '';
+		content = '';
 		editable = true;
-	});
-
-	// reset mode when tool is not supported
-	// FIXME: model isn't sync when updated, only sync on delete/create
-	$effect(() => {
-		if (mode == Mode.Normal) return;
-		const models = get(getContext<Readable<ModelListResp | undefined>>('models'));
-		if (models == undefined) return;
-		const model = models.list.find((m) => m.id == modelId);
-		if (model == undefined) return;
-		if (model.tool) return;
-		untrack(() => (mode = Mode.Normal));
-		dispatchError('internal', "the model doesn't support tool");
+		modelId = null;
 	});
 
 	function submit() {
@@ -112,8 +114,8 @@
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
 			<ModelBtn bind:value={modelId} />
-			<ModeBtn bind:value={mode} />
-			<UploadBtn bind:files />
+			<ModeBtn bind:value={mode} limited={!selectModelCap?.tool} />
+			<UploadBtn bind:files {filetypes} />
 		</div>
 		{#if content.length != 0}
 			<MarkdownBtn bind:editable />
