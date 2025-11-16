@@ -36,8 +36,8 @@
 		untrack(() => {
 			if (inited) return;
 			inited = true;
+			mode = $room.mode;
 			if ($room?.model_id) modelId = $room?.model_id.toString();
-			if (mode == null) mode = $room.mode;
 		});
 	});
 

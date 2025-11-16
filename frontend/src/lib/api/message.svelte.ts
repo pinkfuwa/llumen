@@ -35,11 +35,9 @@ let messages = $state<Array<Message>>([]);
 // Push a message with id to messages array
 //
 // If same id exist, replace it
-//
-// Cost O(1)
 function pushMessage(m: Message) {
 	let idx = messages.findIndex((message) => message.id <= m.id);
-	if (idx === -1) messages.unshift(m);
+	if (idx === -1) messages.push(m);
 	else {
 		const sameId = messages[idx].id === m.id;
 		messages.splice(idx, Number(sameId), m);
