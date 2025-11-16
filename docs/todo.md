@@ -1,0 +1,12 @@
+- [ ] Add test to state management(message.svelte.ts has problematic bug before)
+- [ ] Rewrite state management lib to use $state(replace stores)
+- [ ] Track streaming message progress(EX. in chunk 1 token position 20) to avoid resetting and repopulating chunk of last message
+- [ ] Document lua's function usage in coder's prompt to improve lua coding performance of backend
+- [ ] detect model capability with https://openrouter.ai/api/v1/models
+- [ ] Fix auto-complete in middle of the word(code-mirror)
+- [ ] Modify code splitting strategy to make code-mirror and markdown-parser use same lezer(@lezer/highlight and @lezer/common), reducing size
+- [ ] Investigate the reason of background repaint on setting overlay
+- [ ] Rewrite `MessageInput` for clearer model-mode conflict handling and prevent user selecting certain-mode under some model
+- [ ] Test deep-research's prompt performance
+- [ ] Extend basic component to themed almost everything
+- [ ] Prepare for next feature (artifact): preact with themed component

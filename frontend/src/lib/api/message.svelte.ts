@@ -15,7 +15,8 @@ import type {
 	SseReq,
 	SseResp,
 	FileMetadata,
-	Deep
+	Deep,
+	AssistantChunk
 } from './types';
 import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
@@ -23,9 +24,27 @@ import { UpdateInfiniteQueryDataById } from './state';
 import { untrack } from 'svelte';
 import { dev } from '$app/environment';
 
+type Message = MessagePaginateRespList & { stream?: boolean };
+type AssistantMessage = Message & { inner: { t: 'assistant'; c: AssistantChunk[] } };
+
 let version = $state(-1);
 
-let messages = $state<Array<MessagePaginateRespList & { stream?: boolean }>>([]);
+// sorted in descending order by id
+let messages = $state<Array<Message>>([]);
+
+// Push a message with id to messages array
+//
+// If same id exist, replace it
+//
+// Cost O(1)
+function pushMessage(m: Message) {
+	let idx = messages.findIndex((message) => message.id <= m.id);
+	if (idx === -1) messages.unshift(m);
+	else {
+		const sameId = messages[idx].id === m.id;
+		messages.splice(idx, Number(sameId), m);
+	}
+}
 
 // State for tracking deep research plan being built during streaming
 let deepState = $state<{
@@ -45,55 +64,41 @@ const Handlers: {
 	},
 
 	start(data) {
-		const message = messages.find((m) => m.id == data.id);
-		if (message == undefined) {
-			messages.unshift({
-				id: data.id,
-				inner: {
-					t: 'assistant',
-					c: []
-				},
-				token_count: 0,
-				price: 0,
-				stream: true
-			});
-		} else {
-			message.inner.c = [];
-		}
+		const message: Message = {
+			id: data.id,
+			inner: {
+				t: 'assistant',
+				c: []
+			},
+			token_count: 0,
+			price: 0,
+			stream: true
+		};
+		pushMessage(message);
 		version = data.version;
-		// Reset deepState for the new message
 		deepState = null;
 	},
 
 	token(token) {
-		const firstMsg = messages.at(0);
-		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+		const firstMsg = messages[0] as AssistantMessage;
 
 		const lastChunk = firstMsg.inner.c.at(-1);
 
-		if (lastChunk && lastChunk.t === 'text') {
-			lastChunk.c += token as string;
-		} else {
-			firstMsg.inner.c.push({ t: 'text', c: token as string });
-		}
+		if (lastChunk?.t === 'text') lastChunk.c += token as string;
+		else firstMsg.inner.c.push({ t: 'text', c: token as string });
 	},
 
 	reasoning(reasoning) {
-		const firstMsg = messages.at(0);
-		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+		const firstMsg = messages[0] as AssistantMessage;
 
 		const lastChunk = firstMsg.inner.c.at(-1);
 
-		if (lastChunk && lastChunk.t === 'reasoning') {
-			lastChunk.c += reasoning as string;
-		} else {
-			firstMsg.inner.c.push({ t: 'reasoning', c: reasoning as string });
-		}
+		if (lastChunk?.t === 'reasoning') lastChunk.c += reasoning as string;
+		else firstMsg.inner.c.push({ t: 'reasoning', c: reasoning as string });
 	},
 
 	tool_call(toolCall) {
-		const firstMsg = messages.at(0);
-		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+		const firstMsg = messages[0] as AssistantMessage;
 
 		const toolCallObj = toolCall as { name: string; args: string };
 		firstMsg.inner.c.push({
@@ -111,12 +116,10 @@ const Handlers: {
 	},
 
 	complete(data) {
-		const lastMsg = messages.at(0);
-		if (lastMsg && lastMsg.stream) {
-			lastMsg.stream = false;
-			lastMsg.token_count = data.token_count;
-			lastMsg.price = data.cost;
-		}
+		const firstMsg = messages[0] as AssistantMessage;
+		firstMsg.stream = false;
+		firstMsg.token_count = data.token_count;
+		firstMsg.price = data.cost;
 		version = data.version;
 	},
 
@@ -129,11 +132,10 @@ const Handlers: {
 	},
 
 	error(err) {
-		const lastMsg = messages.at(0);
-		if (lastMsg && lastMsg.stream) {
-			if (lastMsg.inner.t == 'user') return;
+		const firstMsg = messages[0] as AssistantMessage;
 
-			lastMsg.inner.c.push({
+		if (firstMsg && firstMsg.stream) {
+			firstMsg.inner.c.push({
 				t: 'error',
 				c: err
 			});
@@ -141,9 +143,10 @@ const Handlers: {
 	},
 
 	deep_plan(planChunk) {
-		const firstMsg = messages.at(0);
-		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+		const firstMsg = messages[0] as AssistantMessage;
+
 		const lastChunk = firstMsg.inner.c.at(-1);
+
 		if (!lastChunk || lastChunk.t != 'deep_agent') {
 			firstMsg.inner.c.push({
 				t: 'deep_agent',
@@ -390,9 +393,7 @@ export function getStream(updater: (x: boolean) => void) {
 }
 
 export function pushUserMessage(user_id: number, content: string, files: FileMetadata[]) {
-	let streamingMessage = untrack(() => messages).filter((x) => x.stream);
-
-	messages.splice(streamingMessage.length, 0, {
+	pushMessage({
 		id: user_id,
 		inner: {
 			t: 'user',
