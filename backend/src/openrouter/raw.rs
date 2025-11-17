@@ -20,6 +20,8 @@ pub struct CompletionReq {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub top_p: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<Tool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plugins: Option<Vec<Plugin>>,
@@ -27,6 +29,21 @@ pub struct CompletionReq {
     pub usage: Option<UsageReq>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reasoning: Option<Reasoning>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Reasoning {
+    pub effort: String,
+}
+
+impl Reasoning {
+    pub fn low() -> Self {
+        Reasoning {
+            effort: "low".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -72,6 +89,7 @@ impl Default for CompletionReq {
             repeat_penalty: None,
             top_k: None,
             top_p: None,
+            max_tokens: None,
             plugins: Some(vec![Plugin {
                 id: "file-parser".to_string(),
                 pdf: PdfPlugin {
@@ -80,6 +98,7 @@ impl Default for CompletionReq {
             }]),
             usage: Some(UsageReq { include: true }),
             response_format: None,
+            reasoning: None,
         }
     }
 }

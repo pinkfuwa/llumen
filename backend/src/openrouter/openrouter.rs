@@ -139,6 +139,13 @@ impl Openrouter {
         )
     }
 
+    /// Use [`super::builder::ModelBuilder`] instead.
+    ///
+    /// complete without streaming
+    ///
+    /// Note that we enforce low thinking budget and 512 output token,
+    /// primarily because it's used by title generation
+    #[deprecated]
     pub async fn complete(
         &self,
         mut messages: Vec<Message>,
@@ -160,6 +167,13 @@ impl Openrouter {
             messages.push(Message::User("".to_string()));
         }
 
+        let mut reasoning = None;
+        let mut max_tokens = None;
+        if !self.compatibility_mode {
+            max_tokens = Some(512);
+            reasoning = Some(raw::Reasoning::low());
+        }
+
         let req = raw::CompletionReq {
             messages: messages.into_iter().map(|m| m.into()).collect(),
             model: model.id,
@@ -167,8 +181,10 @@ impl Openrouter {
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
             top_p: model.top_p,
+            max_tokens,
             stream: false,
             response_format: model.response_format.clone(),
+            reasoning,
             ..self.get_request()
         };
 
