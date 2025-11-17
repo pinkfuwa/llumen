@@ -68,7 +68,7 @@ struct RenderingContext<'a> {
 }
 
 const TIME_FORMAT: &[BorrowedFormatItem<'static>] =
-    format_description!("[weekday], [hour]:[minute], [day] [month] [year]");
+    format_description!("[weekday], [year]-[month]-[day]");
 
 impl Prompt {
     pub fn render(
