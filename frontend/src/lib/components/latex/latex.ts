@@ -8,16 +8,15 @@ function latexTrim(i: string) {
 		.replace(/\s*\\\)$/gm, '');
 }
 
-let katexInstance: Promise<typeof import('katex')> | null = null;
+let temmlInstance: Promise<typeof import('temml')> | null = null;
 
 export async function toHtml(text: string, displayMode: boolean) {
-	if (katexInstance === null) katexInstance = import('katex');
+	if (temmlInstance === null) temmlInstance = import('temml');
 
-	const katex = await katexInstance;
+	const temml = await temmlInstance;
 
-	return katex.renderToString(latexTrim(text), {
+	return temml.renderToString(latexTrim(text), {
 		displayMode,
-		output: 'mathml',
 		throwOnError: false
 	});
 }
