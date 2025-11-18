@@ -1,5 +1,5 @@
 <script lang="ts">
-	import 'katex/dist/katex.min.css';
+	import 'temml/dist/Temml-Latin-Modern.css';
 
 	import { toHtml } from './latex';
 
