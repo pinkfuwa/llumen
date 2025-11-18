@@ -1,6 +1,4 @@
 <script lang="ts">
-	import 'temml/dist/Temml-Latin-Modern.css';
-
 	import { toHtml } from './latex';
 
 	let { text, displayMode = false } = $props<{ text: string; displayMode?: boolean }>();
