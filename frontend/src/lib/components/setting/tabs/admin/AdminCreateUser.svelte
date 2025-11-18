@@ -12,7 +12,7 @@
 
 {#if func == 'notify'}
 	<div class="font-semibold">
-		{$_('setting.admin.user')} <span class="rounded-md bg-hover p-2">{username}</span>
+		{$_('setting.admin.user')} <span class="bg-hover rounded-md p-2">{username}</span>
 		{$_('setting.admin.created')}
 	</div>
 {:else if func == 'retypePwd'}
@@ -45,7 +45,7 @@
 		</div>
 
 		<button
-			class="mx-1 mr-2 shrink-0 rounded-md p-1 hover:bg-hover"
+			class="hover:bg-hover mx-1 mr-2 shrink-0 rounded-md p-1"
 			onclick={() => {
 				if (username.length != 0) func = 'retypePwd';
 			}}><CheckLine /></button
