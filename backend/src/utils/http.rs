@@ -1,5 +1,10 @@
-use reqwest::{Certificate, Client, ClientBuilder};
+use reqwest::{Client, ClientBuilder};
+
+#[cfg(feature = "dev")]
+use reqwest::Certificate;
+#[cfg(feature = "dev")]
 use std::fs;
+#[cfg(feature = "dev")]
 use std::path::Path;
 
 /// Build a reqwest Client with optional custom certificate support.
@@ -52,6 +57,7 @@ pub fn build_client_with<F>(configure: F) -> Client
 where
     F: FnOnce(ClientBuilder) -> ClientBuilder,
 {
+    #[allow(unused_mut)]
     let mut builder = Client::builder();
 
     #[cfg(feature = "dev")]
