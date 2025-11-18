@@ -13,7 +13,8 @@ let temmlInstance: Promise<typeof import('temml')> | null = null;
 export async function toHtml(text: string, displayMode: boolean) {
 	if (temmlInstance === null) temmlInstance = import('temml');
 
-	const temml = await temmlInstance;
+	const temmlModule = await temmlInstance;
+	const temml = temmlModule.default;
 
 	return temml.renderToString(latexTrim(text), {
 		displayMode,
