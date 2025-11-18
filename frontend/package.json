@@ -32,7 +32,7 @@
 		"bits-ui": "^2.14.3",
 		"codemirror": "^6.0.2",
 		"fetch-event-stream": "^0.1.6",
-		"katex": "^0.16.25",
+		"temml": "^0.12.1",
 		"oboe": "^2.1.7",
 		"prettier": "^3.6.2",
 		"prettier-plugin-svelte": "^3.4.0",
