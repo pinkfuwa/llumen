@@ -11,11 +11,11 @@
 		<a
 			href="https://github.com/pinkfuwa/llumen"
 			target="_blank"
-			class="rounded-md px-2 py-0.5 hover:bg-primary hover:text-text-hover duration-150">llumen</a
+			class="rounded-md px-2 py-0.5 duration-150 hover:bg-primary hover:text-text-hover">llumen</a
 		>Made by<a
 			href="https://github.com/pinkfuwa"
 			target="_blank"
-			class="rounded-md px-2 py-0.5 hover:bg-primary hover:text-text-hover duration-150">pinkfuwa</a
+			class="rounded-md px-2 py-0.5 duration-150 hover:bg-primary hover:text-text-hover">pinkfuwa</a
 		>&COPY; {new Date().getFullYear()}
 	</footer>
 </div>
