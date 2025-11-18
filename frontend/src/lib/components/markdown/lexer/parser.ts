@@ -81,11 +81,11 @@ const latexExtension: MarkdownConfig = {
 				// Multi-line math block - consume lines until we find \]
 				const from = cx.lineStart + line.pos;
 				let content = line.text;
-				
+
 				// Move to next line and keep consuming until we find \]
 				while (cx.nextLine()) {
 					content += '\n' + line.text;
-					
+
 					if (line.text.includes('\\]')) {
 						// Found the closing delimiter, consume this line too
 						cx.nextLine();
@@ -94,9 +94,10 @@ const latexExtension: MarkdownConfig = {
 				}
 
 				// Create a paragraph element with the full LaTeX block
-				cx.addElement(cx.elt('Paragraph', from, cx.prevLineEnd(), 
-					cx.parser.parseInline(content, from)));
-				
+				cx.addElement(
+					cx.elt('Paragraph', from, cx.prevLineEnd(), cx.parser.parseInline(content, from))
+				);
+
 				return true;
 			}
 		}

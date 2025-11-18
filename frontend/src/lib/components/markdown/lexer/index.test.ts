@@ -99,17 +99,17 @@ describe('Lexer - parse', () => {
 \\frac{1}{4} \\cos^2\\theta_y
 \\tag{B}
 \\]`;
-		
+
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
-		
+
 		const containsType = (node: any, typeName: string): boolean => {
 			if (!node) return false;
 			if (node.type === typeName) return true;
 			if (!Array.isArray(node.children)) return false;
 			return node.children.some((child: any) => containsType(child, typeName));
 		};
-		
+
 		expect(containsType(walked, 'BlockMathBracket')).toBe(true);
 	});
 
