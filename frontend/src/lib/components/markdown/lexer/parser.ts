@@ -5,7 +5,10 @@ import {
 	GFM,
 	type InlineContext,
 	type MarkdownConfig,
-	type DelimiterType
+	type DelimiterType,
+	type BlockContext,
+	type Line,
+	type LeafBlock
 } from '@lezer/markdown';
 import { tags } from '@lezer/highlight';
 import {
@@ -57,6 +60,59 @@ const latexExtension: MarkdownConfig = {
 		{ name: `${INLINE_MATH_BRACKET}Mark`, style: tags.processingInstruction },
 		{ name: BLOCK_MATH_BRACKET, style: tags.emphasis },
 		{ name: `${BLOCK_MATH_BRACKET}Mark`, style: tags.processingInstruction }
+	],
+	parseBlock: [
+		{
+			name: 'LatexBlockBracket',
+			before: 'SetextHeading',
+			leaf(cx: BlockContext, leaf: LeafBlock) {
+				// Check if the leaf content starts with \[
+				const content = cx.input.read(leaf.start, leaf.start + Math.min(2, leaf.content.length));
+				console.log('LatexBlockBracket leaf called, content:', JSON.stringify(content), 'leaf.content:', leaf.content.substring(0, 20));
+				if (content !== '\\[') {
+					return null;
+				}
+				
+				console.log('LatexBlockBracket: Detected LaTeX block starting with \\[');
+				// This is a LaTeX block starting with \[
+				// Return a parser that prevents SetextHeading from taking over
+				let foundClosing = false;
+				return {
+					nextLine(cx: BlockContext, line: Line, leaf: LeafBlock): boolean {
+						console.log('LatexBlockBracket nextLine called, line.text:', JSON.stringify(line.text.substring(0, 30)));
+						console.log('LatexBlockBracket: foundClosing=', foundClosing, 'leaf.content has \\]?', leaf.content.includes('\\]'));
+						
+						// Check if the LaTeX block has already been closed
+						if (foundClosing || leaf.content.includes('\\]')) {
+							// LaTeX block is closed, let other parsers handle subsequent lines
+							return false;
+						}
+						
+						// Check if this line contains the closing \]
+						if (line.text.includes('\\]')) {
+							console.log('LatexBlockBracket: Found closing bracket, finishing block');
+							// Found closing bracket, consume this line and finish
+							foundClosing = true;
+							cx.nextLine();
+							cx.addLeafElement(leaf, cx.elt('Paragraph', leaf.start, cx.prevLineEnd(), 
+								cx.parser.parseInline(leaf.content + '\n' + line.text, leaf.start)));
+							return true;
+						}
+						
+						// We're still inside an unclosed LaTeX block
+						// Continue accumulating lines, including lines that look like Setext underlines
+						console.log('LatexBlockBracket: Continue accumulating (inside unclosed LaTeX block)');
+						return false;
+					},
+					finish(cx: BlockContext, leaf: LeafBlock): boolean {
+						// Finish as a regular paragraph, let inline parsers handle \[ and \]
+						cx.addLeafElement(leaf, cx.elt('Paragraph', leaf.start, cx.prevLineEnd(),
+							cx.parser.parseInline(leaf.content, leaf.start)));
+						return true;
+					}
+				};
+			}
+		}
 	],
 	parseInline: [
 		// Block math with $$ ... $$
