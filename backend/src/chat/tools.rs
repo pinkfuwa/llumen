@@ -1,4 +1,5 @@
 use crate::runner;
+use crate::utils::http::build_client_with;
 use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -20,13 +21,13 @@ pub struct CrawlTool {
 impl CrawlTool {
     pub fn new() -> Self {
         Self {
-            client: reqwest::Client::builder()
-                .user_agent(
-                    "Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)",
-                )
-                .timeout(std::time::Duration::from_secs(30))
-                .build()
-                .expect("Failed to create HTTP client"),
+            client: build_client_with(|builder| {
+                builder
+                    .user_agent(
+                        "Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)",
+                    )
+                    .timeout(std::time::Duration::from_secs(30))
+            }),
         }
     }
 
@@ -83,13 +84,13 @@ pub struct WebSearchTool {
 impl WebSearchTool {
     pub fn new() -> Self {
         Self {
-            client: reqwest::Client::builder()
-                .user_agent(
-                    "Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)",
-                )
-                .timeout(std::time::Duration::from_secs(30))
-                .build()
-                .expect("Failed to create HTTP client"),
+            client: build_client_with(|builder| {
+                builder
+                    .user_agent(
+                        "Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)",
+                    )
+                    .timeout(std::time::Duration::from_secs(30))
+            }),
             // Limit concurrent requests to avoid rate limiting
             semaphore: Arc::new(Semaphore::new(2)),
             last_search_time: Arc::new(tokio::sync::Mutex::new(std::time::Instant::now())),
