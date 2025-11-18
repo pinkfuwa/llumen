@@ -71,6 +71,12 @@ We also provided prebuild binary, download it and extract from [release](https:/
 - `BLOB_URL` — path for [redb](https://www.redb.org/) object storage. Default in Docker: `/data/blobs.redb`.
 - `BIND_ADDR` — address the backend binds to (default in Docker: `0.0.0.0:80`).
 
+### Development-only environment variables
+
+These variables are only available when the backend is compiled with the `dev` feature:
+
+- `LLUMEN_CUSTOM_CERT_PATH` — path to a custom root certificate file (PEM or DER format) for HTTPS requests. Useful for testing/benchmarking with self-signed certificates or custom certificate authorities.
+
 ## :book: Where to look for more documentation
 
 - Development and build-from-source steps and other developer-focused docs were moved to `./docs/overview.md`
