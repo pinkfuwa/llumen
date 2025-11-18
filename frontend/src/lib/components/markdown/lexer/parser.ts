@@ -5,7 +5,10 @@ import {
 	GFM,
 	type InlineContext,
 	type MarkdownConfig,
-	type DelimiterType
+	type DelimiterType,
+	type BlockContext,
+	type Line,
+	type LeafBlock
 } from '@lezer/markdown';
 import { tags } from '@lezer/highlight';
 import {
@@ -57,6 +60,47 @@ const latexExtension: MarkdownConfig = {
 		{ name: `${INLINE_MATH_BRACKET}Mark`, style: tags.processingInstruction },
 		{ name: BLOCK_MATH_BRACKET, style: tags.emphasis },
 		{ name: `${BLOCK_MATH_BRACKET}Mark`, style: tags.processingInstruction }
+	],
+	parseBlock: [
+		{
+			name: 'LatexBlockBracket',
+			before: 'SetextHeading',
+			parse(cx: BlockContext, line: Line) {
+				// Check if the line starts with \[ (possibly after whitespace)
+				const trimmed = line.text.trimStart();
+				if (!trimmed.startsWith('\\[')) {
+					return false;
+				}
+
+				// Check if there's a closing \] on the same line
+				if (trimmed.includes('\\]')) {
+					// Single-line math block - let it be handled as a normal paragraph
+					return false;
+				}
+
+				// Multi-line math block - consume lines until we find \]
+				const from = cx.lineStart + line.pos;
+				let content = line.text;
+
+				// Move to next line and keep consuming until we find \]
+				while (cx.nextLine()) {
+					content += '\n' + line.text;
+
+					if (line.text.includes('\\]')) {
+						// Found the closing delimiter, consume this line too
+						cx.nextLine();
+						break;
+					}
+				}
+
+				// Create a paragraph element with the full LaTeX block
+				cx.addElement(
+					cx.elt('Paragraph', from, cx.prevLineEnd(), cx.parser.parseInline(content, from))
+				);
+
+				return true;
+			}
+		}
 	],
 	parseInline: [
 		// Block math with $$ ... $$
