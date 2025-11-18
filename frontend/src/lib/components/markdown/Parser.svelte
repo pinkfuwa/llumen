@@ -7,7 +7,6 @@
 	import Code from './Code.svelte';
 	import Codespan from './Codespan.svelte';
 	import Del from './Del.svelte';
-	import Em from './Em.svelte';
 	import Heading from './Heading.svelte';
 	import Hr from './Hr.svelte';
 	import Html from './Html.svelte';
@@ -40,7 +39,8 @@
 		FencedCode: Code,
 		InlineCode: Codespan,
 		Strikethrough: Del,
-		Emphasis: Em,
+		StrikethroughMark: Empty,
+		Emphasis: Strong,
 		ATXHeading1: Heading,
 		ATXHeading2: Heading,
 		ATXHeading3: Heading,
@@ -158,9 +158,10 @@
 			authoritative={data.authoritative}
 		/>
 	{:else if !nodeMap[ast.type]}
-		<p>
-			Unmapped node type: {ast.type}
-		</p>
+		<pre>
+<code>Unmapped node type: {ast.type}</code>
+<code>{JSON.stringify(ast, null, 2)}</code>
+		</pre>
 	{:else}
 		{@const MappedComponent = nodeMap[ast.type]}
 		<MappedComponent node={ast}>
