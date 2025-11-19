@@ -1,6 +1,7 @@
 mod agent;
 mod agents;
 mod channel;
+pub use channel::Cursor;
 mod context;
 pub mod converter;
 mod deep_prompt;

@@ -391,8 +391,19 @@ export interface Resp {
 	deleted: boolean;
 }
 
+export interface SseCursor {
+	index: number;
+	offset: number;
+}
+
+export interface SseReqResume {
+	cursor: SseCursor;
+	version: number;
+}
+
 export interface SseReq {
 	id: number;
+	resume?: SseReqResume;
 }
 
 export interface SseRespMessageComplete {

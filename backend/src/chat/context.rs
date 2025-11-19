@@ -68,8 +68,12 @@ impl Context {
     pub fn halt_completion(&self, chat_id: i32) {
         self.channel.stop(chat_id)
     }
-    pub fn subscribe(self: Arc<Self>, chat_id: i32) -> impl Stream<Item = Token> + 'static {
-        self.channel.clone().subscribe(chat_id)
+    pub fn subscribe(
+        self: Arc<Self>,
+        chat_id: i32,
+        cursor: Option<channel::Cursor>,
+    ) -> impl Stream<Item = Token> + 'static {
+        self.channel.clone().subscribe(chat_id, cursor)
     }
     pub fn is_streaming(&self, chat_id: i32) -> bool {
         !self.channel.publishable(chat_id)
