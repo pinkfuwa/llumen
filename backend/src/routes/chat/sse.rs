@@ -170,7 +170,7 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?
         .into_iter()
-        .rfind(|m| !m.inner.is_empty());
+        .find(|m| !m.inner.is_empty());
 
     let initial_event = if let Some(ref last_msg) = last_msg {
         let event = SseResp::Version(last_msg.id);

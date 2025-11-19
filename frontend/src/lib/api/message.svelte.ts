@@ -372,7 +372,10 @@ function startSSE(chatId: number, signal: AbortSignal, cursor?: SseCursor, versi
 }
 
 export function useSSEEffect(chatId: () => number) {
-	if (dev) $inspect('messages', messages);
+	if (dev) {
+		$inspect('messages', messages);
+		$inspect('version', version);
+	}
 	$effect(() => {
 		let controller = new AbortController();
 
