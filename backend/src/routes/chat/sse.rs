@@ -10,17 +10,37 @@ use axum::{
 };
 use entity::prelude::*;
 use futures_util::stream;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use tokio_stream::{Stream, StreamExt};
 use typeshare::typeshare;
 
-use crate::{AppState, chat::Token, errors::*, middlewares::auth::UserId};
+use crate::{
+    AppState,
+    chat::{Cursor, Token},
+    errors::*,
+    middlewares::auth::UserId,
+};
+
+#[derive(Debug, Deserialize)]
+#[typeshare]
+pub struct SseReqResume {
+    pub cursor: SseCursor,
+    pub version: i32,
+}
+
+#[derive(Debug, Deserialize)]
+#[typeshare]
+pub struct SseCursor {
+    pub index: i32,
+    pub offset: i32,
+}
 
 #[derive(Debug, Deserialize)]
 #[typeshare]
 pub struct SseReq {
     pub id: i32,
+    pub resume: Option<SseReqResume>,
 }
 
 /// Represents a message sent over the SSE (Server-Sent Events) stream in the chat API.
@@ -141,22 +161,37 @@ pub async fn route(
         }));
     }
 
-    let stream = pipeline.clone().subscribe(req.id);
-
-    let last_message = Message::find()
+    // last non-empty message
+    let last_msg = Message::find()
         .filter(entity::message::Column::ChatId.eq(req.id))
         .order_by_desc(entity::message::Column::Id)
-        .one(&app.conn)
+        .limit(3)
+        .all(&app.conn)
         .await
-        .kind(ErrorKind::Internal)?;
+        .kind(ErrorKind::Internal)?
+        .into_iter()
+        .rfind(|m| !m.inner.is_empty());
 
-    let initial_event = if let Some(last_message) = last_message {
-        let event = SseResp::Version(last_message.id);
+    let initial_event = if let Some(ref last_msg) = last_msg {
+        let event = SseResp::Version(last_msg.id);
         let event = Event::default().json_data(event).unwrap();
         Some(Ok(event))
     } else {
         None
     };
+
+    let cursor = req
+        .resume
+        .map(|resume| match last_msg.map(|x| x.id) {
+            Some(i) if i == resume.version => {
+                let SseCursor { offset, index } = resume.cursor;
+                Cursor::try_from((index, offset)).ok()
+            }
+            _ => None,
+        })
+        .unwrap_or(None);
+
+    let stream = pipeline.clone().subscribe(req.id, cursor);
 
     let st = stream::iter(initial_event).chain(stream.filter_map(|token| {
         let event = match token {

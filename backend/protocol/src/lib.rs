@@ -131,7 +131,7 @@ impl MessageInner {
     }
     pub fn is_empty(&self) -> bool {
         match self {
-            MessageInner::User { text, .. } => text.is_empty(),
+            MessageInner::User { .. } => false,
             MessageInner::Assistant(chunks) => chunks.is_empty(),
         }
     }
