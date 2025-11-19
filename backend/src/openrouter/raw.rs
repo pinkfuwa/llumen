@@ -328,6 +328,12 @@ pub struct CompletionInfoResp {
 pub struct Usage {
     pub total_tokens: Option<i64>,
     pub cost: f64,
+    pub cost_details: Option<DetailCost>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DetailCost {
+    pub upstream_inference_cost: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]

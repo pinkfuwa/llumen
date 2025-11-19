@@ -213,7 +213,15 @@ impl Openrouter {
 
         let (token, price) = json
             .usage
-            .map(|x| (x.total_tokens, x.cost))
+            .map(|u| {
+                (
+                    u.total_tokens,
+                    u.cost_details
+                        .map(|x| x.upstream_inference_cost)
+                        .flatten()
+                        .unwrap_or(u.cost),
+                )
+            })
             .unwrap_or_default();
 
         let choice =
