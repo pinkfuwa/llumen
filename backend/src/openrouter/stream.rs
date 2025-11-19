@@ -164,10 +164,17 @@ impl StreamCompletion {
     fn handle_data(&mut self, data: &str) -> Result<StreamCompletionResp, Error> {
         // this approach made it compatible with both openrouter and openai
         if let Ok(resp) = serde_json::from_str::<raw::CompletionInfoResp>(data) {
-            self.usage.cost += resp.usage.cost;
+            let cost = resp
+                .usage
+                .cost_details
+                .map(|x| x.upstream_inference_cost)
+                .flatten()
+                .unwrap_or(resp.usage.cost);
+
+            self.usage.cost += cost;
             self.usage.token += resp.usage.total_tokens.unwrap_or(0);
             return Ok(StreamCompletionResp::Usage {
-                price: resp.usage.cost,
+                price: cost,
                 // cloak model may return null for total_tokens
                 token: resp.usage.total_tokens.map(|x| x as usize).unwrap_or(0),
             });
