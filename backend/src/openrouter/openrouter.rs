@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use super::{Model, StreamCompletion, error::Error, raw};
+use crate::utils::http::build_client;
 
 static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
@@ -15,7 +16,7 @@ async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<String>, Error> {
         data: Vec<Model>,
     }
 
-    let client = reqwest::Client::new();
+    let client = build_client();
     let response = client
         .get(url)
         .bearer_auth(api_key)
@@ -84,7 +85,7 @@ impl Openrouter {
             api_key,
             chat_completion_endpoint,
             model_ids,
-            http_client: reqwest::Client::new(),
+            http_client: build_client(),
             compatibility_mode,
         }
     }
