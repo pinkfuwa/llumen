@@ -66,7 +66,7 @@ We also provided prebuild binary, download it and extract from [release](https:/
 ## :key: Environment variables
 
 - `API_KEY` (required) — OpenRouter or equivalent provider API key.
-- `API_BASE` — openai compatible api url. Default: `https://openrouter.ai/api`
+- `OPENAI_API_BASE` — openai compatible api url. Default: `https://openrouter.ai/api`
 - `DATABASE_URL` — database connection string. Default in Docker: `sqlite://data/db.sqlite?mode=rwc`.
 - `BLOB_URL` — path for [redb](https://www.redb.org/) object storage. Default in Docker: `/data/blobs.redb`.
 - `BIND_ADDR` — address the backend binds to (default in Docker: `0.0.0.0:80`).

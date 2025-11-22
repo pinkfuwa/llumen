@@ -92,9 +92,10 @@ pub struct AppState {
 /// The API key is required to make requests to the OpenRouter API for LLM completions.
 /// If not found, prints instructions for obtaining a key and exits gracefully.
 fn load_api_key() -> String {
-    match var("API_KEY") {
-        Ok(key) => key,
-        Err(_) => {
+    match (var("API_KEY"), var("OPENA_API_KEY")) {
+        (Ok(key), _) => key,
+        (_, Ok(key)) => key,
+        _ => {
             println!("Warning: API_KEY environment variable not found.");
             println!("You can get a key from https://openrouter.ai/keys");
             #[cfg(windows)]
@@ -146,7 +147,9 @@ async fn main() {
     let _main_span = info_span!("llumen_backend_startup").entered();
 
     let api_key = load_api_key();
-    let api_base = var("OPENAI_API_BASE").unwrap_or("https://openrouter.ai/api".to_string());
+    let api_base = var("API_BASE").unwrap_or_else(|_| {
+        var("OPENAI_API_BASE").unwrap_or("https://openrouter.ai/api".to_string())
+    });
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
     let static_dir = var("STATIC_DIR").unwrap_or(
