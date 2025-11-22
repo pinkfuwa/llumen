@@ -327,6 +327,7 @@ pub struct CompletionInfoResp {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Usage {
     pub total_tokens: Option<i64>,
+    #[serde(default)]
     pub cost: f64,
     pub cost_details: Option<DetailCost>,
 }
