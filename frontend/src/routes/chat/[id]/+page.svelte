@@ -51,6 +51,7 @@
 	$effect(() => {
 		if (!inited || modelId === null) return;
 		const currentModelId = parseInt(modelId);
+		if (isNaN(currentModelId)) return;
 		if (lastSavedModelId !== currentModelId) {
 			update({
 				chat_id: id,
