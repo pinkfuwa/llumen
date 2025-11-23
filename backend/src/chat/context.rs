@@ -136,6 +136,9 @@ impl CompletionContext {
             .ok_or_else(|| anyhow::anyhow!("Chat not found"))?;
         let model = model?.ok_or_else(|| anyhow::anyhow!("Model not found"))?;
 
+        let mut chat = chat.into_active_model();
+        chat.model_id = ActiveValue::Set(Some(model.id));
+
         let mut publisher = ctx
             .channel
             .clone()
@@ -161,7 +164,7 @@ impl CompletionContext {
 
         Ok(Self {
             model,
-            chat: chat.into_active_model(),
+            chat,
             message: msg,
             messages: msgs,
             user,
