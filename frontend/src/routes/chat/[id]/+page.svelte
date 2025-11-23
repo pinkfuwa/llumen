@@ -5,7 +5,7 @@
 	import Copyright from '$lib/components/Copyright.svelte';
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
-	import { haltCompletion, useRoom } from '$lib/api/chatroom.svelte';
+	import { haltCompletion, useRoom, updateRoom } from '$lib/api/chatroom.svelte';
 	import { UploadManager } from '$lib/api/files.js';
 	import Scroll from '$lib/ui/Scroll.svelte';
 	import { createMessage, getStream } from '$lib/api/message.svelte.js';
@@ -16,6 +16,7 @@
 
 	let { mutate } = createMessage();
 	let { mutate: halt } = haltCompletion();
+	let { mutate: update } = updateRoom();
 
 	let content = $state('');
 	let files: File[] = $state([]);
@@ -39,6 +40,18 @@
 			mode = $room.mode;
 			if ($room?.model_id) modelId = $room?.model_id.toString();
 		});
+	});
+
+	// Persist model changes immediately when user changes the model
+	$effect(() => {
+		if (!inited || modelId === null) return;
+		const currentModelId = parseInt(modelId);
+		if ($room?.model_id !== currentModelId) {
+			update({
+				chat_id: id,
+				model_id: currentModelId
+			});
+		}
 	});
 
 	let uploadManager = $derived(new UploadManager(id));

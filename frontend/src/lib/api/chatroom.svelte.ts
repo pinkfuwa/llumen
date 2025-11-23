@@ -167,7 +167,22 @@ export function deleteRoom(): MutationResult<ChatDeleteReq, ChatDeleteResp> {
 
 export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
 	return CreateMutation({
-		path: 'chat/write'
+		path: 'chat/write',
+		onSuccess: (data, param) => {
+			if (!data.wrote) return;
+
+			// Update the chat list cache if model_id was changed
+			if (param.model_id !== undefined) {
+				UpdateInfiniteQueryDataById<ChatPaginateRespList>({
+					key: ['chatPaginate'],
+					updater: (chatData) => {
+						if (chatData.id === param.chat_id) chatData.model_id = param.model_id;
+						return chatData;
+					},
+					id: param.chat_id
+				});
+			}
+		}
 	});
 }
 

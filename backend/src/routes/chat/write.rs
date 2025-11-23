@@ -13,6 +13,7 @@ use crate::{AppState, errors::*, middlewares::auth::UserId};
 pub struct ChatUpdateReq {
     pub chat_id: i32,
     pub title: Option<String>,
+    pub model_id: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -34,14 +35,21 @@ pub async fn route(
 
     // TODO: sync Mode with remote
 
-    if req.title.is_none() {
+    if req.title.is_none() && req.model_id.is_none() {
         return Ok(Json(ChatUpdateResp { wrote: false }));
     }
 
-    let title = req.title.unwrap();
+    let mut update = chat::Entity::update_many();
 
-    let res = chat::Entity::update_many()
-        .col_expr(chat::Column::Title, title.into())
+    if let Some(title) = req.title {
+        update = update.col_expr(chat::Column::Title, title.into());
+    }
+
+    if let Some(model_id) = req.model_id {
+        update = update.col_expr(chat::Column::ModelId, model_id.into());
+    }
+
+    let res = update
         .filter(
             chat::Column::Id
                 .eq(req.chat_id)

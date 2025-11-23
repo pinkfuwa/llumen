@@ -81,6 +81,7 @@ export interface ChatReadResp {
 export interface ChatUpdateReq {
 	chat_id: number;
 	title?: string;
+	model_id?: number;
 }
 
 export interface ChatUpdateResp {
