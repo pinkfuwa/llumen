@@ -494,6 +494,11 @@ export function updateMessage(): RawMutationResult<
 
 				messages = messages.filter((x) => x.id < param.msgId);
 
+				// Reset cursor and version after filtering messages to ensure
+				// SSE reconnection starts fresh and doesn't try to resume with stale cursor
+				version = -1;
+				cursor = { index: -1, offset: 0 };
+
 				await create(param, resolve);
 			});
 		}
