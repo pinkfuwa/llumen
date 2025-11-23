@@ -29,7 +29,7 @@ type Message = MessagePaginateRespList & { stream?: boolean };
 type AssistantMessage = Message & { inner: { t: 'assistant'; c: AssistantChunk[] } };
 
 let version = $state(-1);
-let cursor = $state<SseCursor>({ index: -1, offset: 0 });
+let cursor = $state<SseCursor | null>(null);
 
 // sorted in descending order by id
 let messages = $state<Array<Message>>([]);
@@ -59,7 +59,7 @@ const Handlers: {
 	version(data, chatId) {
 		if (version !== data) {
 			version = data;
-			cursor = { index: -1, offset: 0 };
+			cursor = null;
 			syncMessages(chatId);
 		}
 	},
@@ -77,8 +77,7 @@ const Handlers: {
 		};
 		pushMessage(message);
 		version = data.version;
-		cursor.index++;
-		cursor.offset = 1;
+		cursor = { index: 0, offset: 0 };
 		deepState = null;
 	},
 
@@ -89,11 +88,11 @@ const Handlers: {
 
 		if (lastChunk?.t === 'text') {
 			lastChunk.c += token as string;
-			cursor.offset += (token as string).length;
+			cursor!.offset += (token as string).length;
 		} else {
 			firstMsg.inner.c.push({ t: 'text', c: token as string });
-			cursor.index++;
-			cursor.offset = (token as string).length;
+			cursor!.index++;
+			cursor!.offset = (token as string).length;
 		}
 	},
 
@@ -104,11 +103,11 @@ const Handlers: {
 
 		if (lastChunk?.t === 'reasoning') {
 			lastChunk.c += reasoning as string;
-			cursor.offset += (reasoning as string).length;
+			cursor!.offset += (reasoning as string).length;
 		} else {
 			firstMsg.inner.c.push({ t: 'reasoning', c: reasoning as string });
-			cursor.index++;
-			cursor.offset = (reasoning as string).length;
+			cursor!.index++;
+			cursor!.offset = (reasoning as string).length;
 		}
 	},
 
@@ -124,14 +123,14 @@ const Handlers: {
 				arg: toolCallObj.args
 			}
 		});
-		cursor.index++;
-		cursor.offset = 1;
+		cursor!.index++;
+		cursor!.offset = 1;
 	},
 
 	tool_result(toolResult) {
 		handleToolResult(toolResult.content);
-		cursor.index++;
-		cursor.offset = 1;
+		cursor!.index++;
+		cursor!.offset = 1;
 	},
 
 	complete(data) {
@@ -140,8 +139,7 @@ const Handlers: {
 		firstMsg.token_count = data.token_count;
 		firstMsg.price = data.cost;
 		version = data.version;
-		cursor.index++;
-		cursor.offset = 1;
+		cursor = null;
 
 		if (messages.length > 1) messages[1].stream = false;
 	},
@@ -152,8 +150,8 @@ const Handlers: {
 			id: chatId,
 			updater: (chat) => ({ ...chat, title: data })
 		});
-		cursor.index++;
-		cursor.offset = 1;
+		cursor!.index++;
+		cursor!.offset = 1;
 	},
 
 	error(err) {
@@ -164,8 +162,8 @@ const Handlers: {
 				t: 'error',
 				c: err
 			});
-			cursor.index++;
-			cursor.offset = (err as string).length;
+			cursor!.index++;
+			cursor!.offset = (err as string).length;
 		}
 	},
 
@@ -189,10 +187,10 @@ const Handlers: {
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
 
 		if (deepState) {
-			cursor.offset += (planChunk as string).length;
+			cursor!.offset += (planChunk as string).length;
 		} else {
-			cursor.index++;
-			cursor.offset = (planChunk as string).length;
+			cursor!.index++;
+			cursor!.offset = (planChunk as string).length;
 		}
 
 		// Initialize deepState if not already initialized
@@ -236,8 +234,8 @@ const Handlers: {
 			lastChunk.c = agentCall;
 		}
 		deepState.currentStepIndex = stepIndex as number;
-		cursor.index++;
-		cursor.offset = 1;
+		cursor!.index++;
+		cursor!.offset = 1;
 	},
 
 	deep_step_token(token) {
@@ -248,11 +246,11 @@ const Handlers: {
 		const lastChunk = step.progress.at(-1);
 		if (lastChunk && lastChunk.t === 'text') {
 			lastChunk.c += token as string;
-			cursor.offset += (token as string).length;
+			cursor!.offset += (token as string).length;
 		} else {
 			step.progress.push({ t: 'text', c: token as string });
-			cursor.index++;
-			cursor.offset = (token as string).length;
+			cursor!.index++;
+			cursor!.offset = (token as string).length;
 		}
 	},
 
@@ -264,11 +262,11 @@ const Handlers: {
 		const lastChunk = step.progress.at(-1);
 		if (lastChunk && lastChunk.t === 'reasoning') {
 			lastChunk.c += reasoning as string;
-			cursor.offset += (reasoning as string).length;
+			cursor!.offset += (reasoning as string).length;
 		} else {
 			step.progress.push({ t: 'reasoning', c: reasoning as string });
-			cursor.index++;
-			cursor.offset = (reasoning as string).length;
+			cursor!.index++;
+			cursor!.offset = (reasoning as string).length;
 		}
 	},
 
@@ -286,8 +284,8 @@ const Handlers: {
 				arg: toolCallObj.args
 			}
 		});
-		cursor.index++;
-		cursor.offset = 1;
+		cursor!.index++;
+		cursor!.offset = 1;
 	},
 
 	deep_step_tool_result(toolResult) {
@@ -315,8 +313,8 @@ const Handlers: {
 				}
 			}
 		}
-		cursor.index++;
-		cursor.offset = 1;
+		cursor!.index++;
+		cursor!.offset = 1;
 	},
 
 	deep_report(report) {
@@ -327,20 +325,23 @@ const Handlers: {
 
 		if (lastChunk && lastChunk.t === 'text') {
 			lastChunk.c += report as string;
-			cursor.offset += (report as string).length;
+			cursor!.offset += (report as string).length;
 		} else {
 			firstMsg.inner.c.push({ t: 'text', c: report as string });
-			cursor.index++;
-			cursor.offset = (report as string).length;
+			cursor!.index++;
+			cursor!.offset = (report as string).length;
 		}
 	}
 };
 
-function startSSE(chatId: number, signal: AbortSignal, cursor?: SseCursor, version?: number) {
+function startSSE(chatId: number, signal: AbortSignal) {
+	let cursor_ = untrack(() => cursor);
+
 	const req: SseReq = { id: chatId };
-	if (cursor && version !== undefined && version !== -1) {
-		req.resume = { cursor, version };
+	if (cursor_ != null) {
+		req.resume = { cursor: cursor_, version: untrack(() => version) };
 	}
+
 	RawAPIFetch<SseReq>('chat/sse', req, 'POST', signal).then(async (response) => {
 		if (response == undefined) return;
 
@@ -388,12 +389,7 @@ export function useSSEEffect(chatId: () => number) {
 			if (state === 'visible') {
 				if (!controller.signal.aborted) controller.abort();
 				controller = new AbortController();
-				startSSE(
-					id,
-					controller.signal,
-					untrack(() => cursor),
-					untrack(() => version)
-				);
+				startSSE(id, controller.signal);
 			} else if (state === 'hidden') controller.abort();
 		}
 
