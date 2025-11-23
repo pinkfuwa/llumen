@@ -28,7 +28,21 @@ import { dev } from '$app/environment';
 type Message = MessagePaginateRespList & { stream?: boolean };
 type AssistantMessage = Message & { inner: { t: 'assistant'; c: AssistantChunk[] } };
 
+// version only reflect per-message changes, which is the minimal unit that pagination API cares
+// when version mismatch, revaildate messages
+// check version when backend send version event
+// update version on push event(start/completed event)
 let version = $state(-1);
+// cursor reflect per-chunk and per-token changes, which handled by SSE API
+// index for chunk, offset for token(counting char, not a proper tokenized counting).
+//
+// cursor are used to check small different between versions
+//
+// For example:
+// User: What's llumen -> version 1
+// Assistant: -> version 2 index 0 offset 0
+// <thinking>I have to<thinking> -> version 2 index 0 offset 8
+// **Quick Answer:** -> version 2 index 1 offset 17
 let cursor = $state<SseCursor | null>(null);
 
 // sorted in descending order by id
@@ -64,6 +78,7 @@ const Handlers: {
 		}
 	},
 
+	// user message arrived
 	start(data) {
 		const message: Message = {
 			id: data.id,
