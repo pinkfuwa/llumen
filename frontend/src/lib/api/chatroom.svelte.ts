@@ -176,7 +176,7 @@ export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
 				UpdateInfiniteQueryDataById<ChatPaginateRespList>({
 					key: ['chatPaginate'],
 					updater: (chatData) => {
-						if (chatData.id === param.chat_id) chatData.model_id = param.model_id;
+						chatData.model_id = param.model_id;
 						return chatData;
 					},
 					id: param.chat_id

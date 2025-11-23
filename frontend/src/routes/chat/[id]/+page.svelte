@@ -25,11 +25,13 @@
 	let { data: room } = $derived(useRoom(id));
 
 	let modelId = $state<string | null>(null);
+	let lastSavedModelId = $state<number | undefined>(undefined);
 
 	let inited = false;
 
 	afterNavigate(() => {
 		inited = false;
+		lastSavedModelId = undefined;
 	});
 
 	$effect(() => {
@@ -38,7 +40,10 @@
 			if (inited) return;
 			inited = true;
 			mode = $room.mode;
-			if ($room?.model_id) modelId = $room?.model_id.toString();
+			if ($room?.model_id) {
+				modelId = $room.model_id.toString();
+				lastSavedModelId = $room.model_id;
+			}
 		});
 	});
 
@@ -46,11 +51,12 @@
 	$effect(() => {
 		if (!inited || modelId === null) return;
 		const currentModelId = parseInt(modelId);
-		if ($room?.model_id !== currentModelId) {
+		if (lastSavedModelId !== currentModelId) {
 			update({
 				chat_id: id,
 				model_id: currentModelId
 			});
+			lastSavedModelId = currentModelId;
 		}
 	});
 
