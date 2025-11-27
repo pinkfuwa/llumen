@@ -36,6 +36,8 @@ pub async fn route(
     } = req;
     let user_id = user_id_req.unwrap_or(user_id);
 
+    // Please note that update to same value does not result in error
+    // But update no value does result in error
     debug_assert!(
         preference.is_some() || password.is_some(),
         "no field to update"
@@ -52,6 +54,8 @@ pub async fn route(
 
     let mut active_model = res.into_active_model();
 
+    // merge two preferences
+    // frontend can do partial update, but not reset to None
     if let Some(preference) = preference {
         let mut new_preference = active_model.preference.take().unwrap();
         if let Some(theme) = preference.theme {
