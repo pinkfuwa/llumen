@@ -74,5 +74,5 @@ We also provided prebuild binary, download it and extract from [release](https:/
 
 ## :book: Where to look for more documentation
 
-- Development and build-from-source steps and other developer-focused docs were moved to `./docs/overview.md`
-- User guide at `./docs/user.md`
+- **User Guide**: [./docs/user/](./docs/user/) - Getting started, installation, configuration, and features
+- Development and build-from-source steps and other developer-focused docs at `./docs/overview.md`
