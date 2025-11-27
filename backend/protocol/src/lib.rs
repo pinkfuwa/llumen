@@ -144,8 +144,12 @@ pub struct UserPreference {
     pub theme: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>,
+    // Valid value for it should "true" or "false"
+    // due to <Select> in frontend, string is used here instead of boolean
     #[serde(skip_serializing_if = "Option::is_none")]
     pub submit_on_enter: Option<String>,
+    // Valid value for it should "true" or "false"
+    // due to <Select> in frontend, string is used here instead of boolean
     #[serde(skip_serializing_if = "Option::is_none")]
     pub use_pattern_background: Option<String>,
 }
