@@ -200,46 +200,7 @@ ls -la data/
    docker run -p 8080:80 ...
    ```
 
-## Performance Issues
-
-### High Memory Usage
-
-**Solutions:**
-
-1. **Limit container memory:**
-   ```yaml
-   deploy:
-     resources:
-       limits:
-         memory: 512M
-   ```
-
-2. **Reduce concurrent operations**
-3. **Clear old conversations**
-
-### Slow Startup
-
-**Normal behavior:**
-- First startup may take longer as migrations run
-- Subsequent startups should be faster
-
-**If persistently slow:**
-- Check disk I/O performance
-- Verify database isn't corrupted
-
-## Logging and Debugging
-
-### Enable Debug Logging
-
-**Docker:**
-```bash
-docker run -e RUST_LOG=backend=debug ...
-```
-
-**Binary:**
-```bash
-RUST_LOG=backend=debug ./llumen
-```
+## Bug
 
 ### View Logs
 

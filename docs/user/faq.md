@@ -113,12 +113,6 @@ Responses stream token-by-token as the LLM generates them. You see the response 
 
 ## Technical
 
-### What are the system requirements?
-
-- **Memory:** ~512MB minimum, 1GB recommended
-- **Disk:** ~100MB for application, plus data storage
-- **CPU:** Any modern processor
-
 ### What ports does Llumen use?
 
 - **Docker:** Port 80 by default

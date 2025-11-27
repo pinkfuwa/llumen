@@ -83,7 +83,7 @@ For development or custom builds, you can compile from source.
 ### Prerequisites
 
 - Rust 1.89 or later
-- Node.js 18+ with pnpm
+- Node.js 21+ with pnpm
 - SQLite development libraries
 
 ### Build Steps
@@ -128,17 +128,6 @@ nix develop
 Always mount the `/data` volume in Docker to persist:
 - SQLite database (`db.sqlite`)
 - Blob storage (`blobs.redb`)
-
-### Memory Requirements
-
-Llumen is designed to run on systems with ~1GB memory:
-
-| Component | Memory |
-|-----------|--------|
-| SQLite cache | 128MB |
-| Backend threads | 16MB |
-| Heap | 256MB |
-| Lua runtimes | 512MB |
 
 ### Reverse Proxy
 
