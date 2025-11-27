@@ -1,6 +1,9 @@
 services:
   llumen:
     image: ghcr.io/pinkfuwa/llumen:latest
+    # build:
+    #   context: .
+    #   dockerfile: ./package/Dockerfile
     restart: on-failure:3
     environment:
       - "API_KEY=sk-or-<YOUR_API_KEY>"
