@@ -36,7 +36,8 @@
 		"github_star": "按個星星",
 		"old_password": "舊密碼",
 		"add_model": "新增模型",
-		"edit_model": "編輯模型"
+		"edit_model": "編輯模型",
+		"pattern": "顯示圖案背景"
 	},
 	"login": {
 		"title": "登入流明",

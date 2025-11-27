@@ -146,6 +146,8 @@ pub struct UserPreference {
     pub locale: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub submit_on_enter: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub use_pattern_background: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Default, Serialize)]

@@ -99,6 +99,7 @@ To create new subagent:
 * SeaORM
 * Tokio
 * mLua with luau sandboxing
+* typeshare(codegen)
 
 ### frontend tech stack
 * Svelte 5(SPA)
