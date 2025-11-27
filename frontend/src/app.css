@@ -21,6 +21,7 @@ html {
 	--color-user-bg: var(--color-secondary);
 	--color-popup-bg: var(--color-white);
 	--color-component-bg: var(--color-white);
+	--color-pattern-bg: #e5e7eb;
 }
 
 [data-theme='dark'] {
@@ -38,6 +39,7 @@ html {
 	--color-user-bg: var(--color-sidebar-bg);
 	--color-popup-bg: #272422;
 	--color-component-bg: var(--color-sidebar-bg);
+	--color-pattern-bg: #2a2724;
 }
 
 [data-theme='blue'] {
@@ -60,6 +62,32 @@ html {
 
 	--color-light: #12395c;
 	--color-dark: white;
+	--color-pattern-bg: #0f3051;
+}
+
+.bg-chat {
+	background-color: var(--color-chat-bg);
+	position: relative;
+	isolation: isolate;
+}
+
+[data-pattern='pattern'] .bg-chat::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+
+	background-color: var(--color-pattern-bg);
+
+	-webkit-mask-image: url('/chat-bg.webp');
+	mask-image: url('/chat-bg.webp');
+
+	-webkit-mask-repeat: repeat;
+	mask-repeat: repeat;
+
+	-webkit-mask-size: 256px 256px;
+	mask-size: 256px 256px;
 }
 
 .nobar {

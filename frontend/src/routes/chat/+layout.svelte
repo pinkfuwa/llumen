@@ -40,7 +40,7 @@
 
 <CollapseBtn bind:open />
 
-<div class="relative flex h-screen w-screen flex-row bg-chat-bg">
+<div class="bg-chat relative flex h-screen w-screen flex-row">
 	<div class="z-20 h-full shrink-0">
 		<Sidebar {addition} currentRoom={Number(params.id)} bind:open />
 	</div>

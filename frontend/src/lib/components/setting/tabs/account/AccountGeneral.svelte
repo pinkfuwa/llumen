@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
-	import { theme, locale, submitOnEnter } from '$lib/preference';
+	import { theme, locale, submitOnEnter, usePatternBackground } from '$lib/preference';
 	import { UpdateUser } from '$lib/api/user';
 	import { get } from 'svelte/store';
 	import Warning from '$lib/components/setting/Warning.svelte';
@@ -10,6 +10,7 @@
 	let themeData = $state(get(theme));
 	let localeData = $state(get(locale));
 	let submitOnEnterData = $state(get(submitOnEnter));
+	let usePatternBackgroundData = $state(get(usePatternBackground));
 
 	let { mutate, isPending, isError } = UpdateUser();
 
@@ -67,5 +68,20 @@
 		class="w-36 truncate"
 		popupClass="w-38"
 		onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}
+	/>
+</div>
+
+<div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
+	<label for="enter" class="grow">{$_('setting.pattern')}: </label>
+	<Select
+		data={[
+			{ value: 'true', label: $_('setting.enable') },
+			{ value: 'false', label: $_('setting.disable') }
+		]}
+		bind:selected={usePatternBackgroundData}
+		disabled={$isPending}
+		class="w-36 truncate"
+		popupClass="w-38"
+		onchange={() => mutatePreference({ use_pattern_background: usePatternBackgroundData })}
 	/>
 </div>

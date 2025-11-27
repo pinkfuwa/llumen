@@ -36,7 +36,8 @@
 		"github_star": "Start on Github",
 		"old_password": "Old Password",
 		"add_model": "Add New Model",
-		"edit_model": "Edit Model"
+		"edit_model": "Edit Model",
+		"pattern": "Show pattern"
 	},
 	"login": {
 		"title": "Sign in to llumen",
