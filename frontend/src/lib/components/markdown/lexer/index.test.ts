@@ -501,3 +501,119 @@ describe('Lexer - Integration', () => {
 		}
 	});
 });
+
+describe('Lexer - Link Structure', () => {
+	it('should parse shortcut reference link [abc] without URL child', async () => {
+		const source = '[abc]';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const findLinks = (node: any): any[] => {
+			const links: any[] = [];
+			if (node.type === 'Link') links.push(node);
+			if (node.children) {
+				for (const child of node.children) {
+					links.push(...findLinks(child));
+				}
+			}
+			return links;
+		};
+
+		const links = findLinks(walked);
+		expect(links.length).toBe(1);
+
+		const link = links[0];
+		const urlChild = link.children?.find((c: any) => c.type === 'URL');
+		expect(urlChild).toBeUndefined();
+	});
+
+	it('should parse full link with URL child', async () => {
+		const source = '[abc](http://example.com)';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const findLinks = (node: any): any[] => {
+			const links: any[] = [];
+			if (node.type === 'Link') links.push(node);
+			if (node.children) {
+				for (const child of node.children) {
+					links.push(...findLinks(child));
+				}
+			}
+			return links;
+		};
+
+		const links = findLinks(walked);
+		expect(links.length).toBe(1);
+
+		const link = links[0];
+		const urlChild = link.children?.find((c: any) => c.type === 'URL');
+		expect(urlChild).toBeDefined();
+		expect(urlChild.text).toBe('http://example.com');
+	});
+});
+
+describe('Lexer - HTML Tag Structure', () => {
+	it('should parse <br> as HTMLTag', async () => {
+		const source = 'Hello<br>World';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const findHtmlTags = (node: any): any[] => {
+			const tags: any[] = [];
+			if (node.type === 'HTMLTag') tags.push(node);
+			if (node.children) {
+				for (const child of node.children) {
+					tags.push(...findHtmlTags(child));
+				}
+			}
+			return tags;
+		};
+
+		const tags = findHtmlTags(walked);
+		expect(tags.length).toBe(1);
+		expect(tags[0].text).toBe('<br>');
+	});
+
+	it('should parse <br/> as HTMLTag', async () => {
+		const source = 'Hello<br/>World';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const findHtmlTags = (node: any): any[] => {
+			const tags: any[] = [];
+			if (node.type === 'HTMLTag') tags.push(node);
+			if (node.children) {
+				for (const child of node.children) {
+					tags.push(...findHtmlTags(child));
+				}
+			}
+			return tags;
+		};
+
+		const tags = findHtmlTags(walked);
+		expect(tags.length).toBe(1);
+		expect(tags[0].text).toBe('<br/>');
+	});
+
+	it('should parse <br /> as HTMLTag', async () => {
+		const source = 'Hello<br />World';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const findHtmlTags = (node: any): any[] => {
+			const tags: any[] = [];
+			if (node.type === 'HTMLTag') tags.push(node);
+			if (node.children) {
+				for (const child of node.children) {
+					tags.push(...findHtmlTags(child));
+				}
+			}
+			return tags;
+		};
+
+		const tags = findHtmlTags(walked);
+		expect(tags.length).toBe(1);
+		expect(tags[0].text).toBe('<br />');
+	});
+});
