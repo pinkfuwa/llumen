@@ -60,9 +60,34 @@ jobs:
         run: pnpm install
 
       - name: Run cargo test
+        id: cargo_test
+        continue-on-error: true
         working-directory: ./backend
         run: cargo test --workspace
 
       - name: Run svelte-check
+        id: svelte_check
+        continue-on-error: true
         working-directory: ./frontend
         run: pnpm exec svelte-check
+
+      - name: Run vitest
+        id: vitest
+        continue-on-error: true
+        working-directory: ./frontend
+        run: pnpm exec vitest --run
+
+      - name: Print test outcomes
+        run: |
+          echo "backend test outcome: ${{ steps.cargo_test.outcome }}"
+          echo "svelte-check outcome: ${{ steps.svelte_check.outcome }}"
+          echo "frontend test outcome: ${{ steps.vitest.outcome }}"
+
+      - name: Fail job if any test step didn't succeed
+        run: |
+          if [ "${{ steps.cargo_test.outcome }}" != "success" ] || \
+             [ "${{ steps.svelte_check.outcome }}" != "success" ] || \
+             [ "${{ steps.vitest.outcome }}" != "success" ]; then
+            echo "One or more test steps failed or were cancelled"
+            exit 1
+          fi
