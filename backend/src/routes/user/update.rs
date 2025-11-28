@@ -67,9 +67,6 @@ pub async fn route(
         if let Some(language) = preference.submit_on_enter {
             new_preference.submit_on_enter = Some(language);
         }
-        if let Some(use_pattern_background) = preference.use_pattern_background {
-            new_preference.use_pattern_background = Some(use_pattern_background);
-        }
         active_model.preference = sea_orm::ActiveValue::Set(new_preference);
     }
     if let Some(password) = password {

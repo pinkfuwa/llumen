@@ -29,12 +29,3 @@ export function setTheme(theme: Theme) {
 		meta.setAttribute('content', color);
 	});
 }
-
-export function setPatternBackground(usePattern: string | boolean) {
-	const useIt = typeof usePattern === 'string' ? usePattern === 'true' : usePattern;
-	if (useIt) {
-		document.documentElement.setAttribute('data-pattern', 'pattern');
-	} else {
-		document.documentElement.removeAttribute('data-pattern');
-	}
-}

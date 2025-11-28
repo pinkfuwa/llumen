@@ -148,10 +148,6 @@ pub struct UserPreference {
     // due to <Select> in frontend, string is used here instead of boolean
     #[serde(skip_serializing_if = "Option::is_none")]
     pub submit_on_enter: Option<String>,
-    // Valid value for it should "true" or "false"
-    // due to <Select> in frontend, string is used here instead of boolean
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub use_pattern_background: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Default, Serialize)]
