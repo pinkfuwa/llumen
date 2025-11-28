@@ -9,7 +9,7 @@ import type {
 } from '../api/types';
 import { setLocale } from './i18n';
 import { localState, token } from '../store';
-import { getTitleGrad, setTheme, setPatternBackground, type Theme } from './theme';
+import { getTitleGrad, setTheme, type Theme } from './theme';
 import { onDestroy } from 'svelte';
 import { isLightTheme as isLightThemeFn } from './theme';
 
@@ -53,7 +53,6 @@ export async function init() {
 		preference.subscribe((value) => {
 			setTheme(value.theme as Theme);
 			setLocale(value.locale as any);
-			setPatternBackground(value.use_pattern_background as any);
 		}),
 		token.subscribe(async (value) => {
 			if (value) await initWithRemote();
@@ -67,8 +66,6 @@ export const submitOnEnter = derived(preference, (x) => x.submit_on_enter);
 export const theme = derived(preference, (x) => x.theme);
 
 export const locale = derived(preference, (x) => x.locale);
-
-export const usePatternBackground = derived(preference, (x) => x.use_pattern_background);
 
 export const isLightTheme = derived(theme, (x) => isLightThemeFn(x as any));
 

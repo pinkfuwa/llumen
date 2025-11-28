@@ -24,7 +24,8 @@ html {
 	--color-pattern-bg: #e5e7eb;
 }
 
-[data-theme='dark'] {
+[data-theme='dark'],
+[data-theme='dark-pattern'] {
 	--color-secondary: #e6521f;
 	--color-secondary: #fb9e3a;
 	--color-outline: #ccc;
@@ -71,7 +72,8 @@ html {
 	isolation: isolate;
 }
 
-[data-pattern='pattern'] .bg-chat::before {
+[data-theme='light-pattern'] .bg-chat::before,
+[data-theme='dark-pattern'] .bg-chat::before {
 	content: '';
 	position: absolute;
 	inset: 0;
