@@ -4,7 +4,7 @@
 	let { node }: { node: ASTNode } = $props();
 </script>
 
-{#if node.text == undefined}{:else if node.text.trim() == '<br>'}
+{#if node.text == undefined}{:else if /^<br\s*\/?>$/i.test(node.text.trim())}
 	<br />
 {:else}
 	{node.text}
