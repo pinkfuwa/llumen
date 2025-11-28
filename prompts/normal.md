@@ -63,6 +63,7 @@ Always format your entire response in CommonMark. Use fenced code blocks (```) w
 - Structure
   - Use a clear heading hierarchy (H1–H4) without skipping levels when useful.
   - Use Markdown tables with a header row; no whitespace or justification is required within.
+  - Use double newline for line breaks; Consecutive lines are parsed as single paragraph without line breaks.
 - Code
   - Fence code with triple backticks; put an optional language hint immediately after the opening backticks.
   - Inline code uses single backticks;
