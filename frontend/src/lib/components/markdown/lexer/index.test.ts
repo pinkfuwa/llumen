@@ -502,22 +502,33 @@ describe('Lexer - Integration', () => {
 	});
 });
 
+const findLinks = (node: any): any[] => {
+	const links: any[] = [];
+	if (node.type === 'Link') links.push(node);
+	if (node.children) {
+		for (const child of node.children) {
+			links.push(...findLinks(child));
+		}
+	}
+	return links;
+};
+
+const findHtmlTags = (node: any): any[] => {
+	const tags: any[] = [];
+	if (node.type === 'HTMLTag') tags.push(node);
+	if (node.children) {
+		for (const child of node.children) {
+			tags.push(...findHtmlTags(child));
+		}
+	}
+	return tags;
+};
+
 describe('Lexer - Link Structure', () => {
 	it('should parse shortcut reference link [abc] without URL child', async () => {
 		const source = '[abc]';
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
-
-		const findLinks = (node: any): any[] => {
-			const links: any[] = [];
-			if (node.type === 'Link') links.push(node);
-			if (node.children) {
-				for (const child of node.children) {
-					links.push(...findLinks(child));
-				}
-			}
-			return links;
-		};
 
 		const links = findLinks(walked);
 		expect(links.length).toBe(1);
@@ -531,17 +542,6 @@ describe('Lexer - Link Structure', () => {
 		const source = '[abc](http://example.com)';
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
-
-		const findLinks = (node: any): any[] => {
-			const links: any[] = [];
-			if (node.type === 'Link') links.push(node);
-			if (node.children) {
-				for (const child of node.children) {
-					links.push(...findLinks(child));
-				}
-			}
-			return links;
-		};
 
 		const links = findLinks(walked);
 		expect(links.length).toBe(1);
@@ -559,17 +559,6 @@ describe('Lexer - HTML Tag Structure', () => {
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
 
-		const findHtmlTags = (node: any): any[] => {
-			const tags: any[] = [];
-			if (node.type === 'HTMLTag') tags.push(node);
-			if (node.children) {
-				for (const child of node.children) {
-					tags.push(...findHtmlTags(child));
-				}
-			}
-			return tags;
-		};
-
 		const tags = findHtmlTags(walked);
 		expect(tags.length).toBe(1);
 		expect(tags[0].text).toBe('<br>');
@@ -580,17 +569,6 @@ describe('Lexer - HTML Tag Structure', () => {
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
 
-		const findHtmlTags = (node: any): any[] => {
-			const tags: any[] = [];
-			if (node.type === 'HTMLTag') tags.push(node);
-			if (node.children) {
-				for (const child of node.children) {
-					tags.push(...findHtmlTags(child));
-				}
-			}
-			return tags;
-		};
-
 		const tags = findHtmlTags(walked);
 		expect(tags.length).toBe(1);
 		expect(tags[0].text).toBe('<br/>');
@@ -600,17 +578,6 @@ describe('Lexer - HTML Tag Structure', () => {
 		const source = 'Hello<br />World';
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
-
-		const findHtmlTags = (node: any): any[] => {
-			const tags: any[] = [];
-			if (node.type === 'HTMLTag') tags.push(node);
-			if (node.children) {
-				for (const child of node.children) {
-					tags.push(...findHtmlTags(child));
-				}
-			}
-			return tags;
-		};
 
 		const tags = findHtmlTags(walked);
 		expect(tags.length).toBe(1);

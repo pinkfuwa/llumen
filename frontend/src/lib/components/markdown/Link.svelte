@@ -4,6 +4,9 @@
 
 	let { node, children }: { node: ASTNode; children: Snippet } = $props();
 
+	// Pattern to extract label text from shortcut reference links like [abc]
+	const SHORTCUT_LINK_PATTERN = /^\[([^\]]*)\]$/;
+
 	// Extract URL from Link node structure
 	// Lezer Link nodes typically have LinkMark children containing the URL
 	function extractUrl(node: any): string | null {
@@ -21,7 +24,7 @@
 		// The label is between the [ and ] marks
 		// For node.text like "[abc]", extract "abc"
 		const text = node.text || '';
-		const match = text.match(/^\[([^\]]*)\]$/);
+		const match = text.match(SHORTCUT_LINK_PATTERN);
 		return match ? match[1] : text;
 	}
 
