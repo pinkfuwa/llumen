@@ -334,7 +334,11 @@ impl<'a> DeepAgent<'a> {
                 break;
             }
 
-            messages.push(openrouter::Message::Assistant(assistant_text.clone()));
+            messages.push(openrouter::Message::Assistant {
+                content: assistant_text.clone(),
+                annotations: None,
+                reasoning_details: None,
+            });
 
             for tool_call in tool_calls {
                 messages.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {

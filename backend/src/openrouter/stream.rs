@@ -27,7 +27,8 @@ pub struct StreamCompletion {
     stop_reason: Option<raw::FinishReason>,
     responses: Vec<StreamCompletionResp>,
     annotations: Option<Vec<serde_json::Value>>,
-    model_id: Option<String>,
+    reasoning_details: Option<Vec<serde_json::Value>>,
+    model_id: String,
 }
 
 pub struct StreamResult {
@@ -36,6 +37,7 @@ pub struct StreamResult {
     pub stop_reason: raw::FinishReason,
     pub responses: Vec<StreamCompletionResp>,
     pub annotations: Option<serde_json::Value>,
+    pub reasoning_details: Option<serde_json::Value>,
 }
 
 impl StreamResult {
@@ -57,7 +59,15 @@ impl StreamCompletion {
         endpoint: &str,
         req: raw::CompletionReq,
     ) -> Result<StreamCompletion, Error> {
-        let model_id = req.model.clone();
+        let mut model_id = {
+            let model_id = req.model.as_str();
+            match model_id.find(":") {
+                Some(pos) => model_id.split_at(pos).0,
+                None => model_id,
+            }
+        }
+        .to_string();
+
         let builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
@@ -73,7 +83,8 @@ impl StreamCompletion {
                 stop_reason: None,
                 responses: vec![],
                 annotations: None,
-                model_id: Some(model_id),
+                reasoning_details: None,
+                model_id,
             }),
             Err(e) => {
                 log::error!("Failed to create event source: {}", e);
@@ -95,6 +106,12 @@ impl StreamCompletion {
             self.annotations
                 .get_or_insert_with(|| Vec::with_capacity(1))
                 .extend(annotations);
+        }
+
+        if let Some(reasoning_details) = delta.reasoning_details {
+            self.reasoning_details
+                .get_or_insert_with(|| Vec::with_capacity(1))
+                .extend(reasoning_details);
         }
 
         if let Some(reasoning) = delta.reasoning {
@@ -182,22 +199,16 @@ impl StreamCompletion {
 
         let resp = serde_json::from_str::<raw::CompletionResp>(data)?;
 
-        match (resp.model, &mut self.model_id) {
-            (_, None) => {}
-            (None, expect) => {
-                log::warn!("Model ID not found in response");
-                expect.take();
+        if let Some(model_id) = resp.model {
+            if model_id != self.model_id {
+                log::warn!(
+                    "Model ID mismatch: expected {}, got {}",
+                    self.model_id,
+                    model_id
+                );
+                self.model_id = model_id;
             }
-            (Some(x), expect) => {
-                if !x.starts_with(expect.as_ref().unwrap()) {
-                    log::warn!(
-                        "Model ID mismatch: expected {}, got {}",
-                        expect.take().unwrap(),
-                        x
-                    );
-                }
-            }
-        };
+        }
 
         if let Some(error) = resp.error {
             return Err(error.into());
@@ -265,6 +276,13 @@ impl StreamCompletion {
         }
         let stop_reason = self.stop_reason.take().unwrap_or(raw::FinishReason::Stop);
 
+        let reasoning_details = self.reasoning_details.take().map(|data| {
+            serde_json::json!({
+                "model_id": self.model_id.clone(),
+                "data": data,
+            })
+        });
+
         StreamResult {
             toolcalls: std::mem::take(&mut self.toolcalls),
             usage: self.usage.clone(),
@@ -274,6 +292,7 @@ impl StreamCompletion {
                 .filter(|x| !x.is_empty())
                 .collect(),
             annotations: self.annotations.take().map(serde_json::Value::Array),
+            reasoning_details,
         }
     }
 }

@@ -34,9 +34,10 @@ pub struct Step {
 #[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum AssistantChunk {
-    Annotation(String),
+    Annotation(serde_json::Value),
     Text(String),
     Reasoning(String),
+    ReasoningDetail(serde_json::Value),
     ToolCall {
         id: String,
         arg: String,
@@ -89,9 +90,16 @@ impl AssistantChunk {
             None
         }
     }
-    pub fn as_annotation(&self) -> Option<&String> {
+    pub fn as_annotation(&self) -> Option<&serde_json::Value> {
         if let AssistantChunk::Annotation(annotation) = self {
             Some(annotation)
+        } else {
+            None
+        }
+    }
+    pub fn as_reasoning_detail(&self) -> Option<&serde_json::Value> {
+        if let AssistantChunk::ReasoningDetail(detail) = self {
+            Some(detail)
         } else {
             None
         }
@@ -121,11 +129,19 @@ impl MessageInner {
             }
         };
     }
-    pub fn add_annotation(&mut self, json_str: String) {
+    pub fn add_annotation(&mut self, json: serde_json::Value) {
         match self {
             MessageInner::User { .. } => {}
             MessageInner::Assistant(assistant_chunks) => {
-                assistant_chunks.push(AssistantChunk::Annotation(json_str))
+                assistant_chunks.push(AssistantChunk::Annotation(json))
+            }
+        }
+    }
+    pub fn add_reasoning_detail(&mut self, json: serde_json::Value) {
+        match self {
+            MessageInner::User { .. } => {}
+            MessageInner::Assistant(assistant_chunks) => {
+                assistant_chunks.push(AssistantChunk::ReasoningDetail(json))
             }
         }
     }

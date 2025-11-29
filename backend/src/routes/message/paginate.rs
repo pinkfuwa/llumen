@@ -130,6 +130,7 @@ pub async fn route(
                 *chunks = std::mem::take(chunks)
                     .into_iter()
                     .filter(|chunk| !matches!(chunk, AssistantChunk::Annotation(_)))
+                    .filter(|chunk| !matches!(chunk, AssistantChunk::ReasoningDetail(_)))
                     .collect::<Vec<_>>();
             }
             Some(MessagePaginateRespList {

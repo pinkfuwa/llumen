@@ -61,9 +61,11 @@ impl ChatInner for Inner {
                 .join("");
 
             if !assistant_text.is_empty() {
-                pipeline
-                    .messages
-                    .push(openrouter::Message::Assistant(assistant_text));
+                pipeline.messages.push(openrouter::Message::Assistant {
+                    content: assistant_text,
+                    annotations: None,
+                    reasoning_details: None,
+                });
             }
 
             for toolcall in toolcalls {
