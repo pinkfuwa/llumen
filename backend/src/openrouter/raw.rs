@@ -217,11 +217,11 @@ impl MessagePart {
                 Self::input_audio(blob, ext),
             ),
             "txt" | "md" | "json" | "csv" | "log" | "svg" => {
-                let content = String::from_utf8_lossy(&blob).to_string();
+                let content = String::from_utf8_lossy(&blob);
 
                 (
                     Self::text(format!("Uploaded file: {}\n\n", filename)),
-                    Self::text(content),
+                    Self::text(format!("<content>{}</content>", content)),
                 )
             }
             "pdf" => (
@@ -229,14 +229,14 @@ impl MessagePart {
                 Self::pdf(filename.to_string(), &blob),
             ),
             _ => {
-                let content = String::from_utf8_lossy(&blob).to_string();
-
                 // TODO: report unknown file type to user
                 // Unknown file type is provider-specific, so provider may return error(we can't capture it)
                 log::warn!("Unknown file type: {}", filename);
+                let content = String::from_utf8_lossy(&blob);
+
                 (
-                    Self::text(format!("Uploaded file: {}", filename)),
-                    Self::text(content),
+                    Self::text(format!("Uploaded file: {}\n\n", filename)),
+                    Self::text(format!("<content>{}</content>", content)),
                 )
             }
         }
