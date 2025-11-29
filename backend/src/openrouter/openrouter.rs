@@ -113,12 +113,15 @@ impl Openrouter {
         check_message(&messages);
 
         // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
-        if matches!(messages.last(), Some(Message::Assistant(_))) {
+        if matches!(messages.last(), Some(Message::Assistant { .. })) {
             messages.push(Message::User("".to_string()));
         }
 
         let req = raw::CompletionReq {
-            messages: messages.into_iter().map(|m| m.into()).collect(),
+            messages: messages
+                .into_iter()
+                .map(|m| m.to_raw_message(&model.id))
+                .collect(),
             model: model.get_full_id(self.compatibility_mode),
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
@@ -163,7 +166,7 @@ impl Openrouter {
         );
 
         // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
-        if matches!(messages.last(), Some(Message::Assistant(_))) {
+        if matches!(messages.last(), Some(Message::Assistant { .. })) {
             messages.push(Message::User("".to_string()));
         }
 
@@ -175,8 +178,11 @@ impl Openrouter {
         }
 
         let req = raw::CompletionReq {
-            messages: messages.into_iter().map(|m| m.into()).collect(),
-            model: model.id,
+            messages: messages
+                .into_iter()
+                .map(|m| m.to_raw_message(&model.id))
+                .collect(),
+            model: model.id.clone(),
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
@@ -272,10 +278,10 @@ pub struct MessageToolResult {
 pub enum Message {
     System(String),
     User(String),
-    Assistant(String),
-    AssistantAnnotationed {
-        text: String,
-        annotations: serde_json::Value,
+    Assistant {
+        content: String,
+        annotations: Option<serde_json::Value>,
+        reasoning_details: Option<serde_json::Value>,
     },
     MultipartUser {
         text: String,
@@ -283,6 +289,38 @@ pub enum Message {
     },
     ToolCall(MessageToolCall),
     ToolResult(MessageToolResult),
+}
+
+impl Message {
+    pub fn to_raw_message(self, target_model_id: &str) -> raw::Message {
+        match self {
+            Message::Assistant {
+                content,
+                annotations,
+                reasoning_details,
+            } => {
+                let mut reasoning_details_value = None;
+                if let Some(details) = reasoning_details {
+                    if let Some(obj) = details.as_object() {
+                        if let Some(model_id) = obj.get("model_id").and_then(|v| v.as_str()) {
+                            if target_model_id.starts_with(model_id) {
+                                reasoning_details_value = obj.get("data").cloned();
+                            }
+                        }
+                    }
+                }
+
+                raw::Message {
+                    role: raw::Role::Assistant,
+                    content: Some(content),
+                    annotations,
+                    reasoning_details: reasoning_details_value.map(|v| vec![v]).unwrap_or_default(),
+                    ..Default::default()
+                }
+            }
+            _ => self.into(),
+        }
+    }
 }
 
 impl From<Message> for raw::Message {
@@ -298,15 +336,14 @@ impl From<Message> for raw::Message {
                 content: Some(msg),
                 ..Default::default()
             },
-            Message::Assistant(msg) => raw::Message {
+            Message::Assistant {
+                content,
+                annotations,
+                reasoning_details: _,
+            } => raw::Message {
                 role: raw::Role::Assistant,
-                content: Some(msg),
-                ..Default::default()
-            },
-            Message::AssistantAnnotationed { text, annotations } => raw::Message {
-                role: raw::Role::Assistant,
-                content: Some(text),
-                annotations: Some(annotations),
+                content: Some(content),
+                annotations,
                 ..Default::default()
             },
             Message::MultipartUser { text, files } => {

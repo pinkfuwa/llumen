@@ -64,16 +64,33 @@ pub async fn db_message_to_openrouter(
                         panic!("Annotation should be captured by Text chunk");
                     }
                     AssistantChunk::Text(x) => {
-                        if matches!(iter.peek(), Some(AssistantChunk::Annotation(_))) {
-                            let annotation = iter.next().unwrap().as_annotation().unwrap();
-                            result.push(openrouter::Message::AssistantAnnotationed {
-                                text: x.clone(),
-                                annotations: serde_json::to_value(annotation)
-                                    .unwrap_or(serde_json::Value::Null),
-                            });
-                        } else {
-                            result.push(openrouter::Message::Assistant(x.clone()))
+                        let mut reasoning_details = None;
+                        let mut annotations = None;
+
+                        while matches!(
+                            iter.peek(),
+                            Some(AssistantChunk::Annotation(_))
+                                | Some(AssistantChunk::ReasoningDetail(_))
+                        ) {
+                            match iter.next().unwrap() {
+                                AssistantChunk::Annotation(value) => {
+                                    annotations = Some(value.clone());
+                                }
+                                AssistantChunk::ReasoningDetail(value) => {
+                                    reasoning_details = Some(value.clone());
+                                }
+                                _ => unreachable!(""),
+                            }
                         }
+
+                        result.push(openrouter::Message::Assistant {
+                            content: x.clone(),
+                            annotations,
+                            reasoning_details,
+                        })
+                    }
+                    AssistantChunk::ReasoningDetail(_) => {
+                        // Should be captured by Text chunk
                     }
                     AssistantChunk::Reasoning(_) => {
                         // Reasoning is internal and not sent back to the model

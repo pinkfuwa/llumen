@@ -96,10 +96,12 @@ impl<P: ChatInner> ChatPipeline<P> {
             .unwrap()
             .extend(openrouter_stream_to_assitant_chunk(&result.responses));
 
-        let annotations = result
-            .annotations
-            .map(|v| serde_json::to_string(&v).ok())
-            .flatten();
+        if let Some(reasoning_details) = result.reasoning_details {
+            self.completion_ctx
+                .message
+                .inner
+                .add_reasoning_detail(reasoning_details);
+        }
 
         let halt = halt_with_error?;
         if matches!(halt, StreamEndReason::Halt) {
@@ -120,7 +122,7 @@ impl<P: ChatInner> ChatPipeline<P> {
 
                 // handoff_tool should decide whether to insert tool_call or not
                 finalized = P::handoff_tool(self, result.toolcalls).await?;
-                if let Some(annotations) = annotations {
+                if let Some(annotations) = result.annotations {
                     self.completion_ctx
                         .message
                         .inner
