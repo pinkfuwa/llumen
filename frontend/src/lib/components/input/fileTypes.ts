@@ -41,7 +41,12 @@ const LITERAL_FILE = [
 	'.rs',
 	'.svelte',
 	'.json',
-	'.csv'
+	'.csv',
+	'.c',
+	'.cpp',
+	'.h',
+	'.hpp',
+	'.toml'
 ];
 
 export function getSupportedFileTypes(capability: CapabilityFileType): string {
