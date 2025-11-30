@@ -1,5 +1,8 @@
 # Llumen Design Document
 
+> [!IMPORTANT]
+> The document was most written by LLM(supervised by human), so it's lengthy.
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -150,40 +153,58 @@ pub struct AppState {
 }
 ```
 
+**Usage:** Injected into route handlers via `State(app): State<Arc<AppState>>` extractor.
+
 ### 2. Context (Global Chat Context)
 
 Located in `src/chat/context.rs`
 
 Singleton context created at server startup, manages:
-- Database access
-- LLM API client (OpenRouter)
-- Token streaming channels
-- Tool instances
-- Prompt templates
+- Database connection (`db`)
+- LLM API client (`openrouter`)
+- Token streaming channels (`channel`)
+- Tool instances (`web_search_tool`, `crawl_tool`, `lua_repl_tool`)
+- Prompt templates (`prompt`, `deep_prompt`)
+- Blob storage (`blob`)
 
-Key methods:
+**Key methods:**
 - `new()` - Initialize context with all resources
-- `get_completion_context()` - Create per-request context
-- `halt_completion()` - Stop an active completion
-- `subscribe()` - Listen to token stream for a chat
-- `is_streaming()` - Check if completion in progress
+- `get_completion_context(user_id, chat_id, model_id)` - Create per-request context
+- `halt_completion(chat_id)` - Stop an active completion
+- `subscribe(chat_id, cursor)` - Listen to token stream for a chat
+- `is_streaming(chat_id)` - Check if completion in progress
+- `get_model_ids()` - Get available model IDs from OpenRouter
+
+**Lifetime:** Created once at server startup, lives for entire application duration, shared via `Arc<Context>`.
 
 ### 3. CompletionContext (Per-Request Context)
 
 Located in `src/chat/context.rs`
 
 Created for each LLM completion request. Tracks:
-- The user making the request
-- The chat and message history
-- The model being used
-- Accumulated tokens and metadata
-- Token publisher for streaming
+- The user making the request (`user`)
+- The chat and message history (`chat`, `message`, `messages`)
+- The model being used (`model`)
+- Accumulated tokens and cost (`token_count`, `cost`)
+- Token publisher for streaming (internal)
 
-Lifecycle:
-1. Created when user submits message
-2. Accumulates tokens as LLM responds
-3. Persists results to database
-4. Destroyed after save
+**Key methods:**
+- `new(ctx, user_id, chat_id, model_id)` - Create new completion context
+- `add_token(token)` - Publish token to stream (checks halt)
+- `add_token_force(token)` - Publish token bypassing halt check
+- `add_error(msg)` - Add error chunk to assistant message
+- `put_stream(stream)` - Consume token stream and publish to channel
+- `update_usage(cost, tokens)` - Update cost and token count
+- `save()` - Persist message and chat to database
+- `get_message_id()` - Get the assistant message ID
+- `latest_user_message()` - Get the most recent user message text
+
+**Lifecycle:**
+1. Created when user submits message via `get_completion_context()`
+2. Passed to Pipeline trait's `process()` method
+3. Accumulates tokens as LLM responds
+4. Pipeline calls `save()` to persist results to database
+5. Ownership transferred to save operation, destroyed after completion
 
 ### 4. Middleware Stack
 
@@ -210,31 +231,33 @@ Organized by feature:
 
 **Chat** (`src/routes/chat/`)
 - `POST /api/chat/create` - Start new chat
-- `GET /api/chat/read` - Get chat details
-- `DELETE /api/chat/delete` - Delete chat
-- `GET /api/chat/list` - Paginated chat list
-- `POST /api/chat/message` - Send message and get streaming response
+- `POST /api/chat/read` - Get chat details
+- `POST /api/chat/delete` - Delete chat
+- `POST /api/chat/paginate` - Paginated chat list
+- `POST /api/chat/write` - Update chat title
+- `GET /api/chat/sse` - Subscribe to chat token stream (SSE)
 - `POST /api/chat/halt` - Stop active completion
 
 **Message** (`src/routes/message/`)
-- `GET /api/message/read` - Get specific message
-- `GET /api/message/list` - List messages in chat
+- `POST /api/message/create` - Send user message and start completion
+- `POST /api/message/delete` - Delete specific message
+- `POST /api/message/paginate` - List messages in chat (paginated)
 
 **User** (`src/routes/user/`)
-- `GET /api/user/profile` - Get user info
-- `POST /api/user/update` - Update user settings
+- `POST /api/user/read` - Get user profile
+- `POST /api/user/write` - Update user settings
+- `POST /api/user/delete` - Delete user account
 
 **Model** (`src/routes/model/`)
-- `GET /api/model/list` - Available LLM models
+- `POST /api/model/paginate` - List available LLM models
 
 **File** (`src/routes/file/`)
 - `POST /api/file/upload` - Upload file
-- `GET /api/file/download` - Download file
+- `POST /api/file/download` - Download file
 
 **Auth** (`src/routes/auth/`)
-- `POST /api/auth/login` - User login
+- `POST /api/auth/login` - User loginindent_guides
 - `POST /api/auth/signup` - User registration
-- `POST /api/auth/refresh` - Refresh token
 
 ### 6. Error Handling
 
@@ -357,7 +380,7 @@ enum AssistantChunk {
 ### 1. Chat Message Request Flow
 
 ```
-Client sends POST /api/chat/message
+Client sends POST /api/message/create
     │
     ├─ Verify auth token (middleware)
     │
@@ -365,39 +388,47 @@ Client sends POST /api/chat/message
     │
     ├─ Validate request (chat_id, model_id exist)
     │
+    ├─ Create user message in database
+    │
     ├─ Create CompletionContext
     │    ├─ Load user record
     │    ├─ Load chat + message history
     │    ├─ Load model config
-    │    └─ Create new message record
+    │    └─ Create new assistant message record
     │
-    ├─ Determine chat mode (Normal/Search/Deep)
+    ├─ Return message IDs immediately
     │
-    ├─ Get appropriate processor
-    │    └─ Normal: Direct LLM call
-    │    └─ Search: Web search + LLM
-    │    └─ Deep: Multi-step research
+    ├─ (in background task) Pipeline processing:
+    │    ├─ Set chat mode on completion context
+    │    ├─ Select Pipeline based on mode:
+    │    │  └─ Normal: ChatPipeline<normal::Inner>
+    │    │  └─ Search: ChatPipeline<search::Inner>
+    │    │  └─ Deep: ChatPipeline<deep::Inner>
+    │    │
+    │    ├─ Pipeline::process() called:
+    │    │  ├─ Create ChatPipeline instance
+    │    │  ├─ Get system prompt (ChatInner trait)
+    │    │  ├─ Get model config (ChatInner trait)
+    │    │  ├─ Get available tools (ChatInner trait)
+    │    │  ├─ Convert message history to OpenRouter format
+    │    │  ├─ Call OpenRouter streaming API
+    │    │  ├─ For each token/chunk:
+    │    │  │  ├─ Publish to channel
+    │    │  │  ├─ Add to assistant message
+    │    │  ├─ If tool calls:
+    │    │  │  ├─ handoff_tool() (ChatInner trait)
+    │    │  │  ├─ Execute tools and add results
+    │    │  │  ├─ Recursively call process() if not finalized
+    │    │  ├─ On error: add error chunk to message
+    │    │  └─ Save message and chat to database
+    │    │
+    │    └─ Publish Complete token with cost/tokens
     │
-    ├─ Start token stream subscription
-    │    └─ Subscribe to chat's token channel
-    │    └─ Return SSE/WebSocket stream
-    │
-    ├─ (in background) Processor pipeline:
-    │    ├─ Render system prompt
-    │    ├─ Call OpenRouter API (streaming)
-    │    ├─ For each token:
-    │    │  ├─ Publish to channel
-    │    │  ├─ Add to message
-    │    ├─ Process tool calls if needed
-    │    ├─ Generate title if needed
-    │    ├─ Save message to database
-    │    └─ Publish Complete token
-    │
-    └─ Client receives token stream
+    └─ Client subscribes to GET /api/chat/sse for tokens
 
 Client can POST /api/chat/halt to stop
     └─ Sets halt signal on channel
-    └─ Processor stops accepting tokens
+    └─ Pipeline stops publishing tokens
 ```
 
 ### 2. Token Streaming
@@ -444,9 +475,63 @@ CompletionContext::save()
 
 ## Chat Modes
 
+Llumen implements three chat modes using a **Pipeline trait pattern** with specialized agent implementations.
+
+### Architecture: Pipeline Trait System
+
+All chat modes implement the `Pipeline` trait defined in `src/chat/agent/mod.rs`:
+
+```rust
+pub trait Pipeline {
+    fn process(
+        ctx: Arc<Context>,
+        completion_ctx: CompletionContext,
+    ) -> BoxFuture<'static, anyhow::Result<()>>;
+}
+```
+
+The modes are type aliases over `ChatPipeline<T: ChatInner>` where `ChatInner` defines mode-specific behavior:
+
+```rust
+pub type Normal = ChatPipeline<normal::Inner>;
+pub type Search = ChatPipeline<search::Inner>;
+pub type Deep = ChatPipeline<deep::Inner>;
+```
+
+**ChatInner Trait** (`src/chat/agent/chat.rs`):
+```rust
+pub trait ChatInner {
+    fn get_system_prompt(ctx: &Context, completion_ctx: &CompletionContext) -> Result<String>;
+    fn get_model(ctx: &Context, completion_ctx: &CompletionContext) -> Result<openrouter::Model>;
+    fn get_tools(ctx: &Context, completion_ctx: &CompletionContext) -> Result<Vec<openrouter::Tool>>;
+    fn handoff_tool<'a>(
+        pipeline: &'a mut ChatPipeline<Self>,
+        toolcall: Vec<openrouter::ToolCall>,
+    ) -> BoxFuture<'a, Result<bool, anyhow::Error>>;
+}
+```
+
+**ChatPipeline** handles the core completion loop:
+1. Constructs OpenRouter message history
+2. Streams tokens from LLM
+3. Publishes tokens to channel
+4. Handles tool calls via `ChatInner::handoff_tool()`
+5. Recursively processes if tool returns `false` (not finalized)
+6. Saves message on completion or error
+
+---
+
 ### Normal Mode
 
-Direct conversation with the LLM.
+**Implementation:** `src/chat/agents/normal.rs`
+
+Direct conversation with the LLM without tools.
+
+**ChatInner Implementation:**
+- `get_system_prompt()`: Renders `prompts/normal.md`
+- `get_model()`: Returns model config from database
+- `get_tools()`: Returns empty vec (no tools)
+- `handoff_tool()`: Not called (no tools available)
 
 **Flow:**
 1. Load chat history
@@ -457,74 +542,109 @@ Direct conversation with the LLM.
 
 **System Prompt:** `prompts/normal.md`
 
+---
+
 ### Search Mode
 
-Augments responses with web search, content crawling, and code execution capabilities.
+**Implementation:** `src/chat/agents/search.rs`
+
+Augments responses with web search and content crawling capabilities.
+
+**ChatInner Implementation:**
+- `get_system_prompt()`: Renders `prompts/search.md`
+- `get_model()`: Returns model with `online: true` flag
+- `get_tools()`: Returns `[web_search_tool, crawl_tool]`
+- `handoff_tool()`: Executes tools, adds results to messages, returns `false` to continue
 
 **Flow:**
 1. Load chat history
-2. Render search system prompt with online mode enabled
+2. Render search system prompt
 3. Call LLM with available tools
-4. LLM may use tools to search, crawl URLs, or execute Lua code
-5. Execute tool calls and return results to LLM
-6. Continue conversation loop until LLM completes response
-7. Stream tokens to client
-8. Save message
+4. LLM generates response or requests tool use
+5. If tool calls:
+   - Execute web_search_tool or crawl_tool
+   - Add tool results to message history
+   - Recursively call LLM with tool results
+   - Continue until LLM produces final response
+6. Stream tokens to client
+7. Save message
 
 **System Prompt:** `prompts/search.md`
 
 **Tools:**
-- WebSearchTool: Search the web using DuckDuckGo API
-- CrawlTool: Fetch and convert web page content to markdown
-- LuaReplTool: Execute Lua code for data analysis or calculations
+- `web_search_tool`: Search the web using configured search API
+- `crawl_tool`: Fetch and parse web page content to markdown
 
 **Features:**
-- Tool calling with automatic handling and result integration
-- Multiple tool calls in a single response supported
 - Online mode enables real-time information retrieval
+- Tool results added as both ToolCall and ToolResult chunks
+- Multiple tool calls in a single turn supported
 - LLM decides when and how to use tools based on user queries
-
-### Deep Research Mode
-
-Multi-step research with multiple tools and LLM reasoning.
 
 ---
 
-### Sub Agent Pattern in Deep Research Mode
+### Deep Research Mode
 
-Deep research mode in Llumen is architected using a **sub agent pattern**. This pattern enables complex, multi-step reasoning and tool usage by delegating specific tasks to specialized sub-agents within a coordinated workflow.
+**Implementation:** `src/chat/agents/deep/`
 
-**Structure:**
-- The main agent (coordinator) receives the user's research query.
-- It enhances the prompt for clarity and context.
-- The coordinator then delegates planning and execution to sub-agents:
-  - **Planner Sub-Agent:** Generates a structured research plan, breaking the task into actionable steps.
-  - **Step Executor Sub-Agent:** Executes each step, selecting appropriate tools (web search, crawling, code execution) and reasoning over results.
-  - **Reporter Sub-Agent:** Synthesizes findings into a comprehensive report.
+Multi-agent research system with prompt enhancement, planning, step execution, and reporting.
 
-**Flow:**
-1. Load chat history and user prompt.
-2. Enhance the prompt using LLM for better context.
-3. Planner sub-agent creates a multi-step research plan.
-4. For each step:
-   - Step executor sub-agent chooses tools and interacts with LLM.
-   - Executes web search, crawls URLs, or runs code as needed.
-   - Integrates tool results and LLM reasoning.
-5. Reporter sub-agent generates a final, comprehensive response.
+**ChatInner Implementation:**
+- `get_system_prompt()`: Renders `prompts/coordinator.md`
+- `get_model()`: Returns model config from database
+- `get_tools()`: Returns `[handoff_to_planner]` tool
+- `handoff_tool()`: Delegates to `DeepAgent::handoff_tool()`, returns `true` (finalizes)
+
+**DeepAgent Structure** (`src/chat/agents/deep/agent.rs`):
+
+The coordinator hands off to `DeepAgent` which orchestrates a multi-phase research process:
+
+**Phase 1: Enhance**
+- Takes user's original prompt
+- Uses LLM to enhance clarity and add context
+- System prompt: `deep_prompt.render_prompt_enhancer()`
+
+**Phase 2: Plan**
+- Planner agent creates structured research plan
+- Breaks task into actionable steps with descriptions and tools
+- Uses JSON schema output if model supports it
+- System prompt: `deep_prompt.render_planner()`
+
+**Phase 3: Execute Steps**
+- For each step in the plan:
+  - Step executor agent processes the step
+  - Decides which tools to use (web search, crawl, Lua code)
+  - Executes tools and reasons over results
+  - Accumulates completed steps with outcomes
+- System prompt: `deep_prompt.render_step_executor()`
+
+**Phase 4: Report** (if configured)
+- Reporter agent synthesizes all findings
+- Generates comprehensive final response
+- System prompt: `deep_prompt.render_reporter()`
+
+**Tools Available to Step Executor:**
+- `web_search_tool`: Web search
+- `crawl_tool`: Fetch and parse URLs
+- `lua_repl_tool`: Execute Lua code for data processing
 
 **System Prompts:**
-- `prompts/coordinator.md` - Orchestrates multi-step process
-- Planner, step executor, and reporter prompts for sub-agents
+- `prompts/coordinator.md` - Initial coordinator
+- Deep prompts managed by `DeepPrompt` (`src/chat/deep_prompt.rs`)
 
-**Tools:**
-- WebSearchTool: Search
-- CrawlTool: Fetch page content
-- LuaReplTool: Code execution
+**Key Features:**
+- Multi-phase agentic workflow
+- Structured planning with step-by-step execution
+- Tool use guided by step requirements
+- Accumulated context from previous steps
+- JSON schema support for structured outputs (when model supports it)
+- Graceful error handling with error chunks
 
-**Benefits of Sub Agent Pattern:**
-- Modularizes complex research tasks
-- Enables specialized reasoning and tool usage per step
-- Improves maintainability and extensibility for future agents or tools
+**Benefits:**
+- Modularizes complex research into phases
+- Each phase has specialized prompting and purpose
+- Maintains context across multiple LLM calls
+- Extensible for additional tools or phases
 
 ---
 
@@ -577,24 +697,42 @@ pub enum Token {
 
 ### 3. Tool Integration
 
-Three main tools available:
+Three main tools are available through the Context:
 
-**WebSearchTool** (`src/chat/tools/web_search.rs`)
-- Queries web search API
-- Returns ranked results with titles, URLs, snippets
+**WebSearchTool** (`src/chat/tools.rs`)
+- Queries web search API (configurable)
+- Returns ranked results with titles, URLs, descriptions
 - Used by Search and Deep Research modes
+- Function: `web_search_tool.search(query) -> Vec<SearchResult>`
 
-**CrawlTool** (`src/chat/tools/crawl.rs`)
+**CrawlTool** (`src/chat/tools.rs`)
 - Fetches full page content from URL
-- Parses and extracts text
+- Parses and converts HTML to markdown
 - Caches results in blob storage
-- Used by Deep Research mode
+- Used by Search and Deep Research modes
+- Function: `crawl_tool.crawl(url) -> String`
 
-**LuaReplTool** (`src/chat/tools/lua_repl.rs`)
-- Executes Lua code in sandboxed environment
+**LuaReplTool** (`src/chat/tools.rs`)
+- Executes Lua (Luau dialect) code in sandboxed environment
 - Limited to 64MB memory per instance
-- Max 8 concurrent instances
+- Max 8 concurrent instances via semaphore
 - Used by Deep Research mode
+- Function: `lua_repl_tool.execute(code) -> String`
+
+**Tool Definition Functions:**
+- `get_web_search_tool_def()` - Returns OpenRouter tool schema for web search
+- `get_crawl_tool_def()` - Returns OpenRouter tool schema for crawling
+- `get_lua_repl_def()` - Returns OpenRouter tool schema for Lua execution
+
+**Integration Pattern:**
+Each mode's `ChatInner::handoff_tool()` implementation receives tool calls from the LLM and:
+1. Parses tool arguments (JSON)
+2. Executes the appropriate tool via Context
+3. Formats results as strings
+4. Adds ToolCall and ToolResult chunks to assistant message
+5. Publishes tokens for real-time display
+6. Adds tool messages to OpenRouter conversation history
+7. Returns `false` to continue processing, or `true` to finalize
 
 ### 4. OpenRouter Integration
 
@@ -693,11 +831,23 @@ When disabled (default), the application uses standard `log` crate only, keeping
 
 ### Code Organization
 
+**Project Structure:**
+- `src/chat/agent/` - Core Pipeline trait and ChatPipeline generic
+- `src/chat/agents/` - Mode implementations (Normal, Search, Deep)
+- `src/chat/agents/deep/` - Deep research multi-agent system
+- `src/routes/` - API endpoints organized by resource
+- `src/middlewares/` - Cross-cutting concerns
+- `src/openrouter/` - LLM API client
+- `src/utils/` - Shared utilities
+- `entity/` - Database entity definitions (SeaORM)
+- `migration/` - Database migrations
+
 **Do:**
 - Put related functionality in the same file (prefer fewer, larger files)
 - Use module structure for logical grouping
 - Document public APIs with doc comments
 - Handle errors explicitly with Result types
+- Never create `mod.rs` files - use `src/module.rs` instead of `src/module/mod.rs`
 
 **Don't:**
 - Create many small single-purpose files
