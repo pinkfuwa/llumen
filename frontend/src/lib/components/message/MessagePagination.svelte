@@ -28,7 +28,7 @@
 				{content}
 				{files}
 				{streaming}
-				onupdate={(text) => {
+				onupdate={(text, updatedFiles) => {
 					if (room == undefined) return;
 					if (room.model_id == undefined) dispatchError('internal', 'select a model first');
 					else
@@ -37,7 +37,7 @@
 							model_id: room.model_id,
 							mode: room.mode,
 							text,
-							files,
+							files: updatedFiles,
 							msgId: msg.id
 						});
 				}}

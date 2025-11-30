@@ -5,14 +5,16 @@
 	import { Markdown } from '$lib/components/markdown';
 	let {
 		content = $bindable(''),
-		files = $bindable([] as Array<{ name: string; id: number }>),
-		onupdate = (() => {}) as (text: string) => void,
+		files = [] as Array<{ name: string; id: number }>,
+		onupdate = (() => {}) as (text: string, files: Array<{ name: string; id: number }>) => void,
 		streaming = false
 	} = $props();
 
 	// TODO: use component lib
 	let editable = $state(false);
 	let editBuffer = $state(content);
+	let filesBuffer = $state<Array<{ name: string; id: number }>>([]);
+	let editFiles = $state<Array<{ name: string; id: number }>>([...files]);
 
 	// bind to markdown height when rendering
 	let markdownHeight = $state(0);
@@ -49,7 +51,11 @@
 		<div class="w-full rounded-md bg-user-bg p-4">
 			{#if files.length != 0}
 				<div class="mb-2 overflow-auto border-b border-outline pb-2">
-					<FileGroup bind:files deletable={editable} />
+					{#if editable}
+						<FileGroup bind:files={editFiles} deletable={true} />
+					{:else}
+						<FileGroup files={editFiles} deletable={false} />
+					{/if}
 				</div>
 			{/if}
 			{#if editable}
@@ -75,6 +81,7 @@
 				onclick={() => {
 					editable = false;
 					content = editBuffer;
+					editFiles = [...filesBuffer];
 				}}
 				data-state={editable ? 'open' : 'close'}
 			>
@@ -82,7 +89,10 @@
 			</Button.Root>
 			<Button.Root
 				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=close]:hidden"
-				onclick={() => onupdate(content)}
+				onclick={() => {
+					editable = false;
+					onupdate(content, editFiles);
+				}}
 				data-state={editable ? 'open' : 'close'}
 			>
 				<Check />
@@ -92,6 +102,7 @@
 				onclick={() => {
 					editable = true;
 					editBuffer = content;
+					filesBuffer = [...editFiles];
 				}}
 				data-state={editable ? 'open' : 'close'}
 			>
