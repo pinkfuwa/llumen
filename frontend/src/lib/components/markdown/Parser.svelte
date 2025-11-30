@@ -26,6 +26,7 @@
 	import Text from './Text.svelte';
 	import Parser from './Parser.svelte';
 	import Empty from './Empty.svelte';
+	import Task from './Task.svelte';
 
 	type Segment = { type: 'text'; text: string } | { type: 'node'; node: ASTNode };
 
@@ -89,7 +90,9 @@
 		default: Text,
 		TableDelimiter: Empty,
 		Escape: Empty,
-		CommentBlock: Text
+		CommentBlock: Text,
+		Task: Task,
+		TaskMarker: Empty
 	};
 
 	const segments = $derived.by((): Segment[] => {
