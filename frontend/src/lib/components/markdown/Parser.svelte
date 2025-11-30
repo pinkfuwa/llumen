@@ -88,7 +88,8 @@
 		HeaderMark: Empty,
 		default: Text,
 		TableDelimiter: Empty,
-		Escape: Empty
+		Escape: Empty,
+		CommentBlock: Text
 	};
 
 	const segments = $derived.by((): Segment[] => {

@@ -26,7 +26,7 @@ llumen is a lightweight, self-hostable LLM chat application (frontend + backend)
 - :mag: Advanced Modes: Standard chat, web-search integration, and **deep-research** capabilities :brain:
 - :computer: Rich Features: **Message editing**, file uploads (PDFs, images, code)
 
-https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618
+[![Video preview](./docs/video.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
 
 ## :point_right: Quickstart
 
