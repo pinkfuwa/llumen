@@ -15,7 +15,7 @@ Welcome to the Llumen user documentation! This guide covers everything you need 
 
 - **Default Login**: Username `admin`, Password `P@88w0rd`
 - **GitHub Repository**: [pinkfuwa/llumen](https://github.com/pinkfuwa/llumen)
-- **Docker Image**: `ghcr.io/pinkfuwa/llumen:nightly`
+- **Docker Image**: `ghcr.io/pinkfuwa/llumen:latest` / `ghcr.io/pinkfuwa/llumen:nightly`
 
 ## Need Help?
 

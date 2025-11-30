@@ -11,55 +11,95 @@ This document serves as a quick reference guide for new contributors to understa
 **Llumen** is a lightweight LLM (Large Language Model) chat application designed to run efficiently on resource-constrained systems (~1GB memory). It provides users with three distinct chat modes:
 
 1. **Normal Chat** - Direct conversation with an LLM
-2. **Search Mode** - Chat augmented with web search results  
-3. **Deep Research** - Multi-step research with tools (web search, crawling, code execution)
+2. **Search Mode** - Chat augmented with web search and crawling
+3. **Deep Research** - Multi-agent research with planning, execution, and reporting (web search, crawling, Lua code execution)
 
 Built with Rust (backend), Svelte 5 (frontend), and integrated with OpenRouter API for LLM access.
 
 ---
 
-## Documentation Files Added
+## Documentation Structure
 
-### 1. **DESIGN_DOCUMENT.md** (This Repository Root)
+### 1. **docs/design.md**
 
 **Purpose:** Comprehensive architectural and design documentation
 
 **What's Inside:**
 - Executive summary and key characteristics
-- High-level system architecture with diagrams
-- Detailed core components explanation
+- High-level system architecture with ASCII diagrams
+- Detailed core components explanation (AppState, Context, CompletionContext, Middleware, Routes)
 - Data model and database schema
 - Complete request flow diagrams
-- Explanation of three chat modes
-- Key systems (prompts, tokens, tools, channels)
+- Explanation of three chat modes with Pipeline trait pattern
+- Key systems (prompts, tokens, tools, channels, tracing)
 - Development guidelines
 
 **When to Read:**
 - Getting familiar with the system architecture
 - Understanding how components interact
-- Learning about the three chat modes
-- Understanding deployment requirements
+- Learning about the Pipeline trait pattern and ChatInner trait
+- Understanding the three chat modes (Normal, Search, Deep Research)
+- Learning about tool integration and OpenRouter API
 
 **Key Sections:**
 - Architecture: High-level system design with ASCII diagrams
-- Core Components: What each major piece does
-- Data Model: Database schema and message formats
-- Chat Modes: How Normal, Search, and Deep Research work
+- Core Components: AppState, Context, CompletionContext, Middleware
+- Chat Modes: Pipeline trait pattern and agent implementations
 - Key Systems: Token streaming, prompts, tools, channels
+- Development Guidelines: Code organization, error handling, testing
 
 ---
 
-### 2. **Annotated Source Code**
+### 2. **docs/refenence.md** (Quick Reference)
 
-The following core files have been extensively commented to explain the "why" and architecture:
+**Purpose:** Quick lookup guide for developers
+
+**What's Inside:**
+- Quick start guide
+- System overview (60 seconds)
+- Project structure overview
+- Key concepts summary
+- Common development tasks with code examples
+- FAQ section
+
+**When to Read:**
+- Need quick reference while coding
+- Looking for code examples
+- Want to understand flow quickly
+- Checking common patterns
+
+---
+
+### 3. **docs/tracing.md**
+
+**Purpose:** Tracing feature documentation
+
+**What's Inside:**
+- How to enable tracing feature
+- Configuration with RUST_LOG
+- Integration with tokio-console
+- What gets traced (HTTP requests, auth, chat operations, startup)
+- Performance considerations
+
+**When to Read:**
+- Debugging application issues
+- Need observability into async operations
+- Analyzing performance bottlenecks
+- Setting up development environment
+
+---
+
+### 4. **Key Source Files**
+
+The following core files contain important implementation details:
 
 #### **backend/src/main.rs**
-- Entire file documented with module-level docs
-- AppState structure explained
-- Initialization sequence documented
-- Router configuration with detailed comments
+- Application entry point
+- AppState structure definition
+- Server initialization sequence
+- Router configuration
+- Middleware stack setup
 - Memory optimization notes
-- Server startup and graceful shutdown flow
 
 **What It Teaches:**
 - How the server starts up
@@ -69,25 +109,22 @@ The following core files have been extensively commented to explain the "why" an
 - Environment variable requirements
 
 #### **backend/src/errors.rs**
-- Error types and standardized responses documented
-- WithKind trait explained with examples
+- Error types and standardized responses
+- WithKind trait for error conversion
 - Error kinds and when to use each
 - Error propagation strategy
-- JsonUnion usage documented
 
 **What It Teaches:**
 - How errors flow through the system
-- Standard error response format
-- Error handling best practices used in Llumen
+- Standard error response format (`{ error, reason }`)
+- Error handling best practices
 - Client-side error handling expectations
 
 #### **backend/src/chat/context.rs**
-- Global Context documented (singleton pattern)
-- CompletionContext documented (per-request pattern)
-- Token streaming flow explained
-- CompletionContext lifecycle documented
-- All methods explained with parameters and behavior
-- Message persistence flow documented
+- Global Context (singleton pattern)
+- CompletionContext (per-request pattern)
+- Token streaming flow
+- Message persistence flow
 
 **What It Teaches:**
 - How chat processing works
@@ -95,6 +132,18 @@ The following core files have been extensively commented to explain the "why" an
 - Token publishing and subscription
 - Database persistence flow
 - Tool integration points
+
+#### **backend/src/chat/agent/chat.rs**
+- Pipeline trait definition
+- ChatInner trait for mode-specific behavior
+- ChatPipeline<T> generic implementation
+- Tool handling pattern
+
+**What It Teaches:**
+- How the Pipeline pattern works
+- How different chat modes are implemented
+- Tool call execution flow
+- Recursive processing for multi-turn tool usage
 
 ---
 
@@ -359,12 +408,14 @@ These principles guide all code in Llumen:
 ## Getting Help
 
 **If you need to understand:**
-- **Architecture**: Read DESIGN_DOCUMENT.md
-- **Specific code**: Read annotated source files
-- **Error handling**: Check backend/src/errors.rs
+- **Architecture**: Read docs/design.md
+- **Quick reference**: Check docs/refenence.md
+- **Error handling**: Read backend/src/errors.rs
 - **Chat processing**: Study backend/src/chat/context.rs
+- **Pipeline pattern**: Read backend/src/chat/agent/chat.rs
 - **API details**: Look in backend/src/routes/
-- **Data model**: Check entity/ and DESIGN_DOCUMENT.md
+- **Data model**: Check entity/ and docs/design.md
+- **Tracing/debugging**: Read docs/tracing.md
 
 **Common Questions:**
 
@@ -372,7 +423,10 @@ Q: Why are there two contexts (global and per-request)?
 A: Separates long-lived shared resources (database, tools) from request-scoped state (user, chat, tokens).
 
 Q: How do clients get real-time tokens?
-A: Token streaming via pub/sub channel - one publisher (processor) streams to multiple subscribers (clients).
+A: Token streaming via pub/sub channel - Pipeline publishes tokens through CompletionContext, clients subscribe via SSE endpoint.
+
+Q: What is the Pipeline trait pattern?
+A: A trait-based architecture where each chat mode implements ChatInner trait, and ChatPipeline<T> handles the generic completion flow.
 
 Q: Why use PASETO instead of JWT?
 A: PASETO v4 prevents common JWT attacks by design and uses authenticated encryption.
@@ -387,11 +441,12 @@ A: No, only one per chat (enforced by channel). Different chats can run in paral
 
 ## Next Steps
 
-1. **Read DESIGN_DOCUMENT.md** to understand the big picture
-2. **Review annotated source files** for detailed implementation
-3. **Clone and run locally** (see DEV.md)
-4. **Pick a small task** and make your first contribution
-5. **Review code comments** for any non-obvious decisions
+1. **Read docs/design.md** to understand the big picture and Pipeline pattern
+2. **Check docs/refenence.md** for quick reference and common tasks
+3. **Review key source files** (main.rs, errors.rs, context.rs, agent/chat.rs)
+4. **Clone and run locally** to see the system in action
+5. **Pick a small task** and make your first contribution
+6. **Follow .rules guidelines** for coding standards
 
 ---
 
@@ -399,22 +454,35 @@ A: No, only one per chat (enforced by channel). Different chats can run in paral
 
 ```
 llumen/
-├── DESIGN_DOCUMENT.md           ← Comprehensive design doc
-├── DOCUMENTATION_SUMMARY.md     ← This file
-├── DEV.md                       ← Local development setup
+├── docs/
+│   ├── design.md                ← Comprehensive architecture doc
+│   ├── overview.md              ← This file (high-level guide)
+│   ├── refenence.md             ← Quick reference guide
+│   ├── tracing.md               ← Tracing feature documentation
+│   └── user.md                  ← User-facing documentation
 ├── backend/src/
-│   ├── main.rs                  ← Annotated entry point
-│   ├── errors.rs                ← Annotated error handling
-│   └── chat/
-│       └── context.rs           ← Annotated core logic
-├── CONTRIBUTING.md              ← Contribution guidelines
-└── .rules                       ← Project rules & standards
+│   ├── main.rs                  ← Application entry point
+│   ├── errors.rs                ← Error handling system
+│   ├── chat/
+│   │   ├── context.rs           ← Global & per-request context
+│   │   ├── agent/
+│   │   │   └── chat.rs          ← Pipeline trait & ChatPipeline
+│   │   └── agents/              ← Mode implementations
+│   └── routes/                  ← API endpoints
+└── .rules                       ← Project coding guidelines
 ```
 
 ---
 
 ## Thank You!
 
-Welcome to the Llumen project. We're excited to have new contributors. The documentation above should provide a solid foundation for understanding the codebase. Feel free to ask questions in issues or discussions if anything is unclear.
+Welcome to the Llumen project! The documentation has been organized to help you understand the architecture quickly:
+
+- **Start with this file** (overview.md) for the big picture
+- **Read design.md** for detailed architecture and Pipeline pattern
+- **Use refenence.md** as a quick lookup while coding
+- **Check tracing.md** when you need debugging tools
+
+Feel free to ask questions in issues or discussions if anything is unclear.
 
 Happy coding! 🚀
