@@ -1,5 +1,6 @@
 //! Tools and utilities for Lua code execution including SQLite, HTTP, and CSV support.
 
+use crate::utils::http::build_client;
 use anyhow::Result;
 use mlua::{Lua, Value};
 use sqlx::{Column, Row, SqlitePool};
@@ -234,7 +235,7 @@ pub fn register_http_functions(lua: &Lua) -> Result<()> {
             .map_err(|e| mlua::Error::external(e))?;
 
         // Make HTTP request
-        let client = reqwest::Client::new();
+        let client = build_client();
         let response = client
             .get(&url)
             .send()
@@ -260,7 +261,7 @@ pub fn register_http_functions(lua: &Lua) -> Result<()> {
                 .map_err(|e| mlua::Error::external(e))?;
 
             // Make HTTP request
-            let client = reqwest::Client::new();
+            let client = build_client();
             let response = client
                 .post(&url)
                 .body(body)

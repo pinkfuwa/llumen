@@ -282,6 +282,37 @@ These principles guide all code in Llumen:
 
 ## Common Development Tasks
 
+### Testing with Custom Certificates (Dev Feature)
+
+When testing or benchmarking llumen with services that use self-signed certificates or custom certificate authorities, you can use the `LLUMEN_CUSTOM_CERT_PATH` environment variable:
+
+1. **Build with dev feature:**
+   ```bash
+   cd backend
+   cargo build --features dev
+   ```
+
+2. **Set the environment variable:**
+   ```bash
+   export LLUMEN_CUSTOM_CERT_PATH=/path/to/your/certificate.pem
+   ```
+
+3. **Run the backend:**
+   ```bash
+   ./target/debug/backend
+   ```
+
+The custom certificate will be loaded and used for all HTTPS requests made by:
+- OpenRouter/LLM API client
+- Web search and crawling tools
+- Lua HTTP functions
+
+**Supported formats:**
+- PEM (`.pem`, `.crt`, `.cer`)
+- DER (`.der`)
+
+**Note:** This feature is only available when compiled with the `dev` feature flag and is intended for testing/benchmarking purposes only.
+
 ### Adding a New Chat Mode
 
 1. Create processor in `backend/src/chat/processes/my_mode.rs`
