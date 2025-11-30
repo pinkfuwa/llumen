@@ -1,33 +1,64 @@
 <script lang="ts">
-	import { RawAPIFetch } from '$lib/api/state/errorHandle';
-
 	let { files = $bindable([] as Array<{ name: string; id?: number }>), deletable = false } =
 		$props();
 
-	let anchor = $state<HTMLAnchorElement | null>(null);
-	import { Paperclip, X } from '@lucide/svelte';
+	import { ArrowDownToLine, X } from '@lucide/svelte';
+	import { RawAPIFetch } from '$lib/api/state/errorHandle';
+
+	async function downloadFile(fileId: number, fileName: string) {
+		try {
+			const response = await RawAPIFetch(`file/download/${fileId}`, null, 'POST');
+
+			if (!response.ok) {
+				console.error('Failed to download file');
+				return;
+			}
+
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = fileName;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			window.URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error('Error downloading file:', error);
+		}
+	}
 </script>
 
-<div>
-	<div class="flex items-center space-x-2">
-		{#each files as file, i}
-			<div class="group bg-background hover:bg-hover relative rounded-md border border-outline p-2">
-				<Paperclip class="absolute top-2 left-14 h-10 w-10 opacity-20" />
-				<div
-					class="nobar flex h-10 w-34 items-center justify-center overflow-x-auto break-all select-none"
-				>
-					{file.name}
-				</div>
+<div class="space-y-2">
+	{#each files as file, i}
+		<div
+			class="group bg-background hover:bg-hover flex min-h-10 flex-row rounded-md border border-outline p-3"
+		>
+			<div
+				class="my-auto mr-2 shrink-0 rounded-md p-1 duration-150 hover:bg-primary hover:text-text-hover focus:ring-4 focus:ring-outline focus:outline-none"
+			>
 				{#if deletable}
 					<X
-						class="bg-background absolute top-0 right-0 hidden h-5 w-5 rounded-sm border border-outline p-[0.15rem] group-hover:block"
+						class="h-7 w-7"
 						onclick={() => {
 							files.splice(i, 1);
 							files = files;
 						}}
 					/>
+				{:else}
+					<ArrowDownToLine
+						class="h-7 w-7"
+						onclick={() => {
+							if (file.id) {
+								downloadFile(file.id, file.name);
+							}
+						}}
+					/>
 				{/if}
 			</div>
-		{/each}
-	</div>
+			<div class="flex min-w-0 grow items-center justify-center overflow-x-auto">
+				{file.name}
+			</div>
+		</div>
+	{/each}
 </div>
