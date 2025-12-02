@@ -1,4 +1,4 @@
-use super::raw;
+use super::{Tool, raw};
 
 #[derive(Clone, Default)]
 pub struct Model {
@@ -12,15 +12,6 @@ pub struct Model {
 }
 
 impl Model {
-    /// get id with suffix
-    pub fn get_full_id(&self, compatibility_mode: bool) -> String {
-        let mut id = self.id.clone();
-        if self.online && !compatibility_mode {
-            id.push_str(":online");
-        }
-        id
-    }
-
     pub fn builder(id: impl Into<String>) -> ModelBuilder {
         ModelBuilder::new(id)
     }
@@ -34,6 +25,7 @@ pub struct ModelBuilder {
     top_p: Option<f32>,
     online: bool,
     response_format: Option<raw::ResponseFormat>,
+    tools: Vec<Tool>,
 }
 
 impl ModelBuilder {
@@ -46,6 +38,20 @@ impl ModelBuilder {
             top_p: None,
             online: false,
             response_format: None,
+            tools: Vec::new(),
+        }
+    }
+
+    pub fn from_model(model: &Model) -> Self {
+        Self {
+            id: model.id.clone(),
+            temperature: model.temperature,
+            repeat_penalty: model.repeat_penalty,
+            top_k: model.top_k,
+            top_p: model.top_p,
+            online: model.online,
+            response_format: model.response_format.clone(),
+            tools: Vec::new(),
         }
     }
 
@@ -88,6 +94,11 @@ impl ModelBuilder {
                 "schema": schema
             }),
         });
+        self
+    }
+
+    pub fn tools(mut self, tools: Vec<Tool>) -> Self {
+        self.tools = tools;
         self
     }
 

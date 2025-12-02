@@ -1,4 +1,4 @@
-use crate::openrouter::{Message, Model, Openrouter, Tool};
+use crate::openrouter::{Message, Model, ModelBuilder, Openrouter, Tool};
 use std::env;
 
 #[test]
@@ -8,7 +8,7 @@ fn test_model_builder() {
         .temperature(0.8)
         .top_p(0.9)
         .build();
-    
+
     assert_eq!(model.id, "openai/gpt-4");
     assert_eq!(model.temperature, Some(0.8));
     assert_eq!(model.top_p, Some(0.9));
@@ -27,15 +27,15 @@ fn test_model_builder_with_json_schema() {
         },
         "required": ["name"]
     });
-    
+
     let model = Model::builder("openai/gpt-4")
         .temperature(0.7)
         .json_schema("test_schema", schema)
         .build();
-    
+
     assert_eq!(model.id, "openai/gpt-4");
     assert!(model.response_format.is_some());
-    
+
     let format = model.response_format.unwrap();
     assert_eq!(format.r#type, "json_schema");
 }
@@ -120,8 +120,9 @@ async fn tool_calls() {
         ..Default::default()
     };
 
+    let model_for_stream = ModelBuilder::from_model(&model).build();
     let mut stream = openrouter
-        .stream(messages, &model, vec![tool])
+        .stream(model_for_stream, messages, vec![tool])
         .await
         .unwrap();
 
@@ -215,8 +216,9 @@ async fn parallel_tool_calls() {
         ..Default::default()
     };
 
+    let model_for_stream = ModelBuilder::from_model(&model).build();
     let mut stream = openrouter
-        .stream(messages, &model, vec![weather_tool, time_tool])
+        .stream(model_for_stream, messages, vec![weather_tool, time_tool])
         .await
         .unwrap();
 
