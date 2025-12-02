@@ -73,10 +73,11 @@ impl<P: ChatInner> ChatPipeline<P> {
     async fn process(&mut self) -> Result<(), anyhow::Error> {
         let message = self.messages.clone();
 
-        let mut res = self
+        let model = openrouter::ModelBuilder::from_model(&self.model).build();
+        let mut res: openrouter::StreamCompletion = self
             .ctx
             .openrouter
-            .stream(message, &self.model, self.tools.clone())
+            .stream(model, message, self.tools.clone())
             .await?;
 
         let halt_with_error = self

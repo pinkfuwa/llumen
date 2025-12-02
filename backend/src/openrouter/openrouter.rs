@@ -1,6 +1,8 @@
 use std::sync::{Arc, RwLock};
 
-use super::{Model, StreamCompletion, error::Error, raw};
+use crate::openrouter::StreamCompletion;
+
+use super::{Model, error::Error, raw};
 
 static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
@@ -29,20 +31,24 @@ async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<String>, Error> {
 }
 
 pub struct Openrouter {
-    api_key: String,
-    chat_completion_endpoint: String,
+    pub(super) api_key: String,
+    pub(super) chat_completion_endpoint: String,
     model_ids: Arc<RwLock<Vec<String>>>,
-    http_client: reqwest::Client,
+    pub(super) http_client: reqwest::Client,
     // true if not openrouter
-    compatibility_mode: bool,
+    pub(super) compatibility_mode: bool,
 }
 
 impl Openrouter {
-    fn get_request(&self) -> raw::CompletionReq {
+    pub(super) fn get_request(&self, insert_web_search_context: bool) -> raw::CompletionReq {
         let mut default_req = raw::CompletionReq::default();
         if self.compatibility_mode {
-            default_req.plugins = None;
             default_req.usage = None;
+        } else {
+            default_req.plugins.push(raw::Plugin::pdf());
+            if insert_web_search_context {
+                default_req.plugins.push(raw::Plugin::web());
+            }
         }
         default_req
     }
@@ -94,20 +100,16 @@ impl Openrouter {
         self.model_ids.read().unwrap().clone()
     }
 
-    /// Use [`super::builder::ModelBuilder`] instead.
-    #[deprecated]
-    pub fn stream(
+    pub async fn stream(
         &self,
-        mut messages: Vec<Message>,
-        model: &Model,
+        model: Model,
+        messages: Vec<Message>,
         tools: Vec<Tool>,
-    ) -> impl std::future::Future<Output = Result<StreamCompletion, Error>> {
-        log::debug!("start streaming with model {}", &model.id);
+    ) -> Result<StreamCompletion, Error> {
+        let tools: Vec<raw::Tool> = tools.into_iter().map(|t| t.into()).collect();
+        let mut messages = messages;
 
-        let tools = match tools.is_empty() {
-            true => None,
-            false => Some(tools.into_iter().map(|t| t.into()).collect()),
-        };
+        log::debug!("start streaming with model {}", &model.id);
 
         #[cfg(debug_assertions)]
         check_message(&messages);
@@ -117,19 +119,19 @@ impl Openrouter {
             messages.push(Message::User("".to_string()));
         }
 
-        let req = raw::CompletionReq {
+        let mut req = raw::CompletionReq {
             messages: messages
                 .into_iter()
                 .map(|m| m.to_raw_message(&model.id))
                 .collect(),
-            model: model.get_full_id(self.compatibility_mode),
+            model: model.id.clone(),
             temperature: model.temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
             top_p: model.top_p,
             tools,
             response_format: model.response_format.clone(),
-            ..self.get_request()
+            ..self.get_request(false) // Web search plugin seems to break annotation/preserved reasoning blocks, it's disable for now
         };
 
         req.log();
@@ -140,9 +142,10 @@ impl Openrouter {
             &self.chat_completion_endpoint,
             req,
         )
+        .await
     }
 
-    /// Use [`super::builder::ModelBuilder`] instead.
+    /// Use [`super::model::ModelBuilder`] instead.
     ///
     /// complete without streaming
     ///
@@ -191,7 +194,7 @@ impl Openrouter {
             stream: false,
             response_format: model.response_format.clone(),
             reasoning,
-            ..self.get_request()
+            ..self.get_request(false)
         };
 
         req.log();
@@ -392,7 +395,7 @@ impl From<Message> for raw::Message {
 }
 
 #[cfg(debug_assertions)]
-pub fn check_message(message: &[Message]) {
+pub(super) fn check_message(message: &[Message]) {
     // For each ToolResult, check for ToolCall and its order
     let mut result_ids = message
         .iter()

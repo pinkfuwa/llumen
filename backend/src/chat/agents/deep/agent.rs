@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context as _, Result, bail};
+use anyhow::{Result, bail};
 use protocol::*;
 use serde::Deserialize;
 use tokio_stream::StreamExt;
@@ -105,11 +105,9 @@ impl<'a> DeepAgent<'a> {
         ];
 
         let enhanced_text = {
-            let mut stream = self
-                .ctx
-                .openrouter
-                .stream(messages, &self.model, vec![])
-                .await?;
+            let model = openrouter::ModelBuilder::from_model(&self.model).build();
+            let mut stream: openrouter::StreamCompletion =
+                self.ctx.openrouter.stream(model, messages, vec![]).await?;
 
             let mut text = String::new();
             while let Some(token) = StreamExt::next(&mut stream).await {
@@ -201,11 +199,9 @@ impl<'a> DeepAgent<'a> {
 
         let model_with_schema = self.get_model_with_schema("planner_response", plan_schema);
 
-        let mut stream = self
-            .ctx
-            .openrouter
-            .stream(messages, &model_with_schema, vec![])
-            .await?;
+        let model = openrouter::ModelBuilder::from_model(&model_with_schema).build();
+        let mut stream: openrouter::StreamCompletion =
+            self.ctx.openrouter.stream(model, messages, vec![]).await?;
 
         let halt = self
             .completion_ctx
@@ -304,10 +300,11 @@ impl<'a> DeepAgent<'a> {
             .add_token_force(Token::DeepStepStart(step_idx as i32));
 
         loop {
-            let mut stream = self
+            let model = openrouter::ModelBuilder::from_model(&self.model).build();
+            let mut stream: openrouter::StreamCompletion = self
                 .ctx
                 .openrouter
-                .stream(messages.clone(), &self.model, tools.clone())
+                .stream(model, messages.clone(), tools.clone())
                 .await?;
 
             let halt = self
@@ -407,11 +404,9 @@ impl<'a> DeepAgent<'a> {
             openrouter::Message::User(report_input),
         ];
 
-        let mut stream = self
-            .ctx
-            .openrouter
-            .stream(messages, &self.model, vec![])
-            .await?;
+        let model = openrouter::ModelBuilder::from_model(&self.model).build();
+        let mut stream: openrouter::StreamCompletion =
+            self.ctx.openrouter.stream(model, messages, vec![]).await?;
 
         let halt = self
             .completion_ctx

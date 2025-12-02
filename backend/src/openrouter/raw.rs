@@ -21,10 +21,10 @@ pub struct CompletionReq {
     pub top_p: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tools: Option<Vec<Tool>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub plugins: Option<Vec<Plugin>>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tools: Vec<Tool>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub plugins: Vec<Plugin>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub usage: Option<UsageReq>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -85,18 +85,13 @@ impl Default for CompletionReq {
             model: "openai/gpt-oss-20b".to_string(),
             messages: vec![],
             stream: true,
-            tools: None,
+            tools: vec![],
             temperature: None,
             repeat_penalty: None,
             top_k: None,
             top_p: None,
             max_tokens: None,
-            plugins: Some(vec![Plugin {
-                id: "file-parser".to_string(),
-                pdf: PdfPlugin {
-                    engine: "mistral-ocr".to_string(),
-                },
-            }]),
+            plugins: Vec::new(),
             usage: Some(UsageReq { include: true }),
             response_format: None,
             reasoning: None,
@@ -126,7 +121,25 @@ pub struct UsageReq {
 #[derive(Debug, Clone, Serialize)]
 pub struct Plugin {
     pub id: String,
-    pub pdf: PdfPlugin,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pdf: Option<PdfPlugin>,
+}
+
+impl Plugin {
+    pub fn pdf() -> Self {
+        Self {
+            id: "file-parser".to_string(),
+            pdf: Some(PdfPlugin {
+                engine: "mistral-ocr".to_string(),
+            }),
+        }
+    }
+    pub fn web() -> Self {
+        Self {
+            id: "web".to_string(),
+            pdf: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
