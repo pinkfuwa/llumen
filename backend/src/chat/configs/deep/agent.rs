@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use anyhow::{Context as _, Result, bail};
 use protocol::*;
 use serde::Deserialize;
 use tokio_stream::StreamExt;
 
 use super::helper::*;
-use crate::chat::agent::chat::ChatPipeline;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::chat::deep_prompt::{CompletedStep, ReportInputContext, StepInputContext};
@@ -25,16 +24,20 @@ pub struct DeepAgent<'a> {
 }
 
 impl<'a> DeepAgent<'a> {
-    pub async fn handoff_tool(
-        pipeline: &'a mut ChatPipeline<super::Inner>,
+    pub async fn handoff_tool_static(
+        ctx: &Arc<Context>,
+        completion_ctx: &mut CompletionContext,
         _toolcall: Vec<openrouter::ToolCall>,
     ) -> Result<()> {
-        let model = pipeline.model.clone();
-        let ctx = pipeline.ctx.clone();
-        let completion_ctx = &mut pipeline.completion_ctx;
+        use crate::utils::model::ModelChecker;
+        use protocol::ModelConfig;
+
+        let model = <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
+            .context("Failed to get model config")?;
+        let model: openrouter::Model = model.into();
 
         let mut agent = DeepAgent {
-            ctx,
+            ctx: ctx.clone(),
             completion_ctx,
             model,
             state: None,

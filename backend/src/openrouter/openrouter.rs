@@ -119,7 +119,7 @@ impl Openrouter {
             messages.push(Message::User("".to_string()));
         }
 
-        let mut req = raw::CompletionReq {
+        let req = raw::CompletionReq {
             messages: messages
                 .into_iter()
                 .map(|m| m.to_raw_message(&model.id))
@@ -395,6 +395,7 @@ impl From<Message> for raw::Message {
 }
 
 #[cfg(debug_assertions)]
+#[allow(dead_code)]
 pub(super) fn check_message(message: &[Message]) {
     // For each ToolResult, check for ToolCall and its order
     let mut result_ids = message

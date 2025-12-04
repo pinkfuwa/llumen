@@ -12,6 +12,7 @@ use super::{
     prompt::Prompt,
     token::Token,
 };
+use crate::chat::Configurations;
 use crate::chat::deep_prompt::DeepPrompt;
 use crate::utils::model::ModelChecker;
 use crate::{chat::prompt::PromptKind, openrouter, utils::blob::BlobDB};
@@ -35,6 +36,7 @@ pub struct Context {
     pub(super) crawl_tool: Arc<CrawlTool>,
     pub(super) lua_repl_tool: Arc<LuaReplTool>,
     pub(super) deep_prompt: Arc<DeepPrompt>,
+    pub configurations: Configurations,
 }
 
 impl Context {
@@ -54,6 +56,7 @@ impl Context {
             crawl_tool: Arc::new(CrawlTool::new()),
             lua_repl_tool: Arc::new(LuaReplTool::new()),
             deep_prompt: Arc::new(DeepPrompt::new()),
+            configurations: Configurations::new(),
         })
     }
 
@@ -81,6 +84,13 @@ impl Context {
 
     pub fn get_model_ids(&self) -> Vec<String> {
         self.openrouter.get_model_ids()
+    }
+
+    pub fn process(
+        self: Arc<Self>,
+        completion_ctx: CompletionContext,
+    ) -> futures_util::future::BoxFuture<'static, anyhow::Result<()>> {
+        self.configurations.process(self.clone(), completion_ctx)
     }
 }
 

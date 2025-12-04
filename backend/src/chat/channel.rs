@@ -4,10 +4,7 @@ use std::{
     sync::{Arc, Mutex, Weak},
 };
 
-use tokio::{
-    sync::{Notify, mpsc, watch},
-    task::yield_now,
-};
+use tokio::sync::{Notify, mpsc, watch};
 use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
 

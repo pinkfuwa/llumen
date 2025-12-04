@@ -178,6 +178,7 @@ where
 /// ```
 #[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
+#[allow(unused)]
 pub enum JsonUnion<T, E> {
     /// Successful result variant
     Ok(T),
