@@ -36,7 +36,7 @@ pub async fn route(
     }
 
     // TODO: return error when not streaming
-    app.processor.halt_completion(req.id);
+    app.processor.halt_completion(req.id).await;
 
     Ok(Json(ChatHaltResp {}))
 }
