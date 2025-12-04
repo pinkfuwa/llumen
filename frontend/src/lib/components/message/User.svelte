@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { SquarePen, Check, X } from '@lucide/svelte';
-	import FileGroup from '../../buttons/FileGroup.svelte';
+	import FileGroup from '$lib/components/common/FileGroup.svelte';
 	import { Button } from 'bits-ui';
 	import { Markdown } from '$lib/components/markdown';
 	let {

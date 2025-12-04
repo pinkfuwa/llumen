@@ -3,7 +3,7 @@
 	import { Atom, SearchCode, ZapOff } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
-	import Tooltip from '../buttons/Tooltip.svelte';
+	import Tooltip from '../common/Tooltip.svelte';
 
 	let {
 		value = $bindable(Mode.Normal) as Mode,

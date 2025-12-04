@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { AssistantChunk } from '$lib/api/types';
-	import Assistant from './buttons/Assistant.svelte';
-	import Reasoning from './buttons/Reasoning.svelte';
-	import ResponseError from './buttons/ResponseError.svelte';
-	import Result from './buttons/Result.svelte';
-	import Tool from './buttons/Tool.svelte';
-	import ToolBox from './buttons/ToolBox.svelte';
-	import DeepResearch from './buttons/DeepResearch.svelte';
+	import Assistant from './Assistant.svelte';
+	import Reasoning from './Reasoning.svelte';
+	import ResponseError from './ResponseError.svelte';
+	import Result from './Result.svelte';
+	import Tool from './Tool.svelte';
+	import ToolBox from './ToolBox.svelte';
+	import DeepResearch from './DeepResearch.svelte';
 
 	let {
 		chunks,

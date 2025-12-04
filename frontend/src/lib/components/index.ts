@@ -1,4 +1,4 @@
-import TiltBtn from './buttons/TiltBtn.svelte';
+import TiltBtn from './common/TiltBtn.svelte';
 import Sidebar from './sidebar/Sidebar.svelte';
 import Copyright from './Copyright.svelte';
 import MessageInput from './input/MessageInput.svelte';

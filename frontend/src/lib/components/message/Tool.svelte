@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Code from '../../shiki/Code.svelte';
+	import Code from '$lib/components/shiki/Code.svelte';
 	let { content }: { content: string } = $props();
 </script>
 

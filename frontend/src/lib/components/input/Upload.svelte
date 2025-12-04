@@ -2,7 +2,7 @@
 	import { Upload } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
-	import Tooltip from '../buttons/Tooltip.svelte';
+	import Tooltip from '../common/Tooltip.svelte';
 
 	let { files = $bindable([] as File[]), filetypes }: { files: File[]; filetypes: string } =
 		$props();

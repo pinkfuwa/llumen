@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Book, BookA } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
-	import Tooltip from '../buttons/Tooltip.svelte';
+	import Tooltip from '../common/Tooltip.svelte';
 
 	let { editable = $bindable(true), disabled = false } = $props();
 </script>
