@@ -445,4 +445,68 @@ mod tests {
         let msg = stream.next().await;
         assert_eq!(msg, Some(" World".to_string()));
     }
+
+    #[tokio::test]
+    async fn test_halt_stops_immediately() {
+        let ctx = Arc::new(Context::<String>::new());
+        let chat_id = 100;
+
+        let mut publisher = ctx.clone().publish(chat_id).unwrap();
+        
+        // Verify halt flag is initially false
+        assert!(!publisher.is_halted());
+        
+        // Call stop to set halt flag
+        ctx.stop(chat_id);
+        
+        // Verify halt flag is now true
+        assert!(publisher.is_halted());
+        
+        // Try to publish - should fail due to halt
+        let result = publisher.publish("test".to_string());
+        assert!(result.is_err(), "publish should fail when halted");
+    }
+
+    #[tokio::test]
+    async fn test_publish_wait_succeeds_when_available() {
+        let ctx = Arc::new(Context::<String>::new());
+        let chat_id = 200;
+
+        // Should succeed immediately when no publisher exists
+        let publisher = ctx
+            .clone()
+            .publish_wait(chat_id, std::time::Duration::from_secs(1))
+            .await;
+        assert!(publisher.is_some(), "Should get publisher immediately");
+    }
+
+    #[tokio::test]
+    async fn test_publish_wait_waits_for_previous_to_finish() {
+        let ctx = Arc::new(Context::<String>::new());
+        let chat_id = 300;
+
+        // Create first publisher
+        let publisher1 = ctx.clone().publish(chat_id).unwrap();
+
+        // Spawn task to drop publisher after a delay
+        let ctx_clone = ctx.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+            drop(publisher1);
+        });
+
+        // Try to get second publisher - should wait and succeed
+        let start = std::time::Instant::now();
+        let publisher2 = ctx
+            .clone()
+            .publish_wait(chat_id, std::time::Duration::from_secs(2))
+            .await;
+        let elapsed = start.elapsed();
+
+        assert!(publisher2.is_some(), "Should get publisher after first is dropped");
+        assert!(
+            elapsed >= std::time::Duration::from_millis(150),
+            "Should have waited for first publisher to drop"
+        );
+    }
 }
