@@ -65,7 +65,9 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
             inner.flag.store(true, atomic::Ordering::Release);
             // Send notification to wake up any waiting operations
             if let Some(sender) = inner.sender.lock().unwrap().as_ref() {
-                let _ = sender.send(());
+                if sender.send(()).is_err() {
+                    log::debug!("Failed to send halt notification - receiver may have been dropped");
+                }
             }
         }
     }
@@ -152,6 +154,7 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         timeout: std::time::Duration,
     ) -> Option<Publisher<S>> {
         let start = std::time::Instant::now();
+        let mut delay_ms = 10u64;
         
         loop {
             if let Some(publisher) = self.clone().publish(id) {
@@ -162,7 +165,9 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
                 return None;
             }
             
-            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            // Exponential backoff with cap at 100ms
+            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+            delay_ms = (delay_ms * 2).min(100);
         }
     }
 }
