@@ -65,8 +65,8 @@ impl Context {
     ) -> impl std::future::Future<Output = Result<CompletionContext, anyhow::Error>> + '_ {
         CompletionContext::new(self.clone(), user_id, chat_id, model_id)
     }
-    pub fn halt_completion(&self, chat_id: i32) {
-        self.channel.stop(chat_id)
+    pub async fn halt_completion(&self, chat_id: i32) {
+        self.channel.stop(chat_id).await
     }
     pub fn subscribe(
         self: Arc<Self>,

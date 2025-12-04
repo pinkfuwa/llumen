@@ -1,13 +1,10 @@
 use std::{
     collections::HashMap,
     ops::Range,
-    sync::{
-        Arc, Mutex, Weak,
-        atomic::{self, AtomicBool},
-    },
+    sync::{Arc, Mutex, Weak},
 };
 
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{Notify, mpsc, watch};
 use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
 
@@ -28,7 +25,7 @@ pub struct Inner<S: Mergeable + Clone> {
     buffer: LockedVec<S>,
     sender: LockedOption<watch::Sender<()>>,
     receiver: watch::Receiver<()>,
-    flag: AtomicBool,
+    stop_notify: Notify,
 }
 
 impl<S: Mergeable + Clone + Send> Default for Inner<S> {
@@ -44,7 +41,7 @@ impl<S: Mergeable + Clone + Send> Inner<S> {
             buffer: Mutex::new(Vec::new()),
             sender: Mutex::new(Some(tx)),
             receiver: rx,
-            flag: AtomicBool::new(false),
+            stop_notify: Notify::new(),
         }
     }
 }
@@ -59,10 +56,17 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
             map: Arc::new(Mutex::new(HashMap::new())),
         }
     }
-    pub fn stop(&self, id: i32) {
-        let map = self.map.lock().unwrap();
-        if let Some(inner) = map.get(&id).and_then(|w| w.upgrade()) {
-            inner.flag.store(true, atomic::Ordering::Release);
+    pub async fn stop(&self, id: i32) {
+        let maybe_inner = {
+            let map = self.map.lock().unwrap();
+            map.get(&id).and_then(|w| w.upgrade())
+        };
+        if let Some(inner) = maybe_inner {
+            let mut receiver = inner.receiver.clone();
+            inner.stop_notify.notify_one();
+            while receiver.changed().await.is_ok() {
+                inner.stop_notify.notify_one();
+            }
         }
     }
     fn remove_weak(&self) {
@@ -84,7 +88,6 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
     fn get_subscriber(&self, id: i32) -> Subscriber<S> {
         let inner = self.get_inner(id);
         let receiver = inner.receiver.clone();
-        inner.flag.store(false, atomic::Ordering::Release);
         Subscriber {
             cursor: Cursor::default(),
             inner,
@@ -179,13 +182,7 @@ impl<S: Mergeable + Clone> Publisher<S> {
         self.sender.send_replace(());
     }
     pub fn publish(&mut self, item: S) -> Result<(), ()> {
-        if self.inner.flag.load(atomic::Ordering::Acquire) {
-            self.inner.flag.store(false, atomic::Ordering::Release);
-            return Err(());
-        }
-
         self.publish_force(item);
-
         Ok(())
     }
 }
@@ -248,11 +245,18 @@ where
                 return Some(item);
             }
 
-            if self.receiver.changed().await.is_err() {
-                let buffer = self.inner.buffer.lock().unwrap();
-
-                if check_buffer_exhausted(&self.cursor, &buffer) {
+            tokio::select! {
+                _ = self.inner.stop_notify.notified() => {
                     return None;
+                }
+                result = self.receiver.changed() => {
+                    if result.is_err() {
+                        let buffer = self.inner.buffer.lock().unwrap();
+
+                        if check_buffer_exhausted(&self.cursor, &buffer) {
+                            return None;
+                        }
+                    }
                 }
             }
         }
