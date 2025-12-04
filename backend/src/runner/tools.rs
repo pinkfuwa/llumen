@@ -97,7 +97,7 @@ impl SqliteContext {
             let mut obj = serde_json::Map::new();
             for (i, column) in row.columns().iter().enumerate() {
                 let value: serde_json::Value = match row.try_get_raw(i) {
-                    Ok(raw) => {
+                    Ok(_) => {
                         // Try to get different types
                         if let Ok(v) = row.try_get::<i64, _>(i) {
                             serde_json::Value::Number(v.into())
@@ -134,13 +134,18 @@ impl SqliteContext {
 
         // Create table with all columns as TEXT for simplicity
         let columns: Vec<String> = headers.iter().map(|h| format!("{} TEXT", h)).collect();
-        let create_table = format!("CREATE TABLE IF NOT EXISTS {} ({})", table_name, columns.join(", "));
+        let create_table = format!(
+            "CREATE TABLE IF NOT EXISTS {} ({})",
+            table_name,
+            columns.join(", ")
+        );
         sqlx::query(&create_table).execute(pool).await?;
 
         // Insert data
         for result in reader.records() {
             let record = result?;
-            let placeholders: Vec<String> = (0..record.len()).map(|i| format!("${}", i + 1)).collect();
+            let placeholders: Vec<String> =
+                (0..record.len()).map(|i| format!("${}", i + 1)).collect();
             let insert_query = format!(
                 "INSERT INTO {} VALUES ({})",
                 table_name,
@@ -195,8 +200,8 @@ pub fn register_sql_functions(lua: &Lua, ctx: Arc<SqliteContext>) -> Result<()> 
 
     // sql.load_csv function
     let ctx_load_csv = ctx.clone();
-    let load_csv_fn = lua.create_async_function(
-        move |_lua, (csv_data, table_name): (String, String)| {
+    let load_csv_fn =
+        lua.create_async_function(move |_lua, (csv_data, table_name): (String, String)| {
             let ctx = ctx_load_csv.clone();
             async move {
                 // Ensure pool is initialized
@@ -211,8 +216,7 @@ pub fn register_sql_functions(lua: &Lua, ctx: Arc<SqliteContext>) -> Result<()> 
 
                 Ok(format!("Loaded CSV data into table '{}'", table_name))
             }
-        },
-    )?;
+        })?;
     sql_table.set("load_csv", load_csv_fn)?;
 
     globals.set("sql", sql_table)?;
@@ -252,30 +256,29 @@ pub fn register_http_functions(lua: &Lua) -> Result<()> {
     http_table.set("get", get_fn)?;
 
     // http.post function
-    let post_fn =
-        lua.create_async_function(|_lua, (url, body): (String, String)| async move {
-            // Validate URL
-            validate_url(&url)
-                .await
-                .map_err(|e| mlua::Error::external(e))?;
+    let post_fn = lua.create_async_function(|_lua, (url, body): (String, String)| async move {
+        // Validate URL
+        validate_url(&url)
+            .await
+            .map_err(|e| mlua::Error::external(e))?;
 
-            // Make HTTP request
-            let client = reqwest::Client::new();
-            let response = client
-                .post(&url)
-                .body(body)
-                .send()
-                .await
-                .map_err(|e| mlua::Error::external(e))?;
+        // Make HTTP request
+        let client = reqwest::Client::new();
+        let response = client
+            .post(&url)
+            .body(body)
+            .send()
+            .await
+            .map_err(|e| mlua::Error::external(e))?;
 
-            let status = response.status().as_u16();
-            let response_body = response
-                .text()
-                .await
-                .map_err(|e| mlua::Error::external(e))?;
+        let status = response.status().as_u16();
+        let response_body = response
+            .text()
+            .await
+            .map_err(|e| mlua::Error::external(e))?;
 
-            Ok((status, response_body))
-        })?;
+        Ok((status, response_body))
+    })?;
     http_table.set("post", post_fn)?;
 
     globals.set("http", http_table)?;

@@ -60,16 +60,6 @@ where
     Self: Sized,
 {
     fn check(&self) -> anyhow::Result<()>;
-    fn check_config(config: &str) -> anyhow::Result<Self>
-    where
-        Self: DeserializeOwned,
-    {
-        let config = toml::from_str::<Self>(config)?;
-
-        config.check()?;
-
-        Ok(config)
-    }
     fn from_toml(config: &str) -> anyhow::Result<Self>
     where
         Self: DeserializeOwned,

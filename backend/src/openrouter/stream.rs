@@ -59,7 +59,7 @@ impl StreamCompletion {
         endpoint: &str,
         req: raw::CompletionReq,
     ) -> Result<StreamCompletion, Error> {
-        let mut model_id = {
+        let model_id = {
             let model_id = req.model.as_str();
             match model_id.find(":") {
                 Some(pos) => model_id.split_at(pos).0,

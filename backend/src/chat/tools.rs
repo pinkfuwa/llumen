@@ -173,9 +173,6 @@ impl WebSearchTool {
             let title_selector = Selector::parse("h2.result__title a")
                 .map_err(|_| anyhow!("Failed to parse title selector"))?;
 
-            let url_selector = Selector::parse("a.result__url")
-                .map_err(|_| anyhow!("Failed to parse URL selector"))?;
-
             let snippet_selector = Selector::parse("a.result__snippet")
                 .map_err(|_| anyhow!("Failed to parse snippet selector"))?;
 

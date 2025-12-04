@@ -8,7 +8,6 @@ use typeshare::typeshare;
 
 use crate::{
     AppState,
-    chat::{Deep, Normal, Pipeline, Search},
     errors::{ErrorKind, JsonResult, WithKind},
     middlewares::auth::UserId,
     utils::chat::ChatMode,
@@ -75,11 +74,7 @@ pub async fn route(
     let closure = async move {
         completion_ctx.set_mode(req.mode.into());
 
-        match req.mode {
-            ChatMode::Search => Search::process(app.processor.clone(), completion_ctx).await?,
-            ChatMode::Research => Deep::process(app.processor.clone(), completion_ctx).await?,
-            _ => Normal::process(app.processor.clone(), completion_ctx).await?,
-        };
+        app.processor.clone().process(completion_ctx).await?;
 
         Ok::<(), anyhow::Error>(())
     };

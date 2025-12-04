@@ -35,6 +35,8 @@ mod errors;
 mod middlewares;
 mod openrouter;
 mod routes;
+// TODO: rewrite runner(along with repl tool)
+#[allow(dead_code)]
 mod runner;
 mod utils;
 
