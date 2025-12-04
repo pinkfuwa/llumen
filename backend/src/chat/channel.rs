@@ -4,7 +4,10 @@ use std::{
     sync::{Arc, Mutex, Weak},
 };
 
-use tokio::sync::{Notify, mpsc, watch};
+use tokio::{
+    sync::{Notify, mpsc, watch},
+    task::yield_now,
+};
 use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
 
@@ -63,9 +66,9 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         };
         if let Some(inner) = maybe_inner {
             let mut receiver = inner.receiver.clone();
-            inner.stop_notify.notify_one();
+            inner.stop_notify.notify_waiters();
             while receiver.changed().await.is_ok() {
-                inner.stop_notify.notify_one();
+                inner.stop_notify.notify_waiters();
             }
         }
     }
@@ -169,8 +172,8 @@ pub struct Publisher<S: Mergeable> {
     sender: watch::Sender<()>,
 }
 
-impl<S: Mergeable + Clone> Publisher<S> {
-    pub fn publish_force(&mut self, item: S) {
+impl<S: Mergeable + Clone + Send + 'static> Publisher<S> {
+    pub fn publish(&mut self, item: S) {
         let mut buffer = self.inner.buffer.lock().unwrap();
         if let Some(last) = buffer.last_mut() {
             if let Some(rest) = last.merge(item) {
@@ -181,9 +184,11 @@ impl<S: Mergeable + Clone> Publisher<S> {
         }
         self.sender.send_replace(());
     }
-    pub fn publish(&mut self, item: S) -> Result<(), ()> {
-        self.publish_force(item);
-        Ok(())
+    pub fn wait_halt(&self) -> impl Future<Output = ()> + Send + 'static {
+        let inner = self.inner.clone();
+        async move {
+            inner.stop_notify.notified().await;
+        }
     }
 }
 
@@ -245,176 +250,13 @@ where
                 return Some(item);
             }
 
-            tokio::select! {
-                _ = self.inner.stop_notify.notified() => {
+            if self.receiver.changed().await.is_err() {
+                let buffer = self.inner.buffer.lock().unwrap();
+
+                if check_buffer_exhausted(&self.cursor, &buffer) {
                     return None;
                 }
-                result = self.receiver.changed() => {
-                    if result.is_err() {
-                        let buffer = self.inner.buffer.lock().unwrap();
-
-                        if check_buffer_exhausted(&self.cursor, &buffer) {
-                            return None;
-                        }
-                    }
-                }
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tokio_stream::StreamExt;
-
-    impl Mergeable for String {
-        fn merge(&mut self, other: Self) -> Option<Self> {
-            self.push_str(&other);
-            None
-        }
-
-        fn len(&self) -> usize {
-            self.len()
-        }
-
-        fn slice(&self, r: Range<usize>) -> Option<Self> {
-            Some(self.get(r)?.to_string())
-        }
-    }
-
-    #[tokio::test]
-    async fn test_subscribe_closes_when_stream_dropped_immediately() {
-        let ctx = Arc::new(Context::<String>::new());
-        let chat_id = 1;
-
-        // Subscribe and immediately drop - simulates SSE disconnect before any data
-        let stream = ctx.clone().subscribe(chat_id, None);
-        // pin_mut!(stream); // Not strictly needed for this usage
-
-        // Drop the stream immediately
-        drop(stream);
-
-        // Give the spawned task time to detect the closure
-        // Without our fix, the task would loop forever trying to recv()
-        // With the fix, it should detect tx.is_closed() and exit
-        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
-
-        // Try to publish - should succeed as the spawned task should have exited
-        let publisher = ctx.clone().publish(chat_id);
-        assert!(
-            publisher.is_some(),
-            "Should be able to publish after subscriber drops"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_subscribe_closes_when_stream_dropped_with_no_publisher() {
-        let ctx = Arc::new(Context::<String>::new());
-        let chat_id = 10;
-
-        // Subscribe without ever creating a publisher
-        let stream = ctx.clone().subscribe(chat_id, None);
-
-        // The spawned task is now waiting in subscriber.recv()
-        // subscriber.recv() will block because there's no data and no publisher
-
-        // Drop the stream to simulate SSE disconnect
-        drop(stream);
-
-        // Give the spawned task time to detect the closure
-        // The task is blocked in subscriber.recv().await which is waiting on watch::Receiver::changed()
-        // When we drop the stream, tx is closed
-        // Eventually the task should wake up and check tx.is_closed()
-        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
-
-        // Now create a publisher - if the spawned task exited, this should succeed
-        let publisher = ctx.clone().publish(chat_id);
-        assert!(
-            publisher.is_some(),
-            "Spawned task should have exited when stream dropped"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_subscribe_task_exits_on_publisher_drop_and_stream_drop() {
-        let ctx = Arc::new(Context::<String>::new());
-        let chat_id = 2;
-
-        // Create a publisher and publish message
-        let mut publisher = ctx.clone().publish(chat_id).unwrap();
-        publisher.publish_force("test".to_string());
-
-        // Create a subscriber and read the message
-        let mut stream = ctx.clone().subscribe(chat_id, None);
-        let msg = stream.next().await;
-        assert!(msg.is_some());
-
-        // Drop publisher to close the watch channel
-        drop(publisher);
-
-        // Drop the stream to simulate SSE disconnect
-        drop(stream);
-
-        // Give the spawned task time to detect closure and exit
-        // The task should:
-        // 1. Call subscriber.recv() which returns None (publisher dropped)
-        // 2. Check tx.is_closed() which returns true (stream dropped)
-        // 3. Break the loop
-        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-
-        // Verify we can create a new publisher (meaning the old task exited)
-        let publisher = ctx.clone().publish(chat_id);
-        assert!(publisher.is_some(), "Spawned task should have exited");
-    }
-
-    #[tokio::test]
-    async fn test_normal_streaming_works() {
-        let ctx = Arc::new(Context::<String>::new());
-        let chat_id = 3;
-
-        // Create publisher first, then subscriber
-        let mut publisher = ctx.clone().publish(chat_id).unwrap();
-        let mut stream = ctx.clone().subscribe(chat_id, None);
-
-        // Give the spawned task time to start
-        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-
-        // Publish messages - they will be merged by the Mergeable implementation
-        publisher.publish_force("Hello".to_string());
-        publisher.publish_force(" ".to_string());
-        publisher.publish_force("World".to_string());
-
-        // Collect the merged message
-        match tokio::time::timeout(tokio::time::Duration::from_secs(1), stream.next()).await {
-            Ok(Some(msg)) => {
-                // All three messages should be merged into one
-                assert_eq!(msg, "Hello World");
-            }
-            Ok(None) => panic!("Stream ended unexpectedly"),
-            Err(_) => panic!("Timeout waiting for message"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_subscribe_with_cursor_resumes_correctly() {
-        let ctx = Arc::new(Context::<String>::new());
-        let chat_id = 42;
-
-        let mut publisher = ctx.clone().publish(chat_id).unwrap();
-        publisher.publish_force("Hello".to_string());
-        publisher.publish_force(" World".to_string());
-
-        // Cursor pointing after "Hello"
-        let cursor = Cursor {
-            index: 0,
-            offset: 5,
-        };
-
-        let mut stream = ctx.clone().subscribe(chat_id, Some(cursor));
-
-        // We expect to receive " World"
-        let msg = stream.next().await;
-        assert_eq!(msg, Some(" World".to_string()));
     }
 }

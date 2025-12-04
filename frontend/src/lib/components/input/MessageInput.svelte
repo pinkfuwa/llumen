@@ -45,8 +45,6 @@
 			($models == undefined || $models.list.some((m) => m.id.toString() == modelId))
 	);
 
-	$inspect('modelIdValid', modelIdValid);
-
 	let selectModelCap = $derived.by(() => {
 		let uselessFn = (a: any) => {};
 		uselessFn(modelId);

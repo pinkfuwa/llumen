@@ -297,7 +297,7 @@ impl<'a> DeepAgent<'a> {
         ];
 
         self.completion_ctx
-            .add_token_force(Token::DeepStepStart(step_idx as i32));
+            .add_token(Token::DeepStepStart(step_idx as i32));
 
         loop {
             let model = openrouter::ModelBuilder::from_model(&self.model).build();
@@ -344,11 +344,10 @@ impl<'a> DeepAgent<'a> {
                     arguments: tool_call.args.clone(),
                 }));
 
-                self.completion_ctx
-                    .add_token_force(Token::DeepStepToolCall {
-                        name: tool_call.name.clone(),
-                        arg: tool_call.args.clone(),
-                    });
+                self.completion_ctx.add_token(Token::DeepStepToolCall {
+                    name: tool_call.name.clone(),
+                    arg: tool_call.args.clone(),
+                });
 
                 let result = self.execute_tool(&tool_call.name, &tool_call.args).await?;
 
@@ -360,7 +359,7 @@ impl<'a> DeepAgent<'a> {
                 ));
 
                 self.completion_ctx
-                    .add_token_force(Token::DeepStepToolResult(result))
+                    .add_token(Token::DeepStepToolResult(result))
             }
         }
 

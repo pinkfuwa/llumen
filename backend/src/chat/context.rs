@@ -152,15 +152,10 @@ impl CompletionContext {
             .context("no user message found")?
             .id;
 
-        if publisher
-            .publish(Token::Start {
-                id: msg.id,
-                user_msg_id,
-            })
-            .is_err()
-        {
-            log::debug!("publisher was halted before completion start");
-        }
+        publisher.publish(Token::Start {
+            id: msg.id,
+            user_msg_id,
+        });
 
         Ok(Self {
             model,
@@ -191,29 +186,32 @@ impl CompletionContext {
     }
 
     /// Adds a token to the completion context and publishes it to the channel.
-    pub(super) fn add_token(&mut self, token: Token) -> Result<(), ()> {
+    pub(super) fn add_token(&mut self, token: Token) {
         self.publisher.publish(token)
-    }
-
-    pub(super) fn add_token_force(&mut self, token: Token) {
-        self.publisher.publish_force(token)
     }
 
     pub async fn put_stream<E>(
         &mut self,
         mut stream: impl Stream<Item = Result<Token, E>> + Unpin,
     ) -> Result<StreamEndReason, E> {
-        while let Some(token) = stream.next().await {
-            match token {
-                Ok(token) => {
-                    if self.add_token(token).is_err() {
-                        return Ok(StreamEndReason::Halt);
-                    }
+        let halt_fut = self.publisher.wait_halt();
+        let fut = async {
+            while let Some(token) = stream.next().await {
+                match token {
+                    Ok(token) => self.add_token(token),
+                    Err(e) => return Err(e),
                 }
-                Err(e) => return Err(e),
+            }
+            Ok(())
+        };
+        tokio::select! {
+            _ = halt_fut => {
+                Ok(StreamEndReason::Halt)
+            },
+            result = fut => {
+                result.map(|_|StreamEndReason::Exhausted)
             }
         }
-        Ok(StreamEndReason::Exhausted)
     }
 
     pub fn update_usage(&mut self, price: f32, token_count: i32) {
@@ -285,15 +283,14 @@ impl CompletionContext {
 
         self.chat.title = ActiveValue::set(Some(title.to_string()));
 
-        self.publisher
-            .publish_force(Token::Title(title.to_string()));
+        self.add_token(Token::Title(title.to_string()));
 
         Ok(())
     }
 
     pub fn add_error(&mut self, msg: String) {
         self.message.inner.add_error(msg.clone());
-        self.add_token_force(Token::Error(msg));
+        self.add_token(Token::Error(msg));
     }
 
     /// Saves the completion to the database.
@@ -312,7 +309,7 @@ impl CompletionContext {
         let cost = self.message.price;
 
         log::trace!("publish complete token");
-        self.publisher.publish_force(Token::Complete {
+        self.add_token(Token::Complete {
             message_id,
             cost,
             token: token_count,

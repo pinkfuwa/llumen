@@ -86,7 +86,7 @@ impl ChatInner for Inner {
 
                 pipeline
                     .completion_ctx
-                    .add_token_force(crate::chat::token::Token::ToolCall {
+                    .add_token(crate::chat::token::Token::ToolCall {
                         name: toolcall.name.clone(),
                         arg: toolcall.args.clone(),
                     });
@@ -112,7 +112,7 @@ impl ChatInner for Inner {
 
                 pipeline
                     .completion_ctx
-                    .add_token_force(crate::chat::token::Token::ToolResult(result.clone()));
+                    .add_token(crate::chat::token::Token::ToolResult(result.clone()));
 
                 pipeline.messages.push(openrouter::Message::ToolResult(
                     openrouter::MessageToolResult {
