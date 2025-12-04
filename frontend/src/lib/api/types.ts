@@ -93,9 +93,10 @@ export enum StepKind {
 }
 
 export type AssistantChunk =
-	| { t: 'annotation'; c: string }
+	| { t: 'annotation'; c: Value }
 	| { t: 'text'; c: string }
 	| { t: 'reasoning'; c: string }
+	| { t: 'reasoning_detail'; c: Value }
 	| {
 			t: 'tool_call';
 			c: {
@@ -230,6 +231,11 @@ export interface FileMetadata {
 
 export interface FileUploadResp {
 	id: number;
+}
+
+export interface HeaderAuthResp {
+	token?: string;
+	exp?: string;
 }
 
 export interface LoginReq {
@@ -460,7 +466,6 @@ export interface UserPreference {
 	theme?: string;
 	locale?: string;
 	submit_on_enter?: string;
-	use_pattern_background?: string;
 }
 
 export interface UserReadReq {

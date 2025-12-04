@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Login } from '$lib/api/auth';
+	import { Login, TryHeaderAuth } from '$lib/api/auth';
 	import { page } from '$app/state';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
@@ -39,6 +39,10 @@
 			}
 		);
 	}
+
+	$effect(() => {
+		TryHeaderAuth();
+	});
 </script>
 
 <svelte:head>

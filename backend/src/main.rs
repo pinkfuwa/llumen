@@ -81,12 +81,14 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 /// * `hasher`: Password hasher for user authentication and security
 /// * `processor`: Main chat processing pipeline context managing LLM completions
 /// * `blob`: Blob database for storing binary data and file uploads
+/// * `user_header`: Optional HTTP header name for header-based authentication (SSO/proxy integration)
 pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
     pub hasher: Hasher,
     pub processor: Arc<Context>,
     pub blob: Arc<BlobDB>,
+    pub auth_header: Option<String>,
 }
 
 /// Attempts to load the OpenRouter API key from environment variables.
@@ -207,12 +209,15 @@ async fn main() {
             .expect("Failed to create pipeline context"),
     );
 
+    let auth_header = var("TRUSTED_HEADER").ok();
+
     let state = Arc::new(AppState {
         conn,
         key,
         hasher: Hasher::default(),
         processor,
         blob,
+        auth_header,
     });
 
     let mut cache_control = CacheControlLayer::new();

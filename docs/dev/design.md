@@ -256,8 +256,9 @@ Organized by feature:
 - `POST /api/file/download` - Download file
 
 **Auth** (`src/routes/auth/`)
-- `POST /api/auth/login` - User loginindent_guides
-- `POST /api/auth/signup` - User registration
+- `POST /api/auth/login` - User login with username/password
+- `POST /api/auth/renew` - Renew expired authentication token
+- `POST /api/auth/header` - Header-based authentication (SSO/proxy integration)
 
 ### 6. Error Handling
 
@@ -278,6 +279,8 @@ Error kinds:
 - `malformed_request` - Bad request body
 - `internal` - Server error
 - `login_fail` - Wrong credentials
+- `resource_not_found` - Resource not found
+- `unauthorized` - Action not permitted
 - `resource_not_found` - 404
 - `api_fail` - External API error
 - `tool_call_fail` - Tool execution error
@@ -290,6 +293,71 @@ some_operation()
 ```
 
 ---
+
+## Authentication System
+
+Llumen supports two authentication mechanisms:
+
+### 1. Standard Authentication (Username/Password)
+
+**Flow:**
+1. User submits login request: `POST /api/auth/login` with username and password
+2. Backend validates credentials against the User database
+3. Backend generates a PASETO v4 symmetric token containing user_id
+4. Frontend stores token and expiry time in localStorage
+5. Token is included in Authorization header for subsequent requests
+
+**Token Management:**
+- Tokens expire after 7 days
+- Frontend automatically renews tokens halfway through their lifetime
+- Token renewal: `POST /api/auth/renew` with existing token
+- Middleware validates token signature and claims for all protected routes
+
+**Files:**
+- Authentication logic: `src/routes/auth/login.rs`, `src/routes/auth/renew.rs`
+- Middleware: `src/middlewares/auth.rs`
+- Password hashing: Argon2 via `utils/password_hash.rs`
+
+### 2. Header-Based Authentication (SSO/Proxy Integration)
+
+**Purpose:** Allows Llumen to integrate with reverse proxies and SSO systems (Authelia, OAuth2-Proxy, etc.) that handle authentication and inject user information via HTTP headers.
+
+**Flow:**
+1. Reverse proxy authenticates the user (external to Llumen)
+2. Proxy injects authenticated username into a configured HTTP header
+3. When token expires, frontend calls `POST /api/auth/header` with username
+4. Backend reads configured header from request
+5. If header value matches the requested username, a new token is issued
+6. Otherwise, normal login is required
+
+**Configuration:**
+- Environment variable: `TRUSTED_HEADER` - HTTP header name containing username (e.g., "X-Remote-User")
+- When not set, header auth is disabled
+- Users must exist in Llumen's database with matching usernames
+- Header name is parsed and cached in AppState during startup (non-blocking to requests)
+
+**Implementation Files:**
+- Header auth endpoint: `src/routes/auth/header_auth.rs`
+- AppState enhancement: `src/main.rs` - Parses TRUSTED_HEADER env var at startup
+- Configuration: Stored as `Option<HeaderName>` in AppState.user_header
+
+**Performance Optimization:**
+- TRUSTED_HEADER environment variable is read and parsed exactly once at server startup
+- Parsed HeaderName is stored in AppState (non-blocking shared memory)
+- Per-request handlers simply reference pre-parsed header name from AppState
+- No blocking I/O or parsing happens during request handling
+
+**Security Model:**
+- Relies on reverse proxy to correctly authenticate and inject headers
+- Should only be used when Llumen is behind a trusted proxy
+- Proxy must prevent external clients from spoofing the header
+- Falls back to standard login if header auth fails or header not present
+
+**Use Cases:**
+- Enterprise deployments with centralized SSO
+- Kubernetes clusters with identity provider integration
+- Shared hosting with per-tenant authentication middleware
+- Reducing password management burden in team environments
 
 ## Data Model
 
