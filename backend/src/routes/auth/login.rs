@@ -1,12 +1,12 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use axum::{Json, extract::State};
 use entity::{prelude::*, user};
-use pasetors::{claims::Claims, local};
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use super::helper;
 use crate::{AppState, errors::*};
 
 #[derive(Debug, Deserialize)]
@@ -42,22 +42,7 @@ pub async fn route(
         }));
     }
 
-    let mut claim = Claims::new().kind(ErrorKind::Internal)?;
-
-    let expiration = Duration::from_secs(60 * 60 * 24 * 7);
-    claim
-        .set_expires_in(&expiration)
-        .kind(ErrorKind::Internal)?;
-
-    // safety:
-    // "uid" is not reserve
-    claim.add_additional("uid", model.id).unwrap();
-
-    // safety:
-    // "exp" must exists
-    let exp = claim.get_claim("exp").unwrap().as_str().unwrap().to_owned();
-
-    let token = local::encrypt(&app.key, &claim, None, None).kind(ErrorKind::Internal)?;
+    let helper::Token { token, exp } = helper::new_token(&app, model.id)?;
 
     Ok(Json(LoginResp { token, exp }))
 }

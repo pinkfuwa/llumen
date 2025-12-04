@@ -4,7 +4,7 @@ import { goto } from '$app/navigation';
 import { CreateMutation, type CreateMutationResult } from './state';
 import { APIFetch } from './state/errorHandle';
 
-import type { LoginReq, LoginResp, RenewResp, RenewReq } from './types';
+import type { LoginReq, LoginResp, RenewResp, RenewReq, HeaderAuthResp } from './types';
 import { onDestroy } from 'svelte';
 
 export interface User {
@@ -38,6 +38,22 @@ export async function RenewToken(originalToken: string) {
 
 		token.set({
 			value: res.token,
+			expireAt: expireAt.toString(),
+			renewAt: renewAt.toString()
+		});
+	}
+}
+
+export async function TryHeaderAuth() {
+	const res = await APIFetch<HeaderAuthResp>('auth/header');
+
+	if (res && res.exp != undefined) {
+		const now = new Date();
+		const expireAt = new Date(res.exp);
+		const renewAt = new Date(now.getTime() + (expireAt.getTime() - now.getTime()) / 2);
+
+		token.set({
+			value: res.token!,
 			expireAt: expireAt.toString(),
 			renewAt: renewAt.toString()
 		});

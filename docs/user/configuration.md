@@ -18,6 +18,7 @@ This guide explains how to configure Llumen through environment variables and mo
 | `DATABASE_URL` | SQLite database connection string | `sqlite://data/db.sqlite?mode=rwc` |
 | `BLOB_URL` | Path for blob storage (file uploads) | `/data/blobs.redb` |
 | `BIND_ADDR` | Address and port to bind to | `0.0.0.0:80` (Docker) |
+| `TRUSTED_HEADER` | HTTP header name for header-based authentication | Not set (disabled) |
 
 ### Setting Environment Variables
 
@@ -71,6 +72,115 @@ Azure OpenAI:
 OPENAI_API_BASE="https://your-resource.openai.azure.com/openai/deployments/your-deployment"
 API_KEY="your-azure-key"
 ```
+
+## Authentication Configuration
+
+### Standard Username/Password Authentication
+
+By default, Llumen uses username and password authentication. Users can log in with their credentials set by administrators.
+
+### Header-Based Authentication
+
+Header-based authentication is useful when Llumen is behind a reverse proxy or SSO middleware (like Authelia, OAuth2-Proxy, etc.) that handles authentication and injects the authenticated username into HTTP headers.
+
+#### Setup
+
+1. **Configure the header name** via the `TRUSTED_HEADER` environment variable:
+
+```bash
+# Example: Using X-Remote-User header injected by Authelia
+export TRUSTED_HEADER="X-Remote-User"
+```
+
+2. **Ensure users exist** in Llumen's database with matching usernames
+
+#### How it Works
+
+When `TRUSTED_HEADER` is configured:
+
+1. When a user's token expires and renewal is attempted
+2. The frontend automatically tries the header-based authentication endpoint
+3. The backend reads the configured header from the request
+4. If the header value matches the username, a new token is issued
+5. If the header doesn't match or is missing, normal login is required
+
+#### Example: Authelia Setup
+
+With Authelia as your SSO middleware, configure your reverse proxy to inject the authenticated username:
+
+```yaml
+# Authelia configuration
+session:
+  remember_me: 1y
+  
+server:
+  headers:
+    X-Remote-User: "{{ .Username }}"
+```
+
+Then set in Llumen:
+```bash
+TRUSTED_HEADER="X-Remote-User"
+```
+
+#### Example: OAuth2-Proxy Setup
+
+With OAuth2-Proxy, configure the header injection:
+
+```bash
+# OAuth2-Proxy command line
+oauth2-proxy \
+  --set-xauthrequest \
+  --cookie-name=_oauth2_proxy \
+  ...
+```
+
+Then set in Llumen:
+```bash
+TRUSTED_HEADER="X-Auth-Request-User"
+```
+
+#### Example: Docker Compose with Authelia
+
+```yaml
+services:
+  authelia:
+    image: authelia/authelia:latest
+    environment:
+      - AUTHELIA_JWT_SECRET=your-secret
+    volumes:
+      - ./authelia.yml:/config/configuration.yml
+
+  llumen:
+    image: llumen:latest
+    environment:
+      - API_KEY=your-key
+      - TRUSTED_HEADER=X-Remote-User
+    depends_on:
+      - authelia
+
+  reverse-proxy:
+    image: nginx:latest
+    # Configure nginx to proxy requests through Authelia
+    # and inject X-Remote-User header
+```
+
+#### Security Considerations
+
+- **Only enable when behind trusted middleware:** Header-based auth relies on the middleware correctly setting headers. Never expose Llumen directly to untrusted networks without proper proxy configuration.
+- **Header must be non-spoofable:** Ensure your reverse proxy only allows the configured header to be set by the authentication middleware, not by clients.
+- **Username must exist:** Users must have matching accounts in Llumen with the same username.
+- **Not suitable for untrusted networks:** This is designed for enterprise/organizational deployments with controlled infrastructure.
+
+#### Troubleshooting Header Auth
+
+If header authentication isn't working:
+
+1. **Check the TRUSTED_HEADER is set:** Verify `echo $TRUSTED_HEADER` shows the correct header name
+2. **Verify header is being sent:** Check reverse proxy logs to confirm the header is injected
+3. **Confirm username matches:** Ensure the username in the header matches exactly with the Llumen user account (case-sensitive)
+4. **Check case sensitivity:** Header names are case-insensitive in HTTP but values are case-sensitive
+5. **Fall back to password login:** If header auth fails, the login page will still work with username/password
 
 ## Model Configuration
 
