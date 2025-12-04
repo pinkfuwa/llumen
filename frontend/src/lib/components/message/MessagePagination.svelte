@@ -2,9 +2,9 @@
 	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/message.svelte';
 	import { type ChatReadResp } from '$lib/api/types';
 	import { dispatchError } from '$lib/error';
-	import ResponseBox from './buttons/ResponseBox.svelte';
-	import ResponseEdit from './buttons/ResponseEdit.svelte';
-	import User from './buttons/User.svelte';
+	import ResponseBox from './ResponseBox.svelte';
+	import ResponseEdit from './ResponseEdit.svelte';
+	import User from './User.svelte';
 	import Chunks from './Chunks.svelte';
 	import { page } from '$app/state';
 

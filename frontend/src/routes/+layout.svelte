@@ -4,7 +4,7 @@
 	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
 	import { initError } from '$lib/error';
 	import { copyCounter } from '$lib/copy';
-	import CopyHint from '$lib/components/buttons/CopyHint.svelte';
+	import CopyHint from '$lib/components/common/CopyHint.svelte';
 	import { initPreference } from '$lib';
 	import { initAuth } from '$lib/api/auth';
 

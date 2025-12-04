@@ -4,8 +4,7 @@
 	import type { PageEntry } from '$lib/api/state';
 	import { type ChatPaginateRespList } from '$lib/api/types';
 	import { dispatchError } from '$lib/error';
-	import { get } from 'svelte/store';
-	import ChatroomBtn from './ChatroomBtn.svelte';
+	import ChatroomEntry from './ChatroomEntry.svelte';
 
 	const {
 		entry,
@@ -24,7 +23,7 @@
 
 <li bind:this={li} class="space-y-1">
 	{#each $data as room, i}
-		<ChatroomBtn
+		<ChatroomEntry
 			name={room.title}
 			id={room.id}
 			selected={room.id == currentRoom}

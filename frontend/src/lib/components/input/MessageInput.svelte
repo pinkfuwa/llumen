@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { createDropZone } from './dropzone.svelte';
-	import MdTextbox from './MDTextbox.svelte';
-	import ModeBtn from './ModeBtn.svelte';
-	import UploadBtn from './UploadBtn.svelte';
-	import SendBtn from './SendBtn.svelte';
-	import FileGroup from '../buttons/FileGroup.svelte';
-	import ModelBtn from './ModelBtn.svelte';
+	import Textbox from './Textbox.svelte';
+	import ModeSelector from './ModeSelector.svelte';
+	import UploadBtn from './Upload.svelte';
+	import Send from './Send.svelte';
+	import FileGroup from '../common/FileGroup.svelte';
+	import ModelSelector from './ModelSelector.svelte';
 	import MarkdownBtn from './MarkdownBtn.svelte';
 	import { _ } from 'svelte-i18n';
-	import StopBtn from './StopBtn.svelte';
+	import Stop from './Stop.svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { ChatMode as Mode, type ModelListResp } from '$lib/api/types';
 	import { getContext } from 'svelte';
@@ -104,7 +104,7 @@
 	<div
 		class="mb-2 flex flex-row items-center justify-between space-x-2 border-b border-outline pr-2 pb-2"
 	>
-		<MdTextbox
+		<Textbox
 			bind:editable
 			placeholder={disabled ? $_('chat.stop_first') : $_('chat.question')}
 			bind:value={content}
@@ -112,15 +112,15 @@
 			{disabled}
 		/>
 		{#if disabled}
-			<StopBtn onclick={oncancel} />
+			<Stop onclick={oncancel} />
 		{:else}
-			<SendBtn onclick={submit} disabled={content.length == 0 || !modelIdValid} />
+			<Send onclick={submit} disabled={content.length == 0 || !modelIdValid} />
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
-			<ModelBtn bind:value={modelId} />
-			<ModeBtn bind:value={mode} limited={!selectModelCap?.tool} />
+			<ModelSelector bind:value={modelId} />
+			<ModeSelector bind:value={mode} limited={!selectModelCap?.tool} />
 			<UploadBtn bind:files {filetypes} />
 		</div>
 		{#if content.length != 0}

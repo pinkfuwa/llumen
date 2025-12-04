@@ -5,7 +5,7 @@
 	import { useUser } from '$lib/api/user.js';
 	let { children, params } = $props();
 	import { Sidebar } from '$lib/components';
-	import CollapseBtn from '$lib/components/sidebar/CollapseBtn.svelte';
+	import OpenBtn from '$lib/components/sidebar/OpenBtn.svelte';
 	import { onDestroy, setContext } from 'svelte';
 
 	let addition = $derived(params.id != undefined);
@@ -38,7 +38,7 @@
 	setContext('models', models);
 </script>
 
-<CollapseBtn bind:open />
+<OpenBtn bind:open />
 
 <div class="bg-chat relative flex h-screen w-screen flex-row">
 	<div class="z-20 h-full shrink-0">
