@@ -63,6 +63,10 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         let map = self.map.lock().unwrap();
         if let Some(inner) = map.get(&id).and_then(|w| w.upgrade()) {
             inner.flag.store(true, atomic::Ordering::Release);
+            // Send notification to wake up any waiting operations
+            if let Some(sender) = inner.sender.lock().unwrap().as_ref() {
+                let _ = sender.send(());
+            }
         }
     }
     fn remove_weak(&self) {
@@ -141,6 +145,26 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
             sender,
         })
     }
+    
+    pub async fn publish_wait(
+        self: Arc<Self>,
+        id: i32,
+        timeout: std::time::Duration,
+    ) -> Option<Publisher<S>> {
+        let start = std::time::Instant::now();
+        
+        loop {
+            if let Some(publisher) = self.clone().publish(id) {
+                return Some(publisher);
+            }
+            
+            if start.elapsed() >= timeout {
+                return None;
+            }
+            
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+    }
 }
 
 #[derive(Clone, Copy, Default, Debug)]
@@ -187,6 +211,14 @@ impl<S: Mergeable + Clone> Publisher<S> {
         self.publish_force(item);
 
         Ok(())
+    }
+    
+    pub fn is_halted(&self) -> bool {
+        self.inner.flag.load(atomic::Ordering::Acquire)
+    }
+    
+    pub fn get_halt_receiver(&self) -> watch::Receiver<()> {
+        self.inner.receiver.clone()
     }
 }
 

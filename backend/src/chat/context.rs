@@ -139,11 +139,13 @@ impl CompletionContext {
         let mut chat = chat.into_active_model();
         chat.model_id = ActiveValue::Set(Some(model.id));
 
+        // Wait for any previous stream to stop before creating a new publisher
         let mut publisher = ctx
             .channel
             .clone()
-            .publish(chat_id)
-            .context("only one publisher is allow at same time")?;
+            .publish_wait(chat_id, std::time::Duration::from_secs(30))
+            .await
+            .context("failed to acquire publisher - previous stream may still be running or timeout occurred")?;
 
         let user_msg_id = msgs
             .iter()
@@ -203,17 +205,28 @@ impl CompletionContext {
         &mut self,
         mut stream: impl Stream<Item = Result<Token, E>> + Unpin,
     ) -> Result<StreamEndReason, E> {
-        while let Some(token) = stream.next().await {
-            match token {
-                Ok(token) => {
-                    if self.add_token(token).is_err() {
+        let mut halt_receiver = self.publisher.get_halt_receiver();
+        
+        loop {
+            tokio::select! {
+                token_result = stream.next() => {
+                    match token_result {
+                        Some(Ok(token)) => {
+                            if self.add_token(token).is_err() {
+                                return Ok(StreamEndReason::Halt);
+                            }
+                        }
+                        Some(Err(e)) => return Err(e),
+                        None => return Ok(StreamEndReason::Exhausted),
+                    }
+                }
+                _ = halt_receiver.changed() => {
+                    if self.publisher.is_halted() {
                         return Ok(StreamEndReason::Halt);
                     }
                 }
-                Err(e) => return Err(e),
             }
         }
-        Ok(StreamEndReason::Exhausted)
     }
 
     pub fn update_usage(&mut self, price: f32, token_count: i32) {
