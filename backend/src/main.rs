@@ -101,8 +101,9 @@ fn load_api_key() -> String {
         (_, Ok(key)) => key,
         _ => {
             println!("Error: API_KEY environment variable not found.");
+            println!("Note: llumen read environment variable as well as .env file.");
             println!("You can get a key from https://openrouter.ai/keys");
-            println!("Checkout documentation and configuration");
+            println!("Or use alternative setup:");
             println!(
                 "- configuration: https://github.com/pinkfuwa/llumen/blob/main/docs/user/configuration.md"
             );
