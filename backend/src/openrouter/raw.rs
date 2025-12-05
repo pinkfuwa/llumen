@@ -400,6 +400,8 @@ pub struct Delta {
     pub reasoning_details: Option<Vec<serde_json::Value>>,
     pub annotations: Option<Vec<serde_json::Value>>,
     pub tool_calls: Option<Vec<ToolCall>>,
+    #[serde(default)]
+    pub images: Vec<Image>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -220,3 +220,136 @@ async fn parallel_tool_calls() {
         );
     }
 }
+
+#[test]
+fn test_image_data_url_parsing() {
+    use crate::openrouter::Image;
+
+    // Test parsing a valid PNG data URL
+    let data_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    let image = Image::from_data_url(data_url).expect("Failed to parse valid PNG data URL");
+
+    assert_eq!(image.mime_type, "image/png");
+    assert!(!image.data.is_empty(), "Image data should not be empty");
+
+    // Test parsing a valid JPEG data URL
+    let jpeg_url = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=";
+    let jpeg_image = Image::from_data_url(jpeg_url).expect("Failed to parse valid JPEG data URL");
+
+    assert_eq!(jpeg_image.mime_type, "image/jpeg");
+    assert!(!jpeg_image.data.is_empty(), "JPEG data should not be empty");
+
+    // Test invalid data URL (missing data: prefix)
+    let invalid_url = "image/png;base64,iVBORw0KGgo=";
+    let result = Image::from_data_url(invalid_url);
+    assert!(result.is_err(), "Should fail for URL without data: prefix");
+
+    // Test invalid data URL (missing comma separator)
+    let invalid_url2 = "data:image/png;base64";
+    let result2 = Image::from_data_url(invalid_url2);
+    assert!(
+        result2.is_err(),
+        "Should fail for URL without comma separator"
+    );
+
+    // Test invalid base64
+    let invalid_base64 = "data:image/png;base64,invalid-base64!!!";
+    let result3 = Image::from_data_url(invalid_base64);
+    assert!(result3.is_err(), "Should fail for invalid base64 data");
+}
+
+#[test]
+fn test_stream_result_images() {
+    use crate::openrouter::stream::{StreamCompletionResp, StreamResult, Usage};
+    use crate::openrouter::{Image, raw::FinishReason};
+
+    // Create a sample image
+    let data_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    let image = Image::from_data_url(data_url).expect("Failed to parse test image");
+
+    // Create a StreamResult with images
+    let result = StreamResult {
+        toolcalls: vec![],
+        usage: Usage {
+            token: 100,
+            cost: 0.001,
+        },
+        stop_reason: FinishReason::Stop,
+        responses: vec![StreamCompletionResp::ResponseToken(
+            "Here is an image: ".to_string(),
+        )],
+        annotations: None,
+        reasoning_details: None,
+        image: vec![image],
+    };
+
+    assert_eq!(result.image.len(), 1, "Should have one image");
+    assert_eq!(result.image[0].mime_type, "image/png");
+    assert!(!result.image[0].data.is_empty());
+}
+
+#[test]
+fn test_multipart_assistant_message() {
+    use crate::openrouter::{Image, Message};
+
+    // Create a sample image
+    let image_data = vec![0x89, 0x50, 0x4E, 0x47]; // PNG header bytes
+    let image = Image {
+        data: image_data.clone(),
+        mime_type: "image/png".to_string(),
+    };
+
+    // Create a multipart assistant message with image
+    let message = Message::MultipartAssistant {
+        content: "Here is the generated image.".to_string(),
+        annotations: None,
+        reasoning_details: None,
+        images: vec![image],
+    };
+
+    // Convert to raw message
+    let raw_message = message.to_raw_message("test-model");
+
+    // Verify it has multipart content
+    assert!(raw_message.contents.is_some());
+    let parts = raw_message.contents.unwrap();
+
+    // Should have 2 parts: image first, then text
+    assert_eq!(parts.len(), 2);
+
+    // First part should be image_url type
+    assert!(matches!(
+        parts[0].r#type,
+        crate::openrouter::raw::MultiPartMessageType::ImageUrl
+    ));
+    assert!(parts[0].image_url.is_some());
+
+    // Verify the image is base64 encoded by checking serialization
+    let serialized = serde_json::to_string(&parts[0]).unwrap();
+    assert!(serialized.contains("data:image/png;base64"));
+
+    // Second part should be text
+    assert_eq!(
+        parts[1].text.as_ref().unwrap(),
+        "Here is the generated image."
+    );
+}
+
+#[test]
+fn test_assistant_message_without_images() {
+    use crate::openrouter::Message;
+
+    // Regular assistant message without images should use single content
+    let message = Message::Assistant {
+        content: "Hello".to_string(),
+        annotations: None,
+        reasoning_details: None,
+    };
+
+    let raw_message = message.to_raw_message("test-model");
+
+    // Should use content field, not contents
+    assert!(raw_message.content.is_some());
+    assert!(raw_message.contents.is_none());
+    assert_eq!(raw_message.content.unwrap(), "Hello");
+}

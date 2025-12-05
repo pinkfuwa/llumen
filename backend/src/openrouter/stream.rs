@@ -5,6 +5,8 @@ use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
 use tokio_stream::{Stream, StreamExt};
 
+use super::Image;
+
 use super::{HTTP_REFERER, X_TITLE, error::Error, raw};
 
 #[derive(Default, Clone)]
@@ -29,6 +31,7 @@ pub struct StreamCompletion {
     annotations: Option<Vec<serde_json::Value>>,
     reasoning_details: Option<Vec<serde_json::Value>>,
     model_id: String,
+    images: Vec<Image>,
 }
 
 pub struct StreamResult {
@@ -38,6 +41,7 @@ pub struct StreamResult {
     pub responses: Vec<StreamCompletionResp>,
     pub annotations: Option<serde_json::Value>,
     pub reasoning_details: Option<serde_json::Value>,
+    pub image: Vec<Image>,
 }
 
 impl StreamResult {
@@ -85,6 +89,7 @@ impl StreamCompletion {
                 annotations: None,
                 reasoning_details: None,
                 model_id,
+                images: Vec::new(),
             }),
             Err(e) => {
                 log::error!("Failed to create event source: {}", e);
@@ -112,6 +117,20 @@ impl StreamCompletion {
             self.reasoning_details
                 .get_or_insert_with(|| Vec::with_capacity(1))
                 .extend(reasoning_details);
+        }
+
+        // Handle images
+        if !delta.images.is_empty() {
+            for raw_image in delta.images {
+                match Image::from_raw_image(raw_image) {
+                    Ok(image) => {
+                        self.images.push(image);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to parse image: {}", e);
+                    }
+                }
+            }
         }
 
         if let Some(reasoning) = delta.reasoning {
@@ -293,6 +312,7 @@ impl StreamCompletion {
                 .collect(),
             annotations: self.annotations.take().map(serde_json::Value::Array),
             reasoning_details,
+            image: std::mem::take(&mut self.images),
         }
     }
 }
