@@ -1,4 +1,10 @@
-use super::{Tool, raw};
+use super::{option::Tool, raw};
+
+#[derive(Clone, Default, Copy)]
+pub struct Capabilities {
+    pub image: bool,
+    pub structured_output: bool,
+}
 
 #[derive(Clone, Default)]
 pub struct Model {
@@ -7,8 +13,8 @@ pub struct Model {
     pub repeat_penalty: Option<f32>,
     pub top_k: Option<i32>,
     pub top_p: Option<f32>,
-    pub online: bool,
     pub response_format: Option<raw::ResponseFormat>,
+    pub capabilities: Capabilities,
 }
 
 impl Model {
@@ -23,9 +29,9 @@ pub struct ModelBuilder {
     repeat_penalty: Option<f32>,
     top_k: Option<i32>,
     top_p: Option<f32>,
-    online: bool,
     response_format: Option<raw::ResponseFormat>,
     tools: Vec<Tool>,
+    capabilities: Capabilities,
 }
 
 impl ModelBuilder {
@@ -36,9 +42,9 @@ impl ModelBuilder {
             repeat_penalty: None,
             top_k: None,
             top_p: None,
-            online: false,
             response_format: None,
             tools: Vec::new(),
+            capabilities: Capabilities::default(),
         }
     }
 
@@ -49,9 +55,9 @@ impl ModelBuilder {
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
             top_p: model.top_p,
-            online: model.online,
             response_format: model.response_format.clone(),
             tools: Vec::new(),
+            capabilities: model.capabilities,
         }
     }
 
@@ -75,30 +81,28 @@ impl ModelBuilder {
         self
     }
 
-    pub fn online(mut self, online: bool) -> Self {
-        self.online = online;
-        self
-    }
-
     pub fn response_format(mut self, response_format: raw::ResponseFormat) -> Self {
         self.response_format = Some(response_format);
         self
     }
 
-    pub fn json_schema(mut self, name: impl Into<String>, schema: serde_json::Value) -> Self {
-        self.response_format = Some(raw::ResponseFormat {
-            r#type: "json_schema".to_string(),
-            json_schema: serde_json::json!({
-                "name": name.into(),
-                "strict": true,
-                "schema": schema
-            }),
-        });
+    pub fn tools(mut self, tools: Vec<Tool>) -> Self {
+        self.tools = tools;
         self
     }
 
-    pub fn tools(mut self, tools: Vec<Tool>) -> Self {
-        self.tools = tools;
+    pub fn capabilities(mut self, capabilities: Capabilities) -> Self {
+        self.capabilities = capabilities;
+        self
+    }
+
+    pub fn support_image(mut self) -> Self {
+        self.capabilities.image = true;
+        self
+    }
+
+    pub fn support_structured_output(mut self) -> Self {
+        self.capabilities.structured_output = true;
         self
     }
 
@@ -109,8 +113,8 @@ impl ModelBuilder {
             repeat_penalty: self.repeat_penalty,
             top_k: self.top_k,
             top_p: self.top_p,
-            online: self.online,
             response_format: self.response_format,
+            capabilities: self.capabilities,
         }
     }
 }

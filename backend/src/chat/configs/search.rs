@@ -8,18 +8,10 @@ pub fn search_configuration() -> Configuration {
     use crate::chat::tools::{get_crawl_tool_def, get_web_search_tool_def};
 
     Configuration {
-        tool: vec![get_web_search_tool_def(), get_crawl_tool_def()],
-        model_setup: Arc::new(|completion_ctx| {
-            use crate::utils::model::ModelChecker;
-            use protocol::ModelConfig;
-
-            let mut model: openrouter::Model =
-                <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
-                    .expect("Failed to get model config")
-                    .into();
-            model.online = true;
-            model
-        }),
+        completion_option: openrouter::CompletionOption::builder()
+            .web_search(true)
+            .tools(&[get_web_search_tool_def(), get_crawl_tool_def()])
+            .build(),
         tool_handler: Arc::new(|state, toolcalls| {
             Box::pin(async move {
                 let assistant_text = state

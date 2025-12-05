@@ -1,8 +1,8 @@
-use anyhow::Context;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 /// Planner response structure matching the prompt output
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default, JsonSchema)]
 pub struct PlannerResponse {
     pub locale: String,
     pub has_enough_context: bool,
@@ -11,7 +11,7 @@ pub struct PlannerResponse {
     pub steps: Vec<PlannerStep>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct PlannerStep {
     pub need_search: bool,
     pub title: String,
@@ -51,7 +51,3 @@ impl From<PlannerResponse> for protocol::Deep {
 //     pub research_topic: String,
 //     pub local: String,
 // }
-
-pub fn from_str_error<T: DeserializeOwned>(s: &str, kind: &'static str) -> anyhow::Result<T> {
-    serde_json::from_str(s).with_context(|| format!("\"{}\" is not a valid {}", s, kind))
-}
