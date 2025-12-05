@@ -94,9 +94,9 @@ impl Openrouter {
             tools,
             plugins,
             usage,
-            response_format: model.response_format,
             reasoning,
             modalities,
+            response_format: None,
         }
     }
 
@@ -170,16 +170,10 @@ impl Openrouter {
         .await
     }
 
-    pub async fn complete(
+    async fn send_complete_request(
         &self,
-        messages: Vec<Message>,
-        model: Model,
-        option: CompletionOption,
+        req: raw::CompletionReq,
     ) -> Result<ChatCompletion, Error> {
-        let req = self.create_request(messages, false, model, option);
-
-        req.log();
-
         let res = self
             .http_client
             .post(&self.chat_completion_endpoint)
@@ -231,6 +225,23 @@ impl Openrouter {
         })
     }
 
+    pub async fn complete(
+        &self,
+        messages: Vec<Message>,
+        model: Model,
+        option: CompletionOption,
+    ) -> Result<ChatCompletion, Error> {
+        debug_assert!(
+            !option.image_generation,
+            "Image generation supported only on streaming"
+        );
+
+        let req = self.create_request(messages, false, model, option);
+        req.log();
+
+        self.send_complete_request(req).await
+    }
+
     pub async fn structured<T>(
         &self,
         messages: Vec<Message>,
@@ -240,22 +251,20 @@ impl Openrouter {
     where
         T: serde::de::DeserializeOwned + schemars::JsonSchema,
     {
-        // Fallback to JSON mode if structured output is not supported
-        let mut model = model;
-        if !model.capabilities.structured_output {
-            if model.capabilities.image {
-                // If model supports image, we assume it's smart enough to follow instructions
-                // We add instructions to system prompt or user message
-                // For now, let's rely on model's ability to output JSON
-            }
-            model.response_format = Some(raw::ResponseFormat {
-                r#type: "json_object".to_string(),
-                json_schema: serde_json::Value::Null,
-            });
-        } else {
+        debug_assert!(
+            !option.image_generation,
+            "Image generation supported only on streaming"
+        );
+
+        let structured_output = model.capabilities.structured_output;
+
+        let mut req = self.create_request(messages, false, model, option);
+        req.log();
+
+        if structured_output {
             let schema = schemars::schema_for!(T);
             let schema_json = serde_json::to_value(&schema).map_err(|e| Error::Serde(e))?;
-            model.response_format = Some(raw::ResponseFormat {
+            req.response_format = Some(raw::ResponseFormat {
                 r#type: "json_schema".to_string(),
                 json_schema: serde_json::json!({
                     "name": "result",
@@ -265,7 +274,7 @@ impl Openrouter {
             });
         }
 
-        let completion = self.complete(messages, model, option).await?;
+        let completion = self.send_complete_request(req).await?;
         let result: T = serde_json::from_str(&completion.response).map_err(Error::Serde)?;
         Ok(StructuredCompletion {
             price: completion.price,

@@ -17,12 +17,12 @@ pub fn deep_configuration() -> Configuration {
                     "type": "string",
                     "description": "The topic of the research task to be handed off."
                 },
-                "local": {
+                "locale": {
                     "type": "string",
                     "description": "The user's detected language locale (e.g., en-US, zh-TW)."
                 }
             },
-            "required": ["research_topic", "local"]
+            "required": ["research_topic", "locale"]
         }),
     };
 

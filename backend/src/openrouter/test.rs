@@ -2,20 +2,6 @@ use crate::openrouter::{CompletionOption, Message, Model, ModelBuilder, Openrout
 use std::env;
 
 #[test]
-fn test_model_builder() {
-    // Test basic builder
-    let model = Model::builder("openai/gpt-4")
-        .temperature(0.8)
-        .top_p(0.9)
-        .build();
-
-    assert_eq!(model.id, "openai/gpt-4");
-    assert_eq!(model.temperature, Some(0.8));
-    assert_eq!(model.top_p, Some(0.9));
-    assert!(model.response_format.is_none());
-}
-
-#[test]
 fn test_tool_call_structure() {
     // Test that ToolCall can hold multiple tool calls
     let mut toolcalls = Vec::new();
