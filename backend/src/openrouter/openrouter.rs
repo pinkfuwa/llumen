@@ -40,13 +40,23 @@ pub struct Openrouter {
 }
 
 impl Openrouter {
-    pub(super) fn get_request(&self, insert_web_search_context: bool) -> raw::CompletionReq {
+    pub(super) fn get_request_option(
+        &self,
+        insert_web_search_context: bool,
+        enable_image_generation: bool,
+    ) -> raw::CompletionReq {
         let mut default_req = raw::CompletionReq::default();
         if self.compatibility_mode {
             default_req.usage = None;
         } else {
             default_req.plugins.push(raw::Plugin::pdf());
+            if enable_image_generation {
+                default_req
+                    .modalities
+                    .extend(["text".to_string(), "image".to_string()]);
+            }
             if insert_web_search_context {
+                log::debug!("inserting web search context");
                 default_req.plugins.push(raw::Plugin::web());
             }
         }
@@ -131,7 +141,7 @@ impl Openrouter {
             top_p: model.top_p,
             tools,
             response_format: model.response_format.clone(),
-            ..self.get_request(false) // Web search plugin seems to break annotation/preserved reasoning blocks, it's disable for now
+            ..self.get_request_option(model.online, false) // Web search plugin seems to break annotation/preserved reasoning blocks, it's disable for now
         };
 
         req.log();
@@ -194,7 +204,7 @@ impl Openrouter {
             stream: false,
             response_format: model.response_format.clone(),
             reasoning,
-            ..self.get_request(false)
+            ..self.get_request_option(false, false)
         };
 
         req.log();

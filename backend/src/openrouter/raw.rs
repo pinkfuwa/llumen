@@ -32,6 +32,8 @@ pub struct CompletionReq {
     // reasoning options
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reasoning: Option<Reasoning>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub modalities: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -95,6 +97,7 @@ impl Default for CompletionReq {
             usage: Some(UsageReq { include: true }),
             response_format: None,
             reasoning: None,
+            modalities: Vec::new(),
         }
     }
 }
@@ -437,6 +440,19 @@ pub struct OutputMessage {
     pub role: String,
     pub content: String,
     pub reasoning: Option<String>,
+    pub images: Vec<Image>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Image {
+    pub r#type: String,
+    pub image_url: ImageUrl,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ImageUrl {
+    pub url: String,
+    // data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
 }
 
 #[derive(Debug, Clone, Deserialize)]
