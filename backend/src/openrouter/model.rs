@@ -13,7 +13,6 @@ pub struct Model {
     pub repeat_penalty: Option<f32>,
     pub top_k: Option<i32>,
     pub top_p: Option<f32>,
-    pub response_format: Option<raw::ResponseFormat>,
     pub capabilities: Capabilities,
 }
 
@@ -29,7 +28,6 @@ pub struct ModelBuilder {
     repeat_penalty: Option<f32>,
     top_k: Option<i32>,
     top_p: Option<f32>,
-    response_format: Option<raw::ResponseFormat>,
     tools: Vec<Tool>,
     capabilities: Capabilities,
 }
@@ -42,7 +40,6 @@ impl ModelBuilder {
             repeat_penalty: None,
             top_k: None,
             top_p: None,
-            response_format: None,
             tools: Vec::new(),
             capabilities: Capabilities::default(),
         }
@@ -55,7 +52,6 @@ impl ModelBuilder {
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
             top_p: model.top_p,
-            response_format: model.response_format.clone(),
             tools: Vec::new(),
             capabilities: model.capabilities,
         }
@@ -78,11 +74,6 @@ impl ModelBuilder {
 
     pub fn top_p(mut self, top_p: f32) -> Self {
         self.top_p = Some(top_p);
-        self
-    }
-
-    pub fn response_format(mut self, response_format: raw::ResponseFormat) -> Self {
-        self.response_format = Some(response_format);
         self
     }
 
@@ -113,7 +104,6 @@ impl ModelBuilder {
             repeat_penalty: self.repeat_penalty,
             top_k: self.top_k,
             top_p: self.top_p,
-            response_format: self.response_format,
             capabilities: self.capabilities,
         }
     }
