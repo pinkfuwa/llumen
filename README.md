@@ -10,6 +10,7 @@
   [![status check](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml)
   [![Release Binaries](https://github.com/pinkfuwa/llumen/actions/workflows/build-binaries.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/build-binaries.yml)
   ![MSRV](https://img.shields.io/static/v1?label=MSRV&message=1.89&color=orange&logo=rust)
+  [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pinkfuwa/llumen)
 
   <img src="https://skillicons.dev/icons?i=rust,ts,svelte,tailwind" alt="llumen Logo" width="auto" height="70" />
 </div>
