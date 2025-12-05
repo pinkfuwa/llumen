@@ -11,8 +11,7 @@ use crate::chat::converter::*;
 use crate::chat::deep_prompt::{CompletedStep, ReportInputContext, StepInputContext};
 use crate::chat::tools::{get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def};
 use crate::chat::{CompletionContext, Context, Token};
-use crate::openrouter;
-use crate::utils::model::{ModelCapability, ModelChecker};
+use crate::openrouter::{self, ReasoningEffort};
 
 /// Deep research agent that orchestrates multiple agents for comprehensive research
 pub struct DeepAgent<'a> {
@@ -69,31 +68,6 @@ impl<'a> DeepAgent<'a> {
             .unwrap_or_else(|| "en-US")
     }
 
-    fn get_model_with_schema(
-        &self,
-        schema_name: &str,
-        schema: serde_json::Value,
-    ) -> openrouter::Model {
-        // Check if model supports JSON structured output
-        let supports_json = ModelConfig::from_toml(&self.completion_ctx.model.config)
-            .ok()
-            .map(|config| config.is_json_capable())
-            .unwrap_or(false);
-
-        if supports_json {
-            log::debug!(
-                "Model supports JSON, using structured output for {}",
-                schema_name
-            );
-            openrouter::Model::builder(self.model.id.clone())
-                .temperature(self.model.temperature.unwrap_or(0.7))
-                .json_schema(schema_name, schema)
-                .build()
-        } else {
-            log::debug!("Model does not support JSON, using regular output");
-            self.model.clone()
-        }
-    }
     async fn enhance(&mut self) -> Result<()> {
         let original_prompt = self.completion_ctx.latest_user_message().unwrap_or("");
 
@@ -109,8 +83,12 @@ impl<'a> DeepAgent<'a> {
 
         let enhanced_text = {
             let model = openrouter::ModelBuilder::from_model(&self.model).build();
-            let mut stream: openrouter::StreamCompletion =
-                self.ctx.openrouter.stream(model, messages, vec![]).await?;
+
+            let mut stream: openrouter::StreamCompletion = self
+                .ctx
+                .openrouter
+                .stream(model, messages, openrouter::CompletionOption::default())
+                .await?;
 
             let mut text = String::new();
             while let Some(token) = StreamExt::next(&mut stream).await {
@@ -200,30 +178,23 @@ impl<'a> DeepAgent<'a> {
             "additionalProperties": false
         });
 
-        let model_with_schema = self.get_model_with_schema("planner_response", plan_schema);
+        let model = openrouter::ModelBuilder::from_model(&self.model).build();
 
-        let model = openrouter::ModelBuilder::from_model(&model_with_schema).build();
-        let mut stream: openrouter::StreamCompletion =
-            self.ctx.openrouter.stream(model, messages, vec![]).await?;
-
-        let halt = self
-            .completion_ctx
-            .put_stream((&mut stream).map(|resp| resp.map(openrouter_to_buffer_token_deep_plan)))
+        let result = self
+            .ctx
+            .openrouter
+            .structured::<PlannerResponse>(messages, model, openrouter::CompletionOption::default())
             .await?;
 
-        if matches!(halt, StreamEndReason::Halt) {
-            bail!("Plan generation interrupted");
-        }
+        // TODO: since we decide to remove streaming plan, we should also remove support in frontend
+        self.completion_ctx.add_token(Token::DeepPlan(
+            serde_json::to_string(&result.response).unwrap(),
+        ));
 
-        let result = stream.get_result();
         self.completion_ctx
-            .update_usage(result.usage.cost as f32, result.usage.token as i32);
+            .update_usage(result.price as f32, result.token as i32);
 
-        let plan_json = result.get_text();
-
-        log::debug!("Plan: {}", &plan_json);
-        // Parse the JSON response
-        self.state = Some(from_str_error::<PlannerResponse>(&plan_json, "plan")?.into());
+        self.state = Some(result.response.into());
 
         Ok(())
     }
@@ -304,10 +275,11 @@ impl<'a> DeepAgent<'a> {
 
         loop {
             let model = openrouter::ModelBuilder::from_model(&self.model).build();
+            let option = openrouter::CompletionOption::tools(&tools);
             let mut stream: openrouter::StreamCompletion = self
                 .ctx
                 .openrouter
-                .stream(model, messages.clone(), tools.clone())
+                .stream(model, messages.clone(), option)
                 .await?;
 
             let halt = self
@@ -407,8 +379,11 @@ impl<'a> DeepAgent<'a> {
         ];
 
         let model = openrouter::ModelBuilder::from_model(&self.model).build();
+        let option = openrouter::CompletionOption::builder()
+            .reasoning_effort(ReasoningEffort::Auto)
+            .build();
         let mut stream: openrouter::StreamCompletion =
-            self.ctx.openrouter.stream(model, messages, vec![]).await?;
+            self.ctx.openrouter.stream(model, messages, option).await?;
 
         let halt = self
             .completion_ctx

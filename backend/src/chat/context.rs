@@ -15,7 +15,11 @@ use super::{
 use crate::chat::Configurations;
 use crate::chat::deep_prompt::DeepPrompt;
 use crate::utils::model::ModelChecker;
-use crate::{chat::prompt::PromptKind, openrouter, utils::blob::BlobDB};
+use crate::{
+    chat::prompt::PromptKind,
+    openrouter::{self, ReasoningEffort},
+    utils::blob::BlobDB,
+};
 use protocol::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -267,7 +271,15 @@ impl CompletionContext {
         let model = <ModelConfig as ModelChecker>::from_toml(&self.model.config)
             .context("invalid config")?;
 
-        let completion = self.ctx.openrouter.complete(messages, model.into()).await?;
+        let option = openrouter::CompletionOption::builder()
+            .reasoning_effort(ReasoningEffort::Auto)
+            .build();
+
+        let completion = self
+            .ctx
+            .openrouter
+            .complete(messages, model.into(), option)
+            .await?;
 
         self.update_usage(completion.price as f32, completion.token as i32);
 

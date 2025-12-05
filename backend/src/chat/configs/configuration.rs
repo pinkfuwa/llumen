@@ -6,12 +6,13 @@ use tokio_stream::StreamExt;
 
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
+use crate::utils::model::ModelChecker;
 use crate::{chat::*, openrouter};
+use protocol::ModelConfig;
 
 #[derive(Clone)]
 pub struct Configuration {
-    pub tool: Vec<openrouter::Tool>,
-    pub model_setup: Arc<dyn Fn(&CompletionContext) -> openrouter::Model + Send + Sync>,
+    pub completion_option: openrouter::CompletionOption,
     pub tool_handler: Arc<
         dyn for<'a> Fn(
                 &'a mut ProcessState,
@@ -28,7 +29,6 @@ pub struct ProcessState {
     pub completion_ctx: CompletionContext,
     pub model: openrouter::Model,
     pub messages: Vec<openrouter::Message>,
-    pub tools: Vec<openrouter::Tool>,
 }
 
 impl Configuration {
@@ -38,12 +38,13 @@ impl Configuration {
         completion_ctx: CompletionContext,
     ) -> BoxFuture<'static, Result<()>> {
         let prompt = self.prompt;
-        let model_setup = self.model_setup.clone();
-        let tools = self.tool.clone();
+        let completion_option = self.completion_option.clone();
         let tool_handler = self.tool_handler.clone();
 
         Box::pin(async move {
-            let model = model_setup(&completion_ctx);
+            let model = <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
+                .expect("Failed to get model config");
+            let model = model.into();
             let system_prompt = ctx.prompt.render(prompt, &completion_ctx)?;
 
             let mut messages = vec![openrouter::Message::System(system_prompt)];
@@ -57,10 +58,12 @@ impl Configuration {
                 completion_ctx,
                 model,
                 messages,
-                tools,
             };
 
-            if let Some(err) = Self::process_loop(&mut state, tool_handler).await.err() {
+            if let Some(err) = Self::process_loop(&mut state, completion_option, tool_handler)
+                .await
+                .err()
+            {
                 state.completion_ctx.add_error(err.to_string());
             }
             state.completion_ctx.save().await?;
@@ -71,6 +74,7 @@ impl Configuration {
 
     pub async fn process_loop(
         state: &mut ProcessState,
+        completion_option: openrouter::CompletionOption,
         tool_handler: Arc<
             dyn for<'a> Fn(
                     &'a mut ProcessState,
@@ -86,7 +90,7 @@ impl Configuration {
         let mut res: openrouter::StreamCompletion = state
             .ctx
             .openrouter
-            .stream(model, message, state.tools.clone())
+            .stream(model, message, completion_option.clone())
             .await?;
 
         let halt_with_error = state
@@ -147,6 +151,6 @@ impl Configuration {
         if finalized {
             return Ok(());
         }
-        Box::pin(Self::process_loop(state, tool_handler)).await
+        Box::pin(Self::process_loop(state, completion_option, tool_handler)).await
     }
 }

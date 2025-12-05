@@ -1,4 +1,4 @@
-use crate::openrouter::{Message, Model, ModelBuilder, Openrouter, Tool};
+use crate::openrouter::{CompletionOption, Message, Model, ModelBuilder, Openrouter, Tool};
 use std::env;
 
 #[test]
@@ -12,32 +12,7 @@ fn test_model_builder() {
     assert_eq!(model.id, "openai/gpt-4");
     assert_eq!(model.temperature, Some(0.8));
     assert_eq!(model.top_p, Some(0.9));
-    assert_eq!(model.online, false);
     assert!(model.response_format.is_none());
-}
-
-#[test]
-fn test_model_builder_with_json_schema() {
-    // Test builder with JSON schema
-    let schema = serde_json::json!({
-        "type": "object",
-        "properties": {
-            "name": {"type": "string"},
-            "age": {"type": "number"}
-        },
-        "required": ["name"]
-    });
-
-    let model = Model::builder("openai/gpt-4")
-        .temperature(0.7)
-        .json_schema("test_schema", schema)
-        .build();
-
-    assert_eq!(model.id, "openai/gpt-4");
-    assert!(model.response_format.is_some());
-
-    let format = model.response_format.unwrap();
-    assert_eq!(format.r#type, "json_schema");
 }
 
 #[test]
@@ -121,8 +96,9 @@ async fn tool_calls() {
     };
 
     let model_for_stream = ModelBuilder::from_model(&model).build();
+    let option = CompletionOption::builder().tools(&[tool]).build();
     let mut stream = openrouter
-        .stream(model_for_stream, messages, vec![tool])
+        .stream(model_for_stream, messages, option)
         .await
         .unwrap();
 
@@ -217,8 +193,11 @@ async fn parallel_tool_calls() {
     };
 
     let model_for_stream = ModelBuilder::from_model(&model).build();
+    let option = CompletionOption::builder()
+        .tools(&[weather_tool, time_tool])
+        .build();
     let mut stream = openrouter
-        .stream(model_for_stream, messages, vec![weather_tool, time_tool])
+        .stream(model_for_stream, messages, option)
         .await
         .unwrap();
 

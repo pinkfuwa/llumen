@@ -5,14 +5,19 @@ use crate::openrouter;
 
 impl From<ModelConfig> for openrouter::Model {
     fn from(value: ModelConfig) -> Self {
+        let capabilities = openrouter::Capabilities {
+            image: value.is_image_capable(),
+            structured_output: value.is_json_capable(),
+        };
+
         openrouter::Model {
             id: value.model_id,
             temperature: value.parameter.temperature,
             repeat_penalty: value.parameter.repeat_penalty,
             top_k: value.parameter.top_k,
             top_p: value.parameter.top_p,
-            online: false,
             response_format: None,
+            capabilities,
         }
     }
 }

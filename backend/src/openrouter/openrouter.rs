@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use crate::openrouter::StreamCompletion;
+use crate::openrouter::{StreamCompletion, option::CompletionOption};
 
 use super::{Model, error::Error, raw};
 
@@ -40,28 +40,66 @@ pub struct Openrouter {
 }
 
 impl Openrouter {
-    pub(super) fn get_request_option(
+    fn create_request(
         &self,
-        insert_web_search_context: bool,
-        enable_image_generation: bool,
+        mut messages: Vec<Message>,
+        stream: bool,
+        model: Model,
+        option: CompletionOption,
     ) -> raw::CompletionReq {
-        let mut default_req = raw::CompletionReq::default();
-        if self.compatibility_mode {
-            default_req.usage = None;
-        } else {
-            default_req.plugins.push(raw::Plugin::pdf());
-            if enable_image_generation {
-                default_req
-                    .modalities
-                    .extend(["text".to_string(), "image".to_string()]);
-            }
-            if insert_web_search_context {
+        // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
+        if matches!(messages.last(), Some(Message::Assistant { .. })) {
+            messages.push(Message::User("".to_string()));
+        }
+
+        let mut plugins = Vec::new();
+        let mut modalities = Vec::new();
+
+        if !self.compatibility_mode {
+            plugins.push(raw::Plugin::pdf());
+            if option.insert_web_search_context {
                 log::debug!("inserting web search context");
-                default_req.plugins.push(raw::Plugin::web());
+                plugins.push(raw::Plugin::web());
+            }
+            if option.image_generation {
+                modalities.extend(["text".to_string(), "image".to_string()]);
             }
         }
-        default_req
+
+        let usage = if self.compatibility_mode {
+            None
+        } else {
+            Some(raw::UsageReq { include: true })
+        };
+
+        let reasoning = option
+            .reasoning_effort
+            .to_value()
+            .map(|effort| raw::Reasoning { effort });
+
+        let tools: Vec<raw::Tool> = option.tools.into_iter().map(|t| t.into()).collect();
+
+        raw::CompletionReq {
+            model: model.id.clone(),
+            messages: messages
+                .into_iter()
+                .map(|m| m.to_raw_message(&model.id))
+                .collect(),
+            stream,
+            temperature: model.temperature,
+            repeat_penalty: model.repeat_penalty,
+            top_k: model.top_k,
+            top_p: model.top_p,
+            max_tokens: option.max_tokens,
+            tools,
+            plugins,
+            usage,
+            response_format: model.response_format,
+            reasoning,
+            modalities,
+        }
     }
+
     pub fn new(api_key: impl AsRef<str>, api_base: impl AsRef<str>) -> Self {
         let api_base = api_base.as_ref();
         let api_key = api_key.as_ref().to_string();
@@ -114,35 +152,12 @@ impl Openrouter {
         &self,
         model: Model,
         messages: Vec<Message>,
-        tools: Vec<Tool>,
+        option: CompletionOption,
     ) -> Result<StreamCompletion, Error> {
-        let tools: Vec<raw::Tool> = tools.into_iter().map(|t| t.into()).collect();
-        let mut messages = messages;
-
-        log::debug!("start streaming with model {}", &model.id);
-
         #[cfg(debug_assertions)]
         check_message(&messages);
 
-        // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
-        if matches!(messages.last(), Some(Message::Assistant { .. })) {
-            messages.push(Message::User("".to_string()));
-        }
-
-        let req = raw::CompletionReq {
-            messages: messages
-                .into_iter()
-                .map(|m| m.to_raw_message(&model.id))
-                .collect(),
-            model: model.id.clone(),
-            temperature: model.temperature,
-            repeat_penalty: model.repeat_penalty,
-            top_k: model.top_k,
-            top_p: model.top_p,
-            tools,
-            response_format: model.response_format.clone(),
-            ..self.get_request_option(model.online, false) // Web search plugin seems to break annotation/preserved reasoning blocks, it's disable for now
-        };
+        let req = self.create_request(messages, true, model, option);
 
         req.log();
 
@@ -155,57 +170,13 @@ impl Openrouter {
         .await
     }
 
-    /// Use [`super::model::ModelBuilder`] instead.
-    ///
-    /// complete without streaming
-    ///
-    /// Note that we enforce low thinking budget and 512 output token,
-    /// primarily because it's used by title generation
-    #[deprecated]
     pub async fn complete(
         &self,
-        mut messages: Vec<Message>,
+        messages: Vec<Message>,
         model: Model,
+        option: CompletionOption,
     ) -> Result<ChatCompletion, Error> {
-        log::debug!("start completion with model {}", &model.id);
-
-        debug_assert!(
-            !model.online,
-            "Online models should not be used in non-streaming completions."
-        );
-        debug_assert!(
-            !messages.iter().any(|x| matches!(x, Message::ToolCall(_))),
-            "Tool calls should not be used in non-streaming completions."
-        );
-
-        // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
-        if matches!(messages.last(), Some(Message::Assistant { .. })) {
-            messages.push(Message::User("".to_string()));
-        }
-
-        let mut reasoning = None;
-        let mut max_tokens = None;
-        if !self.compatibility_mode {
-            max_tokens = Some(512);
-            reasoning = Some(raw::Reasoning::low());
-        }
-
-        let req = raw::CompletionReq {
-            messages: messages
-                .into_iter()
-                .map(|m| m.to_raw_message(&model.id))
-                .collect(),
-            model: model.id.clone(),
-            temperature: model.temperature,
-            repeat_penalty: model.repeat_penalty,
-            top_k: model.top_k,
-            top_p: model.top_p,
-            max_tokens,
-            stream: false,
-            response_format: model.response_format.clone(),
-            reasoning,
-            ..self.get_request_option(false, false)
-        };
+        let req = self.create_request(messages, false, model, option);
 
         req.log();
 
@@ -226,7 +197,6 @@ impl Openrouter {
             .map_err(Error::Http)?;
 
         if let Some(error) = json.error {
-            log::warn!("openrouter finish with api error: {}", &error.message);
             return Err(Error::from(error));
         }
 
@@ -260,12 +230,61 @@ impl Openrouter {
             response: text,
         })
     }
+
+    pub async fn structured<T>(
+        &self,
+        messages: Vec<Message>,
+        model: Model,
+        option: CompletionOption,
+    ) -> Result<StructuredCompletion<T>, Error>
+    where
+        T: serde::de::DeserializeOwned + schemars::JsonSchema,
+    {
+        // Fallback to JSON mode if structured output is not supported
+        let mut model = model;
+        if !model.capabilities.structured_output {
+            if model.capabilities.image {
+                // If model supports image, we assume it's smart enough to follow instructions
+                // We add instructions to system prompt or user message
+                // For now, let's rely on model's ability to output JSON
+            }
+            model.response_format = Some(raw::ResponseFormat {
+                r#type: "json_object".to_string(),
+                json_schema: serde_json::Value::Null,
+            });
+        } else {
+            let schema = schemars::schema_for!(T);
+            let schema_json = serde_json::to_value(&schema).map_err(|e| Error::Serde(e))?;
+            model.response_format = Some(raw::ResponseFormat {
+                r#type: "json_schema".to_string(),
+                json_schema: serde_json::json!({
+                    "name": "result",
+                    "strict": true,
+                    "schema": schema_json
+                }),
+            });
+        }
+
+        let completion = self.complete(messages, model, option).await?;
+        let result: T = serde_json::from_str(&completion.response).map_err(Error::Serde)?;
+        Ok(StructuredCompletion {
+            price: completion.price,
+            token: completion.token,
+            response: result,
+        })
+    }
 }
 
 pub struct ChatCompletion {
     pub price: f64,
     pub token: usize,
     pub response: String,
+}
+
+pub struct StructuredCompletion<T> {
+    pub price: f64,
+    pub token: usize,
+    pub response: T,
 }
 
 #[derive(Debug, Clone)]
@@ -431,26 +450,6 @@ pub(super) fn check_message(message: &[Message]) {
             }
             (None, None) => break,
             _ => panic!("Mismatched ToolCall and ToolResult IDs"),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Tool {
-    pub name: String,
-    pub description: String,
-    pub schema: serde_json::Value,
-}
-
-impl From<Tool> for raw::Tool {
-    fn from(tool: Tool) -> Self {
-        raw::Tool {
-            r#type: "function".to_string(),
-            function: raw::FunctionTool {
-                name: tool.name,
-                description: tool.description,
-                parameters: tool.schema,
-            },
         }
     }
 }

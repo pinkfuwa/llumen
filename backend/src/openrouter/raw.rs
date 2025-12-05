@@ -440,6 +440,7 @@ pub struct OutputMessage {
     pub role: String,
     pub content: String,
     pub reasoning: Option<String>,
+    #[serde(default)]
     pub images: Vec<Image>,
 }
 
