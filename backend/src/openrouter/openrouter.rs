@@ -302,6 +302,51 @@ pub struct File {
     pub data: Vec<u8>,
 }
 
+// generated image
+#[derive(Debug, Clone)]
+pub struct Image {
+    pub data: Vec<u8>,
+    pub mime_type: String,
+}
+
+impl Image {
+    /// Parse a data URL like "data:image/png;base64,iVBORw0KGgo..."
+    pub fn from_data_url(url: &str) -> Result<Self, Error> {
+        if !url.starts_with("data:") {
+            return Err(Error::MalformedResponse(
+                "Image URL does not start with 'data:'",
+            ));
+        }
+
+        let url = url.strip_prefix("data:").unwrap();
+
+        let parts: Vec<&str> = url.splitn(2, ',').collect();
+        if parts.len() != 2 {
+            return Err(Error::MalformedResponse("Invalid data URL format"));
+        }
+
+        let metadata = parts[0];
+        let base64_data = parts[1];
+
+        // Parse metadata like "image/png;base64"
+        let mime_type = if let Some(semicolon_pos) = metadata.find(';') {
+            metadata[..semicolon_pos].to_string()
+        } else {
+            metadata.to_string()
+        };
+
+        // Decode base64
+        let data = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, base64_data)
+            .map_err(|_| Error::MalformedResponse("Failed to decode base64 image data"))?;
+
+        Ok(Image { data, mime_type })
+    }
+
+    pub fn from_raw_image(raw_image: super::raw::Image) -> Result<Self, Error> {
+        Self::from_data_url(&raw_image.image_url.url)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct MessageToolCall {
     pub id: String,
@@ -323,6 +368,12 @@ pub enum Message {
         content: String,
         annotations: Option<serde_json::Value>,
         reasoning_details: Option<serde_json::Value>,
+    },
+    MultipartAssistant {
+        content: String,
+        annotations: Option<serde_json::Value>,
+        reasoning_details: Option<serde_json::Value>,
+        images: Vec<Image>,
     },
     MultipartUser {
         text: String,
@@ -359,6 +410,48 @@ impl Message {
                     ..Default::default()
                 }
             }
+            Message::MultipartAssistant {
+                content,
+                annotations,
+                reasoning_details,
+                images,
+            } => {
+                let mut reasoning_details_value = None;
+                if let Some(details) = reasoning_details {
+                    if let Some(obj) = details.as_object() {
+                        if let Some(model_id) = obj.get("model_id").and_then(|v| v.as_str()) {
+                            if target_model_id.starts_with(model_id) {
+                                reasoning_details_value = obj.get("data").cloned();
+                            }
+                        }
+                    }
+                }
+
+                let mut parts = Vec::new();
+
+                // Put images before text as per requirements
+                for image in images {
+                    let data_url = format!(
+                        "data:{};base64,{}",
+                        image.mime_type,
+                        base64::Engine::encode(
+                            &base64::engine::general_purpose::STANDARD,
+                            &image.data
+                        )
+                    );
+                    parts.push(raw::MessagePart::image_url(data_url));
+                }
+
+                parts.push(raw::MessagePart::text(content));
+
+                raw::Message {
+                    role: raw::Role::Assistant,
+                    contents: Some(parts),
+                    annotations,
+                    reasoning_details: reasoning_details_value.map(|v| vec![v]).unwrap_or_default(),
+                    ..Default::default()
+                }
+            }
             _ => self.into(),
         }
     }
@@ -387,6 +480,36 @@ impl From<Message> for raw::Message {
                 annotations,
                 ..Default::default()
             },
+            Message::MultipartAssistant {
+                content,
+                annotations,
+                reasoning_details: _,
+                images,
+            } => {
+                let mut parts = Vec::new();
+
+                // Put images before text as per requirements
+                for image in images {
+                    let data_url = format!(
+                        "data:{};base64,{}",
+                        image.mime_type,
+                        base64::Engine::encode(
+                            &base64::engine::general_purpose::STANDARD,
+                            &image.data
+                        )
+                    );
+                    parts.push(raw::MessagePart::image_url(data_url));
+                }
+
+                parts.push(raw::MessagePart::text(content));
+
+                raw::Message {
+                    role: raw::Role::Assistant,
+                    contents: Some(parts),
+                    annotations,
+                    ..Default::default()
+                }
+            }
             Message::MultipartUser { text, files } => {
                 let files = files
                     .into_iter()
