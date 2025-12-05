@@ -100,8 +100,16 @@ fn load_api_key() -> String {
         (Ok(key), _) => key,
         (_, Ok(key)) => key,
         _ => {
-            println!("Warning: API_KEY environment variable not found.");
+            println!("Error: API_KEY environment variable not found.");
             println!("You can get a key from https://openrouter.ai/keys");
+            println!("Checkout documentation and configuration");
+            println!(
+                "- configuration: https://github.com/pinkfuwa/llumen/blob/main/docs/user/configuration.md"
+            );
+            println!(
+                "- documentation: https://github.com/pinkfuwa/llumen/blob/main/docs/user/README.md"
+            );
+
             #[cfg(windows)]
             {
                 use std::io::{self, Read};
