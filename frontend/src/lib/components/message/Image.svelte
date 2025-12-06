@@ -18,18 +18,13 @@
 
 	// TODO: recording loading promise and cancel on next load.
 	$effect(() => {
-		try {
-			download(id).then((url) => {
-				if (url) {
-					src = url;
-				} else {
-					error = true;
-				}
-			});
-		} catch (e) {
-			console.error('Failed to load image:', e);
-			error = true;
-		}
+		download(id).then((url) => {
+			if (url) {
+				src = url;
+			} else {
+				error = true;
+			}
+		});
 	});
 </script>
 

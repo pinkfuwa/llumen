@@ -194,6 +194,10 @@ impl CompletionContext {
         self.chat.id.clone().unwrap()
     }
 
+    pub fn get_user_id(&self) -> i32 {
+        self.user.id
+    }
+
     /// get user assistant id
     pub fn get_message_id(&self) -> i32 {
         self.message.id

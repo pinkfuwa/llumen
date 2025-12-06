@@ -56,35 +56,59 @@ impl BlobDB {
         mut chunk_stream: S,
     ) -> Result<Result<(), E>, redb::Error>
     where
-        S: Stream<Item = Result<bytes::Bytes, E>> + Unpin,
+        S: Stream<Item = Result<bytes::Bytes, E>> + Unpin + Send,
     {
-        let txn = (&*self.inner).begin_write()?;
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<bytes::Bytes>(1);
 
-        {
-            let mut table = txn.open_table(TABLE)?;
-            let mut accessor = table.insert_reserve(id, size)?;
+        let db = self.clone();
+        let write_task = tokio::task::spawn_blocking(move || {
+            let txn = db.inner.begin_write()?;
 
-            let writer = accessor.as_mut();
-            let mut wrote = 0;
+            {
+                let mut table = txn.open_table(TABLE)?;
+                let mut accessor = table.insert_reserve(id, size)?;
+                let writer = accessor.as_mut();
+                let mut wrote = 0;
 
-            while let Some(chunk) = chunk_stream.next().await {
-                match chunk {
-                    Err(e) => return Ok(Err(e)),
-                    Ok(b) => {
-                        writer[wrote..wrote + b.len()].copy_from_slice(&b);
-                        wrote += b.len();
-                    }
+                while let Some(chunk) = rx.blocking_recv() {
+                    writer[wrote..wrote + chunk.len()].copy_from_slice(&chunk);
+                    wrote += chunk.len();
+                }
+            }
+
+            txn.commit()?;
+            Ok::<(), redb::Error>(())
+        });
+
+        while let Some(chunk) = chunk_stream.next().await {
+            match chunk {
+                Err(e) => return Ok(Err(e)),
+                Ok(b) => {
+                    tx.send(b).await.map_err(|_| {
+                        redb::Error::Io(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            "write task failed",
+                        ))
+                    })?;
                 }
             }
         }
 
-        txn.commit()?;
+        drop(tx);
+
+        write_task.await.map_err(|_| {
+            redb::Error::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "spawn_blocking failed",
+            ))
+        })??;
 
         Ok(Ok(()))
     }
+
     pub async fn insert<S>(&self, id: i32, size: usize, chunk_stream: S) -> Result<(), redb::Error>
     where
-        S: Stream<Item = bytes::Bytes> + Unpin + 'static,
+        S: Stream<Item = bytes::Bytes> + Unpin + 'static + Send,
     {
         self.insert_with_error(
             id,

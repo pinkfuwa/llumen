@@ -26,10 +26,11 @@ export async function upload(file: File, chatId: number, signal?: AbortSignal) {
 	return data.id;
 }
 
-export async function download(id: number) {
+export async function download(id: number): Promise<string | undefined> {
 	const response = await RawAPIFetch('file/download/' + encodeURIComponent(id), null);
 
-	if (!response.ok) {
+	let content_type = response.headers.get('Content-Type');
+	if (!response.ok || content_type == 'application/json') {
 		console.warn('Fail to download', { id });
 		return;
 	}

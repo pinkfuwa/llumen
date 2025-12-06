@@ -126,20 +126,22 @@ impl Configuration {
             for image in &result.image {
                 let chat_id = state.completion_ctx.get_chat_id();
                 let mime_type = image.mime_type.clone();
+                let owner_id = state.completion_ctx.user.id;
                 let data = image.data.clone();
                 let blob = state.ctx.blob.clone();
-                let db = state.ctx.db.clone();
+                let db = &state.ctx.db;
 
-                let result = file::Entity::insert(file::ActiveModel {
+                use sea_orm::ActiveModelTrait;
+                let result = file::ActiveModel {
                     chat_id: ActiveValue::Set(Some(chat_id)),
-                    owner_id: ActiveValue::Set(None),
+                    owner_id: ActiveValue::Set(Some(owner_id)),
                     mime_type: ActiveValue::Set(Some(mime_type)),
                     ..Default::default()
-                })
-                .exec(&db)
+                }
+                .insert(db)
                 .await?;
 
-                let file_id = result.last_insert_id;
+                let file_id = result.id;
 
                 let size = data.len();
                 if let Err(e) = blob
