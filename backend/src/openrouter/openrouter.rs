@@ -368,11 +368,6 @@ pub enum Message {
         content: String,
         annotations: Option<serde_json::Value>,
         reasoning_details: Option<serde_json::Value>,
-    },
-    MultipartAssistant {
-        content: String,
-        annotations: Option<serde_json::Value>,
-        reasoning_details: Option<serde_json::Value>,
         images: Vec<Image>,
     },
     MultipartUser {
@@ -390,30 +385,6 @@ impl Message {
                 content,
                 annotations,
                 reasoning_details,
-            } => {
-                let mut reasoning_details_value = None;
-                if let Some(details) = reasoning_details {
-                    if let Some(obj) = details.as_object() {
-                        if let Some(model_id) = obj.get("model_id").and_then(|v| v.as_str()) {
-                            if target_model_id.starts_with(model_id) {
-                                reasoning_details_value = obj.get("data").cloned();
-                            }
-                        }
-                    }
-                }
-
-                raw::Message {
-                    role: raw::Role::Assistant,
-                    content: Some(content),
-                    annotations,
-                    reasoning_details: reasoning_details_value.map(|v| vec![v]).unwrap_or_default(),
-                    ..Default::default()
-                }
-            }
-            Message::MultipartAssistant {
-                content,
-                annotations,
-                reasoning_details,
                 images,
             } => {
                 let mut reasoning_details_value = None;
@@ -426,10 +397,19 @@ impl Message {
                         }
                     }
                 }
-
+                if images.is_empty() {
+                    return raw::Message {
+                        role: raw::Role::Assistant,
+                        content: Some(content),
+                        annotations,
+                        reasoning_details: reasoning_details_value
+                            .map(|v| vec![v])
+                            .unwrap_or_default(),
+                        ..Default::default()
+                    };
+                }
                 let mut parts = Vec::new();
 
-                // Put images before text as per requirements
                 for image in images {
                     let data_url = format!(
                         "data:{};base64,{}",
@@ -452,14 +432,6 @@ impl Message {
                     ..Default::default()
                 }
             }
-            _ => self.into(),
-        }
-    }
-}
-
-impl From<Message> for raw::Message {
-    fn from(msg: Message) -> Self {
-        match msg {
             Message::System(msg) => raw::Message {
                 role: raw::Role::System,
                 content: Some(msg),
@@ -470,46 +442,7 @@ impl From<Message> for raw::Message {
                 content: Some(msg),
                 ..Default::default()
             },
-            Message::Assistant {
-                content,
-                annotations,
-                reasoning_details: _,
-            } => raw::Message {
-                role: raw::Role::Assistant,
-                content: Some(content),
-                annotations,
-                ..Default::default()
-            },
-            Message::MultipartAssistant {
-                content,
-                annotations,
-                reasoning_details: _,
-                images,
-            } => {
-                let mut parts = Vec::new();
 
-                // Put images before text as per requirements
-                for image in images {
-                    let data_url = format!(
-                        "data:{};base64,{}",
-                        image.mime_type,
-                        base64::Engine::encode(
-                            &base64::engine::general_purpose::STANDARD,
-                            &image.data
-                        )
-                    );
-                    parts.push(raw::MessagePart::image_url(data_url));
-                }
-
-                parts.push(raw::MessagePart::text(content));
-
-                raw::Message {
-                    role: raw::Role::Assistant,
-                    contents: Some(parts),
-                    annotations,
-                    ..Default::default()
-                }
-            }
             Message::MultipartUser { text, files } => {
                 let files = files
                     .into_iter()

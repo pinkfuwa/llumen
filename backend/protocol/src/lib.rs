@@ -49,6 +49,7 @@ pub enum AssistantChunk {
     },
     Error(String),
     DeepAgent(Deep),
+    Image(i32),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -142,6 +143,14 @@ impl MessageInner {
             MessageInner::User { .. } => {}
             MessageInner::Assistant(assistant_chunks) => {
                 assistant_chunks.push(AssistantChunk::ReasoningDetail(json))
+            }
+        }
+    }
+    pub fn add_image(&mut self, file_id: i32) {
+        match self {
+            MessageInner::User { .. } => {}
+            MessageInner::Assistant(assistant_chunks) => {
+                assistant_chunks.push(AssistantChunk::Image(file_id))
             }
         }
     }

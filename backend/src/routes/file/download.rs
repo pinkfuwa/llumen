@@ -3,7 +3,8 @@ use std::sync::Arc;
 use axum::extract::{Path, State};
 use axum::response::{IntoResponse, Response};
 use axum::{Extension, Json};
-use entity::file::{self, Entity as File};
+use entity::chat;
+use entity::file::Entity as File;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::AppState;
@@ -18,7 +19,6 @@ pub async fn route(
     Path(id): Path<i32>,
 ) -> Result<Response, AppError> {
     let file = File::find_by_id(id)
-        .filter(file::Column::OwnerId.eq(user_id))
         .one(&app.conn)
         .await
         .kind(ErrorKind::Internal)?
@@ -26,6 +26,28 @@ pub async fn route(
             error: ErrorKind::ResourceNotFound,
             reason: "".to_owned(),
         }))?;
+
+    // Check access: user must own the file OR own the chat the file belongs to
+    let has_access = if let Some(owner_id) = file.owner_id {
+        owner_id == user_id
+    } else if let Some(chat_id) = file.chat_id {
+        // Check if user owns the chat
+        chat::Entity::find_by_id(chat_id)
+            .filter(chat::Column::OwnerId.eq(user_id))
+            .one(&app.conn)
+            .await
+            .kind(ErrorKind::Internal)?
+            .is_some()
+    } else {
+        false
+    };
+
+    if !has_access {
+        return Err(Json(Error {
+            error: ErrorKind::ResourceNotFound,
+            reason: "".to_owned(),
+        }));
+    }
 
     let blob = app.blob.get_vectored(id).await.unwrap();
 

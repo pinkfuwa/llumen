@@ -217,49 +217,48 @@ impl MessagePart {
     }
 
     pub fn unknown(filename: &str, blob: Vec<u8>) -> (Self, Self) {
+        infer::is_image(&blob);
+
         let ext = filename
             .rsplit('.')
             .next()
             .map(|s| s.to_lowercase())
             .unwrap_or_default();
 
-        match ext.as_str() {
-            "png" | "jpg" | "jpeg" | "gif" | "bmp" | "webp" => (
+        if infer::is_image(&blob) {
+            return (
                 Self::text(format!("Uploaded file: {}", filename)),
                 Self::image_url(format!(
                     "data:image/{};base64,{}",
                     ext,
                     STANDARD.encode(&blob)
                 )),
-            ),
-            "mp3" | "wav" | "flac" | "m4a" => (
+            );
+        }
+
+        if infer::is_audio(&blob) {
+            return (
                 Self::text(format!("Uploaded file: {}", filename)),
                 Self::input_audio(blob, ext),
-            ),
-            "txt" | "md" | "json" | "csv" | "log" | "svg" => {
-                let content = String::from_utf8_lossy(&blob);
+            );
+        }
 
-                (
-                    Self::text(format!("Uploaded file: {}\n\n", filename)),
-                    Self::text(format!("<content>{}</content>", content)),
-                )
-            }
-            "pdf" => (
+        if infer::archive::is_pdf(&blob)
+            || infer::archive::is_epub(&blob)
+            || infer::is_document(&blob)
+        {
+            return (
                 Self::text(format!("Uploaded file: {}", filename)),
                 Self::pdf(filename.to_string(), &blob),
-            ),
-            _ => {
-                // TODO: report unknown file type to user
-                // Unknown file type is provider-specific, so provider may return error(we can't capture it)
-                log::warn!("Unknown file type: {}", filename);
-                let content = String::from_utf8_lossy(&blob);
-
-                (
-                    Self::text(format!("Uploaded file: {}\n\n", filename)),
-                    Self::text(format!("<content>{}</content>", content)),
-                )
-            }
+            );
         }
+
+        let content = String::from_utf8_lossy(&blob);
+
+        (
+            Self::text(format!("Uploaded file: {}\n\n", filename)),
+            Self::text(format!("<content>{}</content>", content)),
+        )
     }
 
     pub fn image_url(url: String) -> Self {

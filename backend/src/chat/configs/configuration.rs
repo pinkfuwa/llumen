@@ -8,7 +8,9 @@ use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::utils::model::ModelChecker;
 use crate::{chat::*, openrouter};
+use entity::file;
 use protocol::ModelConfig;
+use sea_orm::{ActiveValue, EntityTrait};
 
 #[derive(Clone)]
 pub struct Configuration {
@@ -118,6 +120,39 @@ impl Configuration {
                 .message
                 .inner
                 .add_reasoning_detail(reasoning_details);
+        }
+
+        if !result.image.is_empty() {
+            for image in &result.image {
+                let chat_id = state.completion_ctx.get_chat_id();
+                let mime_type = image.mime_type.clone();
+                let data = image.data.clone();
+                let blob = state.ctx.blob.clone();
+                let db = state.ctx.db.clone();
+
+                let result = file::Entity::insert(file::ActiveModel {
+                    chat_id: ActiveValue::Set(Some(chat_id)),
+                    owner_id: ActiveValue::Set(None),
+                    mime_type: ActiveValue::Set(Some(mime_type)),
+                    ..Default::default()
+                })
+                .exec(&db)
+                .await?;
+
+                let file_id = result.last_insert_id;
+
+                let size = data.len();
+                if let Err(e) = blob
+                    .insert(file_id, size, tokio_stream::once(bytes::Bytes::from(data)))
+                    .await
+                {
+                    log::error!("Failed to store image in blob: {}", e);
+                    continue;
+                }
+
+                state.completion_ctx.message.inner.add_image(file_id);
+                state.completion_ctx.add_token(Token::Image(file_id));
+            }
         }
 
         let halt = halt_with_error?;

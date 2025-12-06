@@ -300,7 +300,7 @@ fn test_multipart_assistant_message() {
     };
 
     // Create a multipart assistant message with image
-    let message = Message::MultipartAssistant {
+    let message = Message::Assistant {
         content: "Here is the generated image.".to_string(),
         annotations: None,
         reasoning_details: None,
@@ -333,23 +333,4 @@ fn test_multipart_assistant_message() {
         parts[1].text.as_ref().unwrap(),
         "Here is the generated image."
     );
-}
-
-#[test]
-fn test_assistant_message_without_images() {
-    use crate::openrouter::Message;
-
-    // Regular assistant message without images should use single content
-    let message = Message::Assistant {
-        content: "Hello".to_string(),
-        annotations: None,
-        reasoning_details: None,
-    };
-
-    let raw_message = message.to_raw_message("test-model");
-
-    // Should use content field, not contents
-    assert!(raw_message.content.is_some());
-    assert!(raw_message.contents.is_none());
-    assert_eq!(raw_message.content.unwrap(), "Hello");
 }

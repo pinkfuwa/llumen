@@ -107,6 +107,7 @@
 │  │         ┌──────────────────────────────┐           │     │
 │  │         │ Blob Storage (ReDB)          │           │     │
 │  │         │ - File uploads               │           │     │
+│  │         │ - Generated images           │           │     │
 │  │         │ - Cached web crawls          │           │     │
 │  │         │ - Processing results         │           │     │
 │  │         └──────────────────────────────┘           │     │
@@ -840,7 +841,43 @@ Benefits:
 - Halting support
 - Memory-efficient (doesn't buffer entire response)
 
-### 6. Tracing and Observability
+### 6. Blob Storage System
+
+Located in `src/utils/blob.rs`
+
+ReDB-based key-value store for binary data:
+
+**Use cases:**
+- User-uploaded files (images, documents)
+- Generated images from LLMs
+- Cached web crawl results
+- Processing artifacts
+
+**Key operations:**
+```rust
+// Insert blob
+blob.insert(file_id, size, byte_stream).await?;
+
+// Retrieve blob
+let data = blob.get_vectored(file_id).await?;
+
+// Delete blob
+blob.delete(file_id)?;
+```
+
+**Image Generation Flow:**
+1. LLM returns image in completion result
+2. File record created in SQLite `file` table
+3. Image data stored in blob storage with file_id
+4. `AssistantChunk::Image(file_id)` added to message
+5. Frontend fetches via `GET /api/file/image/{id}`
+
+**Parallelization:**
+- File loads use `tokio::spawn` for concurrent reads
+- Multiple images load in parallel during message conversion
+- Reduces latency when re-sending messages with images
+
+### 7. Tracing and Observability
 
 **Non-default Feature: `tracing`**
 

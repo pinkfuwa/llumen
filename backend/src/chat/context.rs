@@ -272,7 +272,8 @@ impl CompletionContext {
             .context("invalid config")?;
 
         let option = openrouter::CompletionOption::builder()
-            .reasoning_effort(ReasoningEffort::Auto)
+            .reasoning_effort(ReasoningEffort::Low)
+            .max_tokens(512)
             .build();
 
         let completion = self

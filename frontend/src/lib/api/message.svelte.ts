@@ -346,6 +346,17 @@ const Handlers: {
 			cursor!.index++;
 			cursor!.offset = (report as string).length;
 		}
+	},
+
+	image(fileId) {
+		const firstMsg = messages[0] as AssistantMessage;
+
+		firstMsg.inner.c.push({
+			t: 'image',
+			c: fileId as number
+		});
+		cursor!.index++;
+		cursor!.offset = 1;
 	}
 };
 

@@ -23,6 +23,7 @@ pub enum Token {
     DeepStepToken(String),
     DeepReport(String),
     Error(String),
+    Image(i32),
     Complete {
         message_id: i32,
         cost: f32,
@@ -83,7 +84,8 @@ impl Mergeable for Token {
             | Token::Title(_)
             | Token::Start { .. }
             | Token::ToolCall { .. }
-            | Token::DeepStepToolCall { .. } => 1,
+            | Token::DeepStepToolCall { .. }
+            | Token::Image(_) => 1,
         }
     }
 

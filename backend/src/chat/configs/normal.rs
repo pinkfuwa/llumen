@@ -5,7 +5,9 @@ use crate::{chat::prompt, openrouter};
 
 pub fn normal_configuration() -> Configuration {
     Configuration {
-        completion_option: openrouter::CompletionOption::default(),
+        completion_option: openrouter::CompletionOption::builder()
+            .image_generation(true)
+            .build(),
         tool_handler: Arc::new(|_, _| {
             Box::pin(async move {
                 Err(anyhow::anyhow!(

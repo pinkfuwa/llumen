@@ -9,6 +9,7 @@ pub struct Model {
     pub id: i32,
     pub chat_id: Option<i32>,
     pub owner_id: Option<i32>,
+    // plan to remove
     pub mime_type: Option<String>,
 }
 
