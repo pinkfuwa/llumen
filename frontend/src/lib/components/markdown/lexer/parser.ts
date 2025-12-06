@@ -18,6 +18,14 @@ import {
 	type CitationData
 } from './citation-parser';
 
+// Character codes for delimiter checking
+const CHAR_SPACE = 32; // ' '
+const CHAR_NEWLINE = 10; // '\n'
+const CHAR_TAB = 9; // '\t'
+const CHAR_BACKSLASH = 92; // '\'
+const CHAR_DOLLAR = 36; // '$'
+const CHAR_END_OF_STRING = -1; // Returned by cx.char() when out of bounds
+
 // Mathematical expression node names
 const INLINE_MATH_DOLLAR = 'InlineMathDollar';
 const INLINE_MATH_BRACKET = 'InlineMathBracket';
@@ -107,7 +115,7 @@ const latexExtension: MarkdownConfig = {
 		{
 			name: BLOCK_MATH_DOLLAR,
 			parse(cx: InlineContext, next: number, pos: number): number {
-				if (next !== 36 /* '$' */ || cx.char(pos + 1) !== 36) {
+				if (next !== CHAR_DOLLAR || cx.char(pos + 1) !== CHAR_DOLLAR) {
 					return -1;
 				}
 
@@ -124,14 +132,14 @@ const latexExtension: MarkdownConfig = {
 		{
 			name: INLINE_MATH_DOLLAR,
 			parse(cx: InlineContext, next: number, pos: number): number {
-				if (next !== 36 /* '$' */ || cx.char(pos + 1) === 36) {
+				if (next !== CHAR_DOLLAR || cx.char(pos + 1) === CHAR_DOLLAR) {
 					return -1;
 				}
 
 				// Check for space before $ (except at start)
 				if (pos > 0) {
 					const prevChar = cx.char(pos - 1);
-					if (prevChar !== 32 && prevChar !== 10 && prevChar !== 9) {
+					if (prevChar !== CHAR_SPACE && prevChar !== CHAR_NEWLINE && prevChar !== CHAR_TAB) {
 						return -1;
 					}
 				}
@@ -140,7 +148,7 @@ const latexExtension: MarkdownConfig = {
 				// to avoid matching non-LaTeX usages like monetary amounts ($1), while still
 				// allowing constructions like `$\\text{A}$` and `$ \\text{A} $`.
 				const nextChar = cx.char(pos + 1);
-				if (nextChar !== -1 && nextChar !== 32 && nextChar !== 10 && nextChar !== 9 && nextChar !== 92) {
+				if (nextChar !== CHAR_END_OF_STRING && nextChar !== CHAR_SPACE && nextChar !== CHAR_NEWLINE && nextChar !== CHAR_TAB && nextChar !== CHAR_BACKSLASH) {
 					return -1;
 				}
 
@@ -158,7 +166,9 @@ const latexExtension: MarkdownConfig = {
 			name: INLINE_MATH_BRACKET,
 			before: 'Escape',
 			parse(cx: InlineContext, next: number, pos: number): number {
-				if (next !== 92 /* '\' */ || ![40 /* '(' */, 41 /* ')' */].includes(cx.char(pos + 1))) {
+				const CHAR_OPEN_PAREN = 40; // '('
+				const CHAR_CLOSE_PAREN = 41; // ')'
+				if (next !== CHAR_BACKSLASH || ![CHAR_OPEN_PAREN, CHAR_CLOSE_PAREN].includes(cx.char(pos + 1))) {
 					return -1;
 				}
 
@@ -166,8 +176,8 @@ const latexExtension: MarkdownConfig = {
 					DELIMITERS[INLINE_MATH_BRACKET],
 					pos,
 					pos + DELIMITER_LENGTH[INLINE_MATH_BRACKET],
-					cx.char(pos + 1) === 40,
-					cx.char(pos + 1) === 41
+					cx.char(pos + 1) === CHAR_OPEN_PAREN,
+					cx.char(pos + 1) === CHAR_CLOSE_PAREN
 				);
 			}
 		},
@@ -176,7 +186,9 @@ const latexExtension: MarkdownConfig = {
 			name: BLOCK_MATH_BRACKET,
 			before: 'Escape',
 			parse(cx: InlineContext, next: number, pos: number): number {
-				if (next !== 92 /* '\' */ || ![91 /* '[' */, 93 /* ']' */].includes(cx.char(pos + 1))) {
+				const CHAR_OPEN_BRACKET = 91; // '['
+				const CHAR_CLOSE_BRACKET = 93; // ']'
+				if (next !== CHAR_BACKSLASH || ![CHAR_OPEN_BRACKET, CHAR_CLOSE_BRACKET].includes(cx.char(pos + 1))) {
 					return -1;
 				}
 
@@ -184,8 +196,8 @@ const latexExtension: MarkdownConfig = {
 					DELIMITERS[BLOCK_MATH_BRACKET],
 					pos,
 					pos + DELIMITER_LENGTH[BLOCK_MATH_BRACKET],
-					cx.char(pos + 1) === 91,
-					cx.char(pos + 1) === 93
+					cx.char(pos + 1) === CHAR_OPEN_BRACKET,
+					cx.char(pos + 1) === CHAR_CLOSE_BRACKET
 				);
 			}
 		}
