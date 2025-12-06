@@ -7,6 +7,7 @@
 	import Tool from './Tool.svelte';
 	import ToolBox from './ToolBox.svelte';
 	import DeepResearch from './DeepResearch.svelte';
+	import Image from './Image.svelte';
 
 	let {
 		chunks,
@@ -40,5 +41,7 @@
 		<ResponseError content={chunk.c} />
 	{:else if kind == 'deep_agent'}
 		<DeepResearch plan={chunk.c} {streaming} />
+	{:else if kind == 'image'}
+		<Image id={chunk.c} />
 	{/if}
 {/each}

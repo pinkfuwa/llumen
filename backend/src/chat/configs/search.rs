@@ -36,6 +36,7 @@ pub fn search_configuration() -> Configuration {
                         content: assistant_text,
                         annotations: None,
                         reasoning_details: None,
+                        images: Vec::new(),
                     });
                 }
 

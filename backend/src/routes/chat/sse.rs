@@ -99,6 +99,7 @@ pub enum SseResp {
     DeepStepToolResult(SseRespToolResult),
     DeepStepToolCall(SseRespToolCall),
     DeepReport(String),
+    Image(i32),
 }
 
 #[derive(Debug, Serialize)]
@@ -228,6 +229,7 @@ pub async fn route(
                 SseResp::DeepStepToolResult(SseRespToolResult { content })
             }
             Token::DeepReport(content) => SseResp::DeepReport(content),
+            Token::Image(file_id) => SseResp::Image(file_id),
         };
 
         Some(Ok(Event::default().json_data(event).unwrap()))

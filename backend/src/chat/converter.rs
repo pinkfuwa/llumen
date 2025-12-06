@@ -38,6 +38,35 @@ async fn load_files(
     Ok(results)
 }
 
+async fn load_assistant_images(
+    db: Arc<BlobDB>,
+    file_ids: &[i32],
+) -> Result<Vec<openrouter::Image>, anyhow::Error> {
+    let mut tasks = Vec::with_capacity(file_ids.len());
+
+    for &file_id in file_ids {
+        let db = db.clone();
+        let handle = tokio::spawn(async move {
+            let data = db.get_vectored(file_id).await?;
+            let mime_type = infer::get(&data)
+                .map(|kind| kind.mime_type().to_string())
+                .unwrap_or_else(|| "image/png".to_string());
+            Some(openrouter::Image { data, mime_type })
+        });
+        tasks.push(handle);
+    }
+
+    let mut results = Vec::with_capacity(file_ids.len());
+    for task in tasks {
+        match task.await? {
+            Some(it) => results.push(it),
+            None => log::error!("Image file not found"),
+        };
+    }
+
+    Ok(results)
+}
+
 pub async fn db_message_to_openrouter(
     ctx: &Context,
     message: &MessageInner,
@@ -66,11 +95,14 @@ pub async fn db_message_to_openrouter(
                     AssistantChunk::Text(x) => {
                         let mut reasoning_details = None;
                         let mut annotations = None;
+                        let mut images = Vec::new();
 
+                        let mut image_ids = Vec::new();
                         while matches!(
                             iter.peek(),
                             Some(AssistantChunk::Annotation(_))
                                 | Some(AssistantChunk::ReasoningDetail(_))
+                                | Some(AssistantChunk::Image(_))
                         ) {
                             match iter.next().unwrap() {
                                 AssistantChunk::Annotation(value) => {
@@ -79,17 +111,25 @@ pub async fn db_message_to_openrouter(
                                 AssistantChunk::ReasoningDetail(value) => {
                                     reasoning_details = Some(value.clone());
                                 }
+                                AssistantChunk::Image(file_id) => {
+                                    image_ids.push(*file_id);
+                                }
                                 _ => unreachable!(""),
                             }
+                        }
+
+                        if !image_ids.is_empty() {
+                            images = load_assistant_images(ctx.blob.clone(), &image_ids).await?;
                         }
 
                         result.push(openrouter::Message::Assistant {
                             content: x.clone(),
                             annotations,
                             reasoning_details,
+                            images,
                         })
                     }
-                    AssistantChunk::ReasoningDetail(_) => {
+                    AssistantChunk::ReasoningDetail(_) | AssistantChunk::Image(_) => {
                         // Should be captured by Text chunk
                     }
                     AssistantChunk::Reasoning(_) => {

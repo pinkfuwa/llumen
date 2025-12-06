@@ -113,7 +113,8 @@ export type AssistantChunk =
 			};
 	  }
 	| { t: 'error'; c: string }
-	| { t: 'deep_agent'; c: Deep };
+	| { t: 'deep_agent'; c: Deep }
+	| { t: 'image'; c: number };
 
 export interface Step {
 	need_search: boolean;
@@ -552,4 +553,5 @@ export type SseResp =
 	| { t: 'deep_step_reasoning'; c: string }
 	| { t: 'deep_step_tool_result'; c: SseRespToolResult }
 	| { t: 'deep_step_tool_call'; c: SseRespToolCall }
-	| { t: 'deep_report'; c: string };
+	| { t: 'deep_report'; c: string }
+	| { t: 'image'; c: number };

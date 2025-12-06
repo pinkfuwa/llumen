@@ -125,6 +125,29 @@ You can edit previous messages to refine your conversation.
 3. Modify your message
 4. Submit to regenerate the response
 
+## Image Generation
+
+Some models can generate images directly in response to your prompts.
+
+**How it works:**
+1. Use a model that supports image generation (e.g., models with DALL-E capabilities)
+2. Request an image in your message (e.g., "Generate an image of a sunset over mountains")
+3. The generated image will appear inline in the assistant's response
+4. Images are stored locally and persist across sessions
+
+**Viewing generated images:**
+- Images display directly in the chat
+- Click on an image to view it at full size
+- Images are saved to your local blob storage
+
+**Use cases:**
+- Creating illustrations for concepts
+- Visualizing ideas and designs
+- Generating artwork or graphics
+- Prototyping visual content
+
+**Note:** Not all models support image generation. Check the model's capabilities before requesting images.
+
 ## Markdown Support
 
 Llumen renders rich Markdown in responses:
