@@ -136,11 +136,11 @@ const latexExtension: MarkdownConfig = {
 					}
 				}
 
-				// Require a space, newline, tab, or a backslash immediately after the opening $
+				// Require a space, newline, tab, a backslash, or end-of-string immediately after the $
 				// to avoid matching non-LaTeX usages like monetary amounts ($1), while still
-				// allowing constructions like `$\\text{A}$`.
+				// allowing constructions like `$\\text{A}$` and `$ \\text{A} $`.
 				const nextChar = cx.char(pos + 1);
-				if (nextChar !== 32 && nextChar !== 10 && nextChar !== 9 && nextChar !== 92) {
+				if (nextChar !== -1 && nextChar !== 32 && nextChar !== 10 && nextChar !== 9 && nextChar !== 92) {
 					return -1;
 				}
 
