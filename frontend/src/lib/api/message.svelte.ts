@@ -139,13 +139,13 @@ const Handlers: {
 			}
 		});
 		cursor!.index++;
-		cursor!.offset = 1;
+		cursor!.offset = 0;
 	},
 
 	tool_result(toolResult) {
 		handleToolResult(toolResult.content);
 		cursor!.index++;
-		cursor!.offset = 1;
+		cursor!.offset = 0;
 	},
 
 	complete(data) {
@@ -166,7 +166,7 @@ const Handlers: {
 			updater: (chat) => ({ ...chat, title: data })
 		});
 		cursor!.index++;
-		cursor!.offset = 1;
+		cursor!.offset = 0;
 	},
 
 	error(err) {
@@ -250,7 +250,7 @@ const Handlers: {
 		}
 		deepState.currentStepIndex = stepIndex as number;
 		cursor!.index++;
-		cursor!.offset = 1;
+		cursor!.offset = 0;
 	},
 
 	deep_step_token(token) {
@@ -300,7 +300,7 @@ const Handlers: {
 			}
 		});
 		cursor!.index++;
-		cursor!.offset = 1;
+		cursor!.offset = 0;
 	},
 
 	deep_step_tool_result(toolResult) {
@@ -329,7 +329,7 @@ const Handlers: {
 			}
 		}
 		cursor!.index++;
-		cursor!.offset = 1;
+		cursor!.offset = 0;
 	},
 
 	deep_report(report) {
@@ -356,7 +356,7 @@ const Handlers: {
 			c: fileId as number
 		});
 		cursor!.index++;
-		cursor!.offset = 1;
+		cursor!.offset = 0;
 	}
 };
 
