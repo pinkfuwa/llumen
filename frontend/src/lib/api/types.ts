@@ -467,6 +467,7 @@ export interface UserPreference {
 	theme?: string;
 	locale?: string;
 	submit_on_enter?: string;
+	use_pattern_background?: string;
 }
 
 export interface UserReadReq {
