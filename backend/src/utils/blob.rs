@@ -7,11 +7,22 @@ use std::sync::Arc;
 
 pub const TABLE: TableDefinition<i32, &[u8]> = TableDefinition::new("blobs");
 
-pub struct Reader(AccessGuard<'static, &'static [u8]>);
+pub struct Reader {
+    guard: AccessGuard<'static, &'static [u8]>,
+    txn: Option<ReadTransaction>,
+}
+
+impl Drop for Reader {
+    fn drop(&mut self) {
+        // IMPORTANT: guard is only safe to read when txn is open
+        // this is likely a bug in redb that you can drop txn then use guard.
+        self.txn.take().unwrap().close().ok();
+    }
+}
 
 impl AsRef<[u8]> for Reader {
     fn as_ref(&self) -> &[u8] {
-        self.0.value()
+        self.guard.value()
     }
 }
 
@@ -38,7 +49,10 @@ impl BlobDB {
         let table = txn.open_table(TABLE).ok()?;
 
         let guard = table.get(id).ok()??;
-        Some(Reader(guard))
+        Some(Reader {
+            guard,
+            txn: Some(txn),
+        })
     }
 
     /// read all data
