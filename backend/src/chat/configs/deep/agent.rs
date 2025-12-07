@@ -125,59 +125,6 @@ impl<'a> DeepAgent<'a> {
             openrouter::Message::User(self.enhanced_prompt.clone()),
         ];
 
-        // Define the JSON schema for the planner response
-        let plan_schema = serde_json::json!({
-            "type": "object",
-            "properties": {
-                "locale": {
-                    "type": "string",
-                    "description": "The detected language locale"
-                },
-                "has_enough_context": {
-                    "type": "boolean",
-                    "description": "Whether the current context is sufficient to answer the query"
-                },
-                "thought": {
-                    "type": "string",
-                    "description": "Internal reasoning about the plan"
-                },
-                "title": {
-                    "type": "string",
-                    "description": "Title of the research plan"
-                },
-                "steps": {
-                    "type": "array",
-                    "description": "List of research steps",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "need_search": {
-                                "type": "boolean",
-                                "description": "Whether this step requires web search"
-                            },
-                            "title": {
-                                "type": "string",
-                                "description": "Title of the step"
-                            },
-                            "description": {
-                                "type": "string",
-                                "description": "Detailed description of what to do in this step"
-                            },
-                            "step_type": {
-                                "type": "string",
-                                "enum": ["code", "research"],
-                                "description": "Type of step: code or research"
-                            }
-                        },
-                        "required": ["need_search", "title", "description", "step_type"],
-                        "additionalProperties": false
-                    }
-                }
-            },
-            "required": ["locale", "has_enough_context", "thought", "title", "steps"],
-            "additionalProperties": false
-        });
-
         let model = openrouter::ModelBuilder::from_model(&self.model).build();
 
         let result = self

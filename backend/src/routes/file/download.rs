@@ -4,7 +4,9 @@ use axum::extract::{Path, State};
 use axum::response::{IntoResponse, Response};
 use axum::{Extension, Json};
 use entity::file::{self, Entity as File};
+use futures_util::FutureExt;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use tokio::task::{JoinHandle, spawn_blocking};
 
 use crate::AppState;
 use crate::errors::{AppError, Error, ErrorKind, WithKind};
@@ -16,18 +18,20 @@ use futures_util::stream::Stream;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-const CHUNK_SIZE: usize = 64 * 1024; // 64KB chunks
+const CHUNK_SIZE: usize = 256 * 1024; // 256KB chunks
 
 struct MmapStream {
-    reader: Reader,
+    reader: Arc<Reader>,
     position: usize,
+    read_task: Option<JoinHandle<Bytes>>,
 }
 
 impl MmapStream {
     fn new(reader: Reader) -> Self {
         Self {
-            reader,
+            reader: Arc::new(reader),
             position: 0,
+            read_task: None,
         }
     }
 }
@@ -36,17 +40,32 @@ impl Stream for MmapStream {
     type Item = Result<Bytes, axum::Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let data = self.reader.as_ref();
-        if self.position >= data.len() {
+        if self.position >= self.reader.len() {
             return Poll::Ready(None);
         }
 
-        // feat: mmap is blocking, we will fix that later
-        let end = std::cmp::min(self.position + CHUNK_SIZE, data.len());
-        let chunk = Bytes::copy_from_slice(&data[self.position..end]);
-        self.position = end;
+        let position = self.position;
+        let end = std::cmp::min(position + CHUNK_SIZE, self.reader.len());
 
-        Poll::Ready(Some(Ok(chunk)))
+        if self.read_task.is_none() {
+            let reader = self.reader.clone();
+            self.read_task = Some(spawn_blocking(move || {
+                Bytes::copy_from_slice(&reader.as_ref().as_ref()[position..end])
+            }));
+        }
+
+        self.read_task
+            .as_mut()
+            .unwrap()
+            .poll_unpin(_cx)
+            .map(|x| match x {
+                Ok(buf) => {
+                    self.position = end;
+                    self.read_task = None;
+                    Some(Ok(buf))
+                }
+                Err(_) => None,
+            })
     }
 }
 

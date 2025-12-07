@@ -8,6 +8,7 @@ use std::sync::Arc;
 pub const TABLE: TableDefinition<i32, &[u8]> = TableDefinition::new("blobs");
 
 pub struct Reader {
+    // use of 'static break redb
     guard: AccessGuard<'static, &'static [u8]>,
     txn: Option<ReadTransaction>,
 }
@@ -23,6 +24,12 @@ impl Drop for Reader {
 impl AsRef<[u8]> for Reader {
     fn as_ref(&self) -> &[u8] {
         self.guard.value()
+    }
+}
+
+impl Reader {
+    pub fn len(&self) -> usize {
+        self.guard.value().len()
     }
 }
 
