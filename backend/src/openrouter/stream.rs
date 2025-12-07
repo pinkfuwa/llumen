@@ -216,7 +216,7 @@ impl StreamCompletion {
             });
         }
 
-        let resp = serde_json::from_str::<raw::CompletionResp>(data)?;
+        let resp = serde_json::from_str::<raw::StreamCompletionResponse>(data)?;
 
         if let Some(model_id) = resp.model {
             if model_id != self.model_id {
@@ -290,10 +290,13 @@ impl StreamCompletion {
     }
 
     pub fn get_result(mut self) -> StreamResult {
-        if self.stop_reason.is_none() {
-            log::warn!("Provider didn't return finish_reason, set to Stop");
-        }
-        let stop_reason = self.stop_reason.take().unwrap_or(raw::FinishReason::Stop);
+        let stop_reason = self.stop_reason.take().unwrap_or_else(|| {
+            log::warn!("Provider didn't return finish_reason");
+            match self.toolcalls.is_empty() {
+                true => raw::FinishReason::Stop,
+                false => raw::FinishReason::ToolCalls,
+            }
+        });
 
         let reasoning_details = self.reasoning_details.take().map(|data| {
             serde_json::json!({

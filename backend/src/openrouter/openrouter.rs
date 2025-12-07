@@ -467,7 +467,7 @@ impl Message {
                 name,
                 arguments,
             }) => raw::Message {
-                role: raw::Role::Tool,
+                role: raw::Role::Assistant,
                 tool_calls: Some(vec![raw::ToolCallReq {
                     id,
                     function: raw::ToolFunctionResp {
@@ -476,6 +476,7 @@ impl Message {
                     },
                     r#type: "function".to_string(),
                 }]),
+                content: Some("".to_string()),
                 ..Default::default()
             },
             Message::ToolResult(MessageToolResult { id, content }) => raw::Message {

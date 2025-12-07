@@ -328,7 +328,7 @@ pub struct ToolCallReq {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct CompletionResp {
+pub struct StreamCompletionResponse {
     pub id: String,
     pub choices: Vec<Choice>,
     pub error: Option<ErrorInfo>,
