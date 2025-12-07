@@ -41,6 +41,7 @@ impl Stream for MmapStream {
             return Poll::Ready(None);
         }
 
+        // feat: mmap is blocking, we will fix that later
         let end = std::cmp::min(self.position + CHUNK_SIZE, data.len());
         let chunk = Bytes::copy_from_slice(&data[self.position..end]);
         self.position = end;
