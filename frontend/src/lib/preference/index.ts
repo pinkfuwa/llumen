@@ -28,8 +28,7 @@ function defaultPreference(): Required<UserPreference> {
 			window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 				? 'blue'
 				: 'light',
-		submit_on_enter: 'false',
-		use_pattern_background: 'false'
+		submit_on_enter: 'false'
 	};
 }
 
