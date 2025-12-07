@@ -8,7 +8,6 @@
   [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://www.mozilla.org/en-US/MPL/2.0/)
   [![Nightly Docker](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml)
   [![status check](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml)
-  [![Release Binaries](https://github.com/pinkfuwa/llumen/actions/workflows/build-binaries.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/build-binaries.yml)
   ![MSRV](https://img.shields.io/static/v1?label=MSRV&message=1.89&color=orange&logo=rust)
   [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pinkfuwa/llumen)
 
@@ -25,7 +24,7 @@ llumen is a lightweight, self-hostable LLM chat application (frontend + backend)
 - :rocket: Blazing Fast: Sub-second cold start, **30× smaller asset footprint** and <128MB RAM usage
 - :blue_book: Rich Markdown: Full code syntax highlighting and LaTeX math support
 - :mag: Advanced Modes: Standard chat, web-search integration, and **deep-research** capabilities :brain:
-- :computer: Rich Features: **Message editing**, file uploads (PDFs, images, code)
+- :computer: Rich Features: **Message editing**, file uploads (PDFs, images, code), image generation
 
 [![Video preview](./docs/video.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
 
