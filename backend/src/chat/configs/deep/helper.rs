@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 /// Planner response structure matching the prompt output
 #[derive(Debug, Clone, Deserialize, Serialize, Default, JsonSchema)]
+#[schemars(deny_unknown_fields)]
 pub struct PlannerResponse {
     pub locale: String,
     pub has_enough_context: bool,
@@ -12,6 +13,7 @@ pub struct PlannerResponse {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+#[schemars(deny_unknown_fields)]
 pub struct PlannerStep {
     pub need_search: bool,
     pub title: String,

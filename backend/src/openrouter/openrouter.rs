@@ -259,20 +259,24 @@ impl Openrouter {
         let structured_output = model.capabilities.structured_output;
 
         let mut req = self.create_request(messages, false, model, option);
-        req.log();
 
         if structured_output {
             let schema = schemars::schema_for!(T);
             let schema_json = serde_json::to_value(&schema).map_err(|e| Error::Serde(e))?;
+
+            // structure need to be marked with `#[schemars(deny_unknown_fields)]`
+
             req.response_format = Some(raw::ResponseFormat {
                 r#type: "json_schema".to_string(),
                 json_schema: serde_json::json!({
-                    "name": "result",
+                    "name": std::any::type_name::<T>().split("::").last().unwrap(),
                     "strict": true,
                     "schema": schema_json
                 }),
             });
         }
+
+        req.log();
 
         let completion = self.send_complete_request(req).await?;
         let result: T = serde_json::from_str(&completion.response).map_err(Error::Serde)?;
