@@ -174,6 +174,66 @@ describe('Lexer - parse', () => {
 		expect(containsType(walked, 'InlineMathBracket')).toBe(true);
 	});
 
+	it('should parse single-character inline LaTeX without spaces', async () => {
+		const source = '$x$';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const containsType = (node: any, typeName: string): boolean => {
+			if (!node) return false;
+			if (node.type === typeName) return true;
+			if (!Array.isArray(node.children)) return false;
+			return node.children.some((child: any) => containsType(child, typeName));
+		};
+
+		expect(containsType(walked, 'InlineMathDollar')).toBe(true);
+	});
+
+	it('should not parse multi-character inline LaTeX without spaces', async () => {
+		const source = '$x*y$';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const containsType = (node: any, typeName: string): boolean => {
+			if (!node) return false;
+			if (node.type === typeName) return true;
+			if (!Array.isArray(node.children)) return false;
+			return node.children.some((child: any) => containsType(child, typeName));
+		};
+
+		expect(containsType(walked, 'InlineMathDollar')).toBe(false);
+	});
+
+	it('should not treat dollar amounts as inline math', async () => {
+		const source = 'The apple is $1, orange is $2';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const containsType = (node: any, typeName: string): boolean => {
+			if (!node) return false;
+			if (node.type === typeName) return true;
+			if (!Array.isArray(node.children)) return false;
+			return node.children.some((child: any) => containsType(child, typeName));
+		};
+
+		expect(containsType(walked, 'InlineMathDollar')).toBe(false);
+	});
+
+	it('should parse multi-character inline LaTeX with spaces', async () => {
+		const source = '$ x*y $';
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		const containsType = (node: any, typeName: string): boolean => {
+			if (!node) return false;
+			if (node.type === typeName) return true;
+			if (!Array.isArray(node.children)) return false;
+			return node.children.some((child: any) => containsType(child, typeName));
+		};
+
+		expect(containsType(walked, 'InlineMathDollar')).toBe(true);
+	});
+
 	it('should parse markdown with mixed content', async () => {
 		const source = `# Title
 
