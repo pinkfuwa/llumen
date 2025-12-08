@@ -101,7 +101,7 @@ To create new subagent:
 * mLua with luau sandboxing
 * typeshare(codegen)
 
-### frontend tech stack
+### Frontend tech stack
 * Svelte 5(SPA)
 * TailwindCSS
 * Vite
@@ -113,3 +113,8 @@ To create new subagent:
 
 * document user-facing changes in `docs/user.md`
 * document architecture changes in `docs/design.md`
+
+## Common mistakes
+
+- Editing `frontend/src/lib/api/types.ts` break codegen(always run codegen with typeshare instead)
+- Failing a CI test(see `.github/workflows/check.yml` for tests included)
