@@ -138,11 +138,20 @@ const latexExtension: MarkdownConfig = {
 
 				const prevChar = pos > 0 ? cx.char(pos - 1) : CHAR_END_OF_STRING;
 				const nextChar = cx.char(pos + 1);
-				
+
 				// Check if this could be part of the standard spaced pattern: "$ ... $"
-				const hasSpaceBefore = pos === 0 || prevChar === CHAR_SPACE || prevChar === CHAR_NEWLINE || prevChar === CHAR_TAB;
-				const hasSpaceOrBackslashAfter = nextChar === CHAR_SPACE || nextChar === CHAR_NEWLINE || nextChar === CHAR_TAB || nextChar === CHAR_BACKSLASH || nextChar === CHAR_END_OF_STRING;
-				
+				const hasSpaceBefore =
+					pos === 0 ||
+					prevChar === CHAR_SPACE ||
+					prevChar === CHAR_NEWLINE ||
+					prevChar === CHAR_TAB;
+				const hasSpaceOrBackslashAfter =
+					nextChar === CHAR_SPACE ||
+					nextChar === CHAR_NEWLINE ||
+					nextChar === CHAR_TAB ||
+					nextChar === CHAR_BACKSLASH ||
+					nextChar === CHAR_END_OF_STRING;
+
 				if (hasSpaceBefore && hasSpaceOrBackslashAfter) {
 					// Standard spaced inline math pattern
 					return cx.addDelimiter(
@@ -153,12 +162,12 @@ const latexExtension: MarkdownConfig = {
 						true
 					);
 				}
-				
+
 				// Check for single-character pattern: $x$
 				// This could be either opening or closing delimiter
 				const CHAR_0 = 48;
 				const CHAR_9 = 57;
-				
+
 				// Check if this is an opening delimiter for single-char pattern: $x$
 				const charAfterNext = cx.char(pos + 2);
 				if (charAfterNext === CHAR_DOLLAR && nextChar !== CHAR_END_OF_STRING) {
@@ -167,16 +176,16 @@ const latexExtension: MarkdownConfig = {
 					if (nextChar >= CHAR_0 && nextChar <= CHAR_9) {
 						return -1;
 					}
-					
+
 					return cx.addDelimiter(
 						DELIMITERS[INLINE_MATH_DOLLAR],
 						pos,
 						pos + DELIMITER_LENGTH[INLINE_MATH_DOLLAR],
 						true,
-						false  // Only opening delimiter
+						false // Only opening delimiter
 					);
 				}
-				
+
 				// Check if this is a closing delimiter for single-char pattern: $x$
 				const charBeforePrev = pos >= 2 ? cx.char(pos - 2) : CHAR_END_OF_STRING;
 				if (charBeforePrev === CHAR_DOLLAR && prevChar !== CHAR_END_OF_STRING) {
@@ -185,12 +194,12 @@ const latexExtension: MarkdownConfig = {
 					if (prevChar >= CHAR_0 && prevChar <= CHAR_9) {
 						return -1;
 					}
-					
+
 					return cx.addDelimiter(
 						DELIMITERS[INLINE_MATH_DOLLAR],
 						pos,
 						pos + DELIMITER_LENGTH[INLINE_MATH_DOLLAR],
-						false,  // Only closing delimiter
+						false, // Only closing delimiter
 						true
 					);
 				}
@@ -206,7 +215,10 @@ const latexExtension: MarkdownConfig = {
 			parse(cx: InlineContext, next: number, pos: number): number {
 				const CHAR_OPEN_PAREN = 40; // '('
 				const CHAR_CLOSE_PAREN = 41; // ')'
-				if (next !== CHAR_BACKSLASH || ![CHAR_OPEN_PAREN, CHAR_CLOSE_PAREN].includes(cx.char(pos + 1))) {
+				if (
+					next !== CHAR_BACKSLASH ||
+					![CHAR_OPEN_PAREN, CHAR_CLOSE_PAREN].includes(cx.char(pos + 1))
+				) {
 					return -1;
 				}
 
@@ -226,7 +238,10 @@ const latexExtension: MarkdownConfig = {
 			parse(cx: InlineContext, next: number, pos: number): number {
 				const CHAR_OPEN_BRACKET = 91; // '['
 				const CHAR_CLOSE_BRACKET = 93; // ']'
-				if (next !== CHAR_BACKSLASH || ![CHAR_OPEN_BRACKET, CHAR_CLOSE_BRACKET].includes(cx.char(pos + 1))) {
+				if (
+					next !== CHAR_BACKSLASH ||
+					![CHAR_OPEN_BRACKET, CHAR_CLOSE_BRACKET].includes(cx.char(pos + 1))
+				) {
 					return -1;
 				}
 
