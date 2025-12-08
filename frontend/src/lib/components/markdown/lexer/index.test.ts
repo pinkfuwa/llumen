@@ -2,6 +2,14 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import type { Tree } from '@lezer/common';
 import { parse, parseIncremental, walkTree } from './index';
 
+// Helper function to recursively check if a node type exists in the AST
+function containsType(node: any, typeName: string): boolean {
+	if (!node) return false;
+	if (node.type === typeName) return true;
+	if (!Array.isArray(node.children)) return false;
+	return node.children.some((child: any) => containsType(child, typeName));
+}
+
 describe('Lexer - parse', () => {
 	it('should parse simple markdown text', async () => {
 		const source = '# Hello World';
@@ -103,13 +111,6 @@ describe('Lexer - parse', () => {
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
 
-		const containsType = (node: any, typeName: string): boolean => {
-			if (!node) return false;
-			if (node.type === typeName) return true;
-			if (!Array.isArray(node.children)) return false;
-			return node.children.some((child: any) => containsType(child, typeName));
-		};
-
 		expect(containsType(walked, 'BlockMathBracket')).toBe(true);
 	});
 
@@ -148,13 +149,6 @@ describe('Lexer - parse', () => {
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
 
-		const containsType = (node: any, typeName: string): boolean => {
-			if (!node) return false;
-			if (node.type === typeName) return true;
-			if (!Array.isArray(node.children)) return false;
-			return node.children.some((child: any) => containsType(child, typeName));
-		};
-
 		// With spaces around the dollar delimiters this should be detected as inline math
 		expect(containsType(walked, 'InlineMathDollar')).toBe(true);
 	});
@@ -164,13 +158,6 @@ describe('Lexer - parse', () => {
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
 
-		const containsType = (node: any, typeName: string): boolean => {
-			if (!node) return false;
-			if (node.type === typeName) return true;
-			if (!Array.isArray(node.children)) return false;
-			return node.children.some((child: any) => containsType(child, typeName));
-		};
-
 		expect(containsType(walked, 'InlineMathBracket')).toBe(true);
 	});
 
@@ -178,13 +165,6 @@ describe('Lexer - parse', () => {
 		const source = '$x$';
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
-
-		const containsType = (node: any, typeName: string): boolean => {
-			if (!node) return false;
-			if (node.type === typeName) return true;
-			if (!Array.isArray(node.children)) return false;
-			return node.children.some((child: any) => containsType(child, typeName));
-		};
 
 		expect(containsType(walked, 'InlineMathDollar')).toBe(true);
 	});
@@ -194,13 +174,6 @@ describe('Lexer - parse', () => {
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
 
-		const containsType = (node: any, typeName: string): boolean => {
-			if (!node) return false;
-			if (node.type === typeName) return true;
-			if (!Array.isArray(node.children)) return false;
-			return node.children.some((child: any) => containsType(child, typeName));
-		};
-
 		expect(containsType(walked, 'InlineMathDollar')).toBe(false);
 	});
 
@@ -209,13 +182,6 @@ describe('Lexer - parse', () => {
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
 
-		const containsType = (node: any, typeName: string): boolean => {
-			if (!node) return false;
-			if (node.type === typeName) return true;
-			if (!Array.isArray(node.children)) return false;
-			return node.children.some((child: any) => containsType(child, typeName));
-		};
-
 		expect(containsType(walked, 'InlineMathDollar')).toBe(false);
 	});
 
@@ -223,13 +189,6 @@ describe('Lexer - parse', () => {
 		const source = '$ x*y $';
 		const tree = await parse(source);
 		const walked = await walkTree(tree, source);
-
-		const containsType = (node: any, typeName: string): boolean => {
-			if (!node) return false;
-			if (node.type === typeName) return true;
-			if (!Array.isArray(node.children)) return false;
-			return node.children.some((child: any) => containsType(child, typeName));
-		};
 
 		expect(containsType(walked, 'InlineMathDollar')).toBe(true);
 	});

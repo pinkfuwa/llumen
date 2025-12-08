@@ -24,6 +24,8 @@ const CHAR_NEWLINE = 10; // '\n'
 const CHAR_TAB = 9; // '\t'
 const CHAR_BACKSLASH = 92; // '\'
 const CHAR_DOLLAR = 36; // '$'
+const CHAR_0 = 48; // '0'
+const CHAR_9 = 57; // '9'
 const CHAR_END_OF_STRING = -1; // Returned by cx.char() when out of bounds
 
 // Mathematical expression node names
@@ -165,8 +167,6 @@ const latexExtension: MarkdownConfig = {
 
 				// Check for single-character pattern: $x$
 				// This could be either opening or closing delimiter
-				const CHAR_0 = 48;
-				const CHAR_9 = 57;
 
 				// Check if this is an opening delimiter for single-char pattern: $x$
 				const charAfterNext = cx.char(pos + 2);
@@ -182,7 +182,7 @@ const latexExtension: MarkdownConfig = {
 						pos,
 						pos + DELIMITER_LENGTH[INLINE_MATH_DOLLAR],
 						true,
-						false // Only opening delimiter
+						true
 					);
 				}
 
@@ -199,7 +199,7 @@ const latexExtension: MarkdownConfig = {
 						DELIMITERS[INLINE_MATH_DOLLAR],
 						pos,
 						pos + DELIMITER_LENGTH[INLINE_MATH_DOLLAR],
-						false, // Only closing delimiter
+						true,
 						true
 					);
 				}
