@@ -249,14 +249,13 @@ async fn main() {
                 .nest("/model", routes::model::routes())
                 .layer(middlewares::compression::ZstdCompressionLayer)
                 // only compress plain text content
-                .nest("/file", routes::file::routes())
                 .layer(middleware::from_extractor_with_state::<
                     middlewares::auth::Middleware,
                     _,
                 >(state.clone()))
-                .nest("/auth", routes::auth::routes())
-                .layer(middlewares::logger::LoggerLayer),
+                .nest("/auth", routes::auth::routes()),
         )
+        .nest("/api/file", routes::file::routes())
         .fallback_service(
             // side notes about artifact size:
             // 1. br sized about 1.3Mb, uncompressed sized about 4Mb
