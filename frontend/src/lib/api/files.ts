@@ -44,7 +44,7 @@ export async function download(id: number): Promise<string | undefined> {
 }
 
 export async function downloadCompressed(id: number): Promise<string | undefined> {
-	const width = window.devicePixelRatio * screen.width;
+	const width = Math.max(Math.ceil(window.devicePixelRatio * screen.width), 100);
 	const response = await RawAPIFetch<undefined>(
 		`file/image/${width}/${encodeURIComponent(id)}`,
 		undefined,
