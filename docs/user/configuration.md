@@ -199,11 +199,13 @@ display_name = "My Custom Model"  # Name shown in the UI
 model_id = "provider/model-name"  # Model identifier
 
 [capability]
-image = true       # Supports image input
-tool = true        # Supports tool/function calling
-audio = false      # Supports audio input/output
-json = true        # Supports structured JSON output
-ocr = "native"     # OCR mode: "native", "text", "mistral", or "disabled"
+# All capability fields are optional and will be auto-detected from OpenRouter
+# if not specified and using OpenRouter as the API endpoint
+image = true       # Supports image input (optional, auto-detected)
+tool = true        # Supports tool/function calling (optional, auto-detected)
+audio = false      # Supports audio input/output (optional, auto-detected)
+json = true        # Supports structured JSON output (optional, auto-detected)
+ocr = "native"     # File/document handling: "native", "text", "mistral", or "disabled" (optional, auto-detected)
 
 [parameter]
 temperature = 0.7     # Creativity (0.0-2.0)
@@ -212,15 +214,67 @@ top_k = 40           # Top-k sampling (if supported)
 repeat_penalty = 1.1  # Repetition penalty
 ```
 
+### Capability Auto-Detection
+
+When using OpenRouter as your API endpoint, Llumen automatically detects model capabilities from OpenRouter's model metadata. The detection logic follows this priority:
+
+1. **User explicit setting** - If you explicitly set a capability, your setting is always respected
+2. **OpenRouter metadata** - If OpenRouter is used and the capability is not set, Llumen uses OpenRouter's reported capabilities
+3. **Not found/not OpenRouter** - If the model isn't found on OpenRouter or a custom endpoint is used, capabilities default to `true` (conservative default)
+
+This means you typically don't need to configure capabilities manually when using OpenRouter. The system will automatically:
+- Enable vision features for models like GPT-4 Vision
+- Enable tool calling for models that support it
+- Enable audio input for models like Gemini with audio support
+- Enable structured JSON output for compatible models
+- Choose appropriate OCR mode based on model's native file support
+
+#### Message Filtering Based on Capabilities
+
+Llumen automatically filters message content based on detected capabilities:
+- **Images**: If a model doesn't support image input, image attachments are filtered out before sending
+- **Audio**: If a model doesn't support audio input, audio attachments are filtered out before sending
+- **Files/Documents**: If OCR is disabled, document attachments are filtered out before sending
+
+This ensures requests are always compatible with the target model's capabilities.
+
+**Example: Minimal configuration with auto-detection**
+```toml
+display_name = "GPT-4 Turbo"
+model_id = "openai/gpt-4-turbo"
+# No [capability] section needed - all capabilities auto-detected from OpenRouter
+```
+
+**Example: Override specific capabilities**
+```toml
+display_name = "Custom GPT-4"
+model_id = "openai/gpt-4-turbo"
+
+[capability]
+tool = false  # Disable tool calling even though the model supports it
+# Other capabilities (image, audio, json) are still auto-detected
+```
+
 ### Capability Options
 
-| Capability | Description | Values |
-|------------|-------------|--------|
-| `image` | Vision/image understanding | `true` / `false` |
-| `tool` | Tool/function calling support | `true` / `false` |
-| `audio` | Audio input/output | `true` / `false` |
-| `json` | Structured JSON responses | `true` / `false` |
-| `ocr` | OCR processing mode | `"native"`, `"text"`, `"mistral"`, `"disabled"` |
+All capability fields are **optional** when using OpenRouter (auto-detected). Set them explicitly only when you need to override the auto-detected values or when using custom API endpoints.
+
+| Capability | Description | Values | Auto-Detection |
+|------------|-------------|--------|----------------|
+| `image` | Vision/image understanding | `true` / `false` | Based on OpenRouter's image input modality |
+| `tool` | Tool/function calling support | `true` / `false` | Based on OpenRouter's tools parameter support |
+| `audio` | Audio input/output | `true` / `false` | Based on OpenRouter's audio input modality |
+| `json` | Structured JSON responses | `true` / `false` | Based on OpenRouter's structured output support |
+| `ocr` | File/document handling mode | `"native"`, `"text"`, `"mistral"`, `"disabled"` | `"native"` if model supports File modality, otherwise `"text"` |
+
+#### OCR Mode Details
+
+- **`native`**: Model natively supports file attachments (PDF, documents). Files are sent directly to the model.
+- **`text`**: Files are processed with basic text extraction before sending to the model.
+- **`mistral`**: Files are processed with Mistral's OCR service before sending to the model.
+- **`disabled`**: File attachments are not supported and will be filtered out.
+
+When auto-detecting, if OpenRouter reports the model supports the File modality, `native` is used. Otherwise, `text` is used as a conservative default that works with most models.
 
 ### Parameter Options
 
@@ -233,12 +287,21 @@ repeat_penalty = 1.1  # Repetition penalty
 
 ### Enabling Tool Calling for Modes
 
-If Search or Deep Research modes are grayed out, the model may not be detected as supporting tool calling. To enable:
+If Search or Deep Research modes are grayed out, the model may not support tool calling:
 
-```toml
-[capability]
-tool = true  # Force enable tool support
-```
+1. **Using OpenRouter**: Capabilities are auto-detected. If a mode is grayed out, the model genuinely doesn't support tools according to OpenRouter's metadata.
+
+2. **Using custom endpoints**: Tool support defaults to `true`, but you may need to explicitly enable it:
+   ```toml
+   [capability]
+   tool = true  # Force enable tool support for custom endpoints
+   ```
+
+3. **Override for specific models**: If you know a model supports tools but it's not detected:
+   ```toml
+   [capability]
+   tool = true  # Override auto-detection
+   ```
 
 ## Default Credentials
 

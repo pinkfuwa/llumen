@@ -6,6 +6,51 @@
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
 
+#[derive(serde::Deserialize)]
+pub struct ModelListResponse {
+    pub data: Vec<Model>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum Modality {
+    /// Native image(can still input file without it)
+    File,
+    Image,
+    Text,
+    Audio,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SupportedParams {
+    ResponseFormat,
+    Tools,
+    StructuredOutput,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Model {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub supported_parameters: Vec<SupportedParams>,
+    #[serde(default)]
+    pub architecture: Architecture,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct Architecture {
+    #[serde(default)]
+    pub input_modalities: Vec<Modality>,
+    #[serde(default)]
+    pub output_modalities: Vec<Modality>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct CompletionReq {
     pub model: String,

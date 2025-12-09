@@ -2,16 +2,13 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::{model, prelude::*};
-use protocol::ModelConfig;
+use protocol::{ModelConfig, OcrEngine};
 use sea_orm::{ActiveValue::Set, EntityTrait};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 use crate::{
-    AppState,
-    errors::*,
-    middlewares::auth::UserId,
-    utils::model::{ModelCapability, ModelChecker},
+    AppState, errors::*, middlewares::auth::UserId, openrouter, utils::model::ModelChecker,
 };
 
 #[derive(Debug, Deserialize)]
@@ -36,12 +33,15 @@ pub async fn route(
     Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelCreateReq>,
 ) -> JsonResult<ModelCreateResp> {
-    let config = req.config;
+    let raw_config = req.config;
 
-    match <ModelConfig as ModelChecker>::from_toml(&config) {
-        Ok(cfg) => {
+    match <ModelConfig as ModelChecker>::from_toml(&raw_config) {
+        Ok(config) => {
+            let model: openrouter::Model = config.clone().into();
+            let caps = app.processor.get_capability(&model);
+
             let id = Model::insert(model::ActiveModel {
-                config: Set(config),
+                config: Set(raw_config),
                 ..Default::default()
             })
             .exec(&app.conn)
@@ -51,11 +51,11 @@ pub async fn route(
 
             Ok(Json(ModelCreateResp {
                 id,
-                image_input: cfg.is_image_capable(),
-                audio_input: cfg.is_audio_capable(),
-                other_file_input: cfg.is_other_file_capable(),
-                tool: cfg.is_tool_capable(),
-                display_name: cfg.display_name,
+                image_input: caps.image_input,
+                audio_input: caps.audio,
+                other_file_input: caps.ocr != OcrEngine::Disabled,
+                tool: caps.toolcall,
+                display_name: config.display_name,
             }))
         }
         Err(reason) => Err(Json(Error {

@@ -2,16 +2,13 @@ use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
 use entity::model;
-use protocol::ModelConfig;
+use protocol::{ModelConfig, OcrEngine};
 use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 use crate::{
-    AppState,
-    errors::*,
-    middlewares::auth::UserId,
-    utils::model::{ModelCapability, ModelChecker},
+    AppState, errors::*, middlewares::auth::UserId, openrouter, utils::model::ModelChecker,
 };
 
 #[derive(Debug, Serialize)]
@@ -44,17 +41,23 @@ pub async fn route(
         .all(&app.conn)
         .await
         .kind(ErrorKind::Internal)?;
+
     let list = models
         .into_iter()
         .filter_map(|m| {
             let config =
                 <ModelConfig as ModelChecker>::from_toml(&m.config).expect("corruptted database");
+
+            let model: openrouter::Model = config.clone().into();
+
+            let caps = app.processor.get_capability(&model);
+
             Some(ModelList {
                 id: m.id,
-                image_input: config.is_image_capable(),
-                audio_input: config.is_audio_capable(),
-                other_file_input: config.is_other_file_capable(),
-                tool: config.is_tool_capable(),
+                image_input: caps.image_input,
+                audio_input: caps.audio,
+                other_file_input: caps.ocr != OcrEngine::Disabled,
+                tool: caps.toolcall,
                 display_name: config.display_name,
             })
         })

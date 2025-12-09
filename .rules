@@ -116,6 +116,6 @@ To create new subagent:
 
 ## Common mistakes
 
-- Editing `frontend/src/lib/api/types.ts` break codegen(always run codegen with typeshare instead)
+- Editing `frontend/src/lib/api/types.ts` break codegen(always run codegen with typeshare instead: `cd backend && just gen-ts`)
 - Failing a CI test(see `.github/workflows/check.yml` for tests included)
 - The usage of npm(always use pnpm instead)
