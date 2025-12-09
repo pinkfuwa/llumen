@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { download } from '$lib/api/files';
 	import { Download } from '@lucide/svelte';
 
@@ -16,15 +16,20 @@
 		link.click();
 	}
 
-	// TODO: recording loading promise and cancel on next load.
+	function setSrc(newSrc: string) {
+		if (src != undefined) window.URL.revokeObjectURL(src);
+		src = newSrc;
+	}
+
 	$effect(() => {
 		download(id).then((url) => {
-			if (url) {
-				src = url;
-			} else {
-				error = true;
-			}
+			if (url) setSrc(url);
+			else error = true;
 		});
+	});
+
+	onDestroy(() => {
+		if (src != undefined) window.URL.revokeObjectURL(src);
 	});
 </script>
 

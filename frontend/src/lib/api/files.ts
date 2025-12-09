@@ -27,7 +27,11 @@ export async function upload(file: File, chatId: number, signal?: AbortSignal) {
 }
 
 export async function download(id: number): Promise<string | undefined> {
-	const response = await RawAPIFetch('file/download/' + encodeURIComponent(id), null);
+	const response = await RawAPIFetch<undefined>(
+		`file/read/${encodeURIComponent(id)}`,
+		undefined,
+		'GET'
+	);
 
 	let content_type = response.headers.get('Content-Type');
 	if (!response.ok || content_type == 'application/json') {

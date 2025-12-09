@@ -31,7 +31,11 @@ export async function RawAPIFetch<P = any>(
 	if (!(body instanceof FormData)) headers['Content-Type'] = 'application/json';
 	if (tokenVal) headers['Authorization'] = tokenVal;
 
-	const fetchBody = body instanceof FormData ? body : JSON.stringify(body);
+	let fetchBody;
+	if (method != 'GET') {
+		if (body instanceof FormData) fetchBody = body;
+		else fetchBody = JSON.stringify(body);
+	}
 
 	return fetch(apiBase + path, {
 		method,
