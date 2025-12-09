@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export RUSTFLAGS="-Zfmt-debug=none"
+
 set -euo pipefail
 
 TARGET_TRIPLE=${1:?Target triple must be provided}

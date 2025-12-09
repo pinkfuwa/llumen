@@ -11,6 +11,8 @@ tracing = ["dep:tokio-console", "dep:tracing", "dep:console-subscriber", "dep:tr
 [profile.release]
 opt-level = "s"
 lto = true
+strip = true
+panic = "abort"
 
 [workspace]
 members = [".", "entity", "migration", "protocol"]
