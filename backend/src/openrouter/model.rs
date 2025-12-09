@@ -1,9 +1,24 @@
-use super::{option::Tool, raw};
+use super::option::Tool;
+use protocol::OcrEngine;
 
-#[derive(Clone, Default, Copy)]
-pub struct Capabilities {
-    pub image: bool,
+#[derive(Clone, Default)]
+pub struct Capability {
+    pub image_output: bool,
+    pub image_input: bool,
     pub structured_output: bool,
+    pub toolcall: bool,
+    pub ocr: OcrEngine,
+    pub audio: bool,
+}
+
+#[derive(Clone, Default)]
+pub struct MaybeCapability {
+    pub image_output: Option<bool>,
+    pub image_input: Option<bool>,
+    pub structured_output: Option<bool>,
+    pub toolcall: Option<bool>,
+    pub ocr: Option<OcrEngine>,
+    pub audio: Option<bool>,
 }
 
 #[derive(Clone, Default)]
@@ -13,7 +28,8 @@ pub struct Model {
     pub repeat_penalty: Option<f32>,
     pub top_k: Option<i32>,
     pub top_p: Option<f32>,
-    pub capabilities: Capabilities,
+    // capabilities override
+    pub capability: MaybeCapability,
 }
 
 impl Model {
@@ -29,7 +45,7 @@ pub struct ModelBuilder {
     top_k: Option<i32>,
     top_p: Option<f32>,
     tools: Vec<Tool>,
-    capabilities: Capabilities,
+    capability: MaybeCapability,
 }
 
 impl ModelBuilder {
@@ -41,7 +57,7 @@ impl ModelBuilder {
             top_k: None,
             top_p: None,
             tools: Vec::new(),
-            capabilities: Capabilities::default(),
+            capability: MaybeCapability::default(),
         }
     }
 
@@ -53,7 +69,7 @@ impl ModelBuilder {
             top_k: model.top_k,
             top_p: model.top_p,
             tools: Vec::new(),
-            capabilities: model.capabilities,
+            capability: model.capability.clone(),
         }
     }
 
@@ -82,18 +98,33 @@ impl ModelBuilder {
         self
     }
 
-    pub fn capabilities(mut self, capabilities: Capabilities) -> Self {
-        self.capabilities = capabilities;
+    pub fn capability(mut self, capability: MaybeCapability) -> Self {
+        self.capability = capability;
         self
     }
 
-    pub fn support_image(mut self) -> Self {
-        self.capabilities.image = true;
+    pub fn image_output(mut self, image_output: bool) -> Self {
+        self.capability.image_output = Some(image_output);
         self
     }
 
-    pub fn support_structured_output(mut self) -> Self {
-        self.capabilities.structured_output = true;
+    pub fn image_input(mut self, image_input: bool) -> Self {
+        self.capability.image_input = Some(image_input);
+        self
+    }
+
+    pub fn structured_output(mut self, structured_output: bool) -> Self {
+        self.capability.structured_output = Some(structured_output);
+        self
+    }
+
+    pub fn ocr(mut self, ocr: OcrEngine) -> Self {
+        self.capability.ocr = Some(ocr);
+        self
+    }
+
+    pub fn audio(mut self, audio: bool) -> Self {
+        self.capability.audio = Some(audio);
         self
     }
 
@@ -104,7 +135,7 @@ impl ModelBuilder {
             repeat_penalty: self.repeat_penalty,
             top_k: self.top_k,
             top_p: self.top_p,
-            capabilities: self.capabilities,
+            capability: self.capability,
         }
     }
 }

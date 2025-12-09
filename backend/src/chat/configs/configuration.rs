@@ -10,7 +10,7 @@ use crate::utils::model::ModelChecker;
 use crate::{chat::*, openrouter};
 use entity::file;
 use protocol::ModelConfig;
-use sea_orm::{ActiveValue, EntityTrait};
+use sea_orm::ActiveValue;
 
 #[derive(Clone)]
 pub struct Configuration {

@@ -90,6 +90,10 @@ impl Context {
         self.openrouter.get_model_ids()
     }
 
+    pub fn get_capability(&self, model: &openrouter::Model) -> openrouter::Capability {
+        self.openrouter.get_capability(model)
+    }
+
     pub fn process(
         self: Arc<Self>,
         completion_ctx: CompletionContext,

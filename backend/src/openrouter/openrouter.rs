@@ -1,22 +1,16 @@
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+use super::message::*;
 use crate::openrouter::{StreamCompletion, option::CompletionOption};
 
 use super::{Model, error::Error, raw};
+use protocol::OcrEngine;
 
 static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
 
-async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<String>, Error> {
-    #[derive(serde::Deserialize)]
-    struct Model {
-        id: String,
-    }
-    #[derive(serde::Deserialize)]
-    struct Response {
-        data: Vec<Model>,
-    }
-
+async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<raw::Model>, Error> {
     let client = reqwest::Client::new();
     let response = client
         .get(url)
@@ -26,14 +20,14 @@ async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<String>, Error> {
         .send()
         .await?;
 
-    let model: Response = response.json().await?;
-    Ok(model.data.into_iter().map(|m| m.id).collect())
+    let model: raw::ModelListResponse = response.json().await?;
+    Ok(model.data)
 }
 
 pub struct Openrouter {
     pub(super) api_key: String,
     pub(super) chat_completion_endpoint: String,
-    model_ids: Arc<RwLock<Vec<String>>>,
+    models: Arc<RwLock<HashMap<String, raw::Model>>>,
     pub(super) http_client: reqwest::Client,
     // true if not openrouter
     pub(super) compatibility_mode: bool,
@@ -79,11 +73,13 @@ impl Openrouter {
 
         let tools: Vec<raw::Tool> = option.tools.into_iter().map(|t| t.into()).collect();
 
+        let capability = self.get_capability(&model);
+
         raw::CompletionReq {
             model: model.id.clone(),
             messages: messages
                 .into_iter()
-                .map(|m| m.to_raw_message(&model.id))
+                .map(|m| m.to_raw_message(&model.id, &capability))
                 .collect(),
             stream,
             temperature: model.temperature,
@@ -117,17 +113,19 @@ impl Openrouter {
             log::warn!("Custom API_BASE detected, disabling plugin support");
         }
 
-        let model_ids = Arc::new(RwLock::new(Vec::new()));
+        let models = Arc::new(RwLock::new(HashMap::new()));
 
         {
-            let model_ids = model_ids.clone();
+            let models = models.clone();
             let api_key = api_key.clone();
             let endpoint = format!("{}/v1/models", api_base.trim_end_matches('/'));
             tokio::spawn(async move {
                 match fetch_models(&endpoint, &api_key).await {
-                    Ok(models) => {
-                        log::info!("{} models available", models.len());
-                        *model_ids.write().unwrap() = models;
+                    Ok(model_list) => {
+                        log::info!("{} models available", model_list.len());
+                        let map: HashMap<String, raw::Model> =
+                            model_list.into_iter().map(|m| (m.id.clone(), m)).collect();
+                        *models.write().unwrap() = map;
                     }
                     Err(err) => log::error!("Failed to fetch models: {}", err),
                 }
@@ -137,7 +135,7 @@ impl Openrouter {
         Self {
             api_key,
             chat_completion_endpoint,
-            model_ids,
+            models,
             http_client: reqwest::Client::new(),
             compatibility_mode,
         }
@@ -145,7 +143,107 @@ impl Openrouter {
 
     /// Get a list of available model IDs
     pub fn get_model_ids(&self) -> Vec<String> {
-        self.model_ids.read().unwrap().clone()
+        self.models.read().unwrap().keys().cloned().collect()
+    }
+
+    /// get capability of a model(consider user overrides)
+    pub fn get_capability(&self, model: &Model) -> super::Capability {
+        let overrides: super::MaybeCapability = model.capability.clone().into();
+        let capability = self.get_openrouter_capability(&model.id);
+
+        macro_rules! merge {
+            ($v:ident) => {
+                match overrides.$v {
+                    Some(v) => v,
+                    None => capability.$v.unwrap_or(true),
+                }
+            };
+        }
+        super::Capability {
+            image_output: merge!(image_output),
+            image_input: merge!(image_input),
+            structured_output: merge!(structured_output),
+            toolcall: merge!(toolcall),
+            ocr: match overrides.ocr {
+                Some(v) => v,
+                None => capability.ocr.unwrap_or(OcrEngine::Text),
+            },
+            audio: merge!(audio),
+        }
+    }
+
+    /// get openrouter capabilities
+    fn get_openrouter_capability(&self, model_id: &str) -> super::MaybeCapability {
+        if self.compatibility_mode {
+            return super::MaybeCapability::default();
+        }
+
+        let models = self.models.read().unwrap();
+        let model = models.get(model_id);
+
+        if model.is_none() {
+            return super::MaybeCapability::default();
+        }
+
+        let model = model.unwrap();
+
+        let supports_file_modality = model
+            .architecture
+            .input_modalities
+            .contains(&raw::Modality::File);
+
+        super::MaybeCapability {
+            image_output: Some(
+                model
+                    .architecture
+                    .output_modalities
+                    .contains(&raw::Modality::Image),
+            ),
+            image_input: Some(
+                model
+                    .architecture
+                    .input_modalities
+                    .contains(&raw::Modality::Image),
+            ),
+            structured_output: Some(
+                model
+                    .supported_parameters
+                    .contains(&raw::SupportedParams::StructuredOutput),
+            ),
+            toolcall: Some(
+                model
+                    .supported_parameters
+                    .contains(&raw::SupportedParams::Tools),
+            ),
+            ocr: Some(if supports_file_modality {
+                OcrEngine::Native
+            } else {
+                OcrEngine::Mistral
+            }),
+            audio: Some(
+                model
+                    .architecture
+                    .input_modalities
+                    .contains(&raw::Modality::Audio),
+            ),
+        }
+    }
+
+    /// Check if a model supports tools (function calling)
+    /// Returns None if model not found or not using OpenRouter
+    pub fn supports_tools(&self, model_id: &str) -> Option<bool> {
+        if self.compatibility_mode {
+            return None;
+        }
+
+        let models = self.models.read().unwrap();
+        let model = models.get(model_id)?;
+
+        Some(
+            model
+                .supported_parameters
+                .contains(&raw::SupportedParams::Tools),
+        )
     }
 
     pub async fn stream(
@@ -256,7 +354,11 @@ impl Openrouter {
             "Image generation supported only on streaming"
         );
 
-        let structured_output = model.capabilities.structured_output;
+        // to determine does it support structured output,
+        // first look for capabilities override(capabilities from model)
+        // Then check if openrouter is used, trust what openrouter give us
+        // If not openrouter and no override, assume supported.
+        let structured_output = self.get_capability(&model).structured_output;
 
         let mut req = self.create_request(messages, false, model, option);
 
@@ -298,199 +400,6 @@ pub struct StructuredCompletion<T> {
     pub price: f64,
     pub token: usize,
     pub response: T,
-}
-
-#[derive(Debug, Clone)]
-pub struct File {
-    pub name: String,
-    pub data: Vec<u8>,
-}
-
-// generated image
-#[derive(Debug, Clone)]
-pub struct Image {
-    pub data: Vec<u8>,
-    pub mime_type: String,
-}
-
-impl Image {
-    /// Parse a data URL like "data:image/png;base64,iVBORw0KGgo..."
-    pub fn from_data_url(url: &str) -> Result<Self, Error> {
-        if !url.starts_with("data:") {
-            return Err(Error::MalformedResponse(
-                "Image URL does not start with 'data:'",
-            ));
-        }
-
-        let url = url.strip_prefix("data:").unwrap();
-
-        let parts: Vec<&str> = url.splitn(2, ',').collect();
-        if parts.len() != 2 {
-            return Err(Error::MalformedResponse("Invalid data URL format"));
-        }
-
-        let metadata = parts[0];
-        let base64_data = parts[1];
-
-        // Parse metadata like "image/png;base64"
-        let mime_type = if let Some(semicolon_pos) = metadata.find(';') {
-            metadata[..semicolon_pos].to_string()
-        } else {
-            metadata.to_string()
-        };
-
-        // Decode base64
-        let data = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, base64_data)
-            .map_err(|_| Error::MalformedResponse("Failed to decode base64 image data"))?;
-
-        Ok(Image { data, mime_type })
-    }
-
-    pub fn from_raw_image(raw_image: super::raw::Image) -> Result<Self, Error> {
-        Self::from_data_url(&raw_image.image_url.url)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct MessageToolCall {
-    pub id: String,
-    pub name: String,
-    pub arguments: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct MessageToolResult {
-    pub id: String,
-    pub content: String,
-}
-
-#[derive(Debug, Clone)]
-pub enum Message {
-    System(String),
-    User(String),
-    Assistant {
-        content: String,
-        annotations: Option<serde_json::Value>,
-        reasoning_details: Option<serde_json::Value>,
-        images: Vec<Image>,
-    },
-    MultipartUser {
-        text: String,
-        files: Vec<File>,
-    },
-    ToolCall(MessageToolCall),
-    ToolResult(MessageToolResult),
-}
-
-impl Message {
-    pub fn to_raw_message(self, target_model_id: &str) -> raw::Message {
-        match self {
-            Message::Assistant {
-                content,
-                annotations,
-                reasoning_details,
-                images,
-            } => {
-                let mut reasoning_details_value = None;
-                if let Some(details) = reasoning_details {
-                    if let Some(obj) = details.as_object() {
-                        if let Some(model_id) = obj.get("model_id").and_then(|v| v.as_str()) {
-                            if target_model_id.starts_with(model_id) {
-                                reasoning_details_value = obj.get("data").cloned();
-                            }
-                        }
-                    }
-                }
-                if images.is_empty() {
-                    return raw::Message {
-                        role: raw::Role::Assistant,
-                        content: Some(content),
-                        annotations,
-                        reasoning_details: reasoning_details_value
-                            .map(|v| vec![v])
-                            .unwrap_or_default(),
-                        ..Default::default()
-                    };
-                }
-                let mut parts = Vec::new();
-
-                for image in images {
-                    let data_url = format!(
-                        "data:{};base64,{}",
-                        image.mime_type,
-                        base64::Engine::encode(
-                            &base64::engine::general_purpose::STANDARD,
-                            &image.data
-                        )
-                    );
-                    parts.push(raw::MessagePart::image_url(data_url));
-                }
-
-                parts.push(raw::MessagePart::text(content));
-
-                raw::Message {
-                    role: raw::Role::Assistant,
-                    contents: Some(parts),
-                    annotations,
-                    reasoning_details: reasoning_details_value.map(|v| vec![v]).unwrap_or_default(),
-                    ..Default::default()
-                }
-            }
-            Message::System(msg) => raw::Message {
-                role: raw::Role::System,
-                content: Some(msg),
-                ..Default::default()
-            },
-            Message::User(msg) => raw::Message {
-                role: raw::Role::User,
-                content: Some(msg),
-                ..Default::default()
-            },
-
-            Message::MultipartUser { text, files } => {
-                let files = files
-                    .into_iter()
-                    .flat_map(|f| {
-                        let (first, second) = raw::MessagePart::unknown(&f.name, f.data);
-                        vec![first, second]
-                    })
-                    .collect::<Vec<_>>();
-
-                raw::Message {
-                    role: raw::Role::User,
-                    contents: Some(
-                        std::iter::once(raw::MessagePart::text(text))
-                            .chain(files.into_iter())
-                            .collect(),
-                    ),
-                    ..Default::default()
-                }
-            }
-            Message::ToolCall(MessageToolCall {
-                id,
-                name,
-                arguments,
-            }) => raw::Message {
-                role: raw::Role::Assistant,
-                tool_calls: Some(vec![raw::ToolCallReq {
-                    id,
-                    function: raw::ToolFunctionResp {
-                        name: Some(name),
-                        arguments: Some(arguments),
-                    },
-                    r#type: "function".to_string(),
-                }]),
-                content: Some("".to_string()),
-                ..Default::default()
-            },
-            Message::ToolResult(MessageToolResult { id, content }) => raw::Message {
-                role: raw::Role::Tool,
-                content: Some(content),
-                tool_call_id: Some(id),
-                ..Default::default()
-            },
-        }
-    }
 }
 
 #[cfg(debug_assertions)]

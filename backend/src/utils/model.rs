@@ -1,13 +1,17 @@
-use protocol::{ModelConfig, OcrEngine};
+use protocol::ModelConfig;
 use serde::de::DeserializeOwned;
 
 use crate::openrouter;
 
 impl From<ModelConfig> for openrouter::Model {
     fn from(value: ModelConfig) -> Self {
-        let capabilities = openrouter::Capabilities {
-            image: value.is_image_capable(),
-            structured_output: value.is_json_capable(),
+        let capability = openrouter::MaybeCapability {
+            image_output: None,
+            image_input: value.capability.image,
+            structured_output: value.capability.json,
+            toolcall: value.capability.tool,
+            ocr: value.capability.ocr,
+            audio: value.capability.audio,
         };
 
         openrouter::Model {
@@ -16,46 +20,8 @@ impl From<ModelConfig> for openrouter::Model {
             repeat_penalty: value.parameter.repeat_penalty,
             top_k: value.parameter.top_k,
             top_p: value.parameter.top_p,
-            capabilities,
+            capability,
         }
-    }
-}
-
-pub trait ModelCapability {
-    fn is_image_capable(&self) -> bool;
-    fn is_audio_capable(&self) -> bool;
-    fn is_other_file_capable(&self) -> bool;
-    fn is_tool_capable(&self) -> bool;
-    fn is_json_capable(&self) -> bool;
-}
-
-impl ModelCapability for ModelConfig {
-    fn is_image_capable(&self) -> bool {
-        if let Some(image) = self.capability.image {
-            return image;
-        }
-        true
-    }
-    fn is_audio_capable(&self) -> bool {
-        if let Some(audio) = self.capability.audio {
-            return audio;
-        }
-        true
-    }
-    fn is_other_file_capable(&self) -> bool {
-        self.capability.ocr != Some(OcrEngine::Disabled)
-    }
-    fn is_tool_capable(&self) -> bool {
-        if let Some(tool) = self.capability.tool {
-            return tool;
-        }
-        true
-    }
-    fn is_json_capable(&self) -> bool {
-        if let Some(json) = self.capability.json {
-            return json;
-        }
-        true
     }
 }
 

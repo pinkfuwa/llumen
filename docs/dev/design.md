@@ -36,7 +36,7 @@
 - Rust with Axum web framework
 - SeaORM for database abstraction
 - Tokio async runtime
-- OpenRouter API client
+- OpenRouter API client with capability auto-detection
 - Lua sandbox for code execution
 
 **Frontend:**
@@ -48,6 +48,105 @@
 **Database:**
 - SQLite for persistence
 - ReDB for blob storage
+
+---
+
+## Model Capability Auto-Detection
+
+Llumen automatically detects model capabilities when using OpenRouter, eliminating the need for manual configuration in most cases.
+
+### Architecture
+
+The auto-detection system follows a three-tier priority hierarchy:
+
+1. **User Explicit Setting**: If a user explicitly sets a capability in the model configuration, that value is always respected.
+2. **OpenRouter Metadata**: When using OpenRouter and no explicit setting is provided, Llumen queries OpenRouter's model metadata for capabilities.
+3. **Default Fallback**: If the model isn't found on OpenRouter or a custom endpoint is used, capabilities default to `true`.
+
+### Implementation
+
+#### Backend Components
+
+**`openrouter::Openrouter`** (`backend/src/openrouter/openrouter.rs`):
+- On initialization, spawns a background task to fetch all available models from OpenRouter
+- Stores models in a `HashMap<String, raw::Model>` wrapped in `Arc<RwLock<>>`
+- Provides `get_model_capabilities(&self, model_id: &str) -> Option<Capabilities>` to query capabilities
+- Provides `supports_tools(&self, model_id: &str) -> Option<bool>` for tool calling detection
+
+**`raw::Model`** (`backend/src/openrouter/raw.rs`):
+- Contains `supported_parameters: Vec<SupportedParams>` - indicates support for `Tools`, `ResponseFormat`, `StructuredOutput`
+- Contains `architecture: Architecture` with `input_modalities` and `output_modalities` - indicates support for `Image`, `Audio`, `File`, `Text`
+
+**`ModelCapabilityWithOpenRouter` trait** (`backend/src/utils/model.rs`):
+- Provides unified `get_capability(&self, openrouter: &Openrouter) -> DetectedCapabilities` method
+- Returns a `DetectedCapabilities` struct containing all detected capabilities at once
+- Implements the three-tier priority logic for all capability fields
+- Used by the model list endpoint to determine UI capabilities
+
+**`DetectedCapabilities` struct** (`backend/src/utils/model.rs`):
+- Contains all capability fields: `image`, `audio`, `ocr`, `tool`, `json`
+- Returned by the unified `get_capability()` method
+- Can be converted to `protocol::ModelCapability` via `From` trait for API responses
+
+#### Capability Mapping
+
+| ModelConfig Field | OpenRouter Source | Detection Logic |
+|-------------------|-------------------|-----------------|
+| `image` | `architecture.input_modalities` contains `Image` | User setting → OpenRouter → default true |
+| `audio` | `architecture.input_modalities` contains `Audio` | User setting → OpenRouter → default true |
+| `ocr` (documents) | `architecture.input_modalities` contains `File` | User setting → OpenRouter (Native if File supported, else Text) → default Text |
+| `tool` | `supported_parameters` contains `Tools` | User setting → OpenRouter → default true |
+| `json` | `supported_parameters` contains `StructuredOutput` | User setting → OpenRouter → default true |
+
+#### OCR Mode Detection
+
+The `ocr` field is an enum (`OcrEngine`) rather than a boolean:
+- **`Native`**: Model natively supports File modality. Documents are sent directly to the model.
+- **`Text`**: Basic text extraction is performed before sending to the model.
+- **`Mistral`**: Mistral's OCR service is used to process documents.
+- **`Disabled`**: Documents are filtered out and not sent.
+
+When auto-detecting:
+- If OpenRouter reports File modality support → `Native`
+- Otherwise → `Text` (conservative default that works with most models)
+
+#### Message Filtering
+
+The `Message::to_raw_message()` method (`backend/src/openrouter/openrouter.rs`) now accepts a `capabilities` parameter and filters message content based on detected capabilities:
+
+1. **Image filtering**: If `capabilities.image_input` is `false`, `ImageUrl` message parts are filtered out
+2. **Audio filtering**: If `capabilities.audio` is `false`, `InputAudio` message parts are filtered out
+3. **Document filtering**: If `capabilities.ocr` is `Disabled`, `File` message parts are filtered out
+
+This ensures requests are always compatible with the target model's capabilities, preventing API errors.
+
+#### Usage in List Endpoint
+
+The `/api/model/list` endpoint (`backend/src/routes/model/list.rs`):
+1. Retrieves the OpenRouter instance via `app.processor.get_openrouter()`
+2. For each model, calls `config.get_capability(openrouter)` once to get all capabilities
+3. Returns capability flags to the frontend for UI state (e.g., graying out unavailable modes)
+
+### User Configuration
+
+Users can override auto-detection by explicitly setting capabilities in model TOML configuration:
+
+```toml
+display_name = "Custom Model"
+model_id = "provider/model-name"
+
+[capability]
+tool = false  # Override: disable tools even if model supports it
+# Other capabilities auto-detected from OpenRouter
+```
+
+### Compatibility Mode
+
+When using custom API endpoints (non-OpenRouter), the system enters "compatibility mode":
+- Model metadata fetching is disabled
+- All capabilities default to `true`
+- OpenRouter-specific features (plugins, web search) are disabled
+- Users must manually configure capabilities if needed
 
 ---
 
