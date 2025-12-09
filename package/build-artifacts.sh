@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export RUSTFLAGS="-Zfmt-debug=none"
+
 set -euo pipefail
 
 TARGET_TRIPLE=${1:-$(rustc -vV | grep 'host:' | awk '{print $2}')}
