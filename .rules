@@ -111,10 +111,11 @@ To create new subagent:
 
 ## Document your changes
 
-* document user-facing changes in `docs/user.md`
-* document architecture changes in `docs/design.md`
+* document user-facing changes in `docs/user/`
+* document architecture changes in `docs/dev/`
 
 ## Common mistakes
 
 - Editing `frontend/src/lib/api/types.ts` break codegen(always run codegen with typeshare instead)
 - Failing a CI test(see `.github/workflows/check.yml` for tests included)
+- The usage of npm(always use pnpm instead)

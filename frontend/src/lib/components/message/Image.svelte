@@ -1,35 +1,43 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
-	import { download } from '$lib/api/files';
+	import { onDestroy } from 'svelte';
+	import { downloadCompressed, download } from '$lib/api/files';
 	import { Download } from '@lucide/svelte';
 
 	let { id }: { id: number } = $props();
 
 	let src = $state<string | undefined>(undefined);
 	let error = $state(false);
+	let isDownloading = $state(false);
 
 	async function downloadImage() {
+		if (isDownloading) return;
+		isDownloading = true;
+
+		const src = await download(id);
 		if (!src) return;
+
 		const link = document.createElement('a');
 		link.href = src;
 		link.download = `image-${id}`;
 		link.click();
+		window.URL.revokeObjectURL(src);
+		isDownloading = false;
 	}
 
 	function setSrc(newSrc: string) {
-		if (src != undefined) window.URL.revokeObjectURL(src);
+		if (src !== undefined) window.URL.revokeObjectURL(src);
 		src = newSrc;
 	}
 
 	$effect(() => {
-		download(id).then((url) => {
+		downloadCompressed(id).then((url) => {
 			if (url) setSrc(url);
 			else error = true;
 		});
 	});
 
 	onDestroy(() => {
-		if (src != undefined) window.URL.revokeObjectURL(src);
+		if (src !== undefined) window.URL.revokeObjectURL(src);
 	});
 </script>
 
@@ -48,8 +56,9 @@
 			/>
 			<button
 				onclick={downloadImage}
+				disabled={isDownloading}
 				aria-label="download image"
-				class="visible absolute top-2 right-2 rounded-lg bg-secondary p-2 duration-150 hover:bg-primary hover:text-text-hover md:invisible md:group-hover:visible"
+				class="visible absolute top-2 right-2 rounded-lg bg-secondary p-2 duration-150 hover:bg-primary hover:text-text-hover disabled:opacity-50 md:invisible md:group-hover:visible"
 			>
 				<Download class="h-5 w-5" />
 			</button>
