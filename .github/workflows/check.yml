@@ -1,30 +1,58 @@
-name: status check
+name: Status Check
 
 on:
   pull_request:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  backend-tests:
+    name: Backend tests
     runs-on: ubuntu-latest
+    outputs:
+      cargo_test_outcome: ${{ steps.cargo_test.outcome }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get lockfile hashes
+      - name: Get cargo lockfile hash
         id: lockfile_hash
         run: |
           echo "cargo_lock_hash=$(sha256sum backend/Cargo.lock | awk '{print $1}')" >> $GITHUB_OUTPUT
-          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
 
       - name: Cache backend target directory
         uses: actions/cache@v4
         with:
           path: backend/target
           key: backend-target-${{ runner.os }}-${{ steps.lockfile_hash.outputs.cargo_lock_hash }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run cargo test
+        id: cargo_test
+        continue-on-error: true
+        working-directory: ./backend
+        run: cargo test --workspace
+
+  frontend-tests:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+    outputs:
+      svelte_check_outcome: ${{ steps.svelte_check.outcome }}
+      vitest_outcome: ${{ steps.vitest.outcome }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get pnpm lockfile hash
+        id: lockfile_hash
+        run: |
+          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
 
       - name: Cache frontend node_modules
         uses: actions/cache@v4
@@ -37,9 +65,6 @@ jobs:
         with:
           path: frontend/.svelte-kit
           key: frontend-svelte-kit-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
@@ -59,12 +84,6 @@ jobs:
         working-directory: ./frontend
         run: pnpm install
 
-      - name: Run cargo test
-        id: cargo_test
-        continue-on-error: true
-        working-directory: ./backend
-        run: cargo test --workspace
-
       - name: Run svelte-check
         id: svelte_check
         continue-on-error: true
@@ -76,18 +95,3 @@ jobs:
         continue-on-error: true
         working-directory: ./frontend
         run: pnpm exec vitest --run
-
-      - name: Print test outcomes
-        run: |
-          echo "backend test outcome: ${{ steps.cargo_test.outcome }}"
-          echo "svelte-check outcome: ${{ steps.svelte_check.outcome }}"
-          echo "frontend test outcome: ${{ steps.vitest.outcome }}"
-
-      - name: Fail job if any test step didn't succeed
-        run: |
-          if [ "${{ steps.cargo_test.outcome }}" != "success" ] || \
-             [ "${{ steps.svelte_check.outcome }}" != "success" ] || \
-             [ "${{ steps.vitest.outcome }}" != "success" ]; then
-            echo "One or more test steps failed or were cancelled"
-            exit 1
-          fi
