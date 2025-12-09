@@ -3,19 +3,11 @@
 		$props();
 
 	import { ArrowDownToLine, X } from '@lucide/svelte';
-	import { RawAPIFetch } from '$lib/api/state/errorHandle';
+	import { download } from '$lib/api/files';
 
 	async function downloadFile(fileId: number, fileName: string) {
-		try {
-			const response = await RawAPIFetch(`file/download/${fileId}`, null, 'POST');
-
-			if (!response.ok) {
-				console.error('Failed to download file');
-				return;
-			}
-
-			const blob = await response.blob();
-			const url = window.URL.createObjectURL(blob);
+		let url = await download(fileId);
+		if (url != undefined) {
 			const link = document.createElement('a');
 			link.href = url;
 			link.download = fileName;
@@ -23,8 +15,6 @@
 			link.click();
 			document.body.removeChild(link);
 			window.URL.revokeObjectURL(url);
-		} catch (error) {
-			console.error('Error downloading file:', error);
 		}
 	}
 </script>

@@ -1,6 +1,9 @@
-use std::path::Path;
+use std::{path::Path, pin::Pin, task};
 
+use bytes::Bytes;
+use futures_util::FutureExt;
 use redb::*;
+use tokio::task::JoinHandle;
 use tokio_stream::{Stream, StreamExt};
 
 use std::sync::Arc;
@@ -30,6 +33,66 @@ impl AsRef<[u8]> for Reader {
 impl Reader {
     pub fn len(&self) -> usize {
         self.guard.value().len()
+    }
+}
+
+const CHUNK_SIZE: usize = 256 * 1024;
+
+pub struct MmapStream {
+    reader: Arc<Reader>,
+    position: usize,
+    read_task: Option<JoinHandle<Bytes>>,
+}
+
+impl MmapStream {
+    fn new(reader: Reader) -> Self {
+        Self {
+            reader: Arc::new(reader),
+            position: 0,
+            read_task: None,
+        }
+    }
+}
+
+impl From<Reader> for MmapStream {
+    fn from(reader: Reader) -> Self {
+        Self::new(reader)
+    }
+}
+
+impl Stream for MmapStream {
+    type Item = Result<Bytes, axum::Error>;
+
+    fn poll_next(
+        mut self: Pin<&mut Self>,
+        _cx: &mut task::Context<'_>,
+    ) -> task::Poll<Option<Self::Item>> {
+        if self.position >= self.reader.len() {
+            return task::Poll::Ready(None);
+        }
+
+        let position = self.position;
+        let end = std::cmp::min(position + CHUNK_SIZE, self.reader.len());
+
+        if self.read_task.is_none() {
+            let reader = self.reader.clone();
+            self.read_task = Some(tokio::task::spawn_blocking(move || {
+                Bytes::copy_from_slice(&reader.as_ref().as_ref()[position..end])
+            }));
+        }
+
+        self.read_task
+            .as_mut()
+            .unwrap()
+            .poll_unpin(_cx)
+            .map(|x| match x {
+                Ok(buf) => {
+                    self.position = end;
+                    self.read_task = None;
+                    Some(Ok(buf))
+                }
+                Err(_) => None,
+            })
     }
 }
 
