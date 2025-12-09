@@ -43,6 +43,24 @@ export async function download(id: number): Promise<string | undefined> {
 	return URL.createObjectURL(blob);
 }
 
+export async function downloadCompressed(id: number): Promise<string | undefined> {
+	const width = window.devicePixelRatio * screen.width;
+	const response = await RawAPIFetch<undefined>(
+		`file/image/${width}/${encodeURIComponent(id)}`,
+		undefined,
+		'GET'
+	);
+
+	let content_type = response.headers.get('Content-Type');
+	if (!response.ok || content_type == 'application/json') {
+		console.warn('Fail to download compressed image', { id, width });
+		return;
+	}
+
+	const blob = await response.blob();
+	return URL.createObjectURL(blob);
+}
+
 export class UploadManager {
 	private uploads: { promise: Promise<number | null>; file: File }[] = [];
 	private abortController: AbortController = new AbortController();
