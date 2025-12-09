@@ -46,6 +46,8 @@ impl Openrouter {
             messages.push(Message::User("".to_string()));
         }
 
+        let capability = self.get_capability(&model);
+
         let mut plugins = Vec::new();
         let mut modalities = Vec::new();
 
@@ -55,7 +57,7 @@ impl Openrouter {
                 log::debug!("inserting web search context");
                 plugins.push(raw::Plugin::web());
             }
-            if option.image_generation {
+            if option.image_generation && capability.image_output {
                 modalities.extend(["text".to_string(), "image".to_string()]);
             }
         }
@@ -72,8 +74,6 @@ impl Openrouter {
             .map(|effort| raw::Reasoning { effort });
 
         let tools: Vec<raw::Tool> = option.tools.into_iter().map(|t| t.into()).collect();
-
-        let capability = self.get_capability(&model);
 
         raw::CompletionReq {
             model: model.id.clone(),
