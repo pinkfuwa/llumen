@@ -519,4 +519,172 @@ describe('Lexer - Integration', () => {
 			expect(citationNode.citationData.authoritative).toBe(true);
 		}
 	});
+
+	it('should handle citation block with tabs through full pipeline', async () => {
+		const source = `<citation>
+	<title>Apple's Return to Intel: M-Series Chip Deal by 2027</title>
+	<url>https://apple.gadgethacks.com/news/apple-returns-to-intel-m-series-chip-deal-by-2027/</url>
+	<favicon>https://assets.content.technologyadvice.com/gadgethacks_favicon_d352b3f01c.webp</favicon>
+</citation>`;
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		expect(tree).toBeDefined();
+		expect(walked).toBeDefined();
+
+		const findCitation = (node: any): any => {
+			if (node.type === 'Citation') return node;
+			if (Array.isArray(node.children)) {
+				for (const child of node.children) {
+					const result = findCitation(child);
+					if (result) return result;
+				}
+			}
+			return null;
+		};
+
+		const citationNode = findCitation(walked);
+		if (citationNode) {
+			expect(citationNode.citationData.title).toBe(
+				"Apple's Return to Intel: M-Series Chip Deal by 2027"
+			);
+			expect(citationNode.citationData.url).toBe(
+				'https://apple.gadgethacks.com/news/apple-returns-to-intel-m-series-chip-deal-by-2027/'
+			);
+			expect(citationNode.citationData.favicon).toBe(
+				'https://assets.content.technologyadvice.com/gadgethacks_favicon_d352b3f01c.webp'
+			);
+		}
+	});
+
+	it('should handle citation block with leading tab indentation', async () => {
+		const source = `	<citation>
+	<title>Test with leading tab</title>
+	<url>https://test.com</url>
+</citation>`;
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		expect(tree).toBeDefined();
+		expect(walked).toBeDefined();
+
+		const findCitation = (node: any): any => {
+			if (node.type === 'Citation') return node;
+			if (Array.isArray(node.children)) {
+				for (const child of node.children) {
+					const result = findCitation(child);
+					if (result) return result;
+				}
+			}
+			return null;
+		};
+
+		const citationNode = findCitation(walked);
+
+		expect(citationNode).toBeDefined();
+		if (citationNode) {
+			expect(citationNode.citationData.title).toBe('Test with leading tab');
+			expect(citationNode.citationData.url).toBe('https://test.com');
+		}
+	});
+
+	it('should handle the exact user example with tabs through full pipeline', async () => {
+		const source = `	<citation>
+	<title>Apple's Return to Intel: M-Series Chip Deal by 2027</title>
+	<url>https://apple.gadgethacks.com/news/apple-returns-to-intel-m-series-chip-deal-by-2027/</url>
+	<favicon>https://assets.content.technologyadvice.com/gadgethacks_favicon_d352b3f01c.webp</favicon>
+</citation>`;
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		expect(tree).toBeDefined();
+		expect(walked).toBeDefined();
+
+		const findCitation = (node: any): any => {
+			if (node.type === 'Citation') return node;
+			if (Array.isArray(node.children)) {
+				for (const child of node.children) {
+					const result = findCitation(child);
+					if (result) return result;
+				}
+			}
+			return null;
+		};
+
+		const citationNode = findCitation(walked);
+		expect(citationNode).toBeDefined();
+		if (citationNode) {
+			expect(citationNode.citationData.title).toBe(
+				"Apple's Return to Intel: M-Series Chip Deal by 2027"
+			);
+			expect(citationNode.citationData.url).toBe(
+				'https://apple.gadgethacks.com/news/apple-returns-to-intel-m-series-chip-deal-by-2027/'
+			);
+			expect(citationNode.citationData.favicon).toBe(
+				'https://assets.content.technologyadvice.com/gadgethacks_favicon_d352b3f01c.webp'
+			);
+		}
+	});
+
+	it('should handle consecutive citations through full pipeline', async () => {
+		const source = `<citation>
+    <title>Intel Makes U‑turn, Cancels Plan to Sell Its Networking Division: Read Chipmaker's Statement</title>
+    <url>https://timesofindia.indiatimes.com/technology/tech-news/intel-makes-u-turn-cancels-plan-to-sell-its-networking-division-read-chipmakers-statement/articleshow/125769743.cms</url>
+    <favicon>https://m.timesofindia.com/touch-icon-iphone-precomposed.png</favicon>
+</citation>
+<citation>
+    <title>Apple's Return to Intel: M-Series Chip Deal by 2027</title>
+    <url>https://apple.gadgethacks.com/news/apple-returns-to-intel-m-series-chip-deal-by-2027/</url>
+    <favicon>https://assets.content.technologyadvice.com/gadgethacks_favicon_d352b3f01c.webp</favicon>
+</citation>
+<citation>
+    <title>The 10 Biggest Intel News Stories Of 2025</title>
+    <url>https://www.crn.com/news/components-peripherals/2025/the-10-biggest-intel-news-stories-of-2025</url>
+    <favicon>https://www.crn.com/icons/apple-touch-icon.png</favicon>
+    <author>Dylan Martin</author>
+</citation>`;
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		expect(tree).toBeDefined();
+		expect(walked).toBeDefined();
+
+		const findAllCitations = (node: any): any[] => {
+			const citations: any[] = [];
+			if (node.type === 'Citation') {
+				citations.push(node);
+			}
+			if (Array.isArray(node.children)) {
+				for (const child of node.children) {
+					citations.push(...findAllCitations(child));
+				}
+			}
+			return citations;
+		};
+
+		const citations = findAllCitations(walked);
+		expect(citations).toHaveLength(3);
+
+		// First citation
+		expect(citations[0].citationData.title).toBe(
+			"Intel Makes U‑turn, Cancels Plan to Sell Its Networking Division: Read Chipmaker's Statement"
+		);
+		expect(citations[0].citationData.url).toBe(
+			'https://timesofindia.indiatimes.com/technology/tech-news/intel-makes-u-turn-cancels-plan-to-sell-its-networking-division-read-chipmakers-statement/articleshow/125769743.cms'
+		);
+
+		// Second citation
+		expect(citations[1].citationData.title).toBe(
+			"Apple's Return to Intel: M-Series Chip Deal by 2027"
+		);
+		expect(citations[1].citationData.url).toBe(
+			'https://apple.gadgethacks.com/news/apple-returns-to-intel-m-series-chip-deal-by-2027/'
+		);
+
+		// Third citation
+		expect(citations[2].citationData.title).toBe('The 10 Biggest Intel News Stories Of 2025');
+		expect(citations[2].citationData.url).toBe(
+			'https://www.crn.com/news/components-peripherals/2025/the-10-biggest-intel-news-stories-of-2025'
+		);
+	});
 });

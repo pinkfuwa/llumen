@@ -271,12 +271,18 @@ const citationDetector: BlockDetector = {
 			const openIndex = source.indexOf('<citation>', pos);
 			if (openIndex === -1) break;
 
+			// Find the start of the line containing <citation>
+			let lineStart = openIndex;
+			while (lineStart > 0 && source[lineStart - 1] !== '\n') {
+				lineStart--;
+			}
+
 			const closeIndex = source.indexOf('</citation>', openIndex + 10);
 			if (closeIndex === -1) {
 				// Unclosed citation, include from opening to end
-				if (openIndex >= changeStart) {
+				if (lineStart >= changeStart) {
 					regions.push({
-						start: openIndex,
+						start: lineStart,
 						end: source.length,
 						type: 'citation'
 					});
@@ -287,7 +293,7 @@ const citationDetector: BlockDetector = {
 			const blockEnd = closeIndex + 11; // Length of '</citation>'
 			if (blockEnd >= changeStart) {
 				regions.push({
-					start: openIndex,
+					start: lineStart,
 					end: blockEnd,
 					type: 'citation'
 				});
@@ -748,6 +754,42 @@ export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 			text,
 			children
 		};
+
+		// Check if this is a CodeBlock that contains citations (happens with indented citations)
+		if (node.type.name === 'CodeBlock') {
+			// Extract the code content and check if it's actually a citation
+			const trimmedText = text.trimStart();
+			if (trimmedText.startsWith('<citation>')) {
+				// This is a citation block that was parsed as code due to indentation
+				// Treat it as an HTMLBlock containing citations
+				const citations = splitCitations(text, node.from);
+
+				if (citations.length === 1) {
+					const citationData = parseCitation(citations[0].text);
+					const citationNode: CitationNode = {
+						...baseNode,
+						type: 'Citation',
+						citationData
+					};
+					return citationNode;
+				} else if (citations.length > 1) {
+					const citationChildren: CitationNode[] = citations.map((citation) => ({
+						type: 'Citation',
+						from: citation.from,
+						to: citation.to,
+						text: citation.text,
+						children: [],
+						citationData: parseCitation(citation.text)
+					}));
+
+					return {
+						...baseNode,
+						type: 'HTMLBlock',
+						children: citationChildren
+					};
+				}
+			}
+		}
 
 		// Check if this is an HTMLBlock that contains citations
 		if (node.type.name === 'HTMLBlock' && isCitationBlock(text)) {
