@@ -57,11 +57,6 @@ export function useUser(): QueryResult<UserReadResp> {
 		username: 'admin',
 		preference: {}
 	});
-	return CreateQuery<UserReadReq, UserReadResp>({
-		key: ['currentUser'],
-		path: 'user/read',
-		body: {}
-	});
 }
 
 export function UpdateUser(): CreateMutationResult<UserUpdateReq, UserUpdateResp> {
@@ -73,12 +68,6 @@ export function UpdateUser(): CreateMutationResult<UserUpdateReq, UserUpdateResp
 			if (param.preference) updatePreference(param.preference);
 		}
 	);
-	return CreateMutation({
-		path: 'user/update',
-		onSuccess(data, param) {
-			if (param.preference) updatePreference(param.preference);
-		}
-	});
 }
 
 export function DeleteUser(): CreateMutationResult<UserDeleteReq, UserReadResp> {

@@ -45,7 +45,7 @@ pub async fn route(
     if req.chat_id == 1 {
         return Err(Json(Error {
             error: ErrorKind::Internal,
-            reason: "do not send in tutorial chat".to_string(),
+            reason: "not available in demo".to_string(),
         }));
     }
     let files = req

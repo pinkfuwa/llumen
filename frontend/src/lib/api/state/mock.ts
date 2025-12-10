@@ -19,6 +19,7 @@ export function CreateMockMutation<P, D>(
 			isPending.set(true);
 			await sleep(10);
 			isPending.set(false);
+			if (callback) callback(result);
 			return result;
 		},
 		isError,
