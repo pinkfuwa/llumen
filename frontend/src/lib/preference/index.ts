@@ -9,7 +9,7 @@ import type {
 } from '../api/types';
 import { setLocale } from './i18n';
 import { localState, token } from '../store';
-import { getTitleGrad, setTheme, type Theme } from './theme';
+import { setTheme, type Theme } from './theme';
 import { onDestroy } from 'svelte';
 import { isLightTheme as isLightThemeFn } from './theme';
 
@@ -67,7 +67,5 @@ export const theme = derived(preference, (x) => x.theme);
 export const locale = derived(preference, (x) => x.locale);
 
 export const isLightTheme = derived(theme, (x) => isLightThemeFn(x as any));
-
-export const titleGrad = derived(theme, (x) => getTitleGrad(x as any));
 
 export const lastModel = localState<number | null>('lastModel', null);
