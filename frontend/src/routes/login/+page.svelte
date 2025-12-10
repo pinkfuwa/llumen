@@ -35,7 +35,7 @@
 					return;
 				}
 
-				goto('/chat/new');
+				goto('/chat/1');
 			}
 		);
 	}

@@ -21,14 +21,12 @@ pub struct ModelDeleteResp {
 }
 
 pub async fn route(
-    State(app): State<Arc<AppState>>,
+    State(_app): State<Arc<AppState>>,
     Extension(UserId(_)): Extension<UserId>,
-    Json(req): Json<ModelDeleteReq>,
+    Json(_req): Json<ModelDeleteReq>,
 ) -> JsonResult<ModelDeleteResp> {
-    model::Entity::delete_by_id(req.id)
-        .exec(&app.conn)
-        .await
-        .kind(ErrorKind::ResourceNotFound)?;
-
-    Ok(Json(ModelDeleteResp { deleted: true }))
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "not available in demo".to_string(),
+    }))
 }

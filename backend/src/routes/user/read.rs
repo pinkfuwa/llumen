@@ -25,22 +25,12 @@ pub struct UserReadResp {
 }
 
 pub async fn route(
-    State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
-    Json(req): Json<UserReadReq>,
+    State(_app): State<Arc<AppState>>,
+    Extension(UserId(_user_id)): Extension<UserId>,
+    Json(_req): Json<UserReadReq>,
 ) -> JsonResult<UserReadResp> {
-    let user_id = req.user_id.unwrap_or(user_id);
-
-    let res = User::find_by_id(user_id)
-        .one(&app.conn)
-        .await
-        .kind(ErrorKind::Internal)?
-        .ok_or("")
-        .kind(ErrorKind::ResourceNotFound)?;
-
-    Ok(Json(UserReadResp {
-        user_id: res.id,
-        username: res.name,
-        preference: res.preference,
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "not available in demo".to_string(),
     }))
 }

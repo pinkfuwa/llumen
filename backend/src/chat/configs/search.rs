@@ -9,7 +9,6 @@ pub fn search_configuration() -> Configuration {
 
     Configuration {
         completion_option: openrouter::CompletionOption::builder()
-            .web_search(true)
             .tools(&[get_web_search_tool_def(), get_crawl_tool_def()])
             .build(),
         tool_handler: Arc::new(|state, toolcalls| {
