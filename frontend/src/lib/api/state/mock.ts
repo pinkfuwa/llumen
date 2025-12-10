@@ -18,8 +18,8 @@ export function CreateMockMutation<P, D>(
 			if (oncall) oncall(param);
 			isPending.set(true);
 			await sleep(10);
-			isPending.set(false);
 			if (callback) callback(result);
+			isPending.set(false);
 			return result;
 		},
 		isError,
