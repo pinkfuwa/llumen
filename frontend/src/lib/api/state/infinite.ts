@@ -19,7 +19,7 @@ interface Page<D> {
 }
 
 class Pages<D extends { id: number }> {
-	private maxSize = 16;
+	private maxSize = 32;
 	private fetcher: Fetcher<D>;
 	private staleTime?: number;
 	private revalidateOnFocus?: boolean | 'force';
