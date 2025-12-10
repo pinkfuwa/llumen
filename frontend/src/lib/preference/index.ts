@@ -14,11 +14,15 @@ import { onDestroy } from 'svelte';
 import { isLightTheme as isLightThemeFn } from './theme';
 
 function getRemotePreference() {
-	return APIFetch<UserReadResp, UserReadReq>('user/read', {});
+	return Promise.resolve({
+		user_id: 1,
+		username: 'admin',
+		preference: {}
+	});
 }
 
 function setRemotePreference(preference: UserPreference) {
-	return APIFetch<UserUpdateResp, UserUpdateReq>('user/update', { preference });
+	return Promise.resolve({ user_id: 1 });
 }
 
 function defaultPreference(): Required<UserPreference> {

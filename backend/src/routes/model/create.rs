@@ -33,34 +33,8 @@ pub async fn route(
     Extension(UserId(_)): Extension<UserId>,
     Json(req): Json<ModelCreateReq>,
 ) -> JsonResult<ModelCreateResp> {
-    let raw_config = req.config;
-
-    match <ModelConfig as ModelChecker>::from_toml(&raw_config) {
-        Ok(config) => {
-            let model: openrouter::Model = config.clone().into();
-            let caps = app.processor.get_capability(&model);
-
-            let id = Model::insert(model::ActiveModel {
-                config: Set(raw_config),
-                ..Default::default()
-            })
-            .exec(&app.conn)
-            .await
-            .kind(ErrorKind::Internal)?
-            .last_insert_id;
-
-            Ok(Json(ModelCreateResp {
-                id,
-                image_input: caps.image_input,
-                audio_input: caps.audio,
-                other_file_input: caps.ocr != OcrEngine::Disabled,
-                tool: caps.toolcall,
-                display_name: config.display_name,
-            }))
-        }
-        Err(reason) => Err(Json(Error {
-            error: ErrorKind::MalformedRequest,
-            reason: reason.to_string(),
-        })),
-    }
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "not available in demo".to_string(),
+    }))
 }

@@ -29,54 +29,8 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<UserUpdateReq>,
 ) -> JsonResult<UserUpdateResp> {
-    let UserUpdateReq {
-        user_id: user_id_req,
-        preference,
-        password,
-    } = req;
-    let user_id = user_id_req.unwrap_or(user_id);
-
-    // Please note that update to same value does not result in error
-    // But update no value does result in error
-    debug_assert!(
-        preference.is_some() || password.is_some(),
-        "no field to update"
-    );
-
-    let txn = app.conn.begin().await.kind(ErrorKind::Internal)?;
-
-    let res = User::find_by_id(user_id)
-        .one(&txn)
-        .await
-        .kind(ErrorKind::Internal)?
-        .ok_or("")
-        .kind(ErrorKind::ResourceNotFound)?;
-
-    let mut active_model = res.into_active_model();
-
-    // merge two preferences
-    // frontend can do partial update, but not reset to None
-    if let Some(preference) = preference {
-        let mut new_preference = active_model.preference.take().unwrap();
-        if let Some(theme) = preference.theme {
-            new_preference.theme = Some(theme);
-        }
-        if let Some(language) = preference.locale {
-            new_preference.locale = Some(language);
-        }
-        if let Some(language) = preference.submit_on_enter {
-            new_preference.submit_on_enter = Some(language);
-        }
-        active_model.preference = sea_orm::ActiveValue::Set(new_preference);
-    }
-    if let Some(password) = password {
-        let password_hash = app.hasher.hash_password(&password);
-        active_model.password = sea_orm::ActiveValue::Set(password_hash);
-    }
-
-    active_model.update(&txn).await.kind(ErrorKind::Internal)?;
-
-    txn.commit().await.kind(ErrorKind::Internal)?;
-
-    Ok(Json(UserUpdateResp { user_id }))
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "not available in demo".to_string(),
+    }))
 }

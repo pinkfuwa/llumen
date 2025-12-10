@@ -178,7 +178,7 @@ impl Plugin {
         Self {
             id: "file-parser".to_string(),
             pdf: Some(PdfPlugin {
-                engine: "mistral-ocr".to_string(),
+                engine: "pdf-text".to_string(),
             }),
         }
     }

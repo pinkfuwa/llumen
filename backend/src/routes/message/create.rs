@@ -8,7 +8,7 @@ use typeshare::typeshare;
 
 use crate::{
     AppState,
-    errors::{ErrorKind, JsonResult, WithKind},
+    errors::{Error, ErrorKind, JsonResult, WithKind},
     middlewares::auth::UserId,
     utils::chat::ChatMode,
 };
@@ -42,6 +42,12 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageCreateReq>,
 ) -> JsonResult<MessageCreateResp> {
+    if req.chat_id == 1 {
+        return Err(Json(Error {
+            error: ErrorKind::Internal,
+            reason: "do not send in tutorial chat".to_string(),
+        }));
+    }
     let files = req
         .files
         .into_iter()

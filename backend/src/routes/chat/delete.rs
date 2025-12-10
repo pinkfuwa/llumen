@@ -25,6 +25,12 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<ChatDeleteReq>,
 ) -> JsonResult<ChatDeleteResp> {
+    if req.id == 1 {
+        return Err(Json(Error {
+            error: ErrorKind::Internal,
+            reason: "not available in demo".to_string(),
+        }));
+    }
     let result = chat::Entity::delete_by_id(req.id)
         .filter(chat::Column::OwnerId.eq(user_id))
         .exec(&app.conn)

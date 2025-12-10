@@ -4,7 +4,9 @@ import {
 	type QueryResult,
 	CreateMutation,
 	type CreateMutationResult,
-	SetQueryData
+	SetQueryData,
+	CreateMockMutation,
+	CreateMockQuery
 } from './state';
 
 import type {
@@ -50,6 +52,11 @@ export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp
 }
 
 export function useUser(): QueryResult<UserReadResp> {
+	return CreateMockQuery({
+		user_id: 1,
+		username: 'admin',
+		preference: {}
+	});
 	return CreateQuery<UserReadReq, UserReadResp>({
 		key: ['currentUser'],
 		path: 'user/read',
@@ -58,6 +65,14 @@ export function useUser(): QueryResult<UserReadResp> {
 }
 
 export function UpdateUser(): CreateMutationResult<UserUpdateReq, UserUpdateResp> {
+	return CreateMockMutation(
+		{
+			user_id: 1
+		},
+		(param) => {
+			if (param.preference) updatePreference(param.preference);
+		}
+	);
 	return CreateMutation({
 		path: 'user/update',
 		onSuccess(data, param) {
