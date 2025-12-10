@@ -3,7 +3,7 @@ name: Release Docker
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v*"
 
 permissions:
   contents: read
@@ -34,7 +34,24 @@ jobs:
           images: ghcr.io/pinkfuwa/llumen
           tags: |
             type=semver,pattern={{version}}
-            type=raw,value=latest
+
+      - name: Prepare image tags
+        id: prepare_tags
+        run: |
+          TAGS="${{ steps.meta.outputs.tags }}"
+          REF=${GITHUB_REF#refs/tags/}
+          if [[ "$REF" == *-* ]]; then
+            # For prerelease tags (contains a hyphen), remove any 'latest' tag
+            NEW_TAGS=$(printf "%s" "$TAGS" | tr ',' '\n' | awk '$0!="latest"{print}' | paste -sd, -)
+            echo "tags=$NEW_TAGS" >> $GITHUB_OUTPUT
+          else
+            # For normal semver tags, ensure 'latest' is present
+            if printf "%s" "$TAGS" | tr ',' '\n' | grep -qx "latest"; then
+              echo "tags=$TAGS" >> $GITHUB_OUTPUT
+            else
+              echo "tags=${TAGS},latest" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: Build and push image
         uses: docker/build-push-action@v5
@@ -43,7 +60,7 @@ jobs:
           file: ./package/Dockerfile
           platforms: "linux/amd64,linux/arm64"
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.prepare_tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
