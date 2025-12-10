@@ -39,10 +39,10 @@ We refused to accept that "powerful" means "heavy." We built llumen to fill the 
 
 Don't let the size fool you. Llumen is lightweight in resources, but heavy on capability.
 
-- :electric_plug: **OpenAI Compatible:** Works seamlessly with OpenRouter, local models, or any OpenAI-compatible endpoint.
-- :rocket: **Blazing Fast:** Sub-second cold starts. No more waiting for your UI.
-- :brain: **Smart & Deep:** Built-in "Deep Research" capabilities, web-search integration, and reasoning model support.
-- :art: **Rich Media:** Handles PDF uploads, image generation, and renders complex LaTeX/Code syntax beautifully.
+- :electric_plug: **OpenAI Compatible:** Works with OpenRouter, local models, or OpenAI-compatible server.
+- :rocket: **Blazing Fast:** Sub-second cold starts. No more waiting.
+- :brain: **Smart & Deep:** Built-in "Deep Research" capabilities, web-search integration.
+- :art: **Rich Media:** Handles PDF uploads, image generation, and renders complex LaTeX/Code.
 - :handshake: **Run Anywhere:** Windows, Linux, Docker, and fully optimized for **Arm64** (yes, it fly on a Raspberry Pi).
 
 [![Video preview](./docs/video.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
