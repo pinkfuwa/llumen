@@ -40,7 +40,10 @@ mod routes;
 mod runner;
 mod utils;
 
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use anyhow::Context as _;
 use axum::{Router, middleware};
@@ -150,6 +153,19 @@ async fn shutdown_signal() {
     }
 }
 
+/// get dir for sqlite url
+fn get_dir_from_sqlite(url: &str) -> PathBuf {
+    if !url.starts_with("sqlite://") {
+        return PathBuf::from(".");
+    }
+    let path_start = 9usize;
+    let end = url.find('?').unwrap_or(url.len());
+    let db_path = &url[path_start..end];
+    let mut path = Path::new(db_path).to_path_buf();
+    path.pop();
+    return path;
+}
+
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
@@ -170,7 +186,14 @@ async fn main() {
             .unwrap_or("../frontend/build")
             .to_owned(),
     );
-    let blob_url = var("BLOB_URL").unwrap_or("./blobs.redb".to_owned());
+    let blob_url = match var("BLOB_URL") {
+        Ok(x) => PathBuf::from(x),
+        Err(_) => {
+            let mut dir = get_dir_from_sqlite(&database_url);
+            dir.push("blobs.redb");
+            dir
+        }
+    };
 
     #[cfg(feature = "tracing")]
     let _db_span = info_span!("database_initialization").entered();
