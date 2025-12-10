@@ -3,40 +3,62 @@
 
   # Llumen
 
-  ### :zap: a lightweight, performant LLM chat application with effortless setup :rocket:
+  ### :rocket: The antidote to bloated AI interfaces.
+  ### A lightweight, performant chat application for the rest of us.
 
   [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://www.mozilla.org/en-US/MPL/2.0/)
   [![Nightly Docker](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml)
-  [![Status Check](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml)
+  [![status check](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml)
   ![MSRV](https://img.shields.io/static/v1?label=MSRV&message=1.89&color=orange&logo=rust)
-  [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pinkfuwa/llumen)
 
-  <img src="https://skillicons.dev/icons?i=rust,ts,svelte,tailwind" alt="llumen Logo" width="auto" height="70" />
+  <img src="https://skillicons.dev/icons?i=rust,ts,svelte,tailwind" alt="Technology Stack" width="auto" height="70" />
 </div>
 
-llumen is a lightweight, self-hostable LLM chat application (frontend + backend) that aims to provide an out-of-the-box experience for self-hosting users.
+---
 
-## :question: Why choose llumen?
+## :bulb: Why we built llumen
 
-- :electric_plug: OpenAI Compatible: Works with any **OpenAI-compatible** endpoint (OpenRouter, local models, etc.)
-- :ship: Zero-Config Setup: Pre-integrated with OpenRouter for instant deployment
-- :handshake: Multi-Platform Distribution: Windows executables, Docker images, Linux binaries with Arm64 support
-- :rocket: Blazing Fast: Sub-second cold start, **30× smaller asset footprint** and <128MB RAM usage
-- :blue_book: Rich Markdown: Full code syntax highlighting and LaTeX math support
-- :mag: Advanced Modes: Standard chat, web-search integration, and **deep-research** capabilities :brain:
-- :computer: Rich Features: **Message editing**, file uploads (PDFs, images, code), image generation
+### The Problem: The "Self-Hosted" Tradeoff: Powerful but Complex
+
+If you have ever tried to self-host an LLM interface on a modest device, you know the struggle:
+1.  **The Bloat:** Python-based containers that eat Gigabytes of RAM just to idle.
+2.  **The Lag:** Waiting 30+ seconds for a server to boot and another minute to load chat history.
+3.  **The Config Hell:** Spending hours wrestling with pipelines just to get a simple feature like "Title Generation" to work reliably.
+
+### The Solution: Simplicity by Engineering
+
+We refused to accept that "powerful" means "heavy." We built llumen to fill the gap between commercial products (easy to setup, but no privacy) and power-user tools (private, but heavy & complex).
+
+| Feature | Typical "Power User" UI | **llumen** |
+| :--- | :--- | :--- |
+| **Asset Footprint** | HUGE (GBs) | **Tiny** (12MB) |
+| **RAM Usage** | High (Nightmare to Debug) | **< 128MB** |
+| **Setup Time** | Hours of config | **Zero-Config** |
+
+## :sparkles: Features
+
+Don't let the size fool you. Llumen is lightweight in resources, but heavy on capability.
+
+- :electric_plug: **OpenAI Compatible:** Works seamlessly with OpenRouter, local models, or any OpenAI-compatible endpoint.
+- :rocket: **Blazing Fast:** Sub-second cold starts. No more waiting for your UI.
+- :brain: **Smart & Deep:** Built-in "Deep Research" capabilities, web-search integration, and reasoning model support.
+- :art: **Rich Media:** Handles PDF uploads, image generation, and renders complex LaTeX/Code syntax beautifully.
+- :handshake: **Run Anywhere:** Windows, Linux, Docker, and fully optimized for **Arm64** (yes, it fly on a Raspberry Pi).
 
 [![Video preview](./docs/video.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
 
-## :point_right: Quickstart
+## :zap: Quickstart (The Proof)
+
+Prove the speed yourself. If you have Docker, you are 30 seconds away from chatting.
 
 > [!IMPORTANT]
-> The default account is `admin`, password is `P@88w0rd`
+> **Default Credentials:**
+> - User: `admin`
+> - Pass: `P@88w0rd`
 
 ### :whale: Docker (Recommended)
 
-- The repository includes a multi-stage [Dockerfile](./package/Dockerfile) that builds the frontend and the backend and produces a small image that serves static files and runs the server.
-- Example: run the container (binds port 80 by default).
+Our multi-stage build produces a tiny, efficient container.
 
 ```bash
 docker run -it --rm \
@@ -45,32 +67,30 @@ docker run -it --rm \
   -v "$(pwd)/data:/data" \
   ghcr.io/pinkfuwa/llumen:latest
 ```
-```
-09:25:46.117Z INFO | Using endpoint https://openrouter.ai/api/v1/chat/completions for completions
-09:25:46.180Z INFO | Listening on http://127.0.0.1:8001
-09:25:46.295Z INFO | 344 models available
-```
 
-More docker-compose deployment sample [here](./docs/sample) :point_left:
+*That's it.* No pipelines to configure. No dependencies to install.
 
-### :package: Without docker
+See [./docs/sample](./docs/sample) for docker-compose examples.
 
-> [!TIP]
-> Prebuild-binary is not up to dated, it only built on per-release basis
+### :package: Other Methods
+Prefer a binary? We support that too. Check the [Releases](https://github.com/pinkfuwa/llumen/releases) for Windows and Linux binaries.
 
-We also provided prebuild binary, download it and extract from [release](https://github.com/pinkfuwa/llumen/releases).
+## :key: Configuration (Optional)
 
-## :key: Environment variables
+It works out of the box, but if you want to tweak it:
 
-- `API_KEY` (required) — OpenRouter or equivalent provider API key.
-- `OPENAI_API_BASE` — openai compatible api url. Default: `https://openrouter.ai/api`
-- `DATABASE_URL` — database connection string. Default in Docker: `sqlite://data/db.sqlite?mode=rwc`.
-- `BLOB_URL` — path for [redb](https://www.redb.org/) object storage. Default in Docker: `/data/blobs.redb`.
-- `BIND_ADDR` — address the backend binds to (default in Docker: `0.0.0.0:80`).
+- `API_KEY` (required) — Your OpenRouter/Provider key.
+- `OPENAI_API_BASE` — Custom endpoint (Default: `https://openrouter.ai/api`).
+- `DATABASE_URL` — SQLite path (Default: `sqlite://data/db.sqlite?mode=rwc`).
+- `BIND_ADDR` — Network interface (Default: `0.0.0.0:80`).
 
-## :book: Where to look for more documentation
+## :book: Documentation
 
-- **User Guide**: [./docs/user/README.md](./docs/user/README.md) - Getting started, installation, configuration, and features
-- Development and build-from-source steps and other developer-focused:
-  - Build-from-source steps:  `./docs/chore/README.md`
-  - Documentation generated by AI(supervised by human): `./docs/dev/README.md`
+- **User Guide**: [./docs/user/README.md](./docs/user/README.md) - Full features and usage.
+- **For Developers**:
+  - Build from source: `./docs/chore/README.md`
+  - Architecture docs: `./docs/dev/README.md`
+
+<div align="center">
+  Built with ❤️ by pinkfuwa. Keep it simple, keep it fast.
+</div>
