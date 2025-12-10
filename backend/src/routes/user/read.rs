@@ -25,9 +25,9 @@ pub struct UserReadResp {
 }
 
 pub async fn route(
-    State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
-    Json(req): Json<UserReadReq>,
+    State(_app): State<Arc<AppState>>,
+    Extension(UserId(_user_id)): Extension<UserId>,
+    Json(_req): Json<UserReadReq>,
 ) -> JsonResult<UserReadResp> {
     Err(Json(Error {
         error: ErrorKind::Internal,

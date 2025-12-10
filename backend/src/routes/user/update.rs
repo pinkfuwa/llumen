@@ -25,9 +25,9 @@ pub struct UserUpdateResp {
 }
 
 pub async fn route(
-    State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
-    Json(req): Json<UserUpdateReq>,
+    State(_app): State<Arc<AppState>>,
+    Extension(UserId(_user_id)): Extension<UserId>,
+    Json(_req): Json<UserUpdateReq>,
 ) -> JsonResult<UserUpdateResp> {
     Err(Json(Error {
         error: ErrorKind::Internal,

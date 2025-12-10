@@ -29,9 +29,9 @@ pub struct ModelCreateResp {
 }
 
 pub async fn route(
-    State(app): State<Arc<AppState>>,
+    State(_app): State<Arc<AppState>>,
     Extension(UserId(_)): Extension<UserId>,
-    Json(req): Json<ModelCreateReq>,
+    Json(_req): Json<ModelCreateReq>,
 ) -> JsonResult<ModelCreateResp> {
     Err(Json(Error {
         error: ErrorKind::Internal,

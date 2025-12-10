@@ -21,9 +21,9 @@ pub struct UserDeleteResp {
 }
 
 pub async fn route(
-    State(app): State<Arc<AppState>>,
-    Extension(UserId(user_id)): Extension<UserId>,
-    Json(req): Json<UserDeleteReq>,
+    State(_app): State<Arc<AppState>>,
+    Extension(UserId(_user_id)): Extension<UserId>,
+    Json(_req): Json<UserDeleteReq>,
 ) -> JsonResult<UserDeleteResp> {
     Err(Json(Error {
         error: ErrorKind::Internal,
