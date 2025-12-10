@@ -8,6 +8,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"test": "vitest",
+		"check": "svelte-check",
 		"format": "prettier --write .",
 		"format-ffi": "prettier --write src/lib/api/types.ts",
 		"lint": "prettier --check .",
