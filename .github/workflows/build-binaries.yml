@@ -1,6 +1,8 @@
 name: Release Binaries
 
 on:
+  release:
+    types: [created]
   workflow_dispatch:
 
 permissions:
@@ -95,15 +97,27 @@ jobs:
         shell: bash
         run: ./package/build-artifacts-windows.sh ${{ matrix.target }}
 
-      - name: Upload artifact (Linux)
-        if: matrix.platform == 'linux'
+      - name: Upload release asset (Linux)
+        if: matrix.platform == 'linux' && github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/${{ matrix.target }}.tar.gz
+
+      - name: Upload release asset (Windows)
+        if: matrix.platform == 'windows' && github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/${{ matrix.target }}.zip
+
+      - name: Upload artifact for manual dispatch (Linux)
+        if: matrix.platform == 'linux' && github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: llumen-${{ matrix.target }}
           path: artifacts/${{ matrix.target }}.tar.gz
 
-      - name: Upload artifact (Windows)
-        if: matrix.platform == 'windows'
+      - name: Upload artifact for manual dispatch (Windows)
+        if: matrix.platform == 'windows' && github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: llumen-${{ matrix.target }}

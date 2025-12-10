@@ -17,8 +17,6 @@ RUN find build/ -type f -name "*.gz" -delete
 
 FROM --platform=$BUILDPLATFORM rust:1.90.0-slim-trixie AS backend-builder
 
-ENV RUSTFLAGS="-Zfmt-debug=none"
-
 RUN apt update -y \
     && apt install -y musl-tools pkg-config make perl curl xz-utils
 

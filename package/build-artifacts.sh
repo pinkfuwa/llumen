@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-export RUSTFLAGS="-Zfmt-debug=none"
-
 set -euo pipefail
 
 TARGET_TRIPLE=${1:-$(rustc -vV | grep 'host:' | awk '{print $2}')}
@@ -24,11 +22,13 @@ find frontend/build -type f -name "*.gz" -delete
 
 echo "--- Assembling artifacts in $TMP_DIR ---"
 
-mv frontend/build "$TMP_DIR/static"
+mkdir "$TMP_DIR/llumen"
 
-touch "$TMP_DIR/.env"
+mv frontend/build "$TMP_DIR/llumen/static"
 
-mv "backend/target/$TARGET_TRIPLE/release/backend" "$TMP_DIR/llumen"
+touch "$TMP_DIR/llumen/.env"
+
+mv "backend/target/$TARGET_TRIPLE/release/backend" "$TMP_DIR/llumen/llumen"
 
 echo "--- Creating compressed tarball ---"
 

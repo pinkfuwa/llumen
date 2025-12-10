@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-export RUSTFLAGS="-Zfmt-debug=none"
-
 set -euo pipefail
 
 TARGET_TRIPLE=${1:?Target triple must be provided}
@@ -28,11 +26,13 @@ echo "--- Building frontend ---"
 
 echo "--- Assembling artifacts in $TMP_DIR ---"
 
-mv frontend/build "$TMP_DIR/static"
+mkdir "$TMP_DIR/llumen"
 
-touch "$TMP_DIR/.env"
+mv frontend/build "$TMP_DIR/llumen/static"
 
-mv "backend/target/$TARGET_TRIPLE/release/backend.exe" "$TMP_DIR/llumen.exe"
+touch "$TMP_DIR/llumen/.env"
+
+mv "backend/target/$TARGET_TRIPLE/release/backend.exe" "$TMP_DIR/llumen/llumen.exe"
 
 echo "--- Creating zip archive ---"
 
