@@ -1,0 +1,508 @@
+diff --git a/backend/src/openrouter/raw.rs b/backend/src/openrouter/raw.rs
+index 7f9550e..a353b0e 100644
+--- a/backend/src/openrouter/raw.rs
++++ b/backend/src/openrouter/raw.rs
+@@ -41,7 +41,7 @@ impl Default for CompletionReq {
+             plugins: Some(vec![Plugin {
+                 id: "file-parser".to_string(),
+                 pdf: PdfPlugin {
+-                    engine: "mistral-ocr".to_string(),
++                    engine: "pdf-text".to_string(),
+                 },
+             }]),
+             usage: Some(UsageReq { include: true }),
+diff --git a/backend/src/routes/chat/delete.rs b/backend/src/routes/chat/delete.rs
+index a4219d4..cef6830 100644
+--- a/backend/src/routes/chat/delete.rs
++++ b/backend/src/routes/chat/delete.rs
+@@ -25,6 +25,12 @@ pub async fn route(
+     Extension(UserId(user_id)): Extension<UserId>,
+     Json(req): Json<ChatDeleteReq>,
+ ) -> JsonResult<ChatDeleteResp> {
++    if req.id == 1 {
++        return Err(Json(Error {
++            error: ErrorKind::Internal,
++            reason: "not available in demo".to_string(),
++        }));
++    }
+     let result = chat::Entity::delete_by_id(req.id)
+         .filter(chat::Column::OwnerId.eq(user_id))
+         .exec(&app.conn)
+diff --git a/backend/src/routes/message/create.rs b/backend/src/routes/message/create.rs
+index 41ca1d2..d5d6859 100644
+--- a/backend/src/routes/message/create.rs
++++ b/backend/src/routes/message/create.rs
+@@ -10,7 +10,7 @@ use typeshare::typeshare;
+ use crate::{
+     AppState,
+     chat::{Normal, Pipeline, Search},
+-    errors::{ErrorKind, JsonResult, WithKind},
++    errors::{Error, ErrorKind, JsonResult, WithKind},
+     middlewares::auth::UserId,
+     utils::chat::ChatMode,
+ };
+@@ -43,6 +43,12 @@ pub async fn route(
+     Extension(UserId(user_id)): Extension<UserId>,
+     Json(req): Json<MessageCreateReq>,
+ ) -> JsonResult<MessageCreateResp> {
++    if req.chat_id == 1 {
++        return Err(Json(Error {
++            error: ErrorKind::Internal,
++            reason: "do not send in tutorial chat".to_string(),
++        }));
++    }
+     let txn = app.conn.begin().await.raw_kind(ErrorKind::Internal)?;
+     let user_msg = entity::message::ActiveModel {
+         chat_id: Set(req.chat_id),
+diff --git a/backend/src/routes/message/delete.rs b/backend/src/routes/message/delete.rs
+index 74d29e4..4ce9397 100644
+--- a/backend/src/routes/message/delete.rs
++++ b/backend/src/routes/message/delete.rs
+@@ -37,6 +37,13 @@ pub async fn route(
+             })
+         })?;
+ 
++    if message.chat_id == 1 {
++        return Err(Json(Error {
++            error: ErrorKind::Internal,
++            reason: "not available in demo".to_string(),
++        }));
++    }
++
+     if chat.map(|m| m.owner_id) != Some(user_id) {
+         return Err(Json(Error {
+             error: ErrorKind::ResourceNotFound,
+diff --git a/backend/src/routes/model/create.rs b/backend/src/routes/model/create.rs
+index 16d3c93..6f3e37c 100644
+--- a/backend/src/routes/model/create.rs
++++ b/backend/src/routes/model/create.rs
+@@ -29,30 +29,8 @@ pub async fn route(
+     Extension(UserId(_)): Extension<UserId>,
+     Json(req): Json<ModelCreateReq>,
+ ) -> JsonResult<ModelCreateResp> {
+-    let config = req.config;
+-
+-    match model::Model::check_config(&config) {
+-        Ok(cfg) => {
+-            let id = Model::insert(model::ActiveModel {
+-                config: Set(config),
+-                ..Default::default()
+-            })
+-            .exec(&app.conn)
+-            .await
+-            .kind(ErrorKind::Internal)?
+-            .last_insert_id;
+-
+-            Ok(Json(ModelCreateResp {
+-                id,
+-                image_input: cfg.is_image_capable(),
+-                audio_input: cfg.is_audio_capable(),
+-                other_file_input: cfg.is_other_file_capable(),
+-                display_name: cfg.display_name,
+-            }))
+-        }
+-        Err(reason) => Err(Json(Error {
+-            error: ErrorKind::MalformedRequest,
+-            reason,
+-        })),
+-    }
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
++    }))
+ }
+diff --git a/backend/src/routes/model/delete.rs b/backend/src/routes/model/delete.rs
+index 73c5027..5df702e 100644
+--- a/backend/src/routes/model/delete.rs
++++ b/backend/src/routes/model/delete.rs
+@@ -25,10 +25,8 @@ pub async fn route(
+     Extension(UserId(_)): Extension<UserId>,
+     Json(req): Json<ModelDeleteReq>,
+ ) -> JsonResult<ModelDeleteResp> {
+-    model::Entity::delete_by_id(req.id)
+-        .exec(&app.conn)
+-        .await
+-        .kind(ErrorKind::ResourceNotFound)?;
+-
+-    Ok(Json(ModelDeleteResp { deleted: true }))
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
++    }))
+ }
+diff --git a/backend/src/routes/model/write.rs b/backend/src/routes/model/write.rs
+index ea3cc42..f17b4aa 100644
+--- a/backend/src/routes/model/write.rs
++++ b/backend/src/routes/model/write.rs
+@@ -27,28 +27,8 @@ pub async fn route(
+     Extension(UserId(_)): Extension<UserId>,
+     Json(req): Json<ModelWriteReq>,
+ ) -> JsonResult<ModelWriteResp> {
+-    let config = req.config;
+-
+-    let display_name = model::Model::check_config(&config)
+-        .map_err(|e| {
+-            Json(Error {
+-                error: ErrorKind::MalformedRequest,
+-                reason: e,
+-            })
+-        })?
+-        .display_name;
+-
+-    let result = model::Entity::update_many()
+-        .col_expr(model::Column::Config, config.into())
+-        .filter(model::Column::Id.eq(req.id))
+-        .exec(&app.conn)
+-        .await
+-        .kind(ErrorKind::ResourceNotFound)?;
+-
+-    let wrote = result.rows_affected > 0;
+-
+-    Ok(Json(ModelWriteResp {
+-        display_name,
+-        wrote,
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
+     }))
+ }
+diff --git a/backend/src/routes/user/create.rs b/backend/src/routes/user/create.rs
+index 43da879..25abcad 100644
+--- a/backend/src/routes/user/create.rs
++++ b/backend/src/routes/user/create.rs
+@@ -26,19 +26,8 @@ pub async fn route(
+     Extension(UserId(user_id)): Extension<UserId>,
+     Json(req): Json<UserCreateReq>,
+ ) -> JsonResult<UserCreateResp> {
+-    let password_hash = app.hasher.hash_password(&req.password);
+-    let new_user = user::ActiveModel {
+-        name: ActiveValue::Set(req.username),
+-        password: ActiveValue::Set(password_hash),
+-        ..Default::default()
+-    };
+-
+-    let new_user = User::insert(new_user)
+-        .exec(&app.conn)
+-        .await
+-        .kind(ErrorKind::Internal)?;
+-
+-    Ok(Json(UserCreateResp {
+-        user_id: new_user.last_insert_id,
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
+     }))
+ }
+diff --git a/backend/src/routes/user/delete.rs b/backend/src/routes/user/delete.rs
+index ad618e1..de40ba2 100644
+--- a/backend/src/routes/user/delete.rs
++++ b/backend/src/routes/user/delete.rs
+@@ -25,12 +25,8 @@ pub async fn route(
+     Extension(UserId(user_id)): Extension<UserId>,
+     Json(req): Json<UserDeleteReq>,
+ ) -> JsonResult<UserDeleteResp> {
+-    let res = User::delete_by_id(req.user_id)
+-        .exec(&app.conn)
+-        .await
+-        .kind(ErrorKind::Internal)?;
+-
+-    Ok(Json(UserDeleteResp {
+-        deleted: res.rows_affected == 1,
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
+     }))
+ }
+diff --git a/backend/src/routes/user/read.rs b/backend/src/routes/user/read.rs
+index 9a74645..17751f0 100644
+--- a/backend/src/routes/user/read.rs
++++ b/backend/src/routes/user/read.rs
+@@ -28,18 +28,8 @@ pub async fn route(
+     Extension(UserId(user_id)): Extension<UserId>,
+     Json(req): Json<UserReadReq>,
+ ) -> JsonResult<UserReadResp> {
+-    let user_id = req.user_id.unwrap_or(user_id);
+-
+-    let res = User::find_by_id(user_id)
+-        .one(&app.conn)
+-        .await
+-        .kind(ErrorKind::Internal)?
+-        .ok_or("")
+-        .kind(ErrorKind::ResourceNotFound)?;
+-
+-    Ok(Json(UserReadResp {
+-        user_id: res.id,
+-        username: res.name,
+-        preference: res.preference,
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
+     }))
+ }
+diff --git a/backend/src/routes/user/update.rs b/backend/src/routes/user/update.rs
+index 28961c1..5444c35 100644
+--- a/backend/src/routes/user/update.rs
++++ b/backend/src/routes/user/update.rs
+@@ -28,50 +28,8 @@ pub async fn route(
+     Extension(UserId(user_id)): Extension<UserId>,
+     Json(req): Json<UserUpdateReq>,
+ ) -> JsonResult<UserUpdateResp> {
+-    let UserUpdateReq {
+-        user_id: user_id_req,
+-        preference,
+-        password,
+-    } = req;
+-    let user_id = user_id_req.unwrap_or(user_id);
+-
+-    debug_assert!(
+-        preference.is_some() || password.is_some(),
+-        "no field to update"
+-    );
+-
+-    let txn = app.conn.begin().await.kind(ErrorKind::Internal)?;
+-
+-    let res = User::find_by_id(user_id)
+-        .one(&txn)
+-        .await
+-        .kind(ErrorKind::Internal)?
+-        .ok_or("")
+-        .kind(ErrorKind::ResourceNotFound)?;
+-
+-    let mut active_model = res.into_active_model();
+-
+-    if let Some(preference) = preference {
+-        let mut new_preference = active_model.preference.take().unwrap();
+-        if let Some(theme) = preference.theme {
+-            new_preference.theme = Some(theme);
+-        }
+-        if let Some(language) = preference.locale {
+-            new_preference.locale = Some(language);
+-        }
+-        if let Some(language) = preference.submit_on_enter {
+-            new_preference.submit_on_enter = Some(language);
+-        }
+-        active_model.preference = sea_orm::ActiveValue::Set(new_preference);
+-    }
+-    if let Some(password) = password {
+-        let password_hash = app.hasher.hash_password(&password);
+-        active_model.password = sea_orm::ActiveValue::Set(password_hash);
+-    }
+-
+-    active_model.update(&txn).await.kind(ErrorKind::Internal)?;
+-
+-    txn.commit().await.kind(ErrorKind::Internal)?;
+-
+-    Ok(Json(UserUpdateResp { user_id }))
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
++    }))
+ }
+diff --git a/demo.sql b/demo.sql
+new file mode 100644
+index 0000000..c4657c8
+--- /dev/null
++++ b/demo.sql
+@@ -0,0 +1,82 @@
++/* --------------------------------------------------------------
++   1️⃣  User message (id = 1) – unchanged apart from kind flag
++   -------------------------------------------------------------- */
++UPDATE message
++SET
++    kind        = 1,          -- 1 = user‑message
++    price       = 0.0,
++    token_count = 0
++WHERE id = 1;
++
++/* --------------------------------------------------------------
++   2️⃣  First user chunk (id = 1) – simple welcome line
++   -------------------------------------------------------------- */
++UPDATE chunk
++SET
++    content = 'Welcome to **Llumen** – a modern LLM‑chat web‑app. '
++            || 'Let’s walk through its core features.',
++    kind    = 0               -- plain‑text/markdown
++WHERE id = 1;
++
++/* --------------------------------------------------------------
++   3️⃣  Placeholder “reasoning” chunk (id = 3) – fake content
++   -------------------------------------------------------------- */
++UPDATE chunk
++SET
++    content = '**Reasoning (placeholder)**' || char(10) ||
++              '- This block is intentionally left vague.' || char(10) ||
++              '- It is only displayed to keep the UI layout consistent.' || char(10) ||
++              '- No substantive information is provided here.',
++    kind    = 1               -- markdown‑styled placeholder
++WHERE id = 3;
++
++/* --------------------------------------------------------------
++   4️⃣  Assistant response (id = 2) – keep price & token info
++   -------------------------------------------------------------- */
++UPDATE message
++SET
++    kind        = 2,                     -- 2 = assistant‑response
++    price       = 0.00104109395761043,
++    token_count = 5616
++WHERE id = 2;
++
++/* --------------------------------------------------------------
++   5️⃣  Full tutorial now lives in the *answer* chunk (id = 4)
++   -------------------------------------------------------------- */
++UPDATE chunk
++SET
++    content = '**Answer – Llumen Tutorial**' || char(10) || char(10) ||
++              '### Features on a new chat' || char(10) ||
++              '1. **Markdown** support – write rich text, tables, code blocks, …' || char(10) ||
++              '2. **File upload** and **search‑mode** toggle located under the message input.' || char(10) || char(10) ||
++              '### Features on each message' || char(10) ||
++              '1. **Edit** button under the user’s own messages (no need to clone the chat).' || char(10) ||
++              '2. **Completion cost** badge displayed beneath the assistant’s response.' || char(10) || char(10) ||
++              '### Settings (bottom‑left gear icon in sidebar)' || char(10) ||
++              '1. **Model configuration** via a TOML file.' || char(10) ||
++              '2. **Preference configuration** – locale & theme selection.' || char(10) ||
++              '3. **User management** panel.' || char(10) || char(10) ||
++              '### Run Llumen with Docker' || char(10) ||
++              '```bash' || char(10) ||
++              'docker run -it --rm -e API_KEY="<YOUR_OPENROUTER_API_KEY>" -p 80:80 -v "$(pwd)/data:/data" ghcr.io/pinkfuwa/llumen:latest' || char(10) ||
++              '```' || char(10) || char(10) ||
++              'Open **http://localhost** (or port 80) and log in with the default admin credentials:' || char(10) ||
++              '- **Username:** `admin`' || char(10) ||
++              '- **Password:** `P@88w0rd`' || char(10) || char(10) ||
++              'You are now ready to explore Markdown editing, file uploads, model tuning via TOML, theme switching, and user administration.',
++    kind    = 0               -- plain‑text/markdown (final answer)
++WHERE id = 4;
++
++/* --------------------------------------------------------------
++   6️⃣  (Optional) Keep the demo file entry accurate
++   -------------------------------------------------------------- */
++UPDATE file
++SET
++    mime_type = 'image/png'   -- demo.png is a PNG image
++WHERE id = 1;
++
++UPDATE chunk
++SET
++    content = '{"name":"demo.png","id":1,"description":"Sample image used in the tutorial"}',
++    kind    = 7           -- 7 = JSON‑metadata chunk (kept from the original schema)
++WHERE id = 2;
+diff --git a/frontend/src/lib/api/state/mock.ts b/frontend/src/lib/api/state/mock.ts
+index d1ce6d2..03ffdb0 100644
+--- a/frontend/src/lib/api/state/mock.ts
++++ b/frontend/src/lib/api/state/mock.ts
+@@ -6,12 +6,16 @@ export async function sleep(ms: number) {
+ 	return new Promise((resolve) => setTimeout(resolve, ms));
+ }
+ 
+-export function CreateMockMutation<P, D>(result: D): MutationResult<P, D> {
++export function CreateMockMutation<P, D>(
++	result: D,
++	oncall?: (param: P) => void
++): MutationResult<P, D> {
+ 	const isPending = writable(false);
+ 	const isError = writable(false);
+ 
+ 	return {
+ 		mutate: async (param: P, callback?: (data: D) => void) => {
++			if (oncall) oncall(param);
+ 			isPending.set(true);
+ 			await sleep(10);
+ 			isPending.set(false);
+diff --git a/frontend/src/lib/api/user.ts b/frontend/src/lib/api/user.ts
+index 2773f1f..dad6484 100644
+--- a/frontend/src/lib/api/user.ts
++++ b/frontend/src/lib/api/user.ts
+@@ -4,7 +4,9 @@ import {
+ 	type QueryResult,
+ 	CreateMutation,
+ 	type CreateMutationResult,
+-	SetQueryData
++	SetQueryData,
++	CreateMockMutation,
++	CreateMockQuery
+ } from './state';
+ 
+ import type {
+@@ -50,6 +52,11 @@ export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp
+ }
+ 
+ export function useUser(): QueryResult<UserReadResp> {
++	return CreateMockQuery({
++		user_id: 1,
++		username: 'admin',
++		preference: {}
++	});
+ 	return CreateQuery<UserReadReq, UserReadResp>({
+ 		key: ['currentUser'],
+ 		path: 'user/read',
+@@ -59,6 +66,14 @@ export function useUser(): QueryResult<UserReadResp> {
+ }
+ 
+ export function UpdateUser(): CreateMutationResult<UserUpdateReq, UserUpdateResp> {
++	return CreateMockMutation(
++		{
++			user_id: 1
++		},
++		(param) => {
++			if (param.preference) updatePreference(param.preference);
++		}
++	);
+ 	return CreateMutation({
+ 		path: 'user/update',
+ 		onSuccess(data, param) {
+diff --git a/frontend/src/lib/preference/index.ts b/frontend/src/lib/preference/index.ts
+index de5d9af..b1a53cd 100644
+--- a/frontend/src/lib/preference/index.ts
++++ b/frontend/src/lib/preference/index.ts
+@@ -14,11 +14,15 @@ import { onDestroy } from 'svelte';
+ import { isLightTheme as isLightThemeFn } from './theme';
+ 
+ function getRemotePreference() {
+-	return APIFetch<UserReadResp, UserReadReq>('user/read', {});
++	return Promise.resolve({
++		user_id: 1,
++		username: 'admin',
++		preference: {}
++	});
+ }
+ 
+ function setRemotePreference(preference: UserPreference) {
+-	return APIFetch<UserUpdateResp, UserUpdateReq>('user/update', { preference });
++	return Promise.resolve({ user_id: 1 });
+ }
+ 
+ function defaultPreference(): Required<UserPreference> {
+diff --git a/frontend/src/routes/+page.svelte b/frontend/src/routes/+page.svelte
+index 75f6c16..c5a3025 100644
+--- a/frontend/src/routes/+page.svelte
++++ b/frontend/src/routes/+page.svelte
+@@ -4,7 +4,7 @@
+ 	import { LoaderCircle } from '@lucide/svelte';
+ 
+ 	$effect(() => {
+-		if ($token) goto('/chat/new');
++		if ($token) goto('/chat/1');
+ 		else goto('/login');
+ 	});
+ </script>
+diff --git a/frontend/src/routes/login/+page.svelte b/frontend/src/routes/login/+page.svelte
+index 0dc2cf1..5193532 100644
+--- a/frontend/src/routes/login/+page.svelte
++++ b/frontend/src/routes/login/+page.svelte
+@@ -35,7 +35,7 @@
+ 					return;
+ 				}
+ 
+-				goto('/chat/new');
++				goto('/chat/1');
+ 			}
+ 		);
+ 	}
+@@ -77,7 +77,4 @@
+ 			</Button>
+ 		</form>
+ 	</div>
+-	<p class="block animate-pulse border-b-2 border-red-500 md:hidden">
+-		llumen is not well-supported on mobile
+-	</p>
+ </main>
