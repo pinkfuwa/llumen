@@ -66,7 +66,7 @@
 		BlockMathDollar: Latex,
 		BlockMathDollarMark: Empty,
 		Link,
-		URL: Empty,
+		URL: Text,
 		Autolink: Link,
 		BulletList: List,
 		OrderedList: List,
