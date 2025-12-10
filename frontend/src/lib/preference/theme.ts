@@ -1,4 +1,4 @@
-export type Theme = 'light' | 'dark' | 'blue';
+export type Theme = 'light' | 'dark' | 'blue' | 'light-pattern' | 'dark-pattern';
 
 export interface ThemeStyle {
 	light: string;
@@ -10,13 +10,7 @@ export interface ThemeStyle {
 }
 
 export function isLightTheme(theme: Theme) {
-	return theme == 'light';
-}
-
-export function getTitleGrad(theme: Theme) {
-	if (theme == 'blue') return 'from-slate-600 to-orange-600';
-	if (theme == 'light') return 'from-slate-700 to-sky-500';
-	return 'from-dark to-blue-600';
+	return theme == 'light' || theme == 'light-pattern';
 }
 
 export function setTheme(theme: Theme) {
