@@ -52,7 +52,12 @@ impl Openrouter {
         let mut modalities = Vec::new();
 
         if !self.compatibility_mode {
-            plugins.push(raw::Plugin::pdf());
+            match capability.ocr {
+                OcrEngine::Native => plugins.push(raw::Plugin::pdf_native()),
+                OcrEngine::Text => plugins.push(raw::Plugin::pdf_text()),
+                OcrEngine::Mistral => plugins.push(raw::Plugin::mistral_ocr()),
+                OcrEngine::Disabled => {}
+            };
             if option.insert_web_search_context {
                 log::debug!("inserting web search context");
                 plugins.push(raw::Plugin::web());
@@ -166,7 +171,7 @@ impl Openrouter {
             toolcall: merge!(toolcall),
             ocr: match overrides.ocr {
                 Some(v) => v,
-                None => capability.ocr.unwrap_or(OcrEngine::Text),
+                None => capability.ocr.unwrap_or(OcrEngine::Disabled),
             },
             audio: merge!(audio),
         }
@@ -218,7 +223,7 @@ impl Openrouter {
             ocr: Some(if supports_file_modality {
                 OcrEngine::Native
             } else {
-                OcrEngine::Mistral
+                OcrEngine::Text
             }),
             audio: Some(
                 model

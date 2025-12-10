@@ -174,11 +174,27 @@ pub struct Plugin {
 }
 
 impl Plugin {
-    pub fn pdf() -> Self {
+    pub fn pdf_text() -> Self {
+        Self {
+            id: "file-parser".to_string(),
+            pdf: Some(PdfPlugin {
+                engine: "pdf-text".to_string(),
+            }),
+        }
+    }
+    pub fn mistral_ocr() -> Self {
         Self {
             id: "file-parser".to_string(),
             pdf: Some(PdfPlugin {
                 engine: "mistral-ocr".to_string(),
+            }),
+        }
+    }
+    pub fn pdf_native() -> Self {
+        Self {
+            id: "file-parser".to_string(),
+            pdf: Some(PdfPlugin {
+                engine: "native".to_string(),
             }),
         }
     }
