@@ -3,8 +3,8 @@ services:
     image: ghcr.io/pinkfuwa/llumen:latest
     restart: on-failure:4
     environment:
-      - "API_KEY=sk-or-v1-openrouter-api-key"
-      - "API_BASE=https://api.openai.com/"
+      - "API_KEY=your-api-key"
+      - "API_BASE=https://ollama.com"
     volumes:
       - "./data:/data"
     ports:

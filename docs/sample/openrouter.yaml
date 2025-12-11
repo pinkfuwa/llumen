@@ -1,6 +1,6 @@
 services:
   llumen:
-    image: ghcr.io/pinkfuwa/llumen:nightly
+    image: ghcr.io/pinkfuwa/llumen:latest
     restart: on-failure:4
     environment:
       - "API_KEY=sk-or-v1-openrouter-api-key"
