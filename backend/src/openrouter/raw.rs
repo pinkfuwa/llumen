@@ -36,7 +36,7 @@ pub enum SupportedParams {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Model {
     pub id: String,
-    pub name: String,
+    pub name: Option<String>,
     #[serde(default)]
     pub supported_parameters: Vec<SupportedParams>,
     #[serde(default)]
