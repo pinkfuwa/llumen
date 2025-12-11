@@ -219,7 +219,8 @@ impl StreamCompletion {
         let resp = serde_json::from_str::<raw::StreamCompletionResponse>(data)?;
 
         if let Some(model_id) = resp.model {
-            if model_id != self.model_id {
+            let trimmed_id = model_id.split(":").next().unwrap_or("");
+            if !self.model_id.starts_with(trimmed_id) {
                 log::warn!(
                     "Model ID mismatch: expected {}, got {}",
                     self.model_id,
