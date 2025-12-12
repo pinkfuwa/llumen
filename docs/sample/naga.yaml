@@ -1,0 +1,17 @@
+# This provider don't support image generation
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: on-failure:4
+    environment:
+      - "API_KEY=ng-naga-api-key"
+      - "API_BASE=https://api.naga.ac/"
+    volumes:
+      - "./data:/data"
+    ports:
+      - "80:80"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    memswap_limit: 512M
