@@ -449,14 +449,16 @@ pub struct Choice {
 pub struct Delta {
     pub role: Option<Role>,
     pub content: Option<String>,
-    // reasoning or summary of reasoning that should be display to user
+    /// reasoning or summary of reasoning that should be display to user
     pub reasoning: Option<String>,
-    // reasoning or encrypted reasoning detail, useful for preserving-reasoning-blocks
-    // if multiple reasoning_details presented, concat them
-    //
-    // Reasoning are model-specific, meaning that when changing model, don't send them
-    //
-    // https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#preserving-reasoning-blocks
+    /// alternative reasoning or summary of reasoning that should be display to user
+    pub reasoning_content: Option<String>,
+    /// reasoning or encrypted reasoning detail, useful for preserving-reasoning-blocks
+    /// if multiple reasoning_details presented, concat them
+    ///
+    /// Reasoning are model-specific, meaning that when changing model, don't send them
+    ///
+    /// https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#preserving-reasoning-blocks
     pub reasoning_details: Option<Vec<serde_json::Value>>,
     pub annotations: Option<Vec<serde_json::Value>>,
     pub tool_calls: Option<Vec<ToolCall>>,

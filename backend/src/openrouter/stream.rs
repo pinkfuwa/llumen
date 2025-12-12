@@ -135,6 +135,8 @@ impl StreamCompletion {
 
         if let Some(reasoning) = delta.reasoning {
             return StreamCompletionResp::ReasoningToken(reasoning);
+        } else if let Some(reasoning) = delta.reasoning_content {
+            return StreamCompletionResp::ReasoningToken(reasoning);
         }
 
         // Handle tool calls - support parallel tool calls
@@ -291,13 +293,20 @@ impl StreamCompletion {
     }
 
     pub fn get_result(mut self) -> StreamResult {
-        let stop_reason = self.stop_reason.take().unwrap_or_else(|| {
-            log::warn!("Provider didn't return finish_reason");
-            match self.toolcalls.is_empty() {
-                true => raw::FinishReason::Stop,
-                false => raw::FinishReason::ToolCalls,
-            }
-        });
+        let stop_reason = match self.toolcalls.is_empty() {
+            true => self.stop_reason.clone().unwrap_or(raw::FinishReason::Stop),
+            false => raw::FinishReason::ToolCalls,
+        };
+
+        if !(matches!(
+            (self.toolcalls.is_empty(), &self.stop_reason),
+            (true, None) | (false, Some(raw::FinishReason::ToolCalls))
+        )) {
+            log::warn!(
+                "Provider return wrong(or didn't provide any) finish reason, set to {:?}",
+                stop_reason
+            );
+        }
 
         let reasoning_details = self.reasoning_details.take().map(|data| {
             serde_json::json!({
