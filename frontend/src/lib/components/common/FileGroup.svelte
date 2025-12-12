@@ -47,7 +47,9 @@
 				{/if}
 			</div>
 			<div class="flex min-w-0 grow items-center justify-center overflow-x-auto">
-				{file.name}
+				<div>
+					{file.name}
+				</div>
 			</div>
 		</div>
 	{/each}
