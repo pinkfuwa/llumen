@@ -25,8 +25,15 @@ pub struct CacheControlLayer {
 
 impl CacheControlLayer {
     pub fn new() -> Self {
-        let version = (0..12)
-            .map(|_| fastrand::alphanumeric())
+        let mut bytes = [0u8; 12];
+        getrandom::fill(&mut bytes).unwrap();
+        let version = bytes
+            .iter()
+            .map(|&b| {
+                const CHARSET: &[u8] =
+                    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                CHARSET[(b as usize) % CHARSET.len()] as char
+            })
             .collect::<String>();
         Self {
             version: Arc::new(version),

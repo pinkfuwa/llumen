@@ -12,11 +12,8 @@ impl Hasher {
         return argon2::verify_encoded(&hash, password.as_bytes()).unwrap();
     }
     pub fn hash_password(&self, password: &str) -> String {
-        let salt = {
-            (0..SALT_LEN)
-                .map(|_| fastrand::u8(0..u8::MAX))
-                .collect::<Vec<u8>>()
-        };
+        let mut salt = [0u8; SALT_LEN];
+        getrandom::fill(&mut salt).unwrap();
 
         let hash = argon2::hash_encoded(password.as_bytes(), &salt, &self.config).unwrap();
 
