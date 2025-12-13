@@ -54,7 +54,6 @@
 		HorizontalRule: Hr,
 		HTMLBlock: Html,
 		HTMLTag: Html,
-		Image,
 		LatexBlock: Latex,
 		LatexSpan,
 		InlineMathBracket: LatexSpan,
@@ -65,9 +64,8 @@
 		BlockMathBracketMark: Empty,
 		BlockMathDollar: Latex,
 		BlockMathDollarMark: Empty,
-		Link,
 		URL: Text,
-		Autolink: Link,
+		Autolink: Text,
 		BulletList: List,
 		OrderedList: List,
 		ListItem,
@@ -93,6 +91,12 @@
 		CommentBlock: Text,
 		Task: Task,
 		TaskMarker: Empty
+	};
+
+	// node that doesn't require constructing children
+	const complexNodeMap: Record<string, any> = {
+		Link,
+		Image
 	};
 
 	const segments = $derived.by((): Segment[] => {
@@ -161,12 +165,10 @@
 			favicon={data.favicon}
 			authoritative={data.authoritative}
 		/>
-	{:else if !nodeMap[ast.type]}
-		<pre>
-<code>Unmapped node type: {ast.type}</code>
-<code>{JSON.stringify(ast, null, 2)}</code>
-		</pre>
-	{:else}
+	{:else if complexNodeMap[ast.type]}
+		{@const MappedComponent = complexNodeMap[ast.type]}
+		<MappedComponent node={ast} />
+	{:else if nodeMap[ast.type]}
 		{@const MappedComponent = nodeMap[ast.type]}
 		<MappedComponent node={ast}>
 			{#each segments as seg}
@@ -177,5 +179,10 @@
 				{/if}
 			{/each}
 		</MappedComponent>
+	{:else}
+		<pre>
+            <code>Unmapped node type: {ast.type}</code>
+            <code>{JSON.stringify(ast, null, 2)}</code>
+		</pre>
 	{/if}
 {/if}
