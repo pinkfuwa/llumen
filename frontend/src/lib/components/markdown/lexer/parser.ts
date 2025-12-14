@@ -746,11 +746,11 @@ function isTableContent(text: string): boolean {
 	const hasPipes = lines.some(line => line.includes('|'));
 	if (!hasPipes) return false;
 	
-	// Check for separator line (|---|---|)
+	// Check for separator line (must have pipes and hyphens: |---|---|)
 	const hasSeparator = lines.some(line => {
 		const trimmed = line.trim();
-		// Table separator line contains pipes, hyphens, colons, and whitespace
-		return /^\|?[\s\-:|]+\|[\s\-:|]*$/.test(trimmed) && trimmed.includes('-');
+		// Valid table separator must have pipes and at least one hyphen
+		return trimmed.includes('|') && trimmed.includes('-') && /^[\s\-:|]+$/.test(trimmed);
 	});
 	
 	return hasSeparator;
@@ -781,17 +781,15 @@ export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 		// This is a non-standard markdown behavior but users expect it
 		if (node.type.name === 'Paragraph' && node.parent?.type.name === 'ListItem') {
 			if (isTableContent(text)) {
-				// Extract only the table lines (lines with |)
+				// Extract only the table lines (lines with pipes)
 				const lines = text.split('\n');
 				const tableLines: string[] = [];
-				let foundTable = false;
 				
 				for (const line of lines) {
 					const trimmed = line.trimStart();
-					// Include lines that have pipes or are separator lines
-					if (trimmed.includes('|') || (foundTable && /^[\s\-:|]+$/.test(trimmed) && trimmed.includes('-'))) {
+					// Include only lines that have pipes (table rows and separators)
+					if (trimmed.includes('|')) {
 						tableLines.push(trimmed);
-						foundTable = true;
 					}
 				}
 				
@@ -799,19 +797,22 @@ export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 					const tableContent = tableLines.join('\n');
 					
 					// Re-parse just the table content as markdown to get proper table structure
+					// Note: Using the existing parser instance which is already configured
 					const tableTree = parser.parse(tableContent);
 					
-					// Directly extract the table node from the tree without walking
+					// Directly extract the table node from the tree
 					let tableNode: SyntaxNode | null = null;
-					const findTableNode = (n: SyntaxNode): void => {
+					const findTableNode = (n: SyntaxNode): boolean => {
 						if (n.type.name === 'Table') {
 							tableNode = n;
-							return;
+							return true;
 						}
 						for (let child = n.firstChild; child; child = child.nextSibling) {
-							if (tableNode) break;
-							findTableNode(child);
+							if (findTableNode(child)) {
+								return true;
+							}
 						}
+						return false;
 					};
 					findTableNode(tableTree.topNode);
 					
