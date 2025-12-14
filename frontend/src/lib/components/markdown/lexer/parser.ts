@@ -746,12 +746,15 @@ function isTableContent(text: string): boolean {
 	const hasPipes = lines.some(line => line.includes('|'));
 	if (!hasPipes) return false;
 	
-	// Check for separator line (must have pipes and hyphens: |---|---|)
+	// Regex pattern for table separator line: |---|---|
+	// Must contain pipes and hyphens, may contain colons (for alignment) and whitespace
+	// Example valid patterns: |---|---|, | --- | --- |, |:---|---:|
+	const TABLE_SEPARATOR_PATTERN = /^\|?[\s\-:|]+\|[\s\-:|]*$/;
+	
+	// Check for separator line (must have pipes and hyphens)
 	const hasSeparator = lines.some(line => {
 		const trimmed = line.trim();
-		// Valid table separator must have pipes and at least one hyphen
-		// Pattern ensures pipes are present: starts/ends with optional whitespace and pipe
-		return trimmed.includes('|') && trimmed.includes('-') && /^\|?[\s\-:|]+\|[\s\-:|]*$/.test(trimmed);
+		return trimmed.includes('|') && trimmed.includes('-') && TABLE_SEPARATOR_PATTERN.test(trimmed);
 	});
 	
 	return hasSeparator;
@@ -802,6 +805,8 @@ export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 		if (node.type.name === 'Paragraph' && node.parent?.type.name === 'ListItem') {
 			if (isTableContent(text)) {
 				// Extract only the table lines (lines with pipes)
+				// Note: trimStart() is used to normalize indentation as tables in lists
+				// are typically indented, and we want to parse them as standalone tables
 				const lines = text.split('\n');
 				const tableLines: string[] = [];
 				
@@ -820,21 +825,18 @@ export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 					// Note: Using the existing parser instance which is already configured
 					const tableTree = parser.parse(tableContent);
 					
-					// Directly extract the table node from the tree
-					let tableNode: SyntaxNode | null = null;
-					const findTableNode = (n: SyntaxNode): boolean => {
+					// Find the table node in the parsed tree
+					const findTableNode = (n: SyntaxNode): SyntaxNode | null => {
 						if (n.type.name === 'Table') {
-							tableNode = n;
-							return true;
+							return n;
 						}
 						for (let child = n.firstChild; child; child = child.nextSibling) {
-							if (findTableNode(child)) {
-								return true;
-							}
+							const found = findTableNode(child);
+							if (found) return found;
 						}
-						return false;
+						return null;
 					};
-					findTableNode(tableTree.topNode);
+					const tableNode = findTableNode(tableTree.topNode);
 					
 					if (tableNode) {
 						// Walk the table node using the table content as source
