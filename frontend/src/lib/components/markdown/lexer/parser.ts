@@ -750,10 +750,30 @@ function isTableContent(text: string): boolean {
 	const hasSeparator = lines.some(line => {
 		const trimmed = line.trim();
 		// Valid table separator must have pipes and at least one hyphen
-		return trimmed.includes('|') && trimmed.includes('-') && /^[\s\-:|]+$/.test(trimmed);
+		// Pattern ensures pipes are present: starts/ends with optional whitespace and pipe
+		return trimmed.includes('|') && trimmed.includes('-') && /^\|?[\s\-:|]+\|[\s\-:|]*$/.test(trimmed);
 	});
 	
 	return hasSeparator;
+}
+
+/**
+ * Helper function to walk a syntax node and convert it to AST using the provided source text
+ */
+function walkNode(node: SyntaxNode, source: string): ASTNode {
+	const children: ASTNode[] = [];
+	for (let child = node.firstChild; child; child = child.nextSibling) {
+		children.push(walkNode(child, source));
+	}
+
+	const text = source.slice(node.from, node.to);
+	return {
+		type: node.type.name,
+		from: node.from,
+		to: node.to,
+		text,
+		children
+	};
 }
 
 export function walkTree(tree: Tree | null, source: string): ASTNode | null {
@@ -817,15 +837,15 @@ export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 					findTableNode(tableTree.topNode);
 					
 					if (tableNode) {
-						// Walk the table node to get its AST structure
-						const tableAst = walk(tableNode);
+						// Walk the table node using the table content as source
+						const tableAst = walkNode(tableNode, tableContent);
 						
-						// Return the table node with adjusted positions
+						// Return the table node with original positions and text preserved
 						return {
 							...tableAst,
 							from: node.from,
 							to: node.to,
-							text: text
+							text: text // Keep original text for context
 						};
 					}
 				}
