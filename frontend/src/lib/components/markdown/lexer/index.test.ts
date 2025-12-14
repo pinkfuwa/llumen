@@ -687,4 +687,61 @@ describe('Lexer - Integration', () => {
 			'https://www.crn.com/news/components-peripherals/2025/the-10-biggest-intel-news-stories-of-2025'
 		);
 	});
+
+	it('should parse table within list item as table (non-standard markdown)', async () => {
+		// The standard markdown behavior would parse indented content as part of the list item
+		// However, users expect tables within lists to be parsed as actual tables
+		const source = `- **參考經典**：
+  | Startup | 問卷重點 | 為什麼有效 |
+  |---------|----------|------------|
+  | Dropbox | 「檔案同步痛點？」+「付費意願？」 | 挖問題→驗證pricing bug |
+  | Airbnb | 「找房煩點？」+「信任顧慮？」 | 隱含安全/清潔bug |
+  | Uber | 「等車次數？」+「叫車障礙？」 | 量化需求→supply bug |`;
+
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		expect(tree).toBeDefined();
+		expect(walked).toBeDefined();
+
+		// Check that a Table node exists in the AST
+		expect(containsType(walked, 'Table')).toBe(true);
+	});
+
+	it('should parse simple table within list item', async () => {
+		const source = `- List item with table:
+  | A | B |
+  |---|---|
+  | 1 | 2 |`;
+
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		expect(containsType(walked, 'Table')).toBe(true);
+	});
+
+	it('should parse table within numbered list item', async () => {
+		const source = `1. First item with table:
+   | Header 1 | Header 2 |
+   |----------|----------|
+   | Cell 1   | Cell 2   |`;
+
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		expect(containsType(walked, 'Table')).toBe(true);
+	});
+
+	it('should not affect regular list items without tables', async () => {
+		const source = `- Regular list item
+- Another regular item`;
+
+		const tree = await parse(source);
+		const walked = await walkTree(tree, source);
+
+		// Should not have table nodes
+		expect(containsType(walked, 'Table')).toBe(false);
+		// Should still have list structure
+		expect(containsType(walked, 'BulletList')).toBe(true);
+	});
 });

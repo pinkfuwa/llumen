@@ -734,6 +734,28 @@ export type CitationNode = ASTNodeBase & {
 
 export type ASTNode = ASTNodeBase | CitationNode;
 
+/**
+ * Check if text contains table syntax (pipes and separator line)
+ */
+function isTableContent(text: string): boolean {
+	const lines = text.split('\n');
+	// Need at least 2 lines (header + separator)
+	if (lines.length < 2) return false;
+	
+	// Check if we have lines with pipes
+	const hasPipes = lines.some(line => line.includes('|'));
+	if (!hasPipes) return false;
+	
+	// Check for separator line (|---|---|)
+	const hasSeparator = lines.some(line => {
+		const trimmed = line.trim();
+		// Table separator line contains pipes, hyphens, colons, and whitespace
+		return /^\|?[\s\-:|]+\|[\s\-:|]*$/.test(trimmed) && trimmed.includes('-');
+	});
+	
+	return hasSeparator;
+}
+
 export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 	if (!tree) {
 		return null;
@@ -754,6 +776,60 @@ export function walkTree(tree: Tree | null, source: string): ASTNode | null {
 			text,
 			children
 		};
+
+		// Check if this is a Paragraph within a ListItem that contains table syntax
+		// This is a non-standard markdown behavior but users expect it
+		if (node.type.name === 'Paragraph' && node.parent?.type.name === 'ListItem') {
+			if (isTableContent(text)) {
+				// Extract only the table lines (lines with |)
+				const lines = text.split('\n');
+				const tableLines: string[] = [];
+				let foundTable = false;
+				
+				for (const line of lines) {
+					const trimmed = line.trimStart();
+					// Include lines that have pipes or are separator lines
+					if (trimmed.includes('|') || (foundTable && /^[\s\-:|]+$/.test(trimmed) && trimmed.includes('-'))) {
+						tableLines.push(trimmed);
+						foundTable = true;
+					}
+				}
+				
+				if (tableLines.length >= 2) {
+					const tableContent = tableLines.join('\n');
+					
+					// Re-parse just the table content as markdown to get proper table structure
+					const tableTree = parser.parse(tableContent);
+					
+					// Directly extract the table node from the tree without walking
+					let tableNode: SyntaxNode | null = null;
+					const findTableNode = (n: SyntaxNode): void => {
+						if (n.type.name === 'Table') {
+							tableNode = n;
+							return;
+						}
+						for (let child = n.firstChild; child; child = child.nextSibling) {
+							if (tableNode) break;
+							findTableNode(child);
+						}
+					};
+					findTableNode(tableTree.topNode);
+					
+					if (tableNode) {
+						// Walk the table node to get its AST structure
+						const tableAst = walk(tableNode);
+						
+						// Return the table node with adjusted positions
+						return {
+							...tableAst,
+							from: node.from,
+							to: node.to,
+							text: text
+						};
+					}
+				}
+			}
+		}
 
 		// Check if this is a CodeBlock that contains citations (happens with indented citations)
 		if (node.type.name === 'CodeBlock') {
