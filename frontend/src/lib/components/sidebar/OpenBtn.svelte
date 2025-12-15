@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { ArrowRight } from '@lucide/svelte';
-	import type { MouseEventHandler } from 'svelte/elements';
 	import { blur } from 'svelte/transition';
 	import Button from '$lib/ui/Button.svelte';
 

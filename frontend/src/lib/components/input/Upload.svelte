@@ -2,7 +2,8 @@
 	import { Upload } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import TipButton from '$lib/ui/TipButton.svelte';
 
 	let { files = $bindable([] as File[]), filetypes }: { files: File[]; filetypes: string } =
 		$props();
@@ -24,11 +25,14 @@
 	}
 </script>
 
-<Button class="aspect-square h-full shrink-0" onclick={openDialog} aria-label="upload file">
-	<Tooltip text={$_('chat.file')}>
-		<Upload class="inline-block" />
-	</Tooltip>
-</Button>
+<TipButton
+	class="aspect-square h-full shrink-0"
+	onclick={openDialog}
+	aria-label="upload file"
+	text={$_('chat.file')}
+>
+	<Upload class="inline-block" />
+</TipButton>
 
 <input
 	type="file"

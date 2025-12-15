@@ -2,8 +2,7 @@
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { Atom, SearchCode, ZapOff } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
-	import Button from '$lib/ui/Button.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
+	import TipButton from '$lib/ui/TipButton.svelte';
 
 	let {
 		value = $bindable(Mode.Normal) as Mode,
@@ -18,28 +17,29 @@
 		value = modes[nextIndex % modes.length];
 	}
 
+	const tipText: Record<Mode, string> = $derived({
+		[Mode.Normal]: $_('chat.model_mode.normal'),
+		[Mode.Search]: $_('chat.model_mode.search'),
+		[Mode.Research]: $_('chat.model_mode.deep')
+	});
+
 	$effect(() => {
 		if (limited) value = Mode.Normal;
 	});
 </script>
 
-<Button
+<TipButton
 	onclick={nextStage}
 	class="aspect-square h-full shrink-0"
 	disabled={disabled || limited}
 	aria-label="change mode"
+	text={tipText[value]}
 >
 	{#if value == Mode.Research}
-		<Tooltip text={$_('chat.model_mode.deep')}>
-			<Atom class="inline-block" />
-		</Tooltip>
+		<Atom class="inline-block" />
 	{:else if value == Mode.Search}
-		<Tooltip text={$_('chat.model_mode.search')}>
-			<SearchCode class="inline-block" />
-		</Tooltip>
+		<SearchCode class="inline-block" />
 	{:else}
-		<Tooltip text={$_('chat.model_mode.normal')}>
-			<ZapOff class="inline-block" />
-		</Tooltip>
+		<ZapOff class="inline-block" />
 	{/if}
-</Button>
+</TipButton>
