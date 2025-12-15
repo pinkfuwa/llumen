@@ -27,7 +27,8 @@
 		)
 			return;
 
-		if (!code.startsWith('Key') && !code.startsWith('Digit') && code != 'Enter') return;
+		console.log({ code });
+		if (!code.startsWith('Key') || !code.startsWith('Digit') || code != 'Enter') return;
 
 		if (input !== document.activeElement) {
 			input?.focus();
