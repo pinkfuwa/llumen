@@ -12,6 +12,7 @@ impl From<ModelConfig> for openrouter::Model {
             toolcall: value.capability.tool,
             ocr: value.capability.ocr,
             audio: value.capability.audio,
+            reasoning: value.capability.reasoning,
         };
 
         openrouter::Model {

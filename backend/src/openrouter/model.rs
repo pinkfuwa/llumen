@@ -9,6 +9,7 @@ pub struct Capability {
     pub toolcall: bool,
     pub ocr: OcrEngine,
     pub audio: bool,
+    pub reasoning: bool,
 }
 
 #[derive(Clone, Default)]
@@ -19,6 +20,7 @@ pub struct MaybeCapability {
     pub toolcall: Option<bool>,
     pub ocr: Option<OcrEngine>,
     pub audio: Option<bool>,
+    pub reasoning: Option<bool>,
 }
 
 #[derive(Clone, Default)]

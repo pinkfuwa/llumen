@@ -220,6 +220,7 @@ impl From<protocol::ModelCapability> for super::MaybeCapability {
             toolcall: capability.tool,
             ocr: capability.ocr,
             audio: capability.audio,
+            reasoning: capability.reasoning,
         }
     }
 }
