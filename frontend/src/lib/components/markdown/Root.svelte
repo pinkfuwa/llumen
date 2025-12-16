@@ -1,39 +1,52 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Parser from './Parser.svelte';
-	import { parseIncremental, walkTree } from './lexer';
-	import { parseAst } from './worker';
+	import { parseMarkdown } from './worker';
+	import { parseIncremental, type IncrementalState } from './lexer';
+	import type { ParseResult } from './lexer';
 
-	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
+	const {
+		source,
+		incremental = false,
+		monochrome = false
+	}: { source: string; incremental?: boolean; monochrome?: boolean } = $props();
 
-	let prevSource: string = $state('');
-	let prevTree: import('@lezer/common').Tree | null = null;
-	let ast: any = $state(null);
+	let incrementalState: IncrementalState | null = $state(null);
+	let result: ParseResult | null = $state(null);
 
 	let throttleTimer: ReturnType<typeof setTimeout> | null = null;
 	const THROTTLE_MS = 100;
 
 	let pendingSource: string | null = null;
 
-	async function doParse(currentSource: string) {
-		const prevTreeValue = untrack(() => prevTree);
-		const prevSourceValue = untrack(() => prevSource);
+	async function doIncrementalParse(currentSource: string) {
+		const currentState = untrack(() => incrementalState);
 
-		const increment =
-			incremental &&
-			prevTreeValue &&
-			currentSource.startsWith(prevSourceValue) &&
-			currentSource.length > prevSourceValue.length;
+		try {
+			const parseResult = await parseIncremental(currentSource, currentState);
+			result = parseResult.result;
+			incrementalState = parseResult.state;
+		} catch (error) {
+			console.error('Incremental parse error:', error);
+			// Fallback to full parse
+			result = await parseMarkdown(currentSource);
+			incrementalState = {
+				prevSource: currentSource,
+				prevResult: result,
+				newContentStart: currentSource.length
+			};
+		}
+	}
 
-		if (increment) {
-			const tree = await parseIncremental(prevTreeValue, prevSourceValue, currentSource);
-			ast = await walkTree(tree, currentSource);
-			prevSource = currentSource;
-			prevTree = tree;
-		} else {
-			ast = await parseAst(currentSource);
-			prevSource = currentSource;
-			prevTree = null;
+	async function doFullParse(currentSource: string) {
+		try {
+			result = await parseMarkdown(currentSource);
+			// Reset incremental state
+			incrementalState = null;
+		} catch (error) {
+			console.error('Parse error:', error);
+			// Show raw text on error
+			result = null;
 		}
 	}
 
@@ -41,28 +54,35 @@
 		pendingSource = source;
 
 		if (!incremental) {
+			// Non-incremental mode: use web worker, no throttling
 			if (throttleTimer != null) {
 				clearTimeout(throttleTimer);
 				throttleTimer = null;
 			}
-			doParse(source);
-		} else if (!throttleTimer) {
-			const runThrottle = async () => {
-				let lastParsedSource = untrack(() => pendingSource);
-				await doParse(lastParsedSource!);
+			doFullParse(source);
+		} else {
+			// Incremental mode: parse in main thread with throttling
+			if (!throttleTimer) {
+				const runThrottle = async () => {
+					const lastParsedSource = untrack(() => pendingSource);
+					if (lastParsedSource !== null) {
+						await doIncrementalParse(lastParsedSource);
+					}
 
-				if (pendingSource !== lastParsedSource) {
-					throttleTimer = setTimeout(runThrottle, THROTTLE_MS);
-				} else {
-					throttleTimer = null;
-				}
-			};
-			throttleTimer = setTimeout(runThrottle, THROTTLE_MS);
+					const currentPending = untrack(() => pendingSource);
+					if (currentPending !== lastParsedSource) {
+						throttleTimer = setTimeout(runThrottle, THROTTLE_MS);
+					} else {
+						throttleTimer = null;
+					}
+				};
+				throttleTimer = setTimeout(runThrottle, THROTTLE_MS);
+			}
 		}
 	});
 </script>
 
-{#if ast == null}
+{#if result == null}
 	<div class="space-y-2">
 		{#each source.split('\n') as line}
 			<p>{line}</p>
@@ -70,6 +90,6 @@
 	</div>
 {:else}
 	<div class="space-y-2">
-		<Parser {ast} />
+		<Parser tokens={result.tokens} {source} {monochrome} />
 	</div>
 {/if}

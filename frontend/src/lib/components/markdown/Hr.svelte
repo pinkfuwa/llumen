@@ -1,1 +1,1 @@
-<hr class="my-8 border-outline" />
+<hr class="my-2" />

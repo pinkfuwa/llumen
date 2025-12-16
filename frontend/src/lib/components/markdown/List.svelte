@@ -1,16 +1,24 @@
 <script lang="ts">
-	import type { ASTNode } from './lexer/parser';
+	import type { Token, OrderedListToken } from './lexer';
+	import { TokenType } from './lexer';
 	import type { Snippet } from 'svelte';
 
-	let { node, children }: { node: ASTNode; children: Snippet } = $props();
+	let { token, source, children }: { token: Token; source: string; children: Snippet } = $props();
 
-	const isOrdered = node.type === 'OrderedList';
+	const isOrdered = $derived(token.type === TokenType.OrderedList);
+	const startNumber = $derived(
+		isOrdered ? (token as OrderedListToken).startNumber || 1 : undefined
+	);
+
+	const numberWidthRem = $derived(((startNumber || 1) + 10).toString().length * 0.7);
 </script>
 
 {#if isOrdered}
-	<ol class="list-decimal" style={`margin-left: 2.5rem`}>
-		{@render children?.()}
+	<ol start={startNumber} class="list-decimal" style={`margin-left: ${numberWidthRem}rem`}>
+		{@render children()}
 	</ol>
 {:else}
-	<ul class="ml-6 list-disc">{@render children?.()}</ul>
+	<ul class="ml-4 list-disc">
+		{@render children()}
+	</ul>
 {/if}

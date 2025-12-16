@@ -1,18 +1,17 @@
 <script lang="ts">
-	import type { ASTNode } from './lexer/parser';
+	import type { Token, HeadingToken } from './lexer';
 	import type { Snippet } from 'svelte';
 
-	let { node, children }: { node: ASTNode; children: Snippet } = $props();
+	let { token, children }: { token: Token; children: Snippet } = $props();
 
-	const classMap: Record<string, string> = {
-		ATXHeading1: 'mt-1 text-2xl font-bold',
-		SetextHeading1: 'mt-1 text-2xl font-bold',
-		ATXHeading2: 'mt-1 text-xl font-bold',
-		SetextHeading2: 'mt-1 text-xl font-bold',
-		ATXHeading3: 'mt-1 text-lg font-bold'
-	};
+	const classes = ['mt-4 text-2xl font-bold', 'mt-4 text-xl font-bold', 'mt-3 text-lg font-bold'];
+	const classname = $derived.by(() => {
+		let level = (token as HeadingToken).level - 1;
+		if (level >= classes.length) return classes.at(-1)!;
+		return classes[level];
+	});
 </script>
 
-<h2 class={classMap[node.type]}>
-	{@render children?.()}
+<h2 class={classname}>
+	{@render children()}
 </h2>

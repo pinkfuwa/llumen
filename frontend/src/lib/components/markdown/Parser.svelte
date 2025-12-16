@@ -1,5 +1,17 @@
 <script lang="ts">
-	import type { ASTNode, CitationNode } from './lexer/parser';
+	import type {
+		Token,
+		CitationToken,
+		TextToken,
+		ImageToken,
+		LinkToken,
+		TableCellToken,
+		LatexBlockToken,
+		LatexInlineToken,
+		InlineCodeToken,
+		CodeBlockToken
+	} from './lexer';
+	import { TokenType } from './lexer';
 
 	import Blockquote from './Blockquote.svelte';
 	import Br from './Br.svelte';
@@ -9,8 +21,8 @@
 	import Del from './Del.svelte';
 	import Heading from './Heading.svelte';
 	import Hr from './Hr.svelte';
-	import Html from './Html.svelte';
 	import Image from './Image.svelte';
+	import Italic from './Italic.svelte';
 	import Latex from './Latex.svelte';
 	import LatexSpan from './LatexSpan.svelte';
 	import Link from './Link.svelte';
@@ -19,170 +31,89 @@
 	import Paragraph from './Paragraph.svelte';
 	import Strong from './Strong.svelte';
 	import Table from './Table.svelte';
-	import TableBody from './TableBody.svelte';
-	import TableCell from './TableCell.svelte';
-	import TableHead from './TableHead.svelte';
 	import TableRow from './TableRow.svelte';
+	import TableCell from './TableCell.svelte';
 	import Text from './Text.svelte';
 	import Parser from './Parser.svelte';
-	import Empty from './Empty.svelte';
-	import Task from './Task.svelte';
 
-	type Segment = { type: 'text'; text: string } | { type: 'node'; node: ASTNode };
-
-	let { ast }: { ast: ASTNode } = $props();
-
-	const nodeMap: Record<string, any> = {
-		Blockquote,
-		HardBreak: Br,
-		Citation,
-		CodeBlock: Code,
-		FencedCode: Code,
-		InlineCode: Codespan,
-		Strikethrough: Del,
-		StrikethroughMark: Empty,
-		Emphasis: Strong,
-		ATXHeading1: Heading,
-		ATXHeading2: Heading,
-		ATXHeading3: Heading,
-		ATXHeading4: Heading,
-		ATXHeading5: Heading,
-		ATXHeading6: Heading,
-		SetextHeading1: Heading,
-		SetextHeading2: Heading,
-		ThematicBreak: Hr,
-		HorizontalRule: Hr,
-		HTMLBlock: Html,
-		HTMLTag: Html,
-		LatexBlock: Latex,
-		LatexSpan,
-		InlineMathBracket: LatexSpan,
-		InlineMathBracketMark: Empty,
-		InlineMathDollar: LatexSpan,
-		InlineMathDollarMark: Empty,
-		BlockMathBracket: Latex,
-		BlockMathBracketMark: Empty,
-		BlockMathDollar: Latex,
-		BlockMathDollarMark: Empty,
-		URL: Text,
-		Autolink: Text,
-		BulletList: List,
-		OrderedList: List,
-		ListItem,
-		Paragraph,
-		StrongEmphasis: Strong,
-		Table,
-		TableBody,
-		TableCell,
-		TableHeader: TableHead,
-		TableRow,
-		Text,
-		CodeText: Text,
-		LinkLabel: Text,
-		EmphasisMark: Empty,
-		CodeMark: Text,
-		LinkMark: Empty,
-		QuoteMark: Empty,
-		ListMark: Empty,
-		HeaderMark: Empty,
-		default: Text,
-		TableDelimiter: Empty,
-		Escape: Empty,
-		CommentBlock: Text,
-		Task: Task,
-		TaskMarker: Empty
-	};
-
-	// node that doesn't require constructing children
-	const complexNodeMap: Record<string, any> = {
-		Link,
-		Image
-	};
-
-	const segments = $derived.by((): Segment[] => {
-		if (!ast) return [];
-
-		const text = ast.text ?? '';
-		const children = ast.children ?? [];
-
-		if (children.length === 0) {
-			return text ? [{ type: 'text', text }] : [];
-		}
-
-		const hasPositions = children.every(
-			(c: ASTNode) => typeof c.from === 'number' && typeof c.to === 'number'
-		);
-
-		if (!hasPositions || typeof ast.from !== 'number') {
-			return children.map((c: ASTNode): Segment => ({ type: 'node', node: c }));
-		}
-
-		const sortedChildren = children
-			.slice()
-			.sort((a: ASTNode, b: ASTNode) => (a.from ?? 0) - (b.from ?? 0));
-
-		const result: Segment[] = [];
-		const baseOffset = ast.from;
-		let lastEnd = 0;
-
-		for (const child of sortedChildren) {
-			const childStart = (child.from ?? 0) - baseOffset;
-			const childEnd = (child.to ?? 0) - baseOffset;
-
-			if (childStart > lastEnd) {
-				const textSlice = text.slice(lastEnd, childStart);
-				if (textSlice) {
-					result.push({ type: 'text', text: textSlice });
-				}
-			}
-
-			result.push({ type: 'node', node: child });
-			lastEnd = Math.max(lastEnd, childEnd);
-		}
-
-		if (lastEnd < text.length) {
-			const textSlice = text.slice(lastEnd);
-			if (textSlice) {
-				result.push({ type: 'text', text: textSlice });
-			}
-		}
-
-		return result;
-	});
+	let { tokens, source, monochrome }: { tokens: Token[]; source: string; monochrome: boolean } =
+		$props();
 </script>
 
-{#if ast}
-	{#if ast.type === 'Document'}
-		{#each ast.children ?? [] as child}
-			<Parser ast={child} />
-		{/each}
-	{:else if ast.type === 'Citation'}
-		{@const data = (ast as CitationNode).citationData}
+{#each tokens as token}
+	{#if token.type === TokenType.Heading}
+		<Heading {token}>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</Heading>
+	{:else if token.type === TokenType.Paragraph}
+		<Paragraph>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</Paragraph>
+	{:else if token.type === TokenType.CodeBlock}
+		<Code token={token as CodeBlockToken} {monochrome} />
+	{:else if token.type === TokenType.Blockquote}
+		<Blockquote>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</Blockquote>
+	{:else if token.type === TokenType.OrderedList || token.type === TokenType.UnorderedList}
+		<List {token} {source}>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</List>
+	{:else if token.type === TokenType.ListItem}
+		<ListItem>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</ListItem>
+	{:else if token.type === TokenType.Table}
+		<Table>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</Table>
+	{:else if token.type === TokenType.TableRow}
+		<TableRow>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</TableRow>
+	{:else if token.type === TokenType.TableCell || token.type === TokenType.TableHeader}
+		<TableCell token={token as TableCellToken}>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</TableCell>
+	{:else if token.type === TokenType.HorizontalRule}
+		<Hr />
+	{:else if token.type === TokenType.LatexBlock}
+		<Latex token={token as LatexBlockToken} />
+	{:else if token.type === TokenType.LatexInline}
+		<LatexSpan token={token as LatexInlineToken} />
+	{:else if token.type === TokenType.Bold}
+		<Strong>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</Strong>
+	{:else if token.type === TokenType.Italic}
+		<Italic>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</Italic>
+	{:else if token.type === TokenType.Strikethrough}
+		<Del {token} {source}>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</Del>
+	{:else if token.type === TokenType.InlineCode}
+		<Codespan token={token as InlineCodeToken} />
+	{:else if token.type === TokenType.Link}
+		<Link token={token as LinkToken}>
+			<Parser tokens={token.children || []} {source} {monochrome} />
+		</Link>
+	{:else if token.type === TokenType.Image}
+		<Image token={token as ImageToken} />
+	{:else if token.type === TokenType.Citation}
 		<Citation
-			raw={data.raw}
-			title={data.title}
-			url={data.url}
-			favicon={data.favicon}
-			authoritative={data.authoritative}
+			raw={`[@${(token as CitationToken).id}]`}
+			title={`Citation ${(token as CitationToken).id}`}
+			url=""
+			favicon=""
+			authoritative={false}
 		/>
-	{:else if complexNodeMap[ast.type]}
-		{@const MappedComponent = complexNodeMap[ast.type]}
-		<MappedComponent node={ast} />
-	{:else if nodeMap[ast.type]}
-		{@const MappedComponent = nodeMap[ast.type]}
-		<MappedComponent node={ast}>
-			{#each segments as seg}
-				{#if seg.type === 'text'}
-					{seg.text}
-				{:else if seg.type === 'node'}
-					<Parser ast={seg.node} />
-				{/if}
-			{/each}
-		</MappedComponent>
+	{:else if token.type === TokenType.LineBreak}
+		<Br />
+	{:else if token.type === TokenType.Text}
+		<Text token={token as TextToken} />
 	{:else}
-		<pre>
-            <code>Unmapped node type: {ast.type}</code>
-            <code>{JSON.stringify(ast, null, 2)}</code>
-		</pre>
+		<span>Unknown token type: {token.type}</span>
 	{/if}
-{/if}
+{/each}
