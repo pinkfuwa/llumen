@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { SquarePen, Check, X } from '@lucide/svelte';
 	import FileGroup from '$lib/components/common/FileGroup.svelte';
-	import { Button } from 'bits-ui';
 	import { Markdown } from '$lib/components/markdown';
+	import { getStream } from '$lib/api/message.svelte';
+	import Button from '$lib/ui/Button.svelte';
+
 	let {
 		content = $bindable(''),
 		files = [] as Array<{ name: string; id: number }>,
 		onupdate = (() => {}) as (text: string, files: Array<{ name: string; id: number }>) => void,
+		// streaming means the message just being updated(editing)
 		streaming = false
 	} = $props();
 
@@ -40,6 +43,10 @@
 			scrolled = true;
 		}
 	});
+
+	// getStream to bypass svelte bug
+	let blockEdit = $state(true);
+	getStream((streaming) => (blockEdit = streaming));
 </script>
 
 <div class="flex w-full justify-end px-[5vw] lg:px-20 2xl:px-36">
@@ -76,38 +83,42 @@
 			</div>
 		</div>
 		<div class="mt-1 flex justify-end" bind:this={btnGroup}>
-			<Button.Root
-				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=close]:hidden"
+			<Button
+				class="p-2 data-[state=close]:hidden"
 				onclick={() => {
 					editable = false;
 					content = editBuffer;
 					editFiles = [...filesBuffer];
 				}}
 				data-state={editable ? 'open' : 'close'}
+				borderless
 			>
-				<X />
-			</Button.Root>
-			<Button.Root
-				class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover data-[state=close]:hidden"
+				<X class="h-6 w-6" />
+			</Button>
+			<Button
+				class="p-2 data-[state=close]:hidden"
 				onclick={() => {
 					editable = false;
 					onupdate(content, editFiles);
 				}}
 				data-state={editable ? 'open' : 'close'}
+				borderless
+				disabled={blockEdit}
 			>
-				<Check />
-			</Button.Root>
-			<Button.Root
-				class="h-10 w-10 rounded-lg p-2 duration-150 group-hover/files:visible hover:bg-primary hover:text-text-hover data-[state=open]:hidden md:invisible"
+				<Check class="h-6 w-6" />
+			</Button>
+			<Button
+				class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
 				onclick={() => {
 					editable = true;
 					editBuffer = content;
 					filesBuffer = [...editFiles];
 				}}
 				data-state={editable ? 'open' : 'close'}
+				borderless
 			>
-				<SquarePen />
-			</Button.Root>
+				<SquarePen class="h-6 w-6" />
+			</Button>
 		</div>
 	</div>
 </div>
