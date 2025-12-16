@@ -223,7 +223,20 @@ fn advance_cursor<S: Mergeable>(cursor: &mut Cursor, shared_buffer: &[S]) -> Opt
 
     cursor.offset = len;
 
-    item.slice(offset..len)
+    // Try to slice; if it fails due to invalid UTF-8 boundary, skip to next item
+    match item.slice(offset..len) {
+        Some(sliced) => Some(sliced),
+        None => {
+            // Invalid boundary, skip to next item
+            if index + 1 < shared_buffer.len() {
+                cursor.index += 1;
+                cursor.offset = 0;
+                advance_cursor(cursor, shared_buffer)
+            } else {
+                None
+            }
+        }
+    }
 }
 
 fn check_buffer_exhausted<S: Mergeable>(cursor: &Cursor, shared_buffer: &[S]) -> bool {
