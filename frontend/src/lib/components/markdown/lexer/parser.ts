@@ -1,831 +1,1116 @@
-import type { Tree, SyntaxNode, TreeFragment } from '@lezer/common';
-
-import {
-	parser as baseParser,
-	GFM,
-	type InlineContext,
-	type MarkdownConfig,
-	type DelimiterType,
-	type BlockContext,
-	type Line,
-	type LeafBlock
-} from '@lezer/markdown';
-import { tags } from '@lezer/highlight';
-import {
-	parseCitation,
-	isCitationBlock,
-	splitCitations,
-	type CitationData
-} from './citation-parser';
-
-// Character codes for delimiter checking
-const CHAR_SPACE = 32; // ' '
-const CHAR_NEWLINE = 10; // '\n'
-const CHAR_TAB = 9; // '\t'
-const CHAR_BACKSLASH = 92; // '\'
-const CHAR_DOLLAR = 36; // '$'
-const CHAR_0 = 48; // '0'
-const CHAR_9 = 57; // '9'
-const CHAR_END_OF_STRING = -1; // Returned by cx.char() when out of bounds
-
-// Mathematical expression node names
-const INLINE_MATH_DOLLAR = 'InlineMathDollar';
-const INLINE_MATH_BRACKET = 'InlineMathBracket';
-const BLOCK_MATH_DOLLAR = 'BlockMathDollar';
-const BLOCK_MATH_BRACKET = 'BlockMathBracket';
+import type {
+	Token,
+	TextToken,
+	HeadingToken,
+	ParagraphToken,
+	CodeBlockToken,
+	BlockquoteToken,
+	OrderedListToken,
+	UnorderedListToken,
+	ListItemToken,
+	TableToken,
+	TableRowToken,
+	TableCellToken,
+	HorizontalRuleToken,
+	LatexBlockToken,
+	LatexInlineToken,
+	BoldToken,
+	ItalicToken,
+	StrikethroughToken,
+	InlineCodeToken,
+	LinkToken,
+	ImageToken,
+	CitationToken,
+	LineBreakToken,
+	ParseResult,
+	RegionBoundary
+} from './tokens';
+import { TokenType } from './tokens';
 
 /**
- * Length of the delimiter for each math expression type
+ * Parser options for incremental-like parsing
  */
-const DELIMITER_LENGTH: Record<string, number> = {
-	[INLINE_MATH_DOLLAR]: 1, // $
-	[INLINE_MATH_BRACKET]: 2, // \(
-	[BLOCK_MATH_DOLLAR]: 2, // $$
-	[BLOCK_MATH_BRACKET]: 2 // \[
-};
+export interface ParserOptions {
+	startFrom?: number;
+}
 
 /**
- * Delimiters for math expressions
+ * Main markdown parser class
  */
-const DELIMITERS = Object.keys(DELIMITER_LENGTH).reduce<Record<string, DelimiterType>>(
-	(agg, name) => {
-		agg[name] = { mark: `${name}Mark`, resolve: name };
-		return agg;
-	},
-	{}
-);
+export class MarkdownParser {
+	private source: string;
+	private position: number;
+	private regions: RegionBoundary[];
 
-/**
- * LaTeX math extension for Lezer Markdown.
- * Supports inline math ($...$, \(...\)) and display math ($$...$$, \[...\]).
- */
-const latexExtension: MarkdownConfig = {
-	defineNodes: [
-		// Define node types for each math expression
-		{ name: BLOCK_MATH_DOLLAR, style: tags.emphasis },
-		{ name: `${BLOCK_MATH_DOLLAR}Mark`, style: tags.processingInstruction },
-		{ name: INLINE_MATH_DOLLAR, style: tags.emphasis },
-		{ name: `${INLINE_MATH_DOLLAR}Mark`, style: tags.processingInstruction },
-		{ name: INLINE_MATH_BRACKET, style: tags.emphasis },
-		{ name: `${INLINE_MATH_BRACKET}Mark`, style: tags.processingInstruction },
-		{ name: BLOCK_MATH_BRACKET, style: tags.emphasis },
-		{ name: `${BLOCK_MATH_BRACKET}Mark`, style: tags.processingInstruction }
-	],
-	parseBlock: [
-		{
-			name: 'LatexBlockBracket',
-			before: 'SetextHeading',
-			parse(cx: BlockContext, line: Line) {
-				// Check if the line starts with \[ (possibly after whitespace)
-				const trimmed = line.text.trimStart();
-				if (!trimmed.startsWith('\\[')) {
-					return false;
-				}
-
-				// Check if there's a closing \] on the same line
-				if (trimmed.includes('\\]')) {
-					// Single-line math block - let it be handled as a normal paragraph
-					return false;
-				}
-
-				// Multi-line math block - consume lines until we find \]
-				const from = cx.lineStart + line.pos;
-				let content = line.text;
-
-				// Move to next line and keep consuming until we find \]
-				while (cx.nextLine()) {
-					content += '\n' + line.text;
-
-					if (line.text.includes('\\]')) {
-						// Found the closing delimiter, consume this line too
-						cx.nextLine();
-						break;
-					}
-				}
-
-				// Create a paragraph element with the full LaTeX block
-				cx.addElement(
-					cx.elt('Paragraph', from, cx.prevLineEnd(), cx.parser.parseInline(content, from))
-				);
-
-				return true;
-			}
-		}
-	],
-	parseInline: [
-		// Block math with $$ ... $$
-		{
-			name: BLOCK_MATH_DOLLAR,
-			parse(cx: InlineContext, next: number, pos: number): number {
-				if (next !== CHAR_DOLLAR || cx.char(pos + 1) !== CHAR_DOLLAR) {
-					return -1;
-				}
-
-				return cx.addDelimiter(
-					DELIMITERS[BLOCK_MATH_DOLLAR],
-					pos,
-					pos + DELIMITER_LENGTH[BLOCK_MATH_DOLLAR],
-					true,
-					true
-				);
-			}
-		},
-		// Inline math with $ ... $ (must not be followed by another $)
-		{
-			name: INLINE_MATH_DOLLAR,
-			parse(cx: InlineContext, next: number, pos: number): number {
-				if (next !== CHAR_DOLLAR || cx.char(pos + 1) === CHAR_DOLLAR) {
-					return -1;
-				}
-
-				const prevChar = pos > 0 ? cx.char(pos - 1) : CHAR_END_OF_STRING;
-				const nextChar = cx.char(pos + 1);
-
-				// Check if this could be part of the standard spaced pattern: "$ ... $"
-				const hasSpaceBefore =
-					pos === 0 ||
-					prevChar === CHAR_SPACE ||
-					prevChar === CHAR_NEWLINE ||
-					prevChar === CHAR_TAB;
-				const hasSpaceOrBackslashAfter =
-					nextChar === CHAR_SPACE ||
-					nextChar === CHAR_NEWLINE ||
-					nextChar === CHAR_TAB ||
-					nextChar === CHAR_BACKSLASH ||
-					nextChar === CHAR_END_OF_STRING;
-
-				if (hasSpaceBefore && hasSpaceOrBackslashAfter) {
-					// Standard spaced inline math pattern
-					return cx.addDelimiter(
-						DELIMITERS[INLINE_MATH_DOLLAR],
-						pos,
-						pos + DELIMITER_LENGTH[INLINE_MATH_DOLLAR],
-						true,
-						true
-					);
-				}
-
-				// Check for single-character pattern: $x$
-				// This could be either opening or closing delimiter
-
-				// Check if this is an opening delimiter for single-char pattern: $x$
-				const charAfterNext = cx.char(pos + 2);
-				if (charAfterNext === CHAR_DOLLAR && nextChar !== CHAR_END_OF_STRING) {
-					// Pattern is $x$ where x is at pos+1
-					// Reject if x is a digit (to avoid $1, $2, etc.)
-					if (nextChar >= CHAR_0 && nextChar <= CHAR_9) {
-						return -1;
-					}
-
-					return cx.addDelimiter(
-						DELIMITERS[INLINE_MATH_DOLLAR],
-						pos,
-						pos + DELIMITER_LENGTH[INLINE_MATH_DOLLAR],
-						true,
-						true
-					);
-				}
-
-				// Check if this is a closing delimiter for single-char pattern: $x$
-				const charBeforePrev = pos >= 2 ? cx.char(pos - 2) : CHAR_END_OF_STRING;
-				if (charBeforePrev === CHAR_DOLLAR && prevChar !== CHAR_END_OF_STRING) {
-					// Pattern is $x$ where x is at pos-1
-					// Reject if x is a digit
-					if (prevChar >= CHAR_0 && prevChar <= CHAR_9) {
-						return -1;
-					}
-
-					return cx.addDelimiter(
-						DELIMITERS[INLINE_MATH_DOLLAR],
-						pos,
-						pos + DELIMITER_LENGTH[INLINE_MATH_DOLLAR],
-						true,
-						true
-					);
-				}
-
-				// Multi-character content without spaces: reject
-				return -1;
-			}
-		},
-		// Inline math with \( ... \)
-		{
-			name: INLINE_MATH_BRACKET,
-			before: 'Escape',
-			parse(cx: InlineContext, next: number, pos: number): number {
-				const CHAR_OPEN_PAREN = 40; // '('
-				const CHAR_CLOSE_PAREN = 41; // ')'
-				if (
-					next !== CHAR_BACKSLASH ||
-					![CHAR_OPEN_PAREN, CHAR_CLOSE_PAREN].includes(cx.char(pos + 1))
-				) {
-					return -1;
-				}
-
-				return cx.addDelimiter(
-					DELIMITERS[INLINE_MATH_BRACKET],
-					pos,
-					pos + DELIMITER_LENGTH[INLINE_MATH_BRACKET],
-					cx.char(pos + 1) === CHAR_OPEN_PAREN,
-					cx.char(pos + 1) === CHAR_CLOSE_PAREN
-				);
-			}
-		},
-		// Block math with \[ ... \]
-		{
-			name: BLOCK_MATH_BRACKET,
-			before: 'Escape',
-			parse(cx: InlineContext, next: number, pos: number): number {
-				const CHAR_OPEN_BRACKET = 91; // '['
-				const CHAR_CLOSE_BRACKET = 93; // ']'
-				if (
-					next !== CHAR_BACKSLASH ||
-					![CHAR_OPEN_BRACKET, CHAR_CLOSE_BRACKET].includes(cx.char(pos + 1))
-				) {
-					return -1;
-				}
-
-				return cx.addDelimiter(
-					DELIMITERS[BLOCK_MATH_BRACKET],
-					pos,
-					pos + DELIMITER_LENGTH[BLOCK_MATH_BRACKET],
-					cx.char(pos + 1) === CHAR_OPEN_BRACKET,
-					cx.char(pos + 1) === CHAR_CLOSE_BRACKET
-				);
-			}
-		}
-	]
-};
-
-/**
- * Detects citation blocks in the source.
- * Citations are identified by <citation>...</citation> tags.
- */
-const citationDetector: BlockDetector = {
-	name: 'citation',
-	detect(source: string, changeStart: number): BlockRegion[] {
-		const regions: BlockRegion[] = [];
-		let pos = 0;
-
-		while (pos < source.length) {
-			const openIndex = source.indexOf('<citation>', pos);
-			if (openIndex === -1) break;
-
-			// Find the start of the line containing <citation>
-			let lineStart = openIndex;
-			while (lineStart > 0 && source[lineStart - 1] !== '\n') {
-				lineStart--;
-			}
-
-			const closeIndex = source.indexOf('</citation>', openIndex + 10);
-			if (closeIndex === -1) {
-				// Unclosed citation, include from opening to end
-				if (lineStart >= changeStart) {
-					regions.push({
-						start: lineStart,
-						end: source.length,
-						type: 'citation'
-					});
-				}
-				break;
-			}
-
-			const blockEnd = closeIndex + 11; // Length of '</citation>'
-			if (blockEnd >= changeStart) {
-				regions.push({
-					start: lineStart,
-					end: blockEnd,
-					type: 'citation'
-				});
-			}
-			pos = blockEnd;
-		}
-
-		return regions;
+	constructor(source: string) {
+		this.source = source;
+		this.position = 0;
+		this.regions = [];
 	}
-};
 
-const parser = baseParser.configure([GFM, latexExtension]);
+	/**
+	 * Parse markdown content
+	 */
+	parse(options?: ParserOptions): ParseResult {
+		this.position = options?.startFrom || 0;
+		this.regions = [];
 
-/**
- * Parse markdown source to a Lezer syntax tree.
- */
-export function parse(source: string): Tree {
-	return parser.parse(source);
-}
+		const tokens: Token[] = [];
 
-export function parseInline(source: string): Tree {
-	return parser.parse(source);
-}
-
-/**
- * Represents a region in the source that cannot be incrementally parsed.
- */
-interface BlockRegion {
-	start: number;
-	end: number;
-	type: string;
-}
-
-/**
- * A block detector identifies regions in the source that need full re-parsing.
- */
-interface BlockDetector {
-	name: string;
-	detect: (source: string, changeStart: number) => BlockRegion[];
-}
-
-/**
- * Detects table blocks in the source.
- * Tables are identified by lines containing pipes and table header separators.
- */
-const tableDetector: BlockDetector = {
-	name: 'table',
-	detect(source: string, changeStart: number): BlockRegion[] {
-		const regions: BlockRegion[] = [];
-		const lines = source.split('\n');
-		let lineStart = 0;
-		let inTable = false;
-		let tableStart = 0;
-
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
-			const lineEnd = lineStart + line.length;
-
-			// Check if line contains table syntax
-			const hasTableSyntax = line.includes('|');
-			const isHeaderSeparator = /^\s*\|?[\s\-:|]+\|\s*$/.test(line);
-
-			if (hasTableSyntax || isHeaderSeparator) {
-				if (!inTable) {
-					// Start of a new table
-					inTable = true;
-					tableStart = lineStart;
-				}
-			} else if (inTable && line.trim() === '') {
-				// Empty line might end the table, but continue checking
-				continue;
-			} else if (inTable) {
-				// Non-table line ends the table
-				const tableEnd = lineStart;
-				// Only include tables that overlap with or are after the change
-				if (tableEnd >= changeStart) {
-					regions.push({
-						start: tableStart,
-						end: tableEnd,
-						type: 'table'
-					});
-				}
-				inTable = false;
+		while (this.position < this.source.length) {
+			const token = this.parseBlock();
+			if (token) {
+				tokens.push(token);
 			}
-
-			lineStart = lineEnd + 1; // +1 for newline
 		}
 
-		// Handle table at end of document
-		if (inTable) {
-			regions.push({
-				start: tableStart,
-				end: source.length,
-				type: 'table'
+		return {
+			tokens,
+			regions: this.regions
+		};
+	}
+
+	/**
+	 * Parse a block-level element
+	 */
+	private parseBlock(): Token | null {
+		this.skipWhitespace();
+
+		if (this.position >= this.source.length) {
+			return null;
+		}
+
+		const start = this.position;
+
+		// Try parsing different block types
+		const heading = this.tryParseHeading();
+		if (heading) return heading;
+
+		const codeBlock = this.tryParseCodeBlock();
+		if (codeBlock) {
+			this.regions.push({
+				type: 'codeblock',
+				start: codeBlock.start,
+				end: codeBlock.end
 			});
+			return codeBlock;
 		}
 
-		return regions;
-	}
-};
+		const latexBlock = this.tryParseLatexBlock();
+		if (latexBlock) return latexBlock;
 
-/**
- * Detects code fence blocks in the source.
- * Code fences are identified by lines starting with ``` or ~~~.
- */
-const codeFenceDetector: BlockDetector = {
-	name: 'codefence',
-	detect(source: string, changeStart: number): BlockRegion[] {
-		const regions: BlockRegion[] = [];
-		const lines = source.split('\n');
-		let lineStart = 0;
-		let inFence = false;
-		let fenceStart = 0;
-		let fenceDelimiter = '';
+		const horizontalRule = this.tryParseHorizontalRule();
+		if (horizontalRule) return horizontalRule;
 
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
-			const lineEnd = lineStart + line.length;
-
-			const backtickMatch = line.match(/^(`{3,})/);
-			const tildeMatch = line.match(/^(~{3,})/);
-			const match = backtickMatch || tildeMatch;
-
-			if (match) {
-				if (!inFence) {
-					// Start of a code fence
-					inFence = true;
-					fenceStart = lineStart;
-					fenceDelimiter = match[1][0]; // '`' or '~'
-				} else if (match[1][0] === fenceDelimiter && match[1].length >= 3) {
-					// End of code fence
-					const fenceEnd = lineEnd + 1; // Include newline
-					// Only include fences that overlap with or are after the change
-					if (fenceEnd >= changeStart) {
-						regions.push({
-							start: fenceStart,
-							end: fenceEnd,
-							type: 'codefence'
-						});
-					}
-					inFence = false;
-					fenceDelimiter = '';
-				}
-			}
-
-			lineStart = lineEnd + 1; // +1 for newline
-		}
-
-		// Handle unclosed fence at end of document
-		if (inFence) {
-			regions.push({
-				start: fenceStart,
-				end: source.length,
-				type: 'codefence'
+		const table = this.tryParseTable();
+		if (table) {
+			this.regions.push({
+				type: 'table',
+				start: table.start,
+				end: table.end
 			});
+			return table;
 		}
 
-		return regions;
-	}
-};
-
-/**
- * Detects LaTeX math blocks in the source for incremental parsing.
- * LaTeX blocks are identified by $$ delimiters or \[ \] pairs.
- * Note: Lezer now parses these natively, but we still exclude them from
- * incremental parsing to ensure correctness.
- */
-const latexDetector: BlockDetector = {
-	name: 'latex',
-	detect(source: string, changeStart: number): BlockRegion[] {
-		const regions: BlockRegion[] = [];
-		let pos = 0;
-
-		// Scan for $$ delimiters (display math)
-		while (pos < source.length) {
-			const dollarIndex = source.indexOf('$$', pos);
-			if (dollarIndex === -1) break;
-
-			const nextDollarIndex = source.indexOf('$$', dollarIndex + 2);
-			if (nextDollarIndex === -1) {
-				// Unclosed $$, include from $$ to end
-				if (dollarIndex >= changeStart) {
-					regions.push({
-						start: dollarIndex,
-						end: source.length,
-						type: 'latex'
-					});
-				}
-				break;
-			}
-
-			const blockEnd = nextDollarIndex + 2;
-			if (blockEnd >= changeStart) {
-				regions.push({
-					start: dollarIndex,
-					end: blockEnd,
-					type: 'latex'
-				});
-			}
-			pos = blockEnd;
+		const blockquote = this.tryParseBlockquote();
+		if (blockquote) {
+			this.regions.push({
+				type: 'blockquote',
+				start: blockquote.start,
+				end: blockquote.end
+			});
+			return blockquote;
 		}
 
-		// Scan for \[ \] delimiters (LaTeX blocks)
-		pos = 0;
-		while (pos < source.length) {
-			const openIndex = source.indexOf('\\[', pos);
-			if (openIndex === -1) break;
-
-			const closeIndex = source.indexOf('\\]', openIndex + 2);
-			if (closeIndex === -1) {
-				// Unclosed \[, include from \[ to end
-				if (openIndex >= changeStart) {
-					regions.push({
-						start: openIndex,
-						end: source.length,
-						type: 'latex'
-					});
-				}
-				break;
-			}
-
-			const blockEnd = closeIndex + 2;
-			if (blockEnd >= changeStart) {
-				regions.push({
-					start: openIndex,
-					end: blockEnd,
-					type: 'latex'
-				});
-			}
-			pos = blockEnd;
+		const list = this.tryParseList();
+		if (list) {
+			this.regions.push({
+				type: 'list',
+				start: list.start,
+				end: list.end
+			});
+			return list;
 		}
 
-		// Scan for \( ... \) inline math
-		pos = 0;
-		while (pos < source.length) {
-			const openIndex = source.indexOf('\\(', pos);
-			if (openIndex === -1) break;
-
-			const closeIndex = source.indexOf('\\)', openIndex + 2);
-			if (closeIndex === -1) {
-				if (openIndex >= changeStart) {
-					regions.push({
-						start: openIndex,
-						end: source.length,
-						type: 'latex-inline'
-					});
-				}
-				break;
-			}
-
-			const blockEnd = closeIndex + 2;
-			if (blockEnd >= changeStart) {
-				regions.push({
-					start: openIndex,
-					end: blockEnd,
-					type: 'latex-inline'
-				});
-			}
-			pos = blockEnd;
+		const paragraph = this.tryParseParagraph();
+		if (paragraph) {
+			// Track paragraphs as regions for incremental parsing
+			this.regions.push({
+				type: 'paragraph',
+				start: paragraph.start,
+				end: paragraph.end
+			});
+			return paragraph;
 		}
 
-		// Scan for $ ... $ inline math (allow start-of-line or whitespace before, and
-		// whitespace or end-of-line after). This helps incremental reparse by matching
-		// cases like `$ \text{A} $` as well as `$x$` when delimited by whitespace or start/end.
-		pos = 0;
-		const dollarInlineRegex = /(^|\s)\$(.+?)\$(?=\s|$)/gs;
-		let match;
-		while ((match = dollarInlineRegex.exec(source)) !== null) {
-			// match[1] is either empty (start of string) or the leading whitespace
-			const start = match.index + match[1].length;
-			// lastIndex points right after the matched $...$ (lookahead doesn't consume trailing whitespace)
-			const end = dollarInlineRegex.lastIndex;
-			if (end >= changeStart) {
-				regions.push({
-					start,
-					end,
-					type: 'latex-inline'
-				});
-			}
-			pos = dollarInlineRegex.lastIndex;
-		}
-
-		return regions;
-	}
-};
-
-/**
- * Registry of all block detectors.
- * Add new detectors here to extend support for additional block types.
- */
-const blockDetectors: BlockDetector[] = [
-	tableDetector,
-	codeFenceDetector,
-	latexDetector,
-	citationDetector
-];
-
-/**
- * Finds all block regions in the source that cannot be incrementally parsed.
- */
-function findBlockRegions(source: string, changeStart: number): BlockRegion[] {
-	const allRegions: BlockRegion[] = [];
-
-	for (const detector of blockDetectors) {
-		const regions = detector.detect(source, changeStart);
-		allRegions.push(...regions);
-	}
-
-	// Sort regions by start position and merge overlapping regions
-	allRegions.sort((a, b) => a.start - b.start);
-
-	const merged: BlockRegion[] = [];
-	for (const region of allRegions) {
-		if (merged.length === 0) {
-			merged.push(region);
-		} else {
-			const last = merged[merged.length - 1];
-			if (region.start <= last.end) {
-				// Overlapping or adjacent regions, merge them
-				last.end = Math.max(last.end, region.end);
-				last.type = `${last.type}+${region.type}`;
-			} else {
-				merged.push(region);
-			}
-		}
-	}
-
-	return merged;
-}
-
-/**
- * Builds tree fragments from the previous tree, excluding problematic block regions.
- */
-function buildFragments(
-	prevTree: Tree,
-	prevSource: string,
-	newSource: string,
-	blockRegions: BlockRegion[]
-): TreeFragment[] {
-	const fragments: TreeFragment[] = [];
-	let lastEnd = 0;
-
-	for (const region of blockRegions) {
-		// Add fragment for the region before this block
-		if (region.start > lastEnd && lastEnd < prevSource.length) {
-			const fragmentEnd = Math.min(region.start, prevSource.length);
-			fragments.push({
-				from: lastEnd,
-				to: fragmentEnd,
-				offset: 0,
-				tree: prevTree
-			} as TreeFragment);
-		}
-		// Skip the block region (no fragment created)
-		lastEnd = Math.max(lastEnd, region.end);
-	}
-
-	// Add fragment for the region after the last block
-	if (lastEnd < prevSource.length) {
-		fragments.push({
-			from: lastEnd,
-			to: prevSource.length,
-			offset: 0,
-			tree: prevTree
-		} as TreeFragment);
-	}
-
-	return fragments;
-}
-
-/**
- * Incrementally parse markdown if newSource is an append of prevSource.
- * Falls back to full parse if not, or if problematic blocks are detected.
- *
- * Problematic blocks (tables, code fences, etc.) are excluded from incremental
- * parsing to ensure correctness, while other regions benefit from fragment reuse.
- */
-export function parseIncremental(prevTree: Tree, prevSource: string, newSource: string): Tree {
-	// Not an append, do full parse
-	if (!newSource.startsWith(prevSource)) {
-		return parser.parse(newSource);
-	}
-
-	const addedLength = newSource.length - prevSource.length;
-
-	// No change, return previous tree
-	if (addedLength === 0) {
-		return prevTree;
-	}
-
-	const changeStart = prevSource.length;
-
-	// Find all problematic block regions that need re-parsing
-	const blockRegions = findBlockRegions(newSource, changeStart);
-
-	// If no problematic blocks found, use simple incremental parsing
-	if (blockRegions.length === 0) {
-		const fragments: TreeFragment[] = [
-			{
-				from: 0,
-				to: prevTree.length,
-				offset: 0,
-				tree: prevTree
-			} as TreeFragment
-		];
-		return parser.parse(newSource, fragments);
-	}
-
-	// Build fragments excluding problematic block regions
-	const fragments = buildFragments(prevTree, prevSource, newSource, blockRegions);
-
-	// If no fragments can be reused, fall back to full parse
-	if (fragments.length === 0) {
-		return parser.parse(newSource);
-	}
-
-	// Parse incrementally with selective fragment reuse
-	return parser.parse(newSource, fragments);
-}
-
-/**
- * Walk the Lezer tree and produce a nested AST structure.
- * Each node contains its type, text, and children.
- * Special handling for citation blocks to extract structured data.
- */
-export type ASTNodeBase = {
-	type: string;
-	from: number;
-	to: number;
-	text: string;
-	children: ASTNode[];
-};
-
-export type CitationNode = ASTNodeBase & {
-	type: 'Citation';
-	citationData: CitationData;
-};
-
-export type ASTNode = ASTNodeBase | CitationNode;
-
-export function walkTree(tree: Tree | null, source: string): ASTNode | null {
-	if (!tree) {
+		this.position++;
 		return null;
 	}
-	const nodeTypes = new Set<string>();
-	function walk(node: SyntaxNode): ASTNode {
-		nodeTypes.add(node.type.name);
-		const children: ASTNode[] = [];
-		for (let child = node.firstChild; child; child = child.nextSibling) {
-			children.push(walk(child));
+
+	/**
+	 * Try to parse a heading (ATX style: # Heading)
+	 */
+	private tryParseHeading(): HeadingToken | null {
+		const start = this.position;
+		const line = this.peekLine();
+
+		const match = line.match(/^(#{1,6})\s+(.+)$/);
+		if (!match) {
+			return null;
 		}
 
-		const text = source.slice(node.from, node.to);
-		const baseNode: ASTNodeBase = {
-			type: node.type.name,
-			from: node.from,
-			to: node.to,
-			text,
-			children
+		const level = match[1].length;
+		const content = match[2];
+
+		this.position += line.length;
+		this.skipNewlines();
+
+		const inlineTokens = this.parseInline(content, start + match[1].length + 1);
+
+		return {
+			type: TokenType.Heading,
+			level,
+			start,
+			end: this.position,
+			children: inlineTokens
 		};
+	}
 
-		// Check if this is a CodeBlock that contains citations (happens with indented citations)
-		if (node.type.name === 'CodeBlock') {
-			// Extract the code content and check if it's actually a citation
-			const trimmedText = text.trimStart();
-			if (trimmedText.startsWith('<citation>')) {
-				// This is a citation block that was parsed as code due to indentation
-				// Treat it as an HTMLBlock containing citations
-				const citations = splitCitations(text, node.from);
+	/**
+	 * Try to parse a code block (fenced with ```)
+	 */
+	private tryParseCodeBlock(): CodeBlockToken | null {
+		const start = this.position;
+		const line = this.peekLine();
 
-				if (citations.length === 1) {
-					const citationData = parseCitation(citations[0].text);
-					const citationNode: CitationNode = {
-						...baseNode,
-						type: 'Citation',
-						citationData
-					};
-					return citationNode;
-				} else if (citations.length > 1) {
-					const citationChildren: CitationNode[] = citations.map((citation) => ({
-						type: 'Citation',
-						from: citation.from,
-						to: citation.to,
-						text: citation.text,
-						children: [],
-						citationData: parseCitation(citation.text)
-					}));
+		const match = line.match(/^```(\w*)$/);
+		if (!match) {
+			return null;
+		}
 
-					return {
-						...baseNode,
-						type: 'HTMLBlock',
-						children: citationChildren
-					};
+		const language = match[1] || undefined;
+		this.position += line.length;
+		this.skipNewlines();
+
+		const contentStart = this.position;
+		let contentEnd = this.position;
+
+		while (this.position < this.source.length) {
+			const currentLine = this.peekLine();
+			if (currentLine.trim() === '```') {
+				contentEnd = this.position;
+				this.position += currentLine.length;
+				this.skipNewlines();
+				break;
+			}
+			this.position += currentLine.length;
+			this.skipNewlines();
+		}
+
+		const content = this.source.substring(contentStart, contentEnd).trimEnd();
+
+		return {
+			type: TokenType.CodeBlock,
+			language,
+			content,
+			start,
+			end: this.position
+		};
+	}
+
+	/**
+	 * Try to parse a LaTeX block (\[ ... \] or $$ ... $$)
+	 */
+	private tryParseLatexBlock(): LatexBlockToken | null {
+		const start = this.position;
+		let delimiter: string;
+		let endDelimiter: string;
+
+		if (this.peek(2) === '\\[') {
+			delimiter = '\\[';
+			endDelimiter = '\\]';
+		} else if (this.peek(2) === '$$') {
+			delimiter = '$$';
+			endDelimiter = '$$';
+		} else {
+			return null;
+		}
+
+		const afterDelimiter = this.peek(delimiter.length + 1);
+		if (delimiter === '$$' && afterDelimiter[delimiter.length] !== '\n') {
+			return null;
+		}
+
+		this.position += delimiter.length;
+		if (delimiter === '$$') {
+			this.skipNewlines();
+		}
+
+		const contentStart = this.position;
+		const endPos = this.source.indexOf(endDelimiter, this.position);
+
+		if (endPos === -1) {
+			this.position = start;
+			return null;
+		}
+
+		const content = this.source.substring(contentStart, endPos);
+		this.position = endPos + endDelimiter.length;
+		this.skipNewlines();
+
+		return {
+			type: TokenType.LatexBlock,
+			content: content.trim(),
+			start,
+			end: this.position
+		};
+	}
+
+	/**
+	 * Try to parse a horizontal rule (---, ___, ***)
+	 */
+	private tryParseHorizontalRule(): HorizontalRuleToken | null {
+		const start = this.position;
+		const line = this.peekLine();
+
+		if (line.match(/^---+$/) || line.match(/^\*\*\*+$/) || line.match(/^___+$/)) {
+			this.position += line.length;
+			this.skipNewlines();
+
+			return {
+				type: TokenType.HorizontalRule,
+				start,
+				end: this.position
+			};
+		}
+
+		return null;
+	}
+
+	/**
+	 * Try to parse a table (with pipes or tabs)
+	 */
+	private tryParseTable(): TableToken | null {
+		const start = this.position;
+		const firstLine = this.peekLine();
+
+		if (!this.isTableRow(firstLine)) {
+			return null;
+		}
+
+		const savedPosition = this.position;
+		this.position += firstLine.length;
+		this.skipNewlines();
+
+		const secondLine = this.peekLine();
+		if (!this.isTableSeparator(secondLine)) {
+			this.position = savedPosition;
+			return null;
+		}
+
+		this.position = savedPosition;
+
+		const rows: TableRowToken[] = [];
+		let lineNum = 0;
+
+		while (this.position < this.source.length) {
+			const line = this.peekLine();
+
+			if (lineNum === 1 && this.isTableSeparator(line)) {
+				this.position += line.length;
+				this.skipNewlines();
+				lineNum++;
+				continue;
+			}
+
+			if (!this.isTableRow(line)) {
+				break;
+			}
+
+			const rowStart = this.position;
+			const cells = this.parseTableRow(line, rowStart);
+			this.position += line.length;
+			const hasBlankLine = this.skipNewlines();
+
+			rows.push({
+				type: TokenType.TableRow,
+				isHeader: lineNum === 0,
+				children: cells,
+				start: rowStart,
+				end: this.position
+			});
+
+			lineNum++;
+
+			// If we crossed a blank line, stop parsing this table
+			if (hasBlankLine) {
+				break;
+			}
+		}
+
+		if (rows.length < 2) {
+			this.position = start;
+			return null;
+		}
+
+		return {
+			type: TokenType.Table,
+			children: rows,
+			start,
+			end: this.position
+		};
+	}
+
+	/**
+	 * Check if a line is a table row (contains pipes or tabs as separators)
+	 */
+	private isTableRow(line: string): boolean {
+		const trimmed = line.trim();
+		return trimmed.includes('|') || trimmed.includes('\t');
+	}
+
+	/**
+	 * Check if a line is a table separator (|---|---|)
+	 */
+	private isTableSeparator(line: string): boolean {
+		const trimmed = line.trim();
+		return /^[\|\s]*:?-+:?[\|\s:]*(:?-+:?[\|\s]*)*$/.test(trimmed);
+	}
+
+	/**
+	 * Parse a table row into cells
+	 */
+	private parseTableRow(line: string, rowStart: number): TableCellToken[] {
+		const cells: TableCellToken[] = [];
+		const trimmed = line.trim();
+
+		let parts: string[];
+		if (trimmed.includes('|')) {
+			parts = trimmed.split('|').map((p) => p.trim());
+			if (parts[0] === '') parts.shift();
+			if (parts[parts.length - 1] === '') parts.pop();
+		} else {
+			parts = trimmed.split('\t').map((p) => p.trim());
+		}
+
+		let offset = rowStart;
+		for (const part of parts) {
+			const cellStart = offset;
+			const inlineTokens = this.parseInline(part, cellStart);
+			offset += part.length + 1;
+
+			cells.push({
+				type: TokenType.TableCell,
+				children: inlineTokens,
+				start: cellStart,
+				end: offset
+			});
+		}
+
+		return cells;
+	}
+
+	/**
+	 * Try to parse a blockquote (> text)
+	 */
+	private tryParseBlockquote(): BlockquoteToken | null {
+		const start = this.position;
+		const line = this.peekLine();
+
+		if (!line.startsWith('>')) {
+			return null;
+		}
+
+		const lines: string[] = [];
+		while (this.position < this.source.length) {
+			const currentLine = this.peekLine();
+			if (!currentLine.startsWith('>')) {
+				break;
+			}
+
+			lines.push(currentLine.substring(1).trim());
+			this.position += currentLine.length;
+			const hasBlankLine = this.skipNewlines();
+
+			// If we crossed a blank line, stop parsing this blockquote
+			if (hasBlankLine) {
+				break;
+			}
+		}
+
+		const content = lines.join('\n');
+		const nestedParser = new MarkdownParser(content);
+		const nestedResult = nestedParser.parse();
+
+		return {
+			type: TokenType.Blockquote,
+			children: nestedResult.tokens,
+			start,
+			end: this.position
+		};
+	}
+
+	/**
+	 * Try to parse a list (ordered or unordered)
+	 */
+	private tryParseList(): OrderedListToken | UnorderedListToken | null {
+		const start = this.position;
+		const line = this.peekLine();
+
+		const orderedMatch = line.match(/^(\d+)\.\s+/);
+		const unorderedMatch = line.match(/^[-*+]\s+/);
+
+		if (!orderedMatch && !unorderedMatch) {
+			return null;
+		}
+
+		const isOrdered = !!orderedMatch;
+		const startNumber = orderedMatch ? parseInt(orderedMatch[1]) : undefined;
+		const items: ListItemToken[] = [];
+
+		while (this.position < this.source.length) {
+			const currentLine = this.peekLine();
+			const itemMatch = isOrdered
+				? currentLine.match(/^(\d+)\.\s+(.*)$/)
+				: currentLine.match(/^[-*+]\s+(.*)$/);
+
+			if (!itemMatch) {
+				break;
+			}
+
+			const itemStart = this.position;
+			const itemContent = isOrdered ? itemMatch[2] : itemMatch[1];
+
+			this.position += currentLine.length;
+			const hasBlankLine = this.skipNewlines();
+
+			const inlineTokens = this.parseInline(
+				itemContent,
+				itemStart + (currentLine.length - itemContent.length)
+			);
+
+			items.push({
+				type: TokenType.ListItem,
+				children: inlineTokens,
+				start: itemStart,
+				end: this.position
+			});
+
+			// If we crossed a blank line, stop parsing this list
+			if (hasBlankLine) {
+				break;
+			}
+		}
+
+		if (items.length === 0) {
+			this.position = start;
+			return null;
+		}
+
+		if (isOrdered) {
+			return {
+				type: TokenType.OrderedList,
+				startNumber: startNumber,
+				children: items,
+				start: start,
+				end: this.position
+			};
+		} else {
+			return {
+				type: TokenType.UnorderedList,
+				children: items,
+				start: start,
+				end: this.position
+			};
+		}
+	}
+
+	/**
+	 * Try to parse a paragraph
+	 */
+	private tryParseParagraph(): ParagraphToken | null {
+		const start = this.position;
+		const contentEnd = this.position;
+
+		while (this.position < this.source.length) {
+			const line = this.peekLine();
+
+			if (line.trim() === '') {
+				break;
+			}
+
+			if (this.looksLikeBlockStart(line)) {
+				break;
+			}
+
+			this.position += line.length;
+
+			const nextChar = this.source[this.position];
+			if (nextChar === '\n' || nextChar === '\r') {
+				this.position++;
+				if (nextChar === '\r' && this.source[this.position] === '\n') {
+					this.position++;
 				}
 			}
 		}
 
-		// Check if this is an HTMLBlock that contains citations
-		if (node.type.name === 'HTMLBlock' && isCitationBlock(text)) {
-			// Split the text into individual citations
-			const citations = splitCitations(text, node.from);
+		if (this.position === start) {
+			return null;
+		}
 
-			if (citations.length === 1) {
-				// Single citation - return as a Citation node
-				const citationData = parseCitation(citations[0].text);
-				const citationNode: CitationNode = {
-					...baseNode,
-					type: 'Citation',
-					citationData
-				};
-				return citationNode;
-			} else if (citations.length > 1) {
-				// Multiple citations - create a wrapper node with Citation children
-				const citationChildren: CitationNode[] = citations.map((citation) => ({
-					type: 'Citation',
-					from: citation.from,
-					to: citation.to,
-					text: citation.text,
-					children: [],
-					citationData: parseCitation(citation.text)
-				}));
+		// Use the original source content to preserve line breaks and spaces
+		const content = this.source.substring(start, this.position).trimEnd();
+		const inlineTokens = this.parseInline(content, start);
 
+		return {
+			type: TokenType.Paragraph,
+			children: inlineTokens,
+			start,
+			end: this.position
+		};
+	}
+
+	/**
+	 * Check if a line looks like the start of a block element
+	 */
+	private looksLikeBlockStart(line: string): boolean {
+		return (
+			line.match(/^#{1,6}\s/) !== null ||
+			line.match(/^```/) !== null ||
+			line.match(/^(---+|\*\*\*+|___+)$/) !== null ||
+			line.startsWith('>') ||
+			line.match(/^\d+\.\s/) !== null ||
+			line.match(/^[-*+]\s/) !== null ||
+			line.match(/^\\\[/) !== null ||
+			line.match(/^\$\$/) !== null ||
+			this.isTableRow(line)
+		);
+	}
+
+	/**
+	 * Parse inline elements
+	 */
+	private parseInline(text: string, baseOffset: number): Token[] {
+		const foundTokens: Token[] = [];
+		let position = 0;
+
+		// First pass: find all formatted tokens and their positions
+		while (position < text.length) {
+			const latexInline = this.tryParseInlineLatex(text, position, baseOffset);
+			if (latexInline) {
+				if (latexInline.content) {
+					foundTokens.push(latexInline);
+				}
+				position = latexInline.end - baseOffset;
+				continue;
+			}
+
+			const image = this.tryParseImage(text, position, baseOffset);
+			if (image) {
+				foundTokens.push(image);
+				position = image.end - baseOffset;
+				continue;
+			}
+
+			const link = this.tryParseLink(text, position, baseOffset);
+			if (link) {
+				foundTokens.push(link);
+				position = link.end - baseOffset;
+				continue;
+			}
+
+			const citation = this.tryParseCitation(text, position, baseOffset);
+			if (citation) {
+				foundTokens.push(citation);
+				position = citation.end - baseOffset;
+				continue;
+			}
+
+			const inlineCode = this.tryParseInlineCode(text, position, baseOffset);
+			if (inlineCode) {
+				foundTokens.push(inlineCode);
+				position = inlineCode.end - baseOffset;
+				continue;
+			}
+
+			const bold = this.tryParseBold(text, position, baseOffset);
+			if (bold) {
+				foundTokens.push(bold);
+				position = bold.end - baseOffset;
+				continue;
+			}
+
+			const italic = this.tryParseItalic(text, position, baseOffset);
+			if (italic) {
+				foundTokens.push(italic);
+				position = italic.end - baseOffset;
+				continue;
+			}
+
+			const strikethrough = this.tryParseStrikethrough(text, position, baseOffset);
+			if (strikethrough) {
+				foundTokens.push(strikethrough);
+				position = strikethrough.end - baseOffset;
+				continue;
+			}
+
+			const lineBreak = this.tryParseLineBreak(text, position, baseOffset);
+			if (lineBreak) {
+				foundTokens.push(lineBreak);
+				position = lineBreak.end - baseOffset;
+				continue;
+			}
+
+			position++;
+		}
+
+		// Second pass: build final token array with text tokens filling gaps
+		const tokens: Token[] = [];
+		let currentPos = 0;
+
+		for (const token of foundTokens) {
+			const tokenStart = token.start - baseOffset;
+
+			// Add text before this token if there's a gap
+			if (tokenStart > currentPos) {
+				const textContent = text.substring(currentPos, tokenStart);
+				tokens.push({
+					type: TokenType.Text,
+					content: textContent,
+					start: baseOffset + currentPos,
+					end: token.start
+				} as TextToken);
+			}
+
+			tokens.push(token);
+			currentPos = token.end - baseOffset;
+		}
+
+		// Add remaining text after last token
+		if (currentPos < text.length) {
+			const textContent = text.substring(currentPos);
+			tokens.push({
+				type: TokenType.Text,
+				content: textContent,
+				start: baseOffset + currentPos,
+				end: baseOffset + text.length
+			} as TextToken);
+		}
+
+		// If no tokens found at all, return text as single text token
+		if (tokens.length === 0) {
+			tokens.push({
+				type: TokenType.Text,
+				content: text,
+				start: baseOffset,
+				end: baseOffset + text.length
+			} as TextToken);
+		}
+
+		return this.mergeTextTokens(tokens);
+	}
+
+	/**
+	 * Extract text content not covered by other tokens
+	 */
+	private extractText(text: string, tokens: Token[], baseOffset: number): string {
+		if (tokens.length === 0) {
+			return text;
+		}
+
+		let result = '';
+		let lastEnd = 0;
+
+		for (const token of tokens) {
+			const tokenStart = token.start - baseOffset;
+			if (tokenStart > lastEnd) {
+				result += text.substring(lastEnd, tokenStart);
+			}
+			lastEnd = token.end - baseOffset;
+		}
+
+		if (lastEnd < text.length) {
+			result += text.substring(lastEnd);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Merge consecutive text tokens
+	 */
+	private mergeTextTokens(tokens: Token[]): Token[] {
+		const merged: Token[] = [];
+		let currentText: TextToken | null = null;
+
+		for (const token of tokens) {
+			if (token.type === TokenType.Text) {
+				if (currentText) {
+					currentText.content += (token as TextToken).content;
+					currentText.end = token.end;
+				} else {
+					currentText = { ...token } as TextToken;
+				}
+			} else {
+				if (currentText) {
+					merged.push(currentText);
+					currentText = null;
+				}
+				merged.push(token);
+			}
+		}
+
+		if (currentText) {
+			merged.push(currentText);
+		}
+
+		return merged;
+	}
+
+	/**
+	 * Try to parse inline LaTeX
+	 */
+	private tryParseInlineLatex(
+		text: string,
+		position: number,
+		baseOffset: number
+	): LatexInlineToken | null {
+		const remaining = text.substring(position);
+
+		if (remaining.startsWith('\\(')) {
+			const endPos = remaining.indexOf('\\)', 2);
+			if (endPos !== -1) {
+				const content = remaining.substring(2, endPos);
 				return {
-					...baseNode,
-					type: 'HTMLBlock',
-					children: citationChildren
+					type: TokenType.LatexInline,
+					content,
+					start: baseOffset + position,
+					end: baseOffset + position + endPos + 2
 				};
 			}
 		}
 
-		return baseNode;
+		if (remaining.startsWith('$')) {
+			const afterDollar = remaining.substring(1);
+
+			if (afterDollar.startsWith('$')) {
+				return null;
+			}
+
+			if (afterDollar.length > 0 && afterDollar[0] === ' ') {
+				return null;
+			}
+
+			const endPos = afterDollar.indexOf('$');
+			if (endPos === -1) {
+				return null;
+			}
+
+			const content = afterDollar.substring(0, endPos);
+
+			if (content.length === 0) {
+				return null;
+			}
+
+			if (content.includes(' ')) {
+				if (position > 0 && text[position - 1] !== ' ') {
+					return null;
+				}
+			}
+
+			return {
+				type: TokenType.LatexInline,
+				content,
+				start: baseOffset + position,
+				end: baseOffset + position + endPos + 2
+			};
+		}
+
+		return null;
 	}
-	const result = walk(tree.topNode);
-	return result;
+
+	/**
+	 * Try to parse an image
+	 */
+	private tryParseImage(text: string, position: number, baseOffset: number): ImageToken | null {
+		const remaining = text.substring(position);
+		const match = remaining.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+
+		if (!match) {
+			return null;
+		}
+
+		const alt = match[1];
+		const url = match[2];
+
+		return {
+			type: TokenType.Image,
+			alt,
+			url,
+			start: baseOffset + position,
+			end: baseOffset + position + match[0].length
+		};
+	}
+
+	/**
+	 * Try to parse a link
+	 */
+	private tryParseLink(text: string, position: number, baseOffset: number): LinkToken | null {
+		const remaining = text.substring(position);
+		const match = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
+
+		if (!match) {
+			return null;
+		}
+
+		const linkText = match[1];
+		const url = match[2];
+
+		const inlineTokens = this.parseInline(linkText, baseOffset + position + 1);
+
+		return {
+			type: TokenType.Link,
+			url,
+			children: inlineTokens,
+			start: baseOffset + position,
+			end: baseOffset + position + match[0].length
+		};
+	}
+
+	/**
+	 * Try to parse a citation (custom: [@cite])
+	 */
+	private tryParseCitation(
+		text: string,
+		position: number,
+		baseOffset: number
+	): CitationToken | null {
+		const remaining = text.substring(position);
+		const match = remaining.match(/^\[@([^\]]+)\]/);
+
+		if (!match) {
+			return null;
+		}
+
+		return {
+			type: TokenType.Citation,
+			id: match[1],
+			start: baseOffset + position,
+			end: baseOffset + position + match[0].length
+		};
+	}
+
+	/**
+	 * Try to parse inline code
+	 */
+	private tryParseInlineCode(
+		text: string,
+		position: number,
+		baseOffset: number
+	): InlineCodeToken | null {
+		const remaining = text.substring(position);
+
+		if (!remaining.startsWith('`')) {
+			return null;
+		}
+
+		const endPos = remaining.indexOf('`', 1);
+		if (endPos === -1) {
+			return null;
+		}
+
+		const content = remaining.substring(1, endPos);
+
+		return {
+			type: TokenType.InlineCode,
+			content,
+			start: baseOffset + position,
+			end: baseOffset + position + endPos + 1
+		};
+	}
+
+	/**
+	 * Try to parse bold text (** or __)
+	 */
+	private tryParseBold(text: string, position: number, baseOffset: number): BoldToken | null {
+		const remaining = text.substring(position);
+
+		if (remaining.startsWith('**')) {
+			const endPos = remaining.indexOf('**', 2);
+			if (endPos !== -1) {
+				const content = remaining.substring(2, endPos);
+				const inlineTokens = this.parseInline(content, baseOffset + position + 2);
+
+				return {
+					type: TokenType.Bold,
+					children: inlineTokens,
+					start: baseOffset + position,
+					end: baseOffset + position + endPos + 2
+				};
+			}
+		}
+
+		if (remaining.startsWith('__')) {
+			const endPos = remaining.indexOf('__', 2);
+			if (endPos !== -1) {
+				const content = remaining.substring(2, endPos);
+				const inlineTokens = this.parseInline(content, baseOffset + position + 2);
+
+				return {
+					type: TokenType.Bold,
+					children: inlineTokens,
+					start: baseOffset + position,
+					end: baseOffset + position + endPos + 2
+				};
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Try to parse italic text (* or _)
+	 */
+	private tryParseItalic(text: string, position: number, baseOffset: number): ItalicToken | null {
+		const remaining = text.substring(position);
+
+		if (remaining.startsWith('*') && !remaining.startsWith('**')) {
+			const endPos = remaining.indexOf('*', 1);
+			if (endPos !== -1 && remaining[endPos + 1] !== '*') {
+				const content = remaining.substring(1, endPos);
+				const inlineTokens = this.parseInline(content, baseOffset + position + 1);
+
+				return {
+					type: TokenType.Italic,
+					children: inlineTokens,
+					start: baseOffset + position,
+					end: baseOffset + position + endPos + 1
+				};
+			}
+		}
+
+		if (remaining.startsWith('_') && !remaining.startsWith('__')) {
+			const endPos = remaining.indexOf('_', 1);
+			if (endPos !== -1 && remaining[endPos + 1] !== '_') {
+				const content = remaining.substring(1, endPos);
+				const inlineTokens = this.parseInline(content, baseOffset + position + 1);
+
+				return {
+					type: TokenType.Italic,
+					children: inlineTokens,
+					start: baseOffset + position,
+					end: baseOffset + position + endPos + 1
+				};
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Try to parse strikethrough text (~~)
+	 */
+	private tryParseStrikethrough(
+		text: string,
+		position: number,
+		baseOffset: number
+	): StrikethroughToken | null {
+		const remaining = text.substring(position);
+
+		if (remaining.startsWith('~~')) {
+			const endPos = remaining.indexOf('~~', 2);
+			if (endPos !== -1) {
+				const content = remaining.substring(2, endPos);
+				const inlineTokens = this.parseInline(content, baseOffset + position + 2);
+
+				return {
+					type: TokenType.Strikethrough,
+					children: inlineTokens,
+					start: baseOffset + position,
+					end: baseOffset + position + endPos + 2
+				};
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Try to parse a line break (two spaces followed by newline)
+	 */
+	private tryParseLineBreak(
+		text: string,
+		position: number,
+		baseOffset: number
+	): LineBreakToken | null {
+		const remaining = text.substring(position);
+
+		// Check for two or more spaces followed by newline
+		const match = remaining.match(/^( {2,})(\r?\n)/);
+		if (match) {
+			return {
+				type: TokenType.LineBreak,
+				start: baseOffset + position,
+				end: baseOffset + position + match[0].length
+			};
+		}
+
+		return null;
+	}
+
+	/**
+	 * Peek the current line without consuming it
+	 */
+	private peekLine(): string {
+		const newlinePos = this.source.indexOf('\n', this.position);
+		if (newlinePos === -1) {
+			return this.source.substring(this.position);
+		}
+		return this.source.substring(this.position, newlinePos);
+	}
+
+	/**
+	 * Peek ahead n characters
+	 */
+	private peek(n: number): string {
+		return this.source.substring(this.position, this.position + n);
+	}
+
+	/**
+	 * Skip whitespace (spaces and tabs only, not newlines)
+	 */
+	private skipWhitespace(): void {
+		while (
+			this.position < this.source.length &&
+			(this.source[this.position] === ' ' || this.source[this.position] === '\t')
+		) {
+			this.position++;
+		}
+	}
+
+	/**
+	 * Skip newlines and return true if we crossed a blank line
+	 */
+	private skipNewlines(): boolean {
+		let newlineCount = 0;
+		while (
+			this.position < this.source.length &&
+			(this.source[this.position] === '\n' || this.source[this.position] === '\r')
+		) {
+			if (this.source[this.position] === '\n') {
+				newlineCount++;
+			}
+			this.position++;
+		}
+		// If we saw 2+ newlines, there was a blank line
+		return newlineCount >= 2;
+	}
+}
+
+/**
+ * Parse markdown content
+ */
+export function parse(source: string, options?: ParserOptions): ParseResult {
+	const parser = new MarkdownParser(source);
+	return parser.parse(options);
 }

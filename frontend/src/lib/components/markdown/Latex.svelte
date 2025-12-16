@@ -1,15 +1,12 @@
 <script lang="ts">
-	import { copy } from '$lib/copy';
-	import Latex from '../latex/Latex.svelte';
+	import type { LatexBlockToken } from './lexer';
+	import LatexComponent from '../latex/Latex.svelte';
 
-	let { node }: { node: { text?: string } } = $props();
+	let { token }: { token: LatexBlockToken } = $props();
+
+	const content = $derived(token.content);
 </script>
 
-<div class="flex justify-center">
-	<button
-		onclick={() => copy(node.text!)}
-		class="overflow-x-auto rounded-md border border-outline p-4"
-	>
-		<Latex text={node.text!} displayMode />
-	</button>
+<div class="my-4">
+	<LatexComponent text={content} displayMode />
 </div>

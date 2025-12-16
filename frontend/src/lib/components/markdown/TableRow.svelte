@@ -5,5 +5,5 @@
 </script>
 
 <tr>
-	{@render children?.()}
+	{@render children()}
 </tr>

@@ -4,6 +4,6 @@
 	let { children }: { children: Snippet } = $props();
 </script>
 
-<tbody>
-	{@render children?.()}
-</tbody>
+<em>
+	{@render children()}
+</em>

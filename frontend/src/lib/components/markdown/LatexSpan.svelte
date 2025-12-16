@@ -1,15 +1,12 @@
 <script lang="ts">
-	import type { ASTNode } from './lexer/parser';
-	import { copy } from '$lib/copy';
+	import type { LatexInlineToken } from './lexer';
+	import LatexComponent from '../latex/Latex.svelte';
 
-	import Latex from '../latex/Latex.svelte';
+	let { token }: { token: LatexInlineToken } = $props();
 
-	let { node }: { node: ASTNode } = $props();
+	const content = $derived(token.content);
 </script>
 
-<button
-	onclick={() => copy(node.text!)}
-	class="max-w-full overflow-x-auto rounded-md p-2 font-semibold"
->
-	<Latex text={node.text!} />
-</button>
+<span class="inline-block">
+	<LatexComponent text={content} />
+</span>

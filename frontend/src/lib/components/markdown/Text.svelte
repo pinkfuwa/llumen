@@ -1,7 +1,9 @@
 <script lang="ts">
-	import type { ASTNode } from './lexer/parser';
+	import type { TextToken } from './lexer';
 
-	let { node }: { node: ASTNode } = $props();
+	let { token }: { token: TextToken } = $props();
+
+	const content = $derived(token.content || '');
 </script>
 
-<span>{node.text}</span>
+{content}

@@ -1,37 +1,29 @@
 <script lang="ts">
-	import type { ASTNode } from './lexer/parser';
+	import type { ImageToken } from './lexer';
 	import { BookX } from '@lucide/svelte';
 
-	let { node }: { node: ASTNode } = $props();
+	let { token }: { token: ImageToken } = $props();
 
-	const src = $derived(node.children.find((x) => x.type == 'URL')?.text);
+	const url = $derived(token.url);
+	const alt = $derived(token.alt);
+	const title = $derived(token.title);
 
 	let errored = $state(false);
-	let data = $derived(errored || src == undefined ? 'error' : 'normal');
-
-	function uselessFn(data: any) {}
-	$effect(() => {
-		uselessFn(node);
-		errored = false;
-	});
 </script>
 
-<div class="inline-block align-middle">
-	{#if src != undefined}
-		<img
-			{src}
-			alt=""
-			style="max-width: 100%;"
-			onerror={() => (errored = true)}
-			class="max-h-[70vh] data-[state=error]:hidden"
-			data-state={data}
-		/>
-	{/if}
+{#if errored}
 	<div
-		class="flex h-50 w-60 flex-col items-center justify-center rounded-md border border-outline text-lg data-[state=normal]:hidden"
-		data-state={data}
+		class="flex h-50 w-60 flex-col items-center justify-center rounded-md border border-outline text-lg"
 	>
 		<BookX class="h-10 w-10" />
 		<span class="mt-1">Image not found</span>
 	</div>
-</div>
+{:else}
+	<img
+		src={url}
+		alt=""
+		style="max-width: 100%;"
+		onerror={() => (errored = true)}
+		class="max-h-[70vh]"
+	/>
+{/if}

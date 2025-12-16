@@ -1,13 +1,10 @@
 <script lang="ts">
+	import type { Token } from './lexer';
 	import type { Snippet } from 'svelte';
-	import type { ASTNode } from './lexer/parser';
 
-	// *del* are rendered as delete in standard markdown
-	// But standard isn't the behavior user expected
-
-	let { children }: { children: Snippet; node: ASTNode } = $props();
+	let { token, source, children }: { token: Token; source: string; children: Snippet } = $props();
 </script>
 
 <del>
-	{@render children?.()}
+	{@render children()}
 </del>
