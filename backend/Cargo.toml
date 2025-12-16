@@ -13,6 +13,7 @@ opt-level = "s"
 lto = true
 strip = true
 panic = "abort"
+incremental = false
 
 [workspace]
 members = [".", "entity", "migration", "protocol"]

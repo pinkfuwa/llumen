@@ -7,13 +7,8 @@ echo "--- Building artifacts for Docker nightly ---"
 ARTIFACTS_DIR="$(pwd)/artifacts"
 mkdir -p "$ARTIFACTS_DIR"
 
-# Create temporary Cargo config for faster builds
-mkdir -p backend/.cargo
-cat > backend/.cargo/config.toml << 'EOF'
-[profile.release]
-opt-level = 2
-incremental = true
-EOF
+# Disable incremental compilation for faster builds
+sed -i 's/incremental = false/incremental = true/' backend/Cargo.toml
 
 # Build frontend once (architecture independent)
 echo "--- Building frontend ---"
@@ -27,8 +22,8 @@ echo "--- Building backend for x86_64-unknown-linux-musl ---"
 echo "--- Building backend for aarch64-unknown-linux-musl ---"
 (cd backend && STATIC_DIR=./static cargo zigbuild --release --target aarch64-unknown-linux-musl)
 
-# Cleanup temporary Cargo config
-rm -f backend/.cargo/config.toml
+# Restore incremental compilation setting
+sed -i 's/incremental = true/incremental = false/' backend/Cargo.toml
 
 # Organize artifacts for Docker
 echo "--- Organizing artifacts for Docker ---"
