@@ -55,37 +55,31 @@ impl Mergeable for Token {
     fn merge(&mut self, other: Self) -> Option<Self> {
         match (self, other) {
             (Token::Assistant(s1), Token::Assistant(mut s2)) => {
-                sanitize_utf8(s1);
                 sanitize_utf8(&mut s2);
                 s1.push_str(&s2);
                 None
             }
             (Token::Reasoning(s1), Token::Reasoning(mut s2)) => {
-                sanitize_utf8(s1);
                 sanitize_utf8(&mut s2);
                 s1.push_str(&s2);
                 None
             }
             (Token::DeepStepToken(s1), Token::DeepStepToken(mut s2)) => {
-                sanitize_utf8(s1);
                 sanitize_utf8(&mut s2);
                 s1.push_str(&s2);
                 None
             }
             (Token::DeepStepReasoning(s1), Token::DeepStepReasoning(mut s2)) => {
-                sanitize_utf8(s1);
                 sanitize_utf8(&mut s2);
                 s1.push_str(&s2);
                 None
             }
             (Token::DeepReport(s1), Token::DeepReport(mut s2)) => {
-                sanitize_utf8(s1);
                 sanitize_utf8(&mut s2);
                 s1.push_str(&s2);
                 None
             }
             (Token::DeepPlan(s1), Token::DeepPlan(mut s2)) => {
-                sanitize_utf8(s1);
                 sanitize_utf8(&mut s2);
                 s1.push_str(&s2);
                 None
