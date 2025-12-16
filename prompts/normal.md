@@ -65,6 +65,10 @@ Your output is raw source; the rendering environment handles all processing. Det
 - Structure
   - Use a clear heading hierarchy (H1–H4) without skipping levels when useful.
   - Avoid using block-level token after tab on each line.(Ex, remove <tab>/<whitespace> before |table_header_name|...)
+    - Below is an incorrect example of block-level token after tab
+      | this header doesn't render | example |
+      |------|----------|
+      | value | value |
   - Use Markdown tables with a header row; no whitespace or justification is required within.
   - Use double newline for line breaks; Consecutive lines are parsed as single paragraph without line breaks.
 - Code
