@@ -797,10 +797,6 @@ export class MarkdownParser {
 				return null;
 			}
 
-			if (afterDollar.length > 0 && afterDollar[0] === ' ') {
-				return null;
-			}
-
 			const endPos = afterDollar.indexOf('$');
 			if (endPos === -1) {
 				return null;
@@ -812,8 +808,23 @@ export class MarkdownParser {
 				return null;
 			}
 
-			if (content.includes(' ')) {
+			const startsWithSpace = content[0] === ' ';
+			const endsWithSpace = content[content.length - 1] === ' ';
+
+			// Reject asymmetric spacing (one side has space, other doesn't)
+			if (startsWithSpace !== endsWithSpace) {
+				return null;
+			}
+
+			const hasSpaces = /\s/.test(content);
+
+			if (hasSpaces) {
 				if (position > 0 && text[position - 1] !== ' ') {
+					return null;
+				}
+
+				const closingPos = position + 1 + endPos + 1;
+				if (closingPos < text.length && text[closingPos] !== ' ') {
 					return null;
 				}
 			}
