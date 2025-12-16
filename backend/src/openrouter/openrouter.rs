@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use super::message::*;
+use crate::openrouter::raw::Reasoning;
 use crate::openrouter::{StreamCompletion, option::CompletionOption};
 
 use super::{Model, error::Error, raw};
@@ -73,10 +74,21 @@ impl Openrouter {
             Some(raw::UsageReq { include: true })
         };
 
-        let reasoning = option
-            .reasoning_effort
-            .to_value()
-            .map(|effort| raw::Reasoning { effort });
+        let reasoning = match (self.compatibility_mode, capability.reasoning) {
+            (true, true) => raw::Reasoning {
+                enabled: None,
+                effort: option.reasoning_effort.to_value(),
+            },
+            (true, false) => raw::Reasoning::default(),
+            (false, true) => raw::Reasoning {
+                enabled: Some(true),
+                effort: option.reasoning_effort.to_value(),
+            },
+            (false, false) => raw::Reasoning {
+                effort: None,
+                enabled: Some(false),
+            },
+        };
 
         let tools: Vec<raw::Tool> = option.tools.into_iter().map(|t| t.into()).collect();
 
@@ -174,6 +186,7 @@ impl Openrouter {
                 None => capability.ocr.unwrap_or(OcrEngine::Disabled),
             },
             audio: merge!(audio),
+            reasoning: merge!(reasoning),
         }
     }
 
@@ -230,6 +243,11 @@ impl Openrouter {
                     .architecture
                     .input_modalities
                     .contains(&raw::Modality::Audio),
+            ),
+            reasoning: Some(
+                model
+                    .supported_parameters
+                    .contains(&raw::SupportedParams::Reasoning),
             ),
         }
     }

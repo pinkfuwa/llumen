@@ -29,6 +29,7 @@ pub enum SupportedParams {
     ResponseFormat,
     Tools,
     StructuredOutput,
+    Reasoning,
     #[serde(other)]
     Unknown,
 }
@@ -75,22 +76,21 @@ pub struct CompletionReq {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
     // reasoning options
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reasoning: Option<Reasoning>,
+    #[serde(skip_serializing_if = "Reasoning::is_empty")]
+    pub reasoning: Reasoning,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub modalities: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct Reasoning {
-    pub effort: String,
+    pub effort: Option<String>,
+    pub enabled: Option<bool>,
 }
 
 impl Reasoning {
-    pub fn low() -> Self {
-        Reasoning {
-            effort: "low".to_string(),
-        }
+    pub fn is_empty(&self) -> bool {
+        self.effort.is_none() && self.enabled.is_none()
     }
 }
 
@@ -125,27 +125,6 @@ pub struct ResponseFormat {
 //     }
 //   }
 // }
-
-impl Default for CompletionReq {
-    fn default() -> Self {
-        Self {
-            model: "openai/gpt-oss-20b".to_string(),
-            messages: vec![],
-            stream: true,
-            tools: vec![],
-            temperature: None,
-            repeat_penalty: None,
-            top_k: None,
-            top_p: None,
-            max_tokens: None,
-            plugins: Vec::new(),
-            usage: Some(UsageReq { include: true }),
-            response_format: None,
-            reasoning: None,
-            modalities: Vec::new(),
-        }
-    }
-}
 
 impl CompletionReq {
     pub fn log(&self) {

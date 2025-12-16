@@ -196,6 +196,8 @@ pub struct ModelCapability {
     pub tool: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub json: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reasoning: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default, Serialize, PartialEq)]
