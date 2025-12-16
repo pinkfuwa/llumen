@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use super::message::*;
-use crate::openrouter::raw::Reasoning;
 use crate::openrouter::{StreamCompletion, option::CompletionOption};
 
 use super::{Model, error::Error, raw};
