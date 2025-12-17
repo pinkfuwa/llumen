@@ -1007,6 +1007,48 @@ describe('MarkdownParser - Edge Cases', () => {
 	test('handles unclosed code block', () => {
 		const result = parse('```\nunclosed');
 		expect(result.tokens.length).toBe(1);
+		const codeBlock = result.tokens[0] as CodeBlockToken;
+		expect(codeBlock.type).toBe(TokenType.CodeBlock);
+		expect(codeBlock.content).toBe('unclosed');
+		expect(codeBlock.language).toBeUndefined();
+	});
+
+	test('handles unclosed code block with language', () => {
+		const result = parse('```javascript\nconst x = 1;\nconsole.log(x);');
+		expect(result.tokens.length).toBe(1);
+		const codeBlock = result.tokens[0] as CodeBlockToken;
+		expect(codeBlock.type).toBe(TokenType.CodeBlock);
+		expect(codeBlock.language).toBe('javascript');
+		expect(codeBlock.content).toBe('const x = 1;\nconsole.log(x);');
+	});
+
+	test('streaming: code block displays immediately without closing delimiter', () => {
+		// Simulate streaming: code block starts but hasn't received closing ``` yet
+		const stream1 = '```python\ndef hello():';
+		const result1 = parse(stream1);
+		expect(result1.tokens.length).toBe(1);
+		const codeBlock1 = result1.tokens[0] as CodeBlockToken;
+		expect(codeBlock1.type).toBe(TokenType.CodeBlock);
+		expect(codeBlock1.language).toBe('python');
+		expect(codeBlock1.content).toBe('def hello():');
+
+		// More content arrives
+		const stream2 = '```python\ndef hello():\n    print("world")';
+		const result2 = parse(stream2);
+		expect(result2.tokens.length).toBe(1);
+		const codeBlock2 = result2.tokens[0] as CodeBlockToken;
+		expect(codeBlock2.type).toBe(TokenType.CodeBlock);
+		expect(codeBlock2.language).toBe('python');
+		expect(codeBlock2.content).toBe('def hello():\n    print("world")');
+
+		// Final closing delimiter arrives
+		const stream3 = '```python\ndef hello():\n    print("world")\n```';
+		const result3 = parse(stream3);
+		expect(result3.tokens.length).toBe(1);
+		const codeBlock3 = result3.tokens[0] as CodeBlockToken;
+		expect(codeBlock3.type).toBe(TokenType.CodeBlock);
+		expect(codeBlock3.language).toBe('python');
+		expect(codeBlock3.content).toBe('def hello():\n    print("world")');
 	});
 
 	test('handles special characters in text', () => {

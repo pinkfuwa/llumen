@@ -28,12 +28,36 @@ The markdown component supports two parsing modes:
 The parser tracks "complete regions" for each block-level element:
 
 - **Paragraphs**: Separated by blank lines
-- **Code blocks**: Fenced with ``` markers
+- **Code blocks**: Fenced with ``` markers (supports open blocks for streaming)
 - **Tables**: Complete table structures
 - **Lists**: Ordered and unordered lists
 - **Blockquotes**: Quote blocks
 
 These regions serve as natural splitting points for incremental parsing.
+
+### Streaming Support for Code Blocks
+
+The parser supports **open code blocks** (code blocks without closing ``` delimiters) to enable immediate display during streaming:
+
+- When a code block starts with ``` but hasn't received the closing delimiter yet, it's treated as a valid code block
+- This allows code to be displayed progressively as it streams from the LLM
+- Once the closing ``` arrives, the code block is properly closed
+- This behavior is transparent and works seamlessly with incremental parsing
+
+Example streaming sequence:
+```typescript
+// Stream 1: Opening delimiter arrives
+parse('```python\ndef hello():')
+// → Returns CodeBlock token with content: "def hello():"
+
+// Stream 2: More content arrives
+parse('```python\ndef hello():\n    print("world")')
+// → Returns CodeBlock token with content: "def hello():\n    print(\"world\")"
+
+// Stream 3: Closing delimiter arrives
+parse('```python\ndef hello():\n    print("world")\n```')
+// → Returns CodeBlock token with complete, closed content
+```
 
 ### Algorithm
 
@@ -133,18 +157,21 @@ A region is "complete" if:
 
 ## Testing
 
-Comprehensive tests in `lexer/incremental.test.ts` cover:
+Comprehensive tests in `lexer/incremental.test.ts` and `lexer/parser.test.ts` cover:
 
 - State initialization and updates
 - Region detection (code blocks, tables, lists, blockquotes, paragraphs)
 - Token position adjustment
 - Multiple sequential incremental parses
 - Edge cases (empty input, whitespace-only updates)
+- **Streaming code blocks**: Open code blocks without closing delimiters
+- **Code block streaming sequence**: Progressive content updates
 
 Run tests:
 ```bash
 cd frontend
 pnpm test lexer/incremental.test.ts
+pnpm test lexer/parser.test.ts
 ```
 
 ## Future Improvements

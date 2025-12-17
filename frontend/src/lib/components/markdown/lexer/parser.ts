@@ -178,6 +178,7 @@ export class MarkdownParser {
 
 	/**
 	 * Try to parse a code block (fenced with ```)
+	 * Supports open code blocks (without closing ```) for streaming
 	 */
 	private tryParseCodeBlock(): CodeBlockToken | null {
 		const start = this.position;
@@ -205,6 +206,11 @@ export class MarkdownParser {
 			}
 			this.position += currentLine.length;
 			this.skipNewlines();
+		}
+
+		// If we reached EOF without finding closing delimiter, treat as open code block
+		if (contentEnd === contentStart && this.position >= this.source.length) {
+			contentEnd = this.position;
 		}
 
 		const content = this.source.substring(contentStart, contentEnd).trimEnd();

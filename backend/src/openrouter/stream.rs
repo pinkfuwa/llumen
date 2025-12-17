@@ -298,14 +298,15 @@ impl StreamCompletion {
             false => raw::FinishReason::ToolCalls,
         };
 
-        if !(matches!(
-            (self.toolcalls.is_empty(), &self.stop_reason),
-            (true, None) | (false, Some(raw::FinishReason::ToolCalls))
-        )) {
+        if self.stop_reason.is_none() {
             log::warn!(
-                "Provider return wrong(or didn't provide any) finish reason, set to {:?}",
+                "Provider didn't provide any finish reason, set to {:?}",
                 stop_reason
             );
+        } else if !self.toolcalls.is_empty()
+            && matches!(self.stop_reason, Some(raw::FinishReason::Stop))
+        {
+            log::warn!("Provider returned stop reason when tool calls are present");
         }
 
         let reasoning_details = self.reasoning_details.take().map(|data| {
