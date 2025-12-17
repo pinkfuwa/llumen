@@ -18,7 +18,7 @@
 </script>
 
 {#await readModelPromise}
-	Loading
+	{$_('common.loading')}
 {:then _}
 	{#key id}
 		<ConfigEditor bind:value={config}>
@@ -31,5 +31,5 @@
 		</ConfigEditor>
 	{/key}
 {:catch}
-	Error
+	{$_('common.error')}
 {/await}

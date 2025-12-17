@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { downloadCompressed, download } from '$lib/api/files';
 	import { Download } from '@lucide/svelte';
+	import { _ } from 'svelte-i18n';
 
 	let { id }: { id: number } = $props();
 
@@ -43,14 +44,14 @@
 
 {#if error}
 	<div class="border-border my-2 flex justify-center rounded-lg border p-4">
-		Failed to load image
+		{$_('chat.failed_load_image')}
 	</div>
 {:else if src}
 	<div class="my-2 flex justify-center">
 		<div class="group relative">
 			<img
 				{src}
-				alt="Generated"
+				alt={$_('chat.image_alt')}
 				class="border-border group relative h-auto max-h-[min(30rem,85vw,70vh)] max-w-full rounded-lg border"
 				loading="lazy"
 			/>
@@ -65,5 +66,5 @@
 		</div>
 	</div>
 {:else}
-	<div class="border-border my-2 flex justify-center rounded-lg border p-4">Loading image...</div>
+	<div class="border-border my-2 flex justify-center rounded-lg border p-4">{$_('chat.loading_image')}</div>
 {/if}

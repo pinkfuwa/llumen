@@ -16,7 +16,7 @@
 		class="flex flex-row flex-nowrap rounded p-2 duration-150 hover:bg-primary hover:text-text-hover"
 	>
 		<Atom class="mr-2" />
-		<span> Research Agent </span>
+		<span> {$_('chat.research_agent')} </span>
 	</Collapsible.Trigger>
 	<Collapsible.Content
 		class="py-2 pl-3 slide-out-to-start-2 fade-in fade-out slide-in-from-top-2 data-[state=close]:animate-out data-[state=open]:animate-in"

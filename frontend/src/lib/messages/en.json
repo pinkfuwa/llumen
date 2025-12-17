@@ -68,6 +68,33 @@
 		"error.no_output": "No response from model, please try again.",
 		"stop_first": "stop the current responding to type new message.",
 		"default_title": "New Chat",
-		"reasoning": "Show reasoning steps"
+		"reasoning": "Show reasoning steps",
+		"upload_file": "Upload File",
+		"loading_image": "Loading image...",
+		"failed_load_image": "Failed to load image",
+		"image_alt": "Generated",
+		"select_model": "Select Model",
+		"research_agent": "Research Agent",
+		"calling": "Calling",
+		"default_tool": "Default Tool"
+	},
+	"common": {
+		"loading": "Loading",
+		"error": "Error",
+		"loading_editor": "Loading code editor...",
+		"copied_clipboard": "Copied to clipboard",
+		"made_by": "Made by"
+	},
+	"error": {
+		"page_not_found": "Page not found",
+		"internal_server_error": "Internal server error",
+		"access_denied": "Access denied",
+		"unauthorized": "Unauthorized",
+		"bad_request": "Bad request",
+		"method_not_allowed": "Method not allowed",
+		"unknown_error": "Unknown error",
+		"back_to_home": "Back to home",
+		"select_model_first": "select a model first",
+		"fail_to_delete": "Fail to delete"
 	}
 }

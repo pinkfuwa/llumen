@@ -3,6 +3,7 @@
 	import { onDestroy } from 'svelte';
 	import { derived, get, toStore, writable } from 'svelte/store';
 	import { useModelIds } from '$lib/api/model';
+	import { _ } from 'svelte-i18n';
 
 	const useCodeMirrorPromise = import('./index');
 	const modelIdsQuery = useModelIds();
@@ -46,7 +47,7 @@
 
 <div class="border-radius-md h-full w-full rounded-md border border-outline p-2" style={themeStyle}>
 	{#if !loaded}
-		<div class="h-full p-1.5 font-mono">Loading code editor...</div>
+		<div class="h-full p-1.5 font-mono">{$_('common.loading_editor')}</div>
 	{/if}
 	<div bind:this={div} class="h-full shrink-0 space-y-2 [&>div]:h-full"></div>
 </div>

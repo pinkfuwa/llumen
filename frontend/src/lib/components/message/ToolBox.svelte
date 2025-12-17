@@ -4,7 +4,7 @@
 	import { _ } from 'svelte-i18n';
 	import { slide } from 'svelte/transition';
 
-	let { children, toolname = 'Default Tool' } = $props();
+	let { children, toolname = $_('chat.default_tool') } = $props();
 
 	let open = $state(false);
 </script>
@@ -17,7 +17,7 @@
 			>
 				<ToolCase class="mr-2" />
 				{#if !open}
-					<span class="mr-1"> Calling </span>
+					<span class="mr-1"> {$_('chat.calling')} </span>
 				{/if}
 				<span class="rounded-md bg-primary px-2 py-[2px] text-text-hover">
 					{toolname}

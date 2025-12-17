@@ -1,6 +1,7 @@
 <script>
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
+	import { _ } from 'svelte-i18n';
 
 	let copied = $state(true);
 
@@ -17,6 +18,6 @@
 		out:fade={{ duration: 150 }}
 	>
 		<CircleCheck class="mr-2 inline-block" />
-		Copied to clipboard
+		{$_('common.copied_clipboard')}
 	</div>
 {/if}

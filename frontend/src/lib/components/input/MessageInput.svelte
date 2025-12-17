@@ -95,7 +95,7 @@
 			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-lg bg-primary text-2xl"
 		>
 			<FileUp />
-			Upload File
+			{$_('chat.upload_file')}
 		</div>
 	{/if}
 	{#if files.length != 0}
