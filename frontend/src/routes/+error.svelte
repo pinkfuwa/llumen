@@ -2,7 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { page } from '$app/state';
 
-	const messages = $derived({
+	const messages = $derived<Record<string, string>>({
 		'404': $_('error.page_not_found'),
 		'500': $_('error.internal_server_error'),
 		'403': $_('error.access_denied'),
