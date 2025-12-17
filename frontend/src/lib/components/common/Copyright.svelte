@@ -1,12 +1,6 @@
-<script lang="ts">
-	let { top = false } = $props();
-</script>
-
 <div class="relative select-none">
 	<footer
-		class="absolute {top
-			? 'top-0'
-			: 'bottom-1'} z-10 flex w-full items-center justify-center text-sm text-outline"
+		class="absolute bottom-1 z-10 flex w-full items-center justify-center text-sm text-outline"
 	>
 		<a
 			href="https://github.com/pinkfuwa/llumen"

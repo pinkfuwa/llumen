@@ -18,12 +18,13 @@
 
 	let {
 		mode = $bindable(Mode.Normal),
-		files = $bindable([] as Array<File>),
-		modelId = $bindable<string | null>(null),
+		files = $bindable([]),
+		modelId = $bindable(null),
 		content = $bindable(''),
-		onsubmit = undefined as undefined | (() => void),
-		oncancel = undefined as undefined | (() => void),
-		disabled = false
+		onsubmit,
+		oncancel,
+		disabled = false,
+		large = false
 	}: {
 		mode?: Mode;
 		files?: Array<File>;
@@ -32,6 +33,7 @@
 		onsubmit?: () => void;
 		oncancel?: () => void;
 		disabled?: boolean;
+		large?: boolean;
 	} = $props();
 
 	let editable = $state(true);
@@ -78,7 +80,7 @@
 </script>
 
 <div
-	class="min-h-sm item relative mx-auto w-[90%] rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-[min(750px,75%)]"
+	class="min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-[min(750px,75%)]"
 	bind:this={container}
 	onpaste={(event) => {
 		const clipboardData = event.clipboardData;
@@ -101,15 +103,14 @@
 			<FileGroup {files} deletable />
 		</div>
 	{/if}
-	<div
-		class="mb-2 flex flex-row items-center justify-between space-x-2 border-b border-outline pr-2 pb-2"
-	>
+	<div class="flex flex-row items-center justify-between space-x-2 pr-2">
 		<Textbox
 			bind:editable
 			placeholder={disabled ? $_('chat.stop_first') : $_('chat.question')}
 			bind:value={content}
 			onsubmit={submit}
 			{disabled}
+			minRow={large ? 2 : 1}
 		/>
 		{#if disabled}
 			<Stop onclick={oncancel} />

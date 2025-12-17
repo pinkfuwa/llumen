@@ -2,7 +2,7 @@
 	let { params } = $props();
 	import { MessageInput } from '$lib/components';
 	import MessagePagination from '$lib/components/message/MessagePagination.svelte';
-	import Copyright from '$lib/components/Copyright.svelte';
+	import Hallucination from '$lib/components/common/Hallucination.svelte';
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { haltCompletion, useRoom } from '$lib/api/chatroom.svelte';
@@ -49,10 +49,10 @@
 	getStream((x) => (stream = x));
 </script>
 
-<Copyright top />
+<Hallucination />
 
 <Scroll class="nobar flex h-full flex-col-reverse">
-	<div class="sticky bottom-2 z-10 mt-4 flex justify-center">
+	<div class="sticky bottom-1 z-10 mt-4 flex justify-center">
 		<MessageInput
 			bind:content
 			bind:modelId
