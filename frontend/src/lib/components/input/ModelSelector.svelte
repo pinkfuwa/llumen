@@ -4,6 +4,7 @@
 	import { getContext } from 'svelte';
 	import type { Readable } from 'svelte/store';
 	import type { ModelListResp } from '$lib/api/types';
+	import { _ } from 'svelte-i18n';
 	let { value = $bindable<string | undefined>(), disabled = false } = $props();
 
 	const data = getContext<Readable<ModelListResp | undefined>>('models');
@@ -22,14 +23,14 @@
 		px-3 text-center text-nowrap text-text duration-150 sm:w-56 sm:grow-0"
 	>
 		<span class="flex min-w-0 grow items-center justify-start truncate">
-			<span> Loading </span>
+			<span> {$_('common.loading')} </span>
 			<LoaderCircle class="ml-2 inline-block animate-spin" />
 		</span>
 	</div>
 {:else}
 	<Select
 		data={selectData}
-		fallback="Select Model"
+		fallback={$_('chat.select_model')}
 		bind:selected={value}
 		{disabled}
 		class="grow truncate sm:w-56 sm:grow-0"

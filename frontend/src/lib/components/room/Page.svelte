@@ -5,6 +5,7 @@
 	import { type ChatPaginateRespList } from '$lib/api/types';
 	import { dispatchError } from '$lib/error';
 	import ChatroomEntry from './ChatroomEntry.svelte';
+	import { _ } from 'svelte-i18n';
 
 	const {
 		entry,
@@ -31,7 +32,7 @@
 				// TODO: delete is reserved keyword
 				delete_({ id: room.id }, (resp) => {
 					if (!resp.deleted) {
-						dispatchError('network', 'Fail to delete');
+						dispatchError('network', $_('error.fail_to_delete'));
 						return;
 					}
 					data.update((x) => {
