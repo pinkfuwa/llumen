@@ -10,7 +10,7 @@ This document summarizes the implementation of incremental parsing for the markd
 
 **File**: `frontend/src/lib/components/markdown/lexer/index.ts`
 
-Added three main functions:
+Added four main functions:
 
 - `parseAsync(source: string): Promise<ParseResult>`
   - Async wrapper for full parse (enables code splitting)
@@ -77,7 +77,26 @@ if (paragraph) {
 Already tracked: code blocks, tables, lists, blockquotes
 Now also tracks: paragraphs
 
-### 4. Type Definitions
+### 4. Streaming Code Block Support
+
+**File**: `frontend/src/lib/components/markdown/lexer/parser.ts`
+
+Enhanced code block parsing to support open code blocks (without closing ``` delimiter):
+
+```typescript
+// If we reached EOF without finding closing delimiter, treat as open code block
+if (contentEnd === contentStart && this.position >= this.source.length) {
+  contentEnd = this.position;
+}
+```
+
+This enables immediate display of code blocks during streaming:
+- Code blocks without closing ``` are treated as valid
+- Content is displayed progressively as it arrives
+- Seamlessly transitions to closed state when ``` arrives
+- Essential for good UX when streaming LLM responses with code
+
+### 5. Type Definitions
 
 **File**: `frontend/src/lib/components/markdown/lexer/tokens.ts`
 
@@ -91,7 +110,7 @@ export interface RegionBoundary {
 }
 ```
 
-### 5. Web Worker Improvements
+### 6. Web Worker Improvements
 
 **File**: `frontend/src/lib/components/markdown/worker/index.ts`
 
@@ -179,8 +198,13 @@ The throttle runs after the first update, then resets if more updates arrive.
 - Edge cases (empty, whitespace-only)
 - Preservation of regions across parses
 
-**Existing tests** (116 tests):
-- All still pass
+**`lexer/parser.test.ts`** (101 tests):
+- All existing tests pass
+- Added tests for unclosed code blocks
+- Added streaming code block sequence test
+- Validates progressive content display
+
+**Total tests**: 151 passing
 - No regressions introduced
 - Parser behavior unchanged
 
@@ -257,7 +281,8 @@ The incremental parsing implementation successfully achieves its goals:
 ✅ **State management**: Root.svelte handles all stateful logic  
 ✅ **Region detection**: Tracks paragraphs, tables, lists, code blocks, blockquotes  
 ✅ **Throttled updates**: 100ms throttle for smooth streaming  
-✅ **Comprehensive tests**: 16 new tests, all existing tests pass  
+✅ **Streaming code blocks**: Open code blocks display immediately without closing delimiter  
+✅ **Comprehensive tests**: 151 total tests passing (16 new incremental tests)  
 ✅ **Documentation**: User guide, architecture docs, and examples  
 
-The implementation provides a practical performance improvement for streaming content while maintaining code quality and test coverage.
+The implementation provides a practical performance improvement for streaming content while maintaining code quality and test coverage. The addition of streaming code block support ensures that code appears immediately as it's generated, creating a smooth user experience during LLM interactions.

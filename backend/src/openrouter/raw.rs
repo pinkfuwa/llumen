@@ -84,7 +84,9 @@ pub struct CompletionReq {
 
 #[derive(Debug, Clone, Serialize, Default)]
 pub struct Reasoning {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub effort: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
 
