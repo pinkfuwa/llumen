@@ -99,7 +99,9 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
                                 if tx.is_closed() {
                                     break;
                                 }
-                                subscriber = self.get_subscriber(id, Cursor::default());
+                                // Preserve cursor position when reconnecting to avoid duplicate content
+                                let current_cursor = subscriber.cursor();
+                                subscriber = self.get_subscriber(id, current_cursor);
                             }
                             Some(item) => {
                                 if tx.send(item).await.is_err() {

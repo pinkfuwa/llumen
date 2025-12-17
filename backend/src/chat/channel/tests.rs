@@ -400,4 +400,47 @@ mod tests {
         assert_eq!(items[0].data, "abcdefghij");
         assert_eq!(items[1].data, "kextra");
     }
+
+    #[tokio::test]
+    async fn test_reconnection_preserves_cursor() {
+        // Regression test for malformed streaming output when switching tabs.
+        // This test verifies that when a publisher drops and reconnects, the subscriber
+        // maintains its cursor position and doesn't re-read already consumed data.
+        let ctx = Arc::new(Context::<TestItem>::new());
+        let mut publisher = ctx.clone().publish(1).expect("should create publisher");
+
+        let mut stream = ctx.clone().subscribe(1, None);
+
+        // Publisher sends some data
+        publisher.publish(TestItem {
+            data: "first".to_string(),
+        });
+        publisher.publish(TestItem {
+            data: "second".to_string(),
+        });
+
+        // Subscriber reads the first batch
+        let item = stream.next().await.unwrap();
+        assert_eq!(item.data, "firstsecond");
+
+        // Publisher drops (simulating tab switch or connection loss)
+        drop(publisher);
+
+        // New publisher starts (simulating reconnection)
+        let mut publisher2 = ctx.clone().publish(1).expect("should create new publisher");
+        
+        // New publisher sends more data
+        publisher2.publish(TestItem {
+            data: "third".to_string(),
+        });
+        publisher2.publish(TestItem {
+            data: "fourth".to_string(),
+        });
+
+        // Subscriber should only receive new data, not duplicate old data
+        let item = stream.next().await.unwrap();
+        assert_eq!(item.data, "thirdfourth", 
+            "Expected 'thirdfourth' but got '{}'. This indicates the cursor position was not preserved on reconnection.",
+            item.data);
+    }
 }
