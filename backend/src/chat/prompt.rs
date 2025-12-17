@@ -37,16 +37,16 @@ impl Prompt {
         let mut env = Environment::new();
         env.add_template(
             "title",
-            include_str!("../../../prompts/title_generation.md"),
+            include_str!("../../../prompts/title_generation.j2"),
         )
         .unwrap();
-        env.add_template("normal", include_str!("../../../prompts/normal.md"))
+        env.add_template("normal", include_str!("../../../prompts/normal.j2"))
             .unwrap();
-        env.add_template("search", include_str!("../../../prompts/search.md"))
+        env.add_template("search", include_str!("../../../prompts/search.j2"))
             .unwrap();
         env.add_template(
             "coordinator",
-            include_str!("../../../prompts/coordinator.md"),
+            include_str!("../../../prompts/coordinator.j2"),
         )
         .unwrap();
         env.add_global("repo_url", "https://github.com/pinkfuwa/llumen");
