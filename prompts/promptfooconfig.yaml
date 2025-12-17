@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+providers:
+  - id: openrouter:openai/gpt-oss-20b
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnv: API_KEY
+      max_tokens: 4096
+
+  - id: openrouter:qwen/qwen3-30b-a3b
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnv: API_KEY
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: openrouter:openai/gpt-oss-120b
+
+prompts:
+  - >
+    [
+      {
+        "role": "system",
+        "content": {{ system_message | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ user_prompt | dump }}
+      }
+    ]
+
+tests:
+  - description: "Normal chat - simple question (English)"
+    vars:
+      system_message: file://normal.j2
+      user_prompt: "What is the capital of France?"
+      locale: "en"
+      time: "2024-01-15T10:00:00Z"
+      chat_title: "Test Chat"
+    assert:
+      - type: contains
+        value: "Paris"
+
+outputPath: ./promptfoo-results.json
+
+sharing: false
