@@ -59,47 +59,47 @@ impl DeepPrompt {
         let mut env = Environment::new();
         env.add_template(
             "deep_coordinator",
-            include_str!("../../../prompts/deepresearch/coordinator.md"),
+            include_str!("../../../prompts/deepresearch/coordinator.j2"),
         )
         .unwrap();
         env.add_template(
             "deep_prompt_enhancer",
-            include_str!("../../../prompts/deepresearch/prompt_enhancer.md"),
+            include_str!("../../../prompts/deepresearch/prompt_enhancer.j2"),
         )
         .unwrap();
         env.add_template(
             "deep_planner",
-            include_str!("../../../prompts/deepresearch/planner.md"),
+            include_str!("../../../prompts/deepresearch/planner.j2"),
         )
         .unwrap();
         env.add_template(
             "deep_researcher",
-            include_str!("../../../prompts/deepresearch/researcher.md"),
+            include_str!("../../../prompts/deepresearch/researcher.j2"),
         )
         .unwrap();
         env.add_template(
             "deep_coder",
-            include_str!("../../../prompts/deepresearch/coder.md"),
+            include_str!("../../../prompts/deepresearch/coder.j2"),
         )
         .unwrap();
         env.add_template(
             "deep_reporter",
-            include_str!("../../../prompts/deepresearch/reporter.md"),
+            include_str!("../../../prompts/deepresearch/reporter.j2"),
         )
         .unwrap();
         env.add_template(
             "step_system_message",
-            include_str!("../../../prompts/deepresearch/step_system_message.md"),
+            include_str!("../../../prompts/deepresearch/step_system_message.j2"),
         )
         .unwrap();
         env.add_template(
             "step_input",
-            include_str!("../../../prompts/deepresearch/step_input.md"),
+            include_str!("../../../prompts/deepresearch/step_input.j2"),
         )
         .unwrap();
         env.add_template(
             "report_input",
-            include_str!("../../../prompts/deepresearch/report_input.md"),
+            include_str!("../../../prompts/deepresearch/report_input.j2"),
         )
         .unwrap();
         Self { env }
