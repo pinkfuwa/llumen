@@ -428,7 +428,7 @@ mod tests {
 
         // New publisher starts (simulating reconnection)
         let mut publisher2 = ctx.clone().publish(1).expect("should create new publisher");
-        
+
         // New publisher sends more data
         publisher2.publish(TestItem {
             data: "third".to_string(),
@@ -439,7 +439,7 @@ mod tests {
 
         // Subscriber should only receive new data, not duplicate old data
         let item = stream.next().await.unwrap();
-        assert_eq!(item.data, "thirdfourth", 
+        assert_eq!(item.data, "thirdfourth",
             "Expected 'thirdfourth' but got '{}'. This indicates the cursor position was not preserved on reconnection.",
             item.data);
     }
