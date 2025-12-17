@@ -35,7 +35,6 @@
 		)
 			return;
 
-		console.log({ code });
 		if (code == 'Enter') return;
 		if (!code.startsWith('Key') && !code.startsWith('Digit')) return;
 

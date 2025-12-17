@@ -7,6 +7,7 @@
 	import User from './User.svelte';
 	import Chunks from './Chunks.svelte';
 	import { page } from '$app/state';
+	import { _ } from 'svelte-i18n';
 
 	const { room }: { room: ChatReadResp | undefined } = $props();
 
@@ -30,7 +31,7 @@
 				{streaming}
 				onupdate={(text, updatedFiles) => {
 					if (room == undefined) return;
-					if (room.model_id == undefined) dispatchError('internal', 'select a model first');
+					if (room.model_id == undefined) dispatchError('internal', $_('error.select_model_first'));
 					else
 						mutate({
 							chat_id: chatId,

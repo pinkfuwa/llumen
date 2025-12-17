@@ -12,13 +12,13 @@
 
 	let readModelPromise = $derived(readModel(id).then((x) => (config = x.raw)));
 
-	let saveSetting = $_('setting.save_settings');
+	let saveSetting = $derived($_('setting.save_settings'));
 
 	let { mutate } = updateModel();
 </script>
 
 {#await readModelPromise}
-	Loading
+	{$_('common.loading')}
 {:then _}
 	{#key id}
 		<ConfigEditor bind:value={config}>
@@ -31,5 +31,5 @@
 		</ConfigEditor>
 	{/key}
 {:catch}
-	Error
+	{$_('common.error')}
 {/await}

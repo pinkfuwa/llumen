@@ -1,3 +1,7 @@
+<script lang="ts">
+	import { _ } from 'svelte-i18n';
+</script>
+
 <div class="relative select-none">
 	<footer
 		class="absolute bottom-1 z-10 flex w-full items-center justify-center text-sm text-outline"

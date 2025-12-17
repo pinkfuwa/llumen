@@ -68,6 +68,33 @@
 		"error.no_output": "模型沒有回應，請再試一次",
 		"stop_first": "暫停目前的對話以輸入訊息",
 		"default_title": "新聊天室",
-		"reasoning": "顯示推理過程"
+		"reasoning": "顯示推理過程",
+		"upload_file": "上傳檔案",
+		"loading_image": "載入圖片中...",
+		"failed_load_image": "無法載入圖片",
+		"image_alt": "產生的圖片",
+		"select_model": "選擇模型",
+		"research_agent": "研究代理",
+		"calling": "呼叫中",
+		"default_tool": "預設工具",
+		"hallucination_warning": "流明可能會犯錯，請謹慎使用生成資訊。"
+	},
+	"common": {
+		"loading": "載入中",
+		"error": "錯誤",
+		"loading_editor": "載入程式編輯器...",
+		"copied_clipboard": "已複製到剪貼簿"
+	},
+	"error": {
+		"page_not_found": "找不到頁面",
+		"internal_server_error": "內部伺服器錯誤",
+		"access_denied": "拒絕存取",
+		"unauthorized": "未授權",
+		"bad_request": "錯誤請求",
+		"method_not_allowed": "不允許的方法",
+		"unknown_error": "未知錯誤",
+		"back_to_home": "返回首頁",
+		"select_model_first": "請先選擇一個模型",
+		"fail_to_delete": "刪除失敗"
 	}
 }
