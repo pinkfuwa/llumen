@@ -4,7 +4,9 @@
 	import { _ } from 'svelte-i18n';
 	import { slide } from 'svelte/transition';
 
-	let { children, toolname = $_('chat.default_tool') } = $props();
+	let { children, toolname = 'Default Tool' } = $props();
+
+	let displayName = $derived(toolname === 'Default Tool' ? $_('chat.default_tool') : toolname);
 
 	let open = $state(false);
 </script>
@@ -20,7 +22,7 @@
 					<span class="mr-1"> {$_('chat.calling')} </span>
 				{/if}
 				<span class="rounded-md bg-primary px-2 py-[2px] text-text-hover">
-					{toolname}
+					{displayName}
 				</span>
 			</Accordion.Trigger>
 		</Accordion.Header>

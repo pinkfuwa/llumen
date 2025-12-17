@@ -2,14 +2,14 @@
 	import { _ } from 'svelte-i18n';
 	import { page } from '$app/state';
 
-	const messages: Record<string, string> = {
+	const messages = $derived({
 		'404': $_('error.page_not_found'),
 		'500': $_('error.internal_server_error'),
 		'403': $_('error.access_denied'),
 		'401': $_('error.unauthorized'),
 		'400': $_('error.bad_request'),
 		'405': $_('error.method_not_allowed')
-	};
+	});
 </script>
 
 <div class="flex h-screen flex-col items-center justify-center bg-login-bg">
