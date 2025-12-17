@@ -76,14 +76,14 @@
 		"select_model": "Select Model",
 		"research_agent": "Research Agent",
 		"calling": "Calling",
-		"default_tool": "Default Tool"
+		"default_tool": "Default Tool",
+		"hallucination_warning": "Llumen can make mistakes. Check important info."
 	},
 	"common": {
 		"loading": "Loading",
 		"error": "Error",
 		"loading_editor": "Loading code editor...",
-		"copied_clipboard": "Copied to clipboard",
-		"made_by": "Made by"
+		"copied_clipboard": "Copied to clipboard"
 	},
 	"error": {
 		"page_not_found": "Page not found",
