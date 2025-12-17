@@ -292,9 +292,20 @@ impl CompletionContext {
 
         self.update_usage(completion.price as f32, completion.token as i32);
 
-        static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\'', '*', '#'];
+        let mut title = completion.response;
 
-        let title = completion.response;
+        if title.is_empty() {
+            let last_user_message = self.messages.iter().find_map(|msg| match &msg.inner {
+                MessageInner::User { text, .. } => Some(text.clone()),
+                _ => None,
+            });
+
+            if let Some(last_user_message) = last_user_message {
+                title = last_user_message;
+            }
+        }
+
+        static TRIMS: &[char] = &['\n', ' ', '\t', '`', '"', '\'', '*', '#'];
 
         let mut title = title
             .trim_matches(TRIMS)

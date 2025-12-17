@@ -349,12 +349,35 @@ impl Openrouter {
         &self,
         messages: Vec<Message>,
         model: Model,
-        option: CompletionOption,
+        mut option: CompletionOption,
     ) -> Result<ChatCompletion, Error> {
         debug_assert!(
             !option.image_generation,
             "Image generation supported only on streaming"
         );
+
+        if !self.compatibility_mode {
+            const IMAGE_ONLY_PREFIXES: &[&str] = &["black-forest-labs/", "sourceful/"];
+            if IMAGE_ONLY_PREFIXES
+                .iter()
+                .any(|prefix| model.id.starts_with(prefix))
+            {
+                return Ok(ChatCompletion::new());
+            }
+
+            let models = self.models.read().unwrap();
+            if let Some(model) = models.get(&model.id) {
+                if !model
+                    .architecture
+                    .output_modalities
+                    .contains(&raw::Modality::Text)
+                {
+                    return Ok(ChatCompletion::new());
+                }
+            }
+        }
+
+        option.image_generation = false;
 
         let req = self.create_request(messages, false, model, option);
         req.log();
@@ -416,6 +439,16 @@ pub struct ChatCompletion {
     pub price: f64,
     pub token: usize,
     pub response: String,
+}
+
+impl ChatCompletion {
+    pub fn new() -> Self {
+        ChatCompletion {
+            price: 0.0,
+            token: 0,
+            response: String::new(),
+        }
+    }
 }
 
 pub struct StructuredCompletion<T> {
