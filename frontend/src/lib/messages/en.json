@@ -94,7 +94,7 @@
 		"method_not_allowed": "Method not allowed",
 		"unknown_error": "Unknown error",
 		"back_to_home": "Back to home",
-		"select_model_first": "select a model first",
-		"fail_to_delete": "Fail to delete"
+		"select_model_first": "Select a model first",
+		"fail_to_delete": "Failed to delete"
 	}
 }
