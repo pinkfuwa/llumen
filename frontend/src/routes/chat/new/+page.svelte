@@ -50,6 +50,7 @@
 				(data) => goto('/chat/' + encodeURIComponent(data.id))
 			);
 		}}
+		large
 	/>
 </main>
 

@@ -52,8 +52,8 @@
 <div class="flex w-full justify-end px-[5vw] lg:px-20 2xl:px-36">
 	<div
 		class="group/files {editable
-			? 'w-full md:w-[75%]'
-			: 'max-w-full md:max-w-[75%]'} wrap-break-word"
+			? 'w-full md:w-[calc(100%-2rem)]'
+			: 'max-w-full md:max-w-[calc(100%-2rem)]'} wrap-break-word"
 	>
 		<div class="w-full rounded-md bg-user-bg p-4">
 			{#if files.length != 0}

@@ -4,7 +4,15 @@
 		value = $bindable(''),
 		placeholder = '',
 		disabled = false,
-		onsubmit = undefined as undefined | (() => void)
+		onsubmit,
+		minRow = 1
+	}: {
+		editable: boolean;
+		value: string;
+		placeholder: string;
+		disabled: boolean;
+		onsubmit?: () => void;
+		minRow?: number;
 	} = $props();
 
 	import { default as Markdown } from '$lib/components/markdown/Root.svelte';
@@ -28,7 +36,8 @@
 			return;
 
 		console.log({ code });
-		if (!code.startsWith('Key') || !code.startsWith('Digit') || code != 'Enter') return;
+		if (code == 'Enter') return;
+		if (!code.startsWith('Key') && !code.startsWith('Digit')) return;
 
 		if (input !== document.activeElement) {
 			input?.focus();
@@ -40,7 +49,7 @@
 	window.addEventListener('keydown', onKeyDown);
 	onDestroy(() => window.removeEventListener('keydown', onKeyDown));
 
-	let rows = () => Math.max(2, value.split('\n').length);
+	let rows = () => Math.max(minRow, value.split('\n').length);
 
 	let virtualKeyboard = $state(false);
 	if ('virtualKeyboard' in navigator) {
