@@ -29,6 +29,7 @@ pub struct CompletionOption {
     pub max_tokens: Option<i32>,
     pub reasoning_effort: ReasoningEffort,
     pub tools: Vec<Tool>,
+    pub temperature: Option<f32>,
 }
 
 impl CompletionOption {
@@ -51,6 +52,7 @@ pub struct OptionBuilder {
     max_tokens: Option<i32>,
     reasoning_effort: ReasoningEffort,
     tools: Vec<Tool>,
+    temperature: Option<f32>,
 }
 
 impl OptionBuilder {
@@ -86,6 +88,11 @@ impl OptionBuilder {
         self
     }
 
+    pub fn temperature(mut self, temperature: f32) -> Self {
+        self.temperature = Some(temperature);
+        self
+    }
+
     pub fn build(self) -> CompletionOption {
         CompletionOption {
             insert_web_search_context: self.insert_web_search_context,
@@ -93,6 +100,7 @@ impl OptionBuilder {
             max_tokens: self.max_tokens,
             reasoning_effort: self.reasoning_effort,
             tools: self.tools,
+            temperature: self.temperature,
         }
     }
 }
