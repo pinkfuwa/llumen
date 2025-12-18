@@ -263,4 +263,30 @@ const x = 1;
 
 		expect(linkCount).toBe(0); // There should be no links in this markdown
 	});
+
+	test('parses code blocks with various indentation levels (0-3 spaces)', () => {
+		// Test with no indentation
+		const noIndent = '```js\ncode\n```';
+		const result0 = parse(noIndent);
+		expect(result0.tokens).toHaveLength(1);
+		expect(result0.tokens[0].type).toBe(TokenType.CodeBlock);
+
+		// Test with 1 space
+		const oneSpace = ' ```js\ncode\n ```';
+		const result1 = parse(oneSpace);
+		expect(result1.tokens).toHaveLength(1);
+		expect(result1.tokens[0].type).toBe(TokenType.CodeBlock);
+
+		// Test with 2 spaces
+		const twoSpaces = '  ```js\ncode\n  ```';
+		const result2 = parse(twoSpaces);
+		expect(result2.tokens).toHaveLength(1);
+		expect(result2.tokens[0].type).toBe(TokenType.CodeBlock);
+
+		// Test with 3 spaces
+		const threeSpaces = '   ```js\ncode\n   ```';
+		const result3 = parse(threeSpaces);
+		expect(result3.tokens).toHaveLength(1);
+		expect(result3.tokens[0].type).toBe(TokenType.CodeBlock);
+	});
 });
