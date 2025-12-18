@@ -179,12 +179,13 @@ export class MarkdownParser {
 	/**
 	 * Try to parse a code block (fenced with ```)
 	 * Supports open code blocks (without closing ```) for streaming
+	 * Supports indentation up to 3 spaces (CommonMark spec)
 	 */
 	private tryParseCodeBlock(): CodeBlockToken | null {
 		const start = this.position;
 		const line = this.peekLine();
 
-		const match = line.match(/^```(\w*)$/);
+		const match = line.match(/^ {0,3}```(\w*)$/);
 		if (!match) {
 			return null;
 		}
@@ -198,7 +199,8 @@ export class MarkdownParser {
 
 		while (this.position < this.source.length) {
 			const currentLine = this.peekLine();
-			if (currentLine.trim() === '```') {
+			// Also allow indented closing fence (up to 3 spaces)
+			if (currentLine.match(/^ {0,3}```\s*$/)) {
 				contentEnd = this.position;
 				this.position += currentLine.length;
 				this.skipNewlines();
@@ -582,7 +584,7 @@ export class MarkdownParser {
 	private looksLikeBlockStart(line: string): boolean {
 		return (
 			line.match(/^#{1,6}\s/) !== null ||
-			line.match(/^```/) !== null ||
+			line.match(/^ {0,3}```/) !== null ||
 			line.match(/^(---+|\*\*\*+|___+)$/) !== null ||
 			line.startsWith('>') ||
 			line.match(/^\d+\.\s/) !== null ||
