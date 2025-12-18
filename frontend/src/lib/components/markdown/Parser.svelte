@@ -102,12 +102,13 @@
 	{:else if token.type === TokenType.Image}
 		<Image token={token as ImageToken} />
 	{:else if token.type === TokenType.Citation}
+		{@const citToken = token as CitationToken}
 		<Citation
-			raw={`[@${(token as CitationToken).id}]`}
-			title={`Citation ${(token as CitationToken).id}`}
-			url=""
-			favicon=""
-			authoritative={false}
+			raw={citToken.title || `[@${citToken.id}]`}
+			title={citToken.title || `Citation ${citToken.id}`}
+			url={citToken.url || ''}
+			favicon={citToken.favicon || ''}
+			authoritative={citToken.authoritative || false}
 		/>
 	{:else if token.type === TokenType.LineBreak}
 		<Br />
