@@ -239,7 +239,14 @@ const x = 1;
 
 		const result = parse(source);
 
-		// Should have: HorizontalRule, OrderedList, CodeBlock, HorizontalRule
+		// Should have: HorizontalRule, OrderedList, Paragraph, CodeBlock, HorizontalRule
+		expect(result.tokens).toHaveLength(5);
+		expect(result.tokens[0].type).toBe(TokenType.HorizontalRule);
+		expect(result.tokens[1].type).toBe(TokenType.OrderedList);
+		expect(result.tokens[2].type).toBe(TokenType.Paragraph);
+		expect(result.tokens[3].type).toBe(TokenType.CodeBlock);
+		expect(result.tokens[4].type).toBe(TokenType.HorizontalRule);
+
 		// Check that no extra Link tokens are created
 		let linkCount = 0;
 		function countLinks(tokens: any[]) {
@@ -253,56 +260,7 @@ const x = 1;
 			}
 		}
 		countLinks(result.tokens);
-		
+
 		expect(linkCount).toBe(0); // There should be no links in this markdown
 	});
-});
-
-describe('Debug horizontal rules and code blocks', () => {
-test('trace parsing of HR-list-code-HR pattern', () => {
-const source = `---
-3. **Generate candidates**  
-   For each prompt, run a *grid* of parameter sets.  
-   \`\`\`python
-   params_list = [
-       {"temperature":0.2,"top_p":0.8,"max_tokens":8,"top_k":50},
-       {"temperature":0.5,"top_p":0.9,"max_tokens":10,"top_k":100},
-       # … add more combos
-   ]
-   \`\`\`
----`;
-
-const result = parse(source);
-
-console.log('\n=== TOKEN STRUCTURE ===');
-result.tokens.forEach((token, i) => {
-console.log(`${i}: ${token.type}`);
-if (token.children) {
-token.children.forEach((child: any, j: number) => {
-console.log(`  ${j}: ${child.type}`);
-if (child.children) {
-child.children.forEach((grandchild: any, k: number) => {
-console.log(`    ${k}: ${grandchild.type}`);
-});
-}
-});
-}
-});
-
-// Count links
-let linkCount = 0;
-function countLinks(tokens: any[]) {
-for (const token of tokens) {
-if (token.type === TokenType.Link) {
-linkCount++;
-console.log(`Found Link: url="${token.url}"`);
-}
-if (token.children) {
-countLinks(token.children);
-}
-}
-}
-countLinks(result.tokens);
-console.log(`Total links found: ${linkCount}`);
-});
 });
