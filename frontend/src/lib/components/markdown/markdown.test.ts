@@ -223,4 +223,86 @@ const x = 1;
 
 		expect(result.tokens).toHaveLength(0);
 	});
+
+	test('should not create extra links around code blocks after horizontal rules', () => {
+		const source = `---
+3. **Generate candidates**  
+   For each prompt, run a *grid* of parameter sets.  
+   \`\`\`python
+   params_list = [
+       {"temperature":0.2,"top_p":0.8,"max_tokens":8,"top_k":50},
+       {"temperature":0.5,"top_p":0.9,"max_tokens":10,"top_k":100},
+       # … add more combos
+   ]
+   \`\`\`
+---`;
+
+		const result = parse(source);
+
+		// Should have: HorizontalRule, OrderedList, CodeBlock, HorizontalRule
+		// Check that no extra Link tokens are created
+		let linkCount = 0;
+		function countLinks(tokens: any[]) {
+			for (const token of tokens) {
+				if (token.type === TokenType.Link) {
+					linkCount++;
+				}
+				if (token.children) {
+					countLinks(token.children);
+				}
+			}
+		}
+		countLinks(result.tokens);
+		
+		expect(linkCount).toBe(0); // There should be no links in this markdown
+	});
+});
+
+describe('Debug horizontal rules and code blocks', () => {
+test('trace parsing of HR-list-code-HR pattern', () => {
+const source = `---
+3. **Generate candidates**  
+   For each prompt, run a *grid* of parameter sets.  
+   \`\`\`python
+   params_list = [
+       {"temperature":0.2,"top_p":0.8,"max_tokens":8,"top_k":50},
+       {"temperature":0.5,"top_p":0.9,"max_tokens":10,"top_k":100},
+       # … add more combos
+   ]
+   \`\`\`
+---`;
+
+const result = parse(source);
+
+console.log('\n=== TOKEN STRUCTURE ===');
+result.tokens.forEach((token, i) => {
+console.log(`${i}: ${token.type}`);
+if (token.children) {
+token.children.forEach((child: any, j: number) => {
+console.log(`  ${j}: ${child.type}`);
+if (child.children) {
+child.children.forEach((grandchild: any, k: number) => {
+console.log(`    ${k}: ${grandchild.type}`);
+});
+}
+});
+}
+});
+
+// Count links
+let linkCount = 0;
+function countLinks(tokens: any[]) {
+for (const token of tokens) {
+if (token.type === TokenType.Link) {
+linkCount++;
+console.log(`Found Link: url="${token.url}"`);
+}
+if (token.children) {
+countLinks(token.children);
+}
+}
+}
+countLinks(result.tokens);
+console.log(`Total links found: ${linkCount}`);
+});
 });
