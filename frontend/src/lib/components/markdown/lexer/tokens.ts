@@ -183,10 +183,15 @@ export interface ImageToken extends Token {
 
 /**
  * Citation token (custom)
+ * Supports both inline format [@cite:id] and block format <citation>...</citation>
  */
 export interface CitationToken extends Token {
 	type: TokenType.Citation;
 	id: string;
+	title?: string;
+	url?: string;
+	favicon?: string;
+	authoritative?: boolean;
 }
 
 /**
