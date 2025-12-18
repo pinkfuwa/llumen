@@ -223,4 +223,70 @@ const x = 1;
 
 		expect(result.tokens).toHaveLength(0);
 	});
+
+	test('should not create extra links around code blocks after horizontal rules', () => {
+		const source = `---
+3. **Generate candidates**  
+   For each prompt, run a *grid* of parameter sets.  
+   \`\`\`python
+   params_list = [
+       {"temperature":0.2,"top_p":0.8,"max_tokens":8,"top_k":50},
+       {"temperature":0.5,"top_p":0.9,"max_tokens":10,"top_k":100},
+       # … add more combos
+   ]
+   \`\`\`
+---`;
+
+		const result = parse(source);
+
+		// Should have: HorizontalRule, OrderedList, Paragraph, CodeBlock, HorizontalRule
+		expect(result.tokens).toHaveLength(5);
+		expect(result.tokens[0].type).toBe(TokenType.HorizontalRule);
+		expect(result.tokens[1].type).toBe(TokenType.OrderedList);
+		expect(result.tokens[2].type).toBe(TokenType.Paragraph);
+		expect(result.tokens[3].type).toBe(TokenType.CodeBlock);
+		expect(result.tokens[4].type).toBe(TokenType.HorizontalRule);
+
+		// Check that no extra Link tokens are created
+		let linkCount = 0;
+		function countLinks(tokens: any[]) {
+			for (const token of tokens) {
+				if (token.type === TokenType.Link) {
+					linkCount++;
+				}
+				if (token.children) {
+					countLinks(token.children);
+				}
+			}
+		}
+		countLinks(result.tokens);
+
+		expect(linkCount).toBe(0); // There should be no links in this markdown
+	});
+
+	test('parses code blocks with various indentation levels (0-3 spaces)', () => {
+		// Test with no indentation
+		const noIndent = '```js\ncode\n```';
+		const result0 = parse(noIndent);
+		expect(result0.tokens).toHaveLength(1);
+		expect(result0.tokens[0].type).toBe(TokenType.CodeBlock);
+
+		// Test with 1 space
+		const oneSpace = ' ```js\ncode\n ```';
+		const result1 = parse(oneSpace);
+		expect(result1.tokens).toHaveLength(1);
+		expect(result1.tokens[0].type).toBe(TokenType.CodeBlock);
+
+		// Test with 2 spaces
+		const twoSpaces = '  ```js\ncode\n  ```';
+		const result2 = parse(twoSpaces);
+		expect(result2.tokens).toHaveLength(1);
+		expect(result2.tokens[0].type).toBe(TokenType.CodeBlock);
+
+		// Test with 3 spaces
+		const threeSpaces = '   ```js\ncode\n   ```';
+		const result3 = parse(threeSpaces);
+		expect(result3.tokens).toHaveLength(1);
+		expect(result3.tokens[0].type).toBe(TokenType.CodeBlock);
+	});
 });
