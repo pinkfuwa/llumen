@@ -253,28 +253,36 @@ impl CompletionContext {
 
         let mut messages = vec![openrouter::Message::System(system_prompt)];
 
-        self.messages.iter().for_each(|m| match &m.inner {
-            MessageInner::User { text, .. } => {
-                messages.push(openrouter::Message::User(text.clone()));
-            }
-            MessageInner::Assistant(assistant_chunks) => {
-                // Concatenate all text chunks for the title generation
-                let text = assistant_chunks
-                    .iter()
-                    .filter_map(|chunk| {
-                        if let AssistantChunk::Text(t) = chunk {
-                            Some(t.as_str())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<_>>()
-                    .join("");
-                if !text.is_empty() {
-                    messages.push(openrouter::Message::User(text));
-                }
-            }
-        });
+        if let Some(user_msg) = self.messages.iter().find_map(|m| match &m.inner {
+            MessageInner::User { text, .. } => Some(text.to_string()),
+            MessageInner::Assistant(_) => None,
+        }) {
+            messages.push(openrouter::Message::User(user_msg));
+        }
+
+        if let Some(assistant_chunks) =
+            self.message
+                .inner
+                .as_assistant()
+                .unwrap()
+                .iter()
+                .find_map(|m| match m {
+                    AssistantChunk::Text(x) => Some(x),
+                    _ => None,
+                })
+        {
+            let text = assistant_chunks.chars().take(300).collect::<String>();
+            messages.push(openrouter::Message::Assistant {
+                content: text,
+                annotations: None,
+                reasoning_details: None,
+                images: Vec::new(),
+            });
+        }
+
+        messages.push(openrouter::Message::User(
+            "Please generate a concise title, starting with a emoji".to_string(),
+        ));
 
         let model = <ModelConfig as ModelChecker>::from_toml(&self.model.config)
             .context("invalid config")?;
@@ -282,6 +290,7 @@ impl CompletionContext {
         let option = openrouter::CompletionOption::builder()
             .reasoning_effort(ReasoningEffort::Low)
             .max_tokens(512)
+            .temperature(0.2)
             .build();
 
         let completion = self

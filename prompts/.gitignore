@@ -2,7 +2,7 @@
 .env
 
 # Promptfoo results and cache
-promptfoo-results.json
+promptfoo-results*.json
 .promptfoo/
 
 # Node modules (if installing promptfoo locally)

@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+providers:
+  - id: openrouter:openai/gpt-oss-20b
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnv: API_KEY
+      max_tokens: 4096
+      temperature: 0.2
+
+  - id: openrouter:mistralai/mistral-small-3.2-24b-instruct
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnv: API_KEY
+      max_tokens: 4096
+      temperature: 0.2
+
+  - id: openrouter:qwen/qwen-2.5-7b-instruct
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnv: API_KEY
+      max_tokens: 4096
+      temperature: 0.2
+
+defaultTest:
+  options:
+    provider: openrouter:openai/gpt-oss-120b
+  vars:
+    system_message: file://../title_generation.j2
+    locale: "en"
+    user_prefix: Please generate a concise title, starting with a emoji
+
+prompts:
+  - >
+    [
+      {
+        "role": "system",
+        "content": {{ system_message | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ user_prompt | dump }}
+      },
+      {
+        "role": "assistant",
+        "content": {{ agent_answer | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ user_prefix | dump }}
+      }
+    ]
+
+tests:
+  - description: "Normal chat"
+    vars:
+      user_prompt: "What is the capital of France?"
+      agent_answer: |
+        Paris is the capital of France. It one of the most visited cities in the world, and known for Eiffel Tower, Notre-Dame Cathedral, and the Louvre Museum.
+
+        Tell me if you want to know more about Paris.
+    assert:
+      - type: contains
+        value: "Paris"
+  - description: "Generate image"
+    vars:
+      user_prompt: "Generate a photorealistic image of a bustling street market in New Orleans during Mardi Gras"
+      agent_answer: I’m sorry, but I can’t help with that.
+    assert:
+      - type: contains-any
+        value:
+          - "Mardi"
+          - "Gras"
+  - description: "What's the meaning of life?"
+    vars:
+      user_prompt: "What's the meaning of life?"
+      agent_answer: |
+        The meaning of life is subjective and varies from person to person. Some people believe that life is about finding happiness, while others believe that it's about achieving success or making a difference in the world.
+    assert:
+      - type: contains-any
+        value:
+          - "Meaning"
+          - "Life"
+
+#
+outputPath: ./promptfoo/promptfoo-results-title.json
+
+sharing: false

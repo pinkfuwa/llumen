@@ -67,6 +67,11 @@ impl Openrouter {
             }
         }
 
+        let temperature = match option.temperature {
+            Some(t) => Some(t),
+            None => model.temperature,
+        };
+
         let usage = if self.compatibility_mode {
             None
         } else {
@@ -98,7 +103,7 @@ impl Openrouter {
                 .map(|m| m.to_raw_message(&model.id, &capability))
                 .collect(),
             stream,
-            temperature: model.temperature,
+            temperature,
             repeat_penalty: model.repeat_penalty,
             top_k: model.top_k,
             top_p: model.top_p,
