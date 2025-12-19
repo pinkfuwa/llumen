@@ -2,7 +2,7 @@ set shell := ["nu", "-c"]
 
 TS_OUTPUT := "../frontend/src/lib/api/types.ts"
 
-DATABASE_URL := "sqlite://../db.sqlite?mode=rwc"
+DATA_PATH := ".."
 
 BIND_ADDR := "127.0.0.1:8001"
 
@@ -10,10 +10,10 @@ run:
     RUST_BACKTRACE=1 RUST_LOG=trace BIND_ADDR={{BIND_ADDR}} cargo run --features dev
 
 fresh:
-    cd migration; DATABASE_URL={{DATABASE_URL}} cargo run -- fresh
+    cd migration; DATA_PATH={{DATA_PATH}} cargo run -- fresh
 
 refresh:
-    cd migration; DATABASE_URL={{DATABASE_URL}} cargo run -- refresh
+    cd migration; DATA_PATH={{DATA_PATH}} cargo run -- refresh
 
 gen-ts:
     typeshare . --lang=typescript --output-file={{TS_OUTPUT}}

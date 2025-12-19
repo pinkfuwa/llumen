@@ -307,7 +307,7 @@ Handler gets UserId(user_id) extractor
 ### Environment Variables
 ```
 API_KEY=your_openrouter_key          # Required
-DATABASE_URL=sqlite://db.sqlite      # Optional
+DATA_PATH=.                          # Optional
 BIND_ADDR=0.0.0.0:8001              # Optional
 STATIC_DIR=../frontend/build         # Optional
 ```

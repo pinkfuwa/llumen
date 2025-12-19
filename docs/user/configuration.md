@@ -15,8 +15,7 @@ This guide explains how to configure Llumen through environment variables and mo
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OPENAI_API_BASE` | OpenAI-compatible API base URL | `https://openrouter.ai/api` |
-| `DATABASE_URL` | SQLite database connection string | `sqlite://data/db.sqlite?mode=rwc` |
-| `BLOB_URL` | Path for blob storage (file uploads) | `/data/blobs.redb` |
+| `DATA_PATH` | Directory path for data storage (stores `db.sqlite` and `blobs.redb`) | `.` (current directory) |
 | `BIND_ADDR` | Address and port to bind to | `0.0.0.0:80` (Docker) |
 | `TRUSTED_HEADER` | HTTP header name for header-based authentication | Not set (disabled) |
 
@@ -315,10 +314,10 @@ The default admin account credentials are:
 
 ### SQLite Options
 
-The `DATABASE_URL` supports SQLite URI parameters:
+The `DATA_PATH` specifies the directory where both `db.sqlite` and `blobs.redb` will be stored:
 
-```bash
-DATABASE_URL="sqlite://data/db.sqlite?mode=rwc"
+```
+DATA_PATH="/data"
 ```
 
 Modes:

@@ -34,7 +34,7 @@ The backend will start on `http://localhost:8001` by default.
 Create a `.env` file in `backend/` (optional):
 
 ```env
-DATABASE_URL=sqlite:db.sqlite
+DATA_PATH=.
 PORT=3000
 ```
 

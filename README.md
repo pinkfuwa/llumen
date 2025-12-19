@@ -82,7 +82,7 @@ It works out of the box, but if you want to tweak it:
 
 - `API_KEY` (required) — Your OpenRouter/Provider key.
 - `OPENAI_API_BASE` — Custom endpoint (Default: `https://openrouter.ai/api`).
-- `DATABASE_URL` — SQLite path (Default: `sqlite://data/db.sqlite?mode=rwc`).
+- `DATA_PATH` — Directory path for data storage (Default: `.`). Stores `db.sqlite` and `blobs.redb`.
 - `BIND_ADDR` — Network interface (Default: `0.0.0.0:80`).
 
 ## :book: Documentation
