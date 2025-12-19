@@ -1129,7 +1129,7 @@ export class MarkdownParser {
 	}
 
 	/**
-	 * Try to parse a line break (two spaces followed by newline)
+	 * Try to parse a line break (two spaces followed by newline or <br> tag)
 	 */
 	private tryParseLineBreak(
 		text: string,
@@ -1137,6 +1137,16 @@ export class MarkdownParser {
 		baseOffset: number
 	): LineBreakToken | null {
 		const remaining = text.substring(position);
+
+		// Check for <br>, <br/>, or <br /> tags
+		const brMatch = remaining.match(/^<br\s*\/?>/i);
+		if (brMatch) {
+			return {
+				type: TokenType.LineBreak,
+				start: baseOffset + position,
+				end: baseOffset + position + brMatch[0].length
+			};
+		}
 
 		// Check for two or more spaces followed by newline
 		const match = remaining.match(/^( {2,})(\r?\n)/);

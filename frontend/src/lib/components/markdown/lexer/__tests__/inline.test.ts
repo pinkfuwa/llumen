@@ -9,7 +9,8 @@ import type {
 	LinkToken,
 	ImageToken,
 	InlineCodeToken,
-	TextToken
+	TextToken,
+	LineBreakToken
 } from '../tokens';
 
 describe('MarkdownParser - Inline Tokens', () => {
@@ -281,6 +282,65 @@ describe('MarkdownParser - Inline Tokens', () => {
 			const para = result.tokens[0] as ParagraphToken;
 			const imageTokens = para.children?.filter((t) => t.type === TokenType.Image) || [];
 			expect(imageTokens.length).toBe(0);
+		});
+	});
+
+	describe('Line Breaks', () => {
+		test('parses <br> tag as line break', () => {
+			const markdown = 'Line one<br>Line two';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(1);
+		});
+
+		test('parses <br /> tag as line break', () => {
+			const markdown = 'Line one<br />Line two';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(1);
+		});
+
+		test('parses <br/> tag (without space) as line break', () => {
+			const markdown = 'Line one<br/>Line two';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(1);
+		});
+
+		test('parses multiple <br> tags', () => {
+			const markdown = 'Line one<br>Line two<br>Line three';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(2);
+		});
+
+		test('parses mixed <br> and <br /> tags', () => {
+			const markdown = 'Line one<br>Line two<br />Line three<br/>Line four';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(3);
+		});
+
+		test('parses two spaces followed by newline as line break', () => {
+			const markdown = 'Line one  \nLine two';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(1);
+		});
+
+		test('parses <br> with surrounding text', () => {
+			const markdown = 'Text before<br>text after with **bold**';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(1);
+			expect(para.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 		});
 	});
 
