@@ -40,10 +40,7 @@ mod routes;
 mod runner;
 mod utils;
 
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Context as _;
 use axum::{Router, middleware};
@@ -154,17 +151,6 @@ async fn shutdown_signal() {
 }
 
 /// get dir for sqlite url
-fn get_dir_from_sqlite(url: &str) -> PathBuf {
-    if !url.starts_with("sqlite://") {
-        return PathBuf::from(".");
-    }
-    let path_start = 9usize;
-    let end = url.find('?').unwrap_or(url.len());
-    let db_path = &url[path_start..end];
-    let mut path = Path::new(db_path).to_path_buf();
-    path.pop();
-    return path;
-}
 
 #[tokio::main]
 async fn main() {
@@ -179,21 +165,18 @@ async fn main() {
     let api_base = var("API_BASE").unwrap_or_else(|_| {
         var("OPENAI_API_BASE").unwrap_or("https://openrouter.ai/api".to_string())
     });
-    let database_url = var("DATABASE_URL").unwrap_or("sqlite://db.sqlite?mode=rwc".to_owned());
+    let data_path = PathBuf::from(var("DATA_PATH").unwrap_or(".".to_owned()));
+    let mut database_path = data_path.clone();
+    database_path.push("db.sqlite");
+    let database_url = format!("sqlite://{}?mode=rwc", database_path.display());
+    let mut blob_path = data_path.clone();
+    blob_path.push("blobs.redb");
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
     let static_dir = var("STATIC_DIR").unwrap_or(
         option_env!("STATIC_DIR")
             .unwrap_or("../frontend/build")
             .to_owned(),
     );
-    let blob_url = match var("BLOB_URL") {
-        Ok(x) => PathBuf::from(x),
-        Err(_) => {
-            let mut dir = get_dir_from_sqlite(&database_url);
-            dir.push("blobs.redb");
-            dir
-        }
-    };
 
     #[cfg(feature = "tracing")]
     let _db_span = info_span!("database_initialization").entered();
@@ -231,7 +214,7 @@ async fn main() {
     let openrouter = openrouter::Openrouter::new(api_key, api_base);
 
     let blob = Arc::new(
-        BlobDB::new_from_path(blob_url)
+        BlobDB::new_from_path(blob_path)
             .await
             .expect("Cannot open blob db"),
     );

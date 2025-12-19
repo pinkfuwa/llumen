@@ -80,7 +80,7 @@ docker run -it --rm \
 
 - `API_KEY`（必填）— 您的 OpenRouter/ OpenAI API Key。
 - `OPENAI_API_BASE` — 自訂API（預設：`https://openrouter.ai/api`）。
-- `DATABASE_URL` — SQLite URL（預設：`sqlite://data/db.sqlite?mode=rwc`）。
+- `DATA_PATH` — 資料儲存目錄路徑（預設：`.`）。儲存 `db.sqlite` 和 `blobs.redb`。
 - `BIND_ADDR` — 網路介面（預設：`0.0.0.0:80`）。
 
 ## :book: 文件

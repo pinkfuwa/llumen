@@ -1159,14 +1159,12 @@ export function useRoom(id: number): QueryResult<ChatReadResp> {
 
 **Required:**
 - `API_KEY` - OpenRouter API key
-- `DATABASE_URL` - SQLite connection string (optional, defaults to `sqlite://db.sqlite`)
+- `DATA_PATH` - Directory path for data storage (optional, defaults to `.`). Stores `db.sqlite` and `blobs.redb`
 - `BIND_ADDR` - Server address (optional, defaults to `0.0.0.0:8001`)
 - `STATIC_DIR` - Frontend build directory path
 
 **Optional:**
 - `OPENAI_API_BASE` - Custom API base URL (defaults to OpenRouter)
-- `BLOB_URL` - Blob storage path (defaults to `./blobs.redb`)
-
 ### Docker
 
 ```bash
