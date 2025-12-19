@@ -7,6 +7,7 @@ edition = "2024"
 default = []
 dev = []
 tracing = ["dep:tokio-console", "dep:tracing", "dep:console-subscriber", "dep:tracing-subscriber", "tokio/tracing"]
+intent_classification = ["dep:smartcore"]
 
 [profile.release]
 opt-level = "s"
@@ -50,6 +51,11 @@ csv = "1.4.0"
 infer = "0.19.0"
 webp = "0.3.1"
 getrandom = "0.3.4"
+
+[dependencies.smartcore]
+version = "0.4.8"
+optional = true
+features = ["serde", "getrandom"]
 
 [dependencies.image]
 version = "0.25.9"

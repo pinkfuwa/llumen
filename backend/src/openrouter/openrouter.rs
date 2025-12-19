@@ -27,10 +27,11 @@ async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<raw::Model>, Error
 pub struct Openrouter {
     pub(super) api_key: String,
     pub(super) chat_completion_endpoint: String,
+    pub(super) embedding_endpoint: String,
     models: Arc<RwLock<HashMap<String, raw::Model>>>,
-    pub(super) http_client: reqwest::Client,
+    http_client: reqwest::Client,
     // true if not openrouter
-    pub(super) compatibility_mode: bool,
+    compatibility_mode: bool,
 }
 
 impl Openrouter {
@@ -121,6 +122,7 @@ impl Openrouter {
         let api_base = api_base.as_ref();
         let api_key = api_key.as_ref().to_string();
 
+        let embedding_endpoint = format!("{}/v1/embeddings", api_base.trim_end_matches('/'));
         let chat_completion_endpoint =
             format!("{}/v1/chat/completions", api_base.trim_end_matches('/'));
 
@@ -156,6 +158,7 @@ impl Openrouter {
         Self {
             api_key,
             chat_completion_endpoint,
+            embedding_endpoint,
             models,
             http_client: reqwest::Client::new(),
             compatibility_mode,
@@ -438,6 +441,44 @@ impl Openrouter {
             response: result,
         })
     }
+
+    pub async fn embed(&self, model: &str, input: &[String]) -> Result<Embedding, Error> {
+        if input.is_empty() {
+            return Ok(Embedding {
+                price: 0.0,
+                response: Vec::new(),
+            });
+        }
+        let req = raw::EmbeddingBatchReq {
+            model: model.to_string(),
+            input: input.to_vec(),
+        };
+        let res = self
+            .http_client
+            .post(&self.embedding_endpoint)
+            .bearer_auth(&self.api_key)
+            .header("HTTP-Referer", HTTP_REFERER)
+            .header("X-Title", X_TITLE)
+            .json(&req)
+            .send()
+            .await
+            .map_err(Error::Http)?;
+
+        let mut result: raw::EmbeddingResponse = res.json().await.map_err(Error::Http)?;
+
+        result.data.sort_by(|a, b| a.index.cmp(&b.index));
+
+        let response = result
+            .data
+            .into_iter()
+            .map(|embedding| embedding.embedding)
+            .collect();
+
+        Ok(Embedding {
+            price: 0.0,
+            response,
+        })
+    }
 }
 
 pub struct ChatCompletion {
@@ -460,6 +501,11 @@ pub struct StructuredCompletion<T> {
     pub price: f64,
     pub token: usize,
     pub response: T,
+}
+
+pub struct Embedding {
+    pub price: f64,
+    pub response: Vec<Vec<f32>>,
 }
 
 #[cfg(debug_assertions)]
