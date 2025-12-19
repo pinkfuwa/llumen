@@ -511,3 +511,40 @@ pub struct ErrorInfo {
     pub message: String,
     pub code: Option<i32>,
 }
+
+#[derive(serde::Deserialize)]
+pub struct EmbeddingModel {
+    pub id: String,
+    pub name: Option<String>,
+}
+
+// https://openrouter.ai/api/v1/embeddings/models
+#[derive(serde::Deserialize)]
+pub struct EmbeddingModelListResponse {
+    pub data: Vec<EmbeddingModel>,
+}
+
+#[derive(serde::Serialize)]
+pub struct EmbeddingReq {
+    pub model: String,
+    pub input: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct EmbeddingBatchReq {
+    pub model: String,
+    pub input: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct EmbeddingResult {
+    pub embedding: Vec<f32>,
+    pub index: usize,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct EmbeddingResponse {
+    pub price: f64,
+    pub data: Vec<EmbeddingResult>,
+    pub usage: Option<Usage>,
+}
