@@ -158,12 +158,6 @@ impl Prompt {
             env.add_template(name, template)?;
         }
 
-        // Load README for global context
-        let readme_content = include_str!("../../../README.md");
-
-        env.add_global("repo_url", "https://github.com/pinkfuwa/llumen");
-        env.add_global("repo_readme", readme_content);
-
         Ok(Self {
             env,
             _templates: templates,
@@ -181,6 +175,8 @@ struct RenderingContext<'a> {
     locale: Option<&'a str>,
     time: String,
     user_prompt: Option<&'a str>,
+    model_name: &'a str,
+    model_provider: &'a str,
 }
 
 #[derive(Serialize, Clone)]
@@ -246,6 +242,19 @@ impl Prompt {
 
         let time = UtcDateTime::now().format(&TIME_FORMAT).unwrap();
 
+        let model_id = ctx
+            .get_model_config()
+            .ok()
+            .map(|x| x.model_id)
+            .unwrap_or_default();
+        let (model_name, model_provider) = {
+            let split = model_id.char_indices().find(|(_, x)| *x == '/');
+            match split {
+                Some((index, _)) => (&model_id[..index], &model_id[index + 1..]),
+                None => (model_id.as_str(), ""),
+            }
+        };
+
         let rendering_ctx = RenderingContext {
             model: config,
             user_id: ctx.user.id,
@@ -255,6 +264,8 @@ impl Prompt {
             locale: ctx.user.preference.locale.as_ref().map(|x| x.as_str()),
             time,
             user_prompt: ctx.latest_user_message(),
+            model_name,
+            model_provider,
         };
 
         let template_name = kind.as_str();

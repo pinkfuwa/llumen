@@ -21,8 +21,6 @@ defaultTest:
     locale: "en"
     time: "2025-12-15T12:00:00Z"
     chat_title: "null"
-    repo_readme: file://../../README.md
-    repo_url: "github.com/pinkfuwa/llumen"
 
 prompts:
   - >

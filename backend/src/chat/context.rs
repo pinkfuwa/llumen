@@ -238,6 +238,10 @@ impl CompletionContext {
         self.message.token_count += token_count;
     }
 
+    pub fn get_model_config(&self) -> anyhow::Result<ModelConfig> {
+        <ModelConfig as ModelChecker>::from_toml(&self.model.config).context("invalid config")
+    }
+
     /// Generates a title for the chat if it doesn't have one.
     async fn generate_title(&mut self) -> Result<(), anyhow::Error> {
         if !matches!(
@@ -281,8 +285,7 @@ impl CompletionContext {
             "Please generate a concise title, starting with a emoji".to_string(),
         ));
 
-        let model = <ModelConfig as ModelChecker>::from_toml(&self.model.config)
-            .context("invalid config")?;
+        let model = self.get_model_config()?;
 
         let option = openrouter::CompletionOption::builder()
             .reasoning_effort(ReasoningEffort::Low)
