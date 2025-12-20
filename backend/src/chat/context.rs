@@ -13,7 +13,6 @@ use super::{
     token::Token,
 };
 use crate::chat::Configurations;
-use crate::chat::deep_prompt::DeepPrompt;
 use crate::utils::model::ModelChecker;
 use crate::{
     chat::prompt::PromptKind,
@@ -34,12 +33,11 @@ pub struct Context {
     pub(super) db: DatabaseConnection,
     pub(super) openrouter: openrouter::Openrouter,
     pub(super) channel: Arc<channel::Context<Token>>,
-    pub(super) prompt: Prompt,
+    pub(super) prompt: Arc<Prompt>,
     pub(super) blob: Arc<BlobDB>,
     pub(super) web_search_tool: Arc<WebSearchTool>,
     pub(super) crawl_tool: Arc<CrawlTool>,
     pub(super) lua_repl_tool: Arc<LuaReplTool>,
-    pub(super) deep_prompt: Arc<DeepPrompt>,
     pub configurations: Configurations,
 }
 
@@ -54,12 +52,11 @@ impl Context {
             db,
             openrouter,
             channel: Arc::new(channel::Context::new()),
-            prompt: Prompt::new(),
+            prompt: Arc::new(Prompt::new()?),
             blob,
             web_search_tool: Arc::new(WebSearchTool::new()),
             crawl_tool: Arc::new(CrawlTool::new()),
             lua_repl_tool: Arc::new(LuaReplTool::new()),
-            deep_prompt: Arc::new(DeepPrompt::new()),
             configurations: Configurations::new(),
         })
     }

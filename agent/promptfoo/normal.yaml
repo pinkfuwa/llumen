@@ -17,7 +17,7 @@ defaultTest:
   options:
     provider: openrouter:openai/gpt-oss-120b
   vars:
-    system_message: file://../normal.j2
+    system_message: file://../prompt/normal.j2
     locale: "en"
     time: "2025-12-15T12:00:00Z"
     chat_title: "null"

@@ -20,10 +20,8 @@ WORKDIR /data
 WORKDIR /
 
 COPY --from=ca /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY ./frontend/build /static
 COPY ./artifacts/${TARGETPLATFORM}/backend /backend
 
-ENV STATIC_DIR="/static"
 ENV DATA_PATH="/data"
 ENV BIND_ADDR="0.0.0.0:80"
 ENV RUST_LOG=none,backend=debug

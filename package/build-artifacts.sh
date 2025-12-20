@@ -9,16 +9,8 @@ echo "--- Preparing to build artifacts for target: $TARGET_TRIPLE ---"
 ARTIFACTS_DIR="$(pwd)/artifacts"
 mkdir -p "$ARTIFACTS_DIR"
 
-TMP_DIR=$(mktemp -d -p "$ARTIFACTS_DIR")
-
-trap 'rm -rf -- "$TMP_DIR"' EXIT
-
-echo "--- Building backend ---"
-(cd backend && STATIC_DIR=./static cargo zigbuild --release --target "$TARGET_TRIPLE")
-
 echo "--- Building frontend ---"
 (cd frontend && NOMAP=T pnpm build)
-find frontend/build -type f -name "*.gz" -delete
 
 echo "--- Assembling artifacts in $TMP_DIR ---"
 
@@ -30,9 +22,9 @@ touch "$TMP_DIR/llumen/.env"
 
 mv "backend/target/$TARGET_TRIPLE/release/backend" "$TMP_DIR/llumen/llumen"
 
-echo "--- Creating compressed tarball ---"
+echo "--- Copying binary to artifacts ---"
 
-TARBALL_PATH="$ARTIFACTS_DIR/$TARGET_TRIPLE.tar.gz"
-tar -czf "$TARBALL_PATH" -C "$TMP_DIR" .
+BINARY_PATH="$ARTIFACTS_DIR/llumen-$TARGET_TRIPLE"
+cp "backend/target/$TARGET_TRIPLE/release/backend" "$BINARY_PATH"
 
-echo "--- Artifact created successfully: $TARBALL_PATH ---"
+echo "--- Artifact created successfully: $BINARY_PATH ---"

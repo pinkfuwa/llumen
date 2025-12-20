@@ -1,5 +1,7 @@
+use anyhow::Result;
 use minijinja::Environment;
 use protocol::ModelConfig;
+use rust_embed_for_web::{EmbedableFile, RustEmbed};
 use serde::Serialize;
 use time::UtcDateTime;
 use time::format_description::BorrowedFormatItem;
@@ -8,6 +10,12 @@ use time::macros::format_description;
 use crate::utils::model::ModelChecker;
 
 use super::context::CompletionContext;
+
+#[derive(RustEmbed)]
+#[folder = "../agent/prompt"]
+#[br = false]
+#[gzip = false]
+struct PromptAssets;
 
 #[derive(Debug, Clone, Copy)]
 pub enum PromptKind {
@@ -26,32 +34,140 @@ impl PromptKind {
             PromptKind::Coordinator => "coordinator",
         }
     }
+
+    fn file_name(&self) -> &'static str {
+        match self {
+            PromptKind::Normal => "normal.j2",
+            PromptKind::Search => "search.j2",
+            PromptKind::TitleGen => "title_generation.j2",
+            PromptKind::Coordinator => "coordinator.j2",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum DeepPromptKind {
+    Coordinator,
+    PromptEnhancer,
+    Planner,
+    Researcher,
+    Coder,
+    Reporter,
+    StepSystemMessage,
+    StepInput,
+    ReportInput,
+}
+
+impl DeepPromptKind {
+    fn as_str(&self) -> &'static str {
+        match self {
+            DeepPromptKind::Coordinator => "deep_coordinator",
+            DeepPromptKind::PromptEnhancer => "deep_prompt_enhancer",
+            DeepPromptKind::Planner => "deep_planner",
+            DeepPromptKind::Researcher => "deep_researcher",
+            DeepPromptKind::Coder => "deep_coder",
+            DeepPromptKind::Reporter => "deep_reporter",
+            DeepPromptKind::StepSystemMessage => "step_system_message",
+            DeepPromptKind::StepInput => "step_input",
+            DeepPromptKind::ReportInput => "report_input",
+        }
+    }
+
+    fn file_name(&self) -> &'static str {
+        match self {
+            DeepPromptKind::Coordinator => "deepresearch/coordinator.j2",
+            DeepPromptKind::PromptEnhancer => "deepresearch/prompt_enhancer.j2",
+            DeepPromptKind::Planner => "deepresearch/planner.j2",
+            DeepPromptKind::Researcher => "deepresearch/researcher.j2",
+            DeepPromptKind::Coder => "deepresearch/coder.j2",
+            DeepPromptKind::Reporter => "deepresearch/reporter.j2",
+            DeepPromptKind::StepSystemMessage => "deepresearch/step_system_message.j2",
+            DeepPromptKind::StepInput => "deepresearch/step_input.j2",
+            DeepPromptKind::ReportInput => "deepresearch/report_input.j2",
+        }
+    }
 }
 
 pub struct Prompt {
     env: Environment<'static>,
+    _templates: Vec<String>,
 }
 
 impl Prompt {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self> {
+        let mut templates = Vec::new();
         let mut env = Environment::new();
-        env.add_template(
-            "title",
-            include_str!("../../../prompts/title_generation.j2"),
-        )
-        .unwrap();
-        env.add_template("normal", include_str!("../../../prompts/normal.j2"))
-            .unwrap();
-        env.add_template("search", include_str!("../../../prompts/search.j2"))
-            .unwrap();
-        env.add_template(
-            "coordinator",
-            include_str!("../../../prompts/coordinator.j2"),
-        )
-        .unwrap();
+
+        // Load normal prompts
+        for kind in [
+            PromptKind::Normal,
+            PromptKind::Search,
+            PromptKind::TitleGen,
+            PromptKind::Coordinator,
+        ] {
+            let content = PromptAssets::get(kind.file_name())
+                .ok_or_else(|| anyhow::anyhow!("Prompt file not found: {}", kind.file_name()))?;
+            let template_str = std::str::from_utf8(content.data().as_ref())?.to_string();
+            templates.push(template_str);
+        }
+
+        // Load deep research prompts
+        for kind in [
+            DeepPromptKind::Coordinator,
+            DeepPromptKind::PromptEnhancer,
+            DeepPromptKind::Planner,
+            DeepPromptKind::Researcher,
+            DeepPromptKind::Coder,
+            DeepPromptKind::Reporter,
+            DeepPromptKind::StepSystemMessage,
+            DeepPromptKind::StepInput,
+            DeepPromptKind::ReportInput,
+        ] {
+            let content = PromptAssets::get(kind.file_name())
+                .ok_or_else(|| anyhow::anyhow!("Prompt file not found: {}", kind.file_name()))?;
+            let template_str = std::str::from_utf8(content.data().as_ref())?.to_string();
+            templates.push(template_str);
+        }
+
+        // Add templates to environment using leaked static references
+        let template_refs: Vec<&'static str> = templates
+            .iter()
+            .map(|s| {
+                let leaked: &'static str = Box::leak(s.clone().into_boxed_str());
+                leaked
+            })
+            .collect();
+
+        let kinds = [
+            PromptKind::Normal.as_str(),
+            PromptKind::Search.as_str(),
+            PromptKind::TitleGen.as_str(),
+            PromptKind::Coordinator.as_str(),
+            DeepPromptKind::Coordinator.as_str(),
+            DeepPromptKind::PromptEnhancer.as_str(),
+            DeepPromptKind::Planner.as_str(),
+            DeepPromptKind::Researcher.as_str(),
+            DeepPromptKind::Coder.as_str(),
+            DeepPromptKind::Reporter.as_str(),
+            DeepPromptKind::StepSystemMessage.as_str(),
+            DeepPromptKind::StepInput.as_str(),
+            DeepPromptKind::ReportInput.as_str(),
+        ];
+
+        for (name, template) in kinds.iter().zip(template_refs.iter()) {
+            env.add_template(name, template)?;
+        }
+
+        // Load README for global context
+        let readme_content = include_str!("../../../README.md");
+
         env.add_global("repo_url", "https://github.com/pinkfuwa/llumen");
-        env.add_global("repo_readme", include_str!("../../../README.md"));
-        Self { env }
+        env.add_global("repo_readme", readme_content);
+
+        Ok(Self {
+            env,
+            _templates: templates,
+        })
     }
 }
 
@@ -67,8 +183,55 @@ struct RenderingContext<'a> {
     user_prompt: Option<&'a str>,
 }
 
+#[derive(Serialize, Clone)]
+pub struct CompletedStep<'a> {
+    pub title: &'a str,
+    pub content: &'a str,
+}
+
+#[derive(Serialize)]
+pub struct StepInputContext<'a> {
+    pub locale: &'a str,
+    pub plan_title: &'a str,
+    pub completed_steps: Vec<CompletedStep<'a>>,
+    pub current_step_title: &'a str,
+    pub current_step_description: &'a str,
+}
+
+#[derive(Serialize)]
+pub struct ReportInputContext<'a> {
+    pub locale: &'a str,
+    pub plan_title: &'a str,
+    pub completed_steps: Vec<CompletedStep<'a>>,
+    pub enhanced_prompt: &'a str,
+}
+
+#[derive(Serialize)]
+struct BasicContext {
+    pub time: String,
+    pub locale: String,
+    pub max_step_num: usize,
+}
+
+impl BasicContext {
+    pub fn new(locale: String) -> Self {
+        let time = time::OffsetDateTime::now_utc()
+            .format(&DEEP_TIME_FORMAT)
+            .unwrap();
+        BasicContext {
+            time,
+            locale,
+            max_step_num: 8,
+        }
+    }
+}
+
+// improve prompt caching by offering day time instead of hour
 const TIME_FORMAT: &[BorrowedFormatItem<'static>] =
     format_description!("[weekday], [year]-[month]-[day]");
+
+const DEEP_TIME_FORMAT: &[BorrowedFormatItem<'static>] =
+    format_description!("[weekday], [hour]:[minute], [day] [month] [year]");
 
 impl Prompt {
     pub fn render(
@@ -97,5 +260,65 @@ impl Prompt {
         let template_name = kind.as_str();
         let template = self.env.get_template(template_name)?;
         template.render(rendering_ctx)
+    }
+
+    pub fn render_prompt_enhancer(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
+        let template = self
+            .env
+            .get_template(DeepPromptKind::PromptEnhancer.as_str())?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_planner(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
+        let template = self.env.get_template(DeepPromptKind::Planner.as_str())?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_researcher(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
+        let template = self.env.get_template(DeepPromptKind::Researcher.as_str())?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_coder(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
+        let template = self.env.get_template(DeepPromptKind::Coder.as_str())?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_reporter(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
+        let template = self.env.get_template(DeepPromptKind::Reporter.as_str())?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_step_system_message(&self, locale: &str) -> Result<String> {
+        let ctx = BasicContext::new(locale.to_string());
+        let template = self
+            .env
+            .get_template(DeepPromptKind::StepSystemMessage.as_str())?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_step_input(&self, ctx: &StepInputContext) -> Result<String> {
+        let template = self.env.get_template(DeepPromptKind::StepInput.as_str())?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
+    }
+
+    pub fn render_report_input(&self, ctx: &ReportInputContext) -> Result<String> {
+        let template = self
+            .env
+            .get_template(DeepPromptKind::ReportInput.as_str())?;
+        let rendered = template.render(&ctx)?;
+        Ok(rendered)
     }
 }
