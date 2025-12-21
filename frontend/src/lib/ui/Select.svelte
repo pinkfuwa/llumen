@@ -66,7 +66,7 @@
 	</Select.Trigger>
 	<Select.Portal>
 		<Select.Content
-			class="z-50 max-h-48 rounded-xl border border-outline bg-input text-text outline-hidden select-none data-[side=bottom]:translate-y-1 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:-translate-y-1 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 {popupClass} "
+			class="z-20 max-h-48 rounded-xl border border-outline bg-input text-text outline-hidden select-none data-[side=bottom]:translate-y-1 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:-translate-y-1 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 {popupClass} "
 			sideOffset={10}
 		>
 			<Select.Viewport class="rounded-xl bg-clip-padding">
