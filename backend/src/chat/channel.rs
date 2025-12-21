@@ -172,34 +172,13 @@ pub struct Publisher<S: Mergeable> {
 impl<S: Mergeable + Clone + Send + 'static> Publisher<S> {
     pub fn publish(&mut self, item: S) {
         let mut buffer = self.inner.buffer.lock().unwrap();
-        let item_len = item.len();
-        log::debug!(
-            "Publisher::publish: buffer_len_before={}, item_len={}",
-            buffer.len(),
-            item_len
-        );
         if let Some(last) = buffer.last_mut() {
-            let last_len_before = last.len();
             if let Some(rest) = last.merge(item) {
-                let rest_len = rest.len();
-                log::debug!(
-                    "Publisher::publish: merge failed, last_len={}, pushing rest with len={}",
-                    last.len(),
-                    rest_len
-                );
                 buffer.push(rest);
-            } else {
-                log::debug!(
-                    "Publisher::publish: merged successfully, last_len: {} -> {}",
-                    last_len_before,
-                    last.len()
-                );
             }
         } else {
-            log::debug!("Publisher::publish: buffer was empty, pushing first item");
             buffer.push(item);
         }
-        log::debug!("Publisher::publish: buffer_len_after={}", buffer.len());
         self.sender.send_replace(());
     }
     pub fn wait_halt(&self) -> impl Future<Output = ()> + Send + 'static {
@@ -231,14 +210,6 @@ fn advance_cursor<S: Mergeable>(cursor: &mut Cursor, shared_buffer: &[S]) -> Opt
     let item = shared_buffer.get(index)?;
     let len = item.len();
 
-    log::debug!(
-        "advance_cursor: cursor=({}, {}), buffer_len={}, item_len={}",
-        index,
-        offset,
-        shared_buffer.len(),
-        len
-    );
-
     if offset == len {
         if index + 1 < shared_buffer.len() {
             cursor.index += 1;
@@ -254,19 +225,9 @@ fn advance_cursor<S: Mergeable>(cursor: &mut Cursor, shared_buffer: &[S]) -> Opt
 
     // Try to slice; if it fails due to invalid UTF-8 boundary, skip to next item
     match item.slice(offset..len) {
-        Some(sliced) => {
-            log::debug!(
-                "advance_cursor: returning slice from {}..{}, new_cursor=({}, {})",
-                offset,
-                len,
-                cursor.index,
-                cursor.offset
-            );
-            Some(sliced)
-        }
+        Some(sliced) => Some(sliced),
         None => {
             // Invalid boundary, skip to next item
-            log::debug!("advance_cursor: invalid UTF-8 boundary at {}..{}, skipping to next item", offset, len);
             if index + 1 < shared_buffer.len() {
                 cursor.index += 1;
                 cursor.offset = 0;
