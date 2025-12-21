@@ -331,7 +331,8 @@ impl StreamCompletion {
     }
 }
 
-// Please be aware that Stream implementation will skip empty string tokens
+// Please be aware that the Stream implementation returns all tokens, including empty ones.
+// Empty tokens are filtered at higher levels (Token conversion and subscriber).
 
 // For compatibility reason, we don't treat null and empty string differently
 //
@@ -344,16 +345,8 @@ impl Stream for StreamCompletion {
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<Self::Item>> {
         let this = &mut *self;
-        loop {
-            let fut = StreamCompletion::next(this);
-            let result = Box::pin(fut).poll_unpin(cx);
-            if let task::Poll::Ready(Some(Ok(ref t))) = result {
-                if StreamCompletionResp::is_empty(t) {
-                    continue;
-                }
-            }
-            return result;
-        }
+        let fut = StreamCompletion::next(this);
+        Box::pin(fut).poll_unpin(cx)
     }
 }
 

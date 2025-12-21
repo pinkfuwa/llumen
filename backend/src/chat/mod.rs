@@ -1,4 +1,6 @@
 mod channel;
+#[cfg(test)]
+mod channel_test;
 pub use channel::Cursor;
 mod configs;
 mod context;
