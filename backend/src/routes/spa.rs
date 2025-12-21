@@ -121,15 +121,19 @@ pub async fn spa_handler(uri: Uri, req: Request<Body>) -> Response<Body> {
 
     let body = build_body(&file, &mut br);
 
+    let is_index = file.name().ends_with("index.html");
+
     let mut builder = Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, file.mime_type().unwrap());
 
     if current_version.map(|x| x == version).unwrap_or_default() {
-        builder = builder.header(
-            header::CACHE_CONTROL,
-            HeaderValue::from_static("public, max-age=31536000, immutable"),
-        );
+        if !is_index {
+            builder = builder.header(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static("public, max-age=31536000, immutable"),
+            );
+        }
     } else {
         let cookie_val = format!("app_version={}; Path=/; SameSite=Lax", version);
         builder = builder
