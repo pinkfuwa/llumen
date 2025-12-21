@@ -8,7 +8,7 @@
 
 {#if $error != null}
 	<button
-		class="fixed top-0 right-0 z-20 m-3 rounded-md border border-outline bg-component-bg px-3 py-2 text-left"
+		class="fixed top-0 right-0 z-50 m-3 rounded-md border border-outline bg-component-bg px-3 py-2 text-left"
 		in:fade={{ duration: 150 }}
 		out:fade={{ duration: 150 }}
 		onmouseleave={dismissError}

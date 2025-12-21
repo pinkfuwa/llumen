@@ -21,10 +21,10 @@
 	<SettingBtn bind:value />
 	<Dialog.Portal>
 		<Dialog.Overlay
-			class="fixed inset-0 z-50 backdrop-blur-md fade-in-100 fade-out-0 data-[state=closed]:animate-out data-[state=open]:animate-in"
+			class="fixed inset-0 z-20 backdrop-blur-md fade-in-100 fade-out-0 data-[state=closed]:animate-out data-[state=open]:animate-in"
 		/>
 		<Dialog.Content
-			class="fixed inset-0 z-50 m-2 flex max-w-4xl rounded-xl border border-outline bg-popup-bg p-3 font-mono text-text fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:m-auto md:h-[min(80vh,48rem)] md:w-full"
+			class="fixed inset-0 z-20 m-2 flex max-w-4xl rounded-xl border border-outline bg-popup-bg p-3 font-mono text-text fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:m-auto md:h-[min(80vh,48rem)] md:w-full"
 		>
 			<Dialog.Close
 				class="focus-visible:ring-foreground focus-visible:ring-offset-background absolute top-5 right-5 rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.98]"
