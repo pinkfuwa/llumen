@@ -24,6 +24,7 @@ pub struct Configuration {
             + Sync,
     >,
     pub prompt: prompt::PromptKind,
+    pub inject_context: bool,
 }
 
 pub struct ProcessState {
@@ -39,6 +40,7 @@ impl Configuration {
         ctx: Arc<Context>,
         completion_ctx: CompletionContext,
     ) -> BoxFuture<'static, Result<()>> {
+        let inject_context = self.inject_context;
         let prompt = self.prompt;
         let completion_option = self.completion_option.clone();
         let tool_handler = self.tool_handler.clone();
@@ -53,6 +55,11 @@ impl Configuration {
 
             for m in &completion_ctx.messages {
                 messages.extend(db_message_to_openrouter(&ctx, &m.inner).await?);
+            }
+
+            if inject_context {
+                let context_message = ctx.prompt.render_context(&completion_ctx)?;
+                messages.push(openrouter::Message::User(context_message));
             }
 
             let mut state = ProcessState {

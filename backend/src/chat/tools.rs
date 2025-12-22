@@ -321,7 +321,6 @@ mod tests {
 
         // May fail due to rate limiting or network issues
         if let Ok(results) = results {
-            dbg!(&results);
             assert!(!results.is_empty() || true); // Always pass - search results may vary
         }
     }

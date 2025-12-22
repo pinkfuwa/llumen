@@ -23,6 +23,7 @@ pub enum PromptKind {
     Search,
     TitleGen,
     Coordinator,
+    Context,
 }
 
 impl PromptKind {
@@ -32,6 +33,7 @@ impl PromptKind {
             PromptKind::Search => "search",
             PromptKind::TitleGen => "title",
             PromptKind::Coordinator => "coordinator",
+            PromptKind::Context => "context",
         }
     }
 
@@ -41,6 +43,7 @@ impl PromptKind {
             PromptKind::Search => "search.j2",
             PromptKind::TitleGen => "title_generation.j2",
             PromptKind::Coordinator => "coordinator.j2",
+            PromptKind::Context => "context.j2",
         }
     }
 }
@@ -104,6 +107,7 @@ impl Prompt {
             PromptKind::Search,
             PromptKind::TitleGen,
             PromptKind::Coordinator,
+            PromptKind::Context,
         ] {
             let content = PromptAssets::get(kind.file_name())
                 .ok_or_else(|| anyhow::anyhow!("Prompt file not found: {}", kind.file_name()))?;
@@ -143,6 +147,7 @@ impl Prompt {
             PromptKind::Search.as_str(),
             PromptKind::TitleGen.as_str(),
             PromptKind::Coordinator.as_str(),
+            PromptKind::Context.as_str(),
             DeepPromptKind::Coordinator.as_str(),
             DeepPromptKind::PromptEnhancer.as_str(),
             DeepPromptKind::Planner.as_str(),
@@ -177,6 +182,13 @@ struct RenderingContext<'a> {
     user_prompt: Option<&'a str>,
     model_name: &'a str,
     model_provider: &'a str,
+}
+
+#[derive(Serialize)]
+struct ContextRenderingContext<'a> {
+    chat_title: Option<&'a str>,
+    time: String,
+    llumen_related: bool,
 }
 
 #[derive(Serialize, Clone)]
@@ -227,6 +239,9 @@ const TIME_FORMAT: &[BorrowedFormatItem<'static>] =
     format_description!("[weekday], [year]-[month]-[day]");
 
 const DEEP_TIME_FORMAT: &[BorrowedFormatItem<'static>] =
+    format_description!("[weekday], [hour]:[minute]:[second], [day] [month] [year]");
+
+const CONTEXT_TIME_FORMAT: &[BorrowedFormatItem<'static>] =
     format_description!("[weekday], [hour]:[minute], [day] [month] [year]");
 
 impl Prompt {
@@ -270,6 +285,29 @@ impl Prompt {
 
         let template_name = kind.as_str();
         let template = self.env.get_template(template_name)?;
+        template.render(rendering_ctx)
+    }
+
+    pub fn render_context(&self, ctx: &CompletionContext) -> Result<String, minijinja::Error> {
+        let chat_title = ctx.chat.title.try_as_ref();
+        let chat_title = chat_title.and_then(|x| x.as_deref());
+
+        let time = UtcDateTime::now().format(&CONTEXT_TIME_FORMAT).unwrap();
+
+        let user_prompt = ctx.latest_user_message().unwrap_or("");
+        let llumen_related = user_prompt.to_lowercase().contains("llumen")
+            || user_prompt.contains("流明")
+            || user_prompt.to_lowercase().contains("app")
+            || user_prompt.to_lowercase().contains("you")
+            || user_prompt.to_lowercase().contains("self-analysis");
+
+        let rendering_ctx = ContextRenderingContext {
+            chat_title,
+            time,
+            llumen_related,
+        };
+
+        let template = self.env.get_template(PromptKind::Context.as_str())?;
         template.render(rendering_ctx)
     }
 
