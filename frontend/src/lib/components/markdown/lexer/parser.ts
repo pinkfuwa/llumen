@@ -952,7 +952,7 @@ export class MarkdownParser {
 		if (angleBracketMatch) {
 			const url = angleBracketMatch[1];
 			
-			// Create a text token with the URL as content
+			// For angle-bracketed URLs, the URL itself is displayed as the link text
 			const textToken: TextToken = {
 				type: TokenType.Text,
 				content: url,
