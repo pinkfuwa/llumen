@@ -7,6 +7,8 @@
 	const content = $derived(token.content);
 </script>
 
-<div class="my-4">
-	<LatexComponent text={content} displayMode />
+<div class="my-4 flex justify-center">
+	<div class="overflow-x-auto">
+		<LatexComponent text={content} displayMode />
+	</div>
 </div>
