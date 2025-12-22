@@ -946,6 +946,30 @@ export class MarkdownParser {
 	 */
 	private tryParseLink(text: string, position: number, baseOffset: number): LinkToken | null {
 		const remaining = text.substring(position);
+		
+		// Try angle-bracketed URL format first: <https://example.com>
+		const angleBracketMatch = remaining.match(/^<(https?:\/\/[^>]+)>/);
+		if (angleBracketMatch) {
+			const url = angleBracketMatch[1];
+			
+			// Create a text token with the URL as content
+			const textToken: TextToken = {
+				type: TokenType.Text,
+				content: url,
+				start: baseOffset + position + 1,
+				end: baseOffset + position + 1 + url.length
+			};
+
+			return {
+				type: TokenType.Link,
+				url,
+				children: [textToken],
+				start: baseOffset + position,
+				end: baseOffset + position + angleBracketMatch[0].length
+			};
+		}
+		
+		// Try standard markdown link format: [text](url)
 		const match = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
 
 		if (!match) {
