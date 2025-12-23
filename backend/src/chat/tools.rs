@@ -202,7 +202,8 @@ impl WebSearchTool {
         Ok(results)
     }
 
-    /// Removes HTML tags and trims whitespace from text
+    /// Removes HTML tags and normalizes whitespace from text
+    /// Preserves consecutive spaces but converts tabs and newlines to spaces
     fn clean_html_text(html: &str) -> String {
         let mut result = String::new();
         let mut in_tag = false;
@@ -211,12 +212,20 @@ impl WebSearchTool {
             match ch {
                 '<' => in_tag = true,
                 '>' => in_tag = false,
-                _ if !in_tag => result.push(ch),
+                _ if !in_tag => {
+                    // Convert tabs and newlines to spaces, but preserve regular spaces
+                    if ch == '\t' || ch == '\n' || ch == '\r' {
+                        result.push(' ');
+                    } else {
+                        result.push(ch);
+                    }
+                }
                 _ => {}
             }
         }
 
-        result.split_whitespace().collect::<Vec<_>>().join(" ")
+        // Trim leading and trailing whitespace
+        result.trim().to_string()
     }
 }
 
@@ -358,5 +367,37 @@ mod tests {
             let error_str = e.to_string().to_lowercase();
             assert!(error_str.contains("private") || error_str.contains("invalid"));
         }
+    }
+
+    #[test]
+    fn test_clean_html_text_preserves_multiple_spaces() {
+        // Test that multiple spaces are preserved
+        let input = "Research student   |  June 2025 - Sep 2025";
+        let result = WebSearchTool::clean_html_text(input);
+        assert_eq!(result, "Research student   |  June 2025 - Sep 2025");
+    }
+
+    #[test]
+    fn test_clean_html_text_removes_tags() {
+        // Test that HTML tags are removed
+        let input = "<b>Hello</b> <i>World</i>";
+        let result = WebSearchTool::clean_html_text(input);
+        assert_eq!(result, "Hello World");
+    }
+
+    #[test]
+    fn test_clean_html_text_normalizes_whitespace() {
+        // Test that tabs and newlines are converted to spaces
+        let input = "Hello\tWorld\nTest";
+        let result = WebSearchTool::clean_html_text(input);
+        assert_eq!(result, "Hello World Test");
+    }
+
+    #[test]
+    fn test_clean_html_text_complex() {
+        // Test combination of tags and multiple spaces
+        let input = "<div>Research student   |  <span>June 2025</span> - Sep 2025</div>";
+        let result = WebSearchTool::clean_html_text(input);
+        assert_eq!(result, "Research student   |  June 2025 - Sep 2025");
     }
 }
