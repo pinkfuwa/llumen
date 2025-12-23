@@ -444,7 +444,10 @@ export class MarkdownParser {
 	 */
 	private isTableRow(line: string): boolean {
 		const trimmed = line.trim();
-		return trimmed.includes('|') || trimmed.includes('\t');
+		// For pipe-separated tables, require at least 2 pipes (for at least 2 columns)
+		// For tab-separated tables, require at least one tab
+		const pipeCount = (trimmed.match(/\|/g) || []).length;
+		return pipeCount >= 2 || trimmed.includes('\t');
 	}
 
 	/**
