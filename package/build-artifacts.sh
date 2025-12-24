@@ -12,19 +12,15 @@ mkdir -p "$ARTIFACTS_DIR"
 echo "--- Building frontend ---"
 (cd frontend && NOMAP=T pnpm build)
 
-echo "--- Assembling artifacts in $TMP_DIR ---"
+echo "--- Building backend ---"
+if [[ "$TARGET_TRIPLE" == *"-musl"* ]] || [[ "$TARGET_TRIPLE" == "aarch64-unknown-linux-gnu" ]]; then
+  (cd backend && cargo zigbuild --release --target "$TARGET_TRIPLE")
+else
+  (cd backend && cargo build --release --target "$TARGET_TRIPLE")
+fi
 
-mkdir "$TMP_DIR/llumen"
+echo "--- Copying binary to artifacts directory ---"
 
-mv frontend/build "$TMP_DIR/llumen/static"
+cp "backend/target/$TARGET_TRIPLE/release/backend" "$ARTIFACTS_DIR/llumen-$TARGET_TRIPLE"
 
-touch "$TMP_DIR/llumen/.env"
-
-mv "backend/target/$TARGET_TRIPLE/release/backend" "$TMP_DIR/llumen/llumen"
-
-echo "--- Copying binary to artifacts ---"
-
-BINARY_PATH="$ARTIFACTS_DIR/llumen-$TARGET_TRIPLE"
-cp "backend/target/$TARGET_TRIPLE/release/backend" "$BINARY_PATH"
-
-echo "--- Artifact created successfully: $BINARY_PATH ---"
+echo "--- Artifact created successfully: $ARTIFACTS_DIR/llumen-$TARGET_TRIPLE ---"
