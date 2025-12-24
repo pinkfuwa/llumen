@@ -309,7 +309,6 @@ Handler gets UserId(user_id) extractor
 API_KEY=your_openrouter_key          # Required
 DATA_PATH=.                          # Optional
 BIND_ADDR=0.0.0.0:8001              # Optional
-STATIC_DIR=../frontend/build         # Optional
 ```
 
 ### Memory Budget (1GB Target)

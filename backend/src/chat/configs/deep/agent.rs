@@ -8,7 +8,7 @@ use tokio_stream::StreamExt;
 use super::helper::*;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
-use crate::chat::deep_prompt::{CompletedStep, ReportInputContext, StepInputContext};
+use crate::chat::prompt::{CompletedStep, ReportInputContext, StepInputContext};
 use crate::chat::tools::{get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def};
 use crate::chat::{CompletionContext, Context, Token};
 use crate::openrouter::{self, ReasoningEffort};
@@ -71,10 +71,7 @@ impl<'a> DeepAgent<'a> {
     async fn enhance(&mut self) -> Result<()> {
         let original_prompt = self.completion_ctx.latest_user_message().unwrap_or("");
 
-        let system_prompt = self
-            .ctx
-            .deep_prompt
-            .render_prompt_enhancer(self.get_locale())?;
+        let system_prompt = self.ctx.prompt.render_prompt_enhancer(self.get_locale())?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
@@ -118,7 +115,7 @@ impl<'a> DeepAgent<'a> {
         Ok(())
     }
     async fn plan(&mut self) -> Result<()> {
-        let system_prompt = self.ctx.deep_prompt.render_planner(self.get_locale())?;
+        let system_prompt = self.ctx.prompt.render_planner(self.get_locale())?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),
@@ -170,14 +167,14 @@ impl<'a> DeepAgent<'a> {
 
         let (system_prompt, tools) = if step.kind == StepKind::Code {
             let tools = vec![get_lua_repl_def()];
-            let system_prompt = self.ctx.deep_prompt.render_coder(locale)?;
+            let system_prompt = self.ctx.prompt.render_coder(locale)?;
             (system_prompt, tools)
         } else {
             let mut tools = vec![get_crawl_tool_def()];
             if step.need_search {
                 tools.push(get_web_search_tool_def());
             }
-            let system_prompt = self.ctx.deep_prompt.render_researcher(locale)?;
+            let system_prompt = self.ctx.prompt.render_researcher(locale)?;
             (system_prompt, tools)
         };
 
@@ -203,10 +200,10 @@ impl<'a> DeepAgent<'a> {
             current_step_description: step.description.as_str(),
         };
         // Render step input using template
-        let step_input = self.ctx.deep_prompt.render_step_input(&step_input_ctx)?;
+        let step_input = self.ctx.prompt.render_step_input(&step_input_ctx)?;
         let step_system_message = self
             .ctx
-            .deep_prompt
+            .prompt
             .render_step_system_message(self.get_locale())?;
 
         let mut progress = Vec::new();
@@ -315,11 +312,8 @@ impl<'a> DeepAgent<'a> {
             enhanced_prompt: self.enhanced_prompt.as_str(),
         };
 
-        let system_prompt = self.ctx.deep_prompt.render_reporter(&self.get_locale())?;
-        let report_input = self
-            .ctx
-            .deep_prompt
-            .render_report_input(&report_input_ctx)?;
+        let system_prompt = self.ctx.prompt.render_reporter(&self.get_locale())?;
+        let report_input = self.ctx.prompt.render_report_input(&report_input_ctx)?;
 
         let messages = vec![
             openrouter::Message::System(system_prompt),

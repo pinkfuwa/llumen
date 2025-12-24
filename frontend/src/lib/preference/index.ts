@@ -26,7 +26,7 @@ function defaultPreference(): Required<UserPreference> {
 		locale: navigator.language.includes('zh') ? 'zh-tw' : 'en',
 		theme:
 			window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-				? 'blue'
+				? 'dark-pattern'
 				: 'light',
 		submit_on_enter: 'false'
 	};

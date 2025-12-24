@@ -2,7 +2,7 @@ pub use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::Database;
 
 mod m20250908_082005_create_table;
-mod m20251219_060552_add_embedding;
+// mod m20251219_060552_add_embedding;
 
 pub struct Migrator;
 
@@ -11,7 +11,7 @@ impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
             Box::new(m20250908_082005_create_table::Migration),
-            Box::new(m20251219_060552_add_embedding::Migration),
+            // Box::new(m20251219_060552_add_embedding::Migration),
         ]
     }
 }

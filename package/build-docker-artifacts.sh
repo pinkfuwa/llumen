@@ -13,14 +13,13 @@ sed -i 's/incremental = false/incremental = true/' backend/Cargo.toml
 # Build frontend once (architecture independent)
 echo "--- Building frontend ---"
 (cd frontend && NOMAP=T pnpm build)
-find frontend/build -type f -name "*.gz" -delete
 
 # Build backend for both architectures
 echo "--- Building backend for x86_64-unknown-linux-musl ---"
-(cd backend && STATIC_DIR=./static cargo zigbuild --release --target x86_64-unknown-linux-musl)
+(cd backend && cargo zigbuild --release --target x86_64-unknown-linux-musl)
 
 echo "--- Building backend for aarch64-unknown-linux-musl ---"
-(cd backend && STATIC_DIR=./static cargo zigbuild --release --target aarch64-unknown-linux-musl)
+(cd backend && cargo zigbuild --release --target aarch64-unknown-linux-musl)
 
 # Restore incremental compilation setting
 sed -i 's/incremental = true/incremental = false/' backend/Cargo.toml
