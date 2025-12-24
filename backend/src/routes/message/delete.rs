@@ -37,6 +37,13 @@ pub async fn route(
             })
         })?;
 
+    if message.chat_id == 1 {
+        return Err(Json(Error {
+            error: ErrorKind::Internal,
+            reason: "not available in demo".to_string(),
+        }));
+    }
+
     if chat.map(|m| m.owner_id) != Some(user_id) {
         return Err(Json(Error {
             error: ErrorKind::ResourceNotFound,

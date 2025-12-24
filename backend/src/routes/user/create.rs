@@ -22,23 +22,12 @@ pub struct UserCreateResp {
 }
 
 pub async fn route(
-    State(app): State<Arc<AppState>>,
+    State(_app): State<Arc<AppState>>,
     Extension(UserId(_)): Extension<UserId>,
-    Json(req): Json<UserCreateReq>,
+    Json(_req): Json<UserCreateReq>,
 ) -> JsonResult<UserCreateResp> {
-    let password_hash = app.hasher.hash_password(&req.password);
-    let new_user = user::ActiveModel {
-        name: ActiveValue::Set(req.username),
-        password: ActiveValue::Set(password_hash),
-        ..Default::default()
-    };
-
-    let new_user = User::insert(new_user)
-        .exec(&app.conn)
-        .await
-        .kind(ErrorKind::Internal)?;
-
-    Ok(Json(UserCreateResp {
-        user_id: new_user.last_insert_id,
+    Err(Json(Error {
+        error: ErrorKind::Internal,
+        reason: "not available in demo".to_string(),
     }))
 }
