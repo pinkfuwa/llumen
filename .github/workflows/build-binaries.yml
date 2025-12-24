@@ -99,24 +99,24 @@ jobs:
         if: matrix.platform == 'linux' && github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/${{ matrix.target }}.tar.gz
+          files: artifacts/llumen-${{ matrix.target }}
 
       - name: Upload release asset (Windows)
         if: matrix.platform == 'windows' && github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/${{ matrix.target }}.zip
+          files: artifacts/llumen-${{ matrix.target }}.exe
 
       - name: Upload artifact for manual dispatch (Linux)
         if: matrix.platform == 'linux' && github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: llumen-${{ matrix.target }}
-          path: artifacts/${{ matrix.target }}.tar.gz
+          path: artifacts/llumen-${{ matrix.target }}
 
       - name: Upload artifact for manual dispatch (Windows)
         if: matrix.platform == 'windows' && github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: llumen-${{ matrix.target }}
-          path: artifacts/${{ matrix.target }}.zip
+          path: artifacts/llumen-${{ matrix.target }}.exe

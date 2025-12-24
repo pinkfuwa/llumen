@@ -444,7 +444,10 @@ export class MarkdownParser {
 	 */
 	private isTableRow(line: string): boolean {
 		const trimmed = line.trim();
-		return trimmed.includes('|') || trimmed.includes('\t');
+		// For pipe-separated tables, require at least 2 pipes (for at least 2 columns)
+		// For tab-separated tables, require at least one tab
+		const pipeCount = (trimmed.match(/\|/g) || []).length;
+		return pipeCount >= 2 || trimmed.includes('\t');
 	}
 
 	/**
@@ -946,6 +949,30 @@ export class MarkdownParser {
 	 */
 	private tryParseLink(text: string, position: number, baseOffset: number): LinkToken | null {
 		const remaining = text.substring(position);
+
+		// Try angle-bracketed URL format first: <https://example.com>
+		const angleBracketMatch = remaining.match(/^<(https?:\/\/[^>]+)>/);
+		if (angleBracketMatch) {
+			const url = angleBracketMatch[1];
+
+			// For angle-bracketed URLs, the URL itself is displayed as the link text
+			const textToken: TextToken = {
+				type: TokenType.Text,
+				content: url,
+				start: baseOffset + position + 1,
+				end: baseOffset + position + 1 + url.length
+			};
+
+			return {
+				type: TokenType.Link,
+				url,
+				children: [textToken],
+				start: baseOffset + position,
+				end: baseOffset + position + angleBracketMatch[0].length
+			};
+		}
+
+		// Try standard markdown link format: [text](url)
 		const match = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
 
 		if (!match) {
@@ -1129,7 +1156,7 @@ export class MarkdownParser {
 	}
 
 	/**
-	 * Try to parse a line break (two spaces followed by newline)
+	 * Try to parse a line break (two spaces followed by newline or <br> tag)
 	 */
 	private tryParseLineBreak(
 		text: string,
@@ -1137,6 +1164,16 @@ export class MarkdownParser {
 		baseOffset: number
 	): LineBreakToken | null {
 		const remaining = text.substring(position);
+
+		// Check for <br>, <br/>, or <br /> tags
+		const brMatch = remaining.match(/^<br\s*\/?>/i);
+		if (brMatch) {
+			return {
+				type: TokenType.LineBreak,
+				start: baseOffset + position,
+				end: baseOffset + position + brMatch[0].length
+			};
+		}
 
 		// Check for two or more spaces followed by newline
 		const match = remaining.match(/^( {2,})(\r?\n)/);
