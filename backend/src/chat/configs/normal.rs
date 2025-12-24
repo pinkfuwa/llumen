@@ -16,5 +16,6 @@ pub fn normal_configuration() -> Configuration {
             })
         }),
         prompt: prompt::PromptKind::Normal,
+        inject_context: true,
     }
 }

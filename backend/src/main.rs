@@ -47,14 +47,12 @@ use axum::{Router, middleware};
 use chat::Context;
 use dotenv::var;
 use entity::prelude::*;
-use middlewares::cache_control::CacheControlLayer;
+
 use migration::MigratorTrait;
 use mimalloc::MiMalloc;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{ConnectionTrait, Database, DbConn, EntityTrait};
 use tokio::{net::TcpListener, signal};
-use tower::ServiceBuilder;
-use tower_http::services::{ServeDir, ServeFile};
 use utils::{blob::BlobDB, password_hash::Hasher};
 
 #[cfg(feature = "tracing")]
@@ -172,11 +170,6 @@ async fn main() {
     let mut blob_path = data_path.clone();
     blob_path.push("blobs.redb");
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
-    let static_dir = var("STATIC_DIR").unwrap_or(
-        option_env!("STATIC_DIR")
-            .unwrap_or("../frontend/build")
-            .to_owned(),
-    );
 
     #[cfg(feature = "tracing")]
     let _db_span = info_span!("database_initialization").entered();
@@ -235,12 +228,6 @@ async fn main() {
         auth_header,
     });
 
-    let mut cache_control = CacheControlLayer::new();
-
-    if let Err(err) = cache_control.try_load_version(&static_dir).await {
-        log::warn!("Fail to load svelte kit's build version. {}", err);
-    }
-
     #[cfg(feature = "tracing")]
     let _router_span = info_span!("router_setup").entered();
 
@@ -263,18 +250,7 @@ async fn main() {
                 .nest("/auth", routes::auth::routes())
                 .layer(middlewares::logger::LoggerLayer),
         )
-        .fallback_service(
-            // side notes about artifact size:
-            // 1. br sized about 1.3Mb, uncompressed sized about 4Mb
-            // 2. Rust binary sized about 6Mb
-            ServiceBuilder::new().layer(cache_control).service(
-                ServeDir::new(static_dir.to_owned())
-                    .precompressed_br()
-                    .fallback(
-                        ServeFile::new(format!("{}/index.html", static_dir)).precompressed_br(),
-                    ),
-            ),
-        )
+        .fallback(routes::spa::spa_handler)
         .with_state(state);
 
     #[cfg(feature = "dev")]

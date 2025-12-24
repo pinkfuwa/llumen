@@ -134,9 +134,13 @@ impl StreamCompletion {
         }
 
         if let Some(reasoning) = delta.reasoning {
-            return StreamCompletionResp::ReasoningToken(reasoning);
+            if !reasoning.is_empty() {
+                return StreamCompletionResp::ReasoningToken(reasoning);
+            }
         } else if let Some(reasoning) = delta.reasoning_content {
-            return StreamCompletionResp::ReasoningToken(reasoning);
+            if !reasoning.is_empty() {
+                return StreamCompletionResp::ReasoningToken(reasoning);
+            }
         }
 
         // Handle tool calls - support parallel tool calls

@@ -20,6 +20,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get pnpm lockfile hash
+        id: pnpm_lockfile_hash
+        run: |
+          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: Cache frontend node_modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: frontend-node-modules-${{ runner.os }}-${{ steps.pnpm_lockfile_hash.outputs.pnpm_lock_hash }}
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+          package_json_file: "./frontend/package.json"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: ./frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: pnpm build
+
       - name: Get cargo lockfile hash
         id: lockfile_hash
         run: |
