@@ -1,5 +1,5 @@
 import { updatePreference } from '$lib/preference';
-import { createQueryEffect, createMutation, type MutationResult } from './state';
+import { createQueryEffect, createMutation, type MutationResult, CreateMockMutation } from './state';
 
 import type {
 	UserCreateReq,
@@ -32,13 +32,11 @@ export function useUsersQueryEffect() {
 }
 
 export function useUserQueryEffect() {
-	createQueryEffect<UserReadReq, UserReadResp>({
-		path: 'user/read',
-		body: {},
-		updateData: (data) => {
-			currentUser = data;
-		}
-	});
+	currentUser = {
+		user_id: 1,
+		username: 'admin',
+		preference: {}
+	};
 }
 
 // Getters for reading state
@@ -81,12 +79,14 @@ export function createUser(): MutationResult<UserCreateReq, UserCreateResp> {
 }
 
 export function updateUser(): MutationResult<UserUpdateReq, UserUpdateResp> {
-	return createMutation({
-		path: 'user/update',
-		onSuccess(data, param) {
+	return CreateMockMutation(
+		{
+			user_id: 1
+		},
+		(param) => {
 			if (param.preference) updatePreference(param.preference);
 		}
-	});
+	);
 }
 
 export function deleteUser(): MutationResult<UserDeleteReq, UserReadResp> {

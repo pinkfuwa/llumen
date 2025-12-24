@@ -4,12 +4,16 @@ export async function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function CreateMockMutation<P, D>(result: D): MutationResult<P, D> {
+export function CreateMockMutation<P, D>(
+	result: D,
+	oncall?: (param: P) => void
+): MutationResult<P, D> {
 	let isPending = $state(false);
 	let isError = $state(false);
 
 	return {
 		mutate: async (param: P, callback?: (data: D) => void) => {
+			if (oncall) oncall(param);
 			isPending = true;
 			await sleep(10);
 			isPending = false;
