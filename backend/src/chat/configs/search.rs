@@ -98,5 +98,6 @@ pub fn search_configuration() -> Configuration {
             })
         }),
         prompt: prompt::PromptKind::Search,
+        inject_context: true,
     }
 }

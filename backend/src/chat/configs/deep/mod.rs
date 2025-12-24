@@ -42,5 +42,6 @@ pub fn deep_configuration() -> Configuration {
             })
         }),
         prompt: prompt::PromptKind::Coordinator,
+        inject_context: false,
     }
 }

@@ -13,7 +13,7 @@ WORKDIR /app
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 ENV NOMAP=T
 RUN pnpm run build
-RUN find build/ -type f -name "*.gz" -delete
+
 
 FROM --platform=$BUILDPLATFORM rust:1.90.0-slim-trixie AS backend-builder
 
@@ -41,12 +41,11 @@ RUN rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
 WORKDIR /
 COPY README.md .
 
-WORKDIR /prompts
-COPY ./prompts .
-
 WORKDIR /compiler
 
 COPY ./backend .
+COPY ./agent ../agent
+COPY --from=frontend-builder /app/build ../frontend/build
 
 RUN --mount=type=cache,id=target,target=/compiler/target \
     cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl && \
@@ -72,10 +71,8 @@ WORKDIR /data
 WORKDIR /
 
 COPY --from=ca /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=frontend-builder /app/build /static
 COPY --from=backend-builder /app/${TARGETPLATFORM} /backend
 
-ENV STATIC_DIR="/static"
 ENV DATA_PATH="/data"
 ENV BIND_ADDR="0.0.0.0:80"
 ENV RUST_LOG=none,backend=debug

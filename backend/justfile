@@ -1,22 +1,29 @@
 set shell := ["nu", "-c"]
 
 TS_OUTPUT := "../frontend/src/lib/api/types.ts"
-
 DATA_PATH := ".."
-
 BIND_ADDR := "127.0.0.1:8001"
 
+build-frontend:
+    cd ../frontend; pnpm install; pnpm build
+
+build: build-frontend
+    cargo build --release
+
 run:
-    RUST_BACKTRACE=1 RUST_LOG=trace BIND_ADDR={{BIND_ADDR}} cargo run --features dev
+    RUST_BACKTRACE=1 RUST_LOG=trace BIND_ADDR={{ BIND_ADDR }} cargo run --features dev
+
+run-with-build: build-frontend
+    RUST_BACKTRACE=1 RUST_LOG=trace BIND_ADDR={{ BIND_ADDR }} cargo run --features dev
 
 fresh:
-    cd migration; DATA_PATH={{DATA_PATH}} cargo run -- fresh
+    cd migration; DATA_PATH={{ DATA_PATH }} cargo run -- fresh
 
 refresh:
-    cd migration; DATA_PATH={{DATA_PATH}} cargo run -- refresh
+    cd migration; DATA_PATH={{ DATA_PATH }} cargo run -- refresh
 
 gen-ts:
-    typeshare . --lang=typescript --output-file={{TS_OUTPUT}}
+    typeshare . --lang=typescript --output-file={{ TS_OUTPUT }}
     cd ../frontend; pnpm i; pnpm format-ffi
 
 gen-entity:

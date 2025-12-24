@@ -3,7 +3,6 @@ pub use channel::Cursor;
 mod configs;
 mod context;
 pub mod converter;
-mod deep_prompt;
 mod prompt;
 mod token;
 mod tools;
