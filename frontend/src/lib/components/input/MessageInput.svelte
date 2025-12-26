@@ -58,7 +58,6 @@
 
 	const dropZone = createDropZone(() => container, {
 		allowedDataTypes: () => filetypes,
-		multiple: false,
 		onDrop(newFiles: File[] | null) {
 			if (newFiles == null) return;
 			newFiles.forEach((f) => files.push(f));
