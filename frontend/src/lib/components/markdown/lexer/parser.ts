@@ -74,7 +74,13 @@ export class MarkdownParser {
 	 * Parse a block-level element
 	 */
 	private parseBlock(): Token | null {
-		this.skipWhitespace();
+		// Skip blank lines
+		while (
+			this.position < this.source.length &&
+			(this.source[this.position] === '\n' || this.source[this.position] === '\r')
+		) {
+			this.position++;
+		}
 
 		if (this.position >= this.source.length) {
 			return null;

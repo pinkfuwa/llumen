@@ -1073,3 +1073,40 @@ describe('MarkdownParser - Position Tracking', () => {
 		expect(para.children?.every((t) => t.start >= 0 && t.end > t.start)).toBe(true);
 	});
 });
+
+describe('MarkdownParser - List with indented code block and trailing text', () => {
+	test('parses list with indented code block followed by text as separate paragraph', () => {
+		const markdown = `*   **Actionable Step:** If you are using C++ or Fortran, just use an OpenMP pragma:
+    \`\`\`cpp
+    #pragma omp parallel for num_threads(4)
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            for (int k = 0; k < N; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    \`\`\`
+AAA`;
+
+		const result = parse(markdown);
+		
+		// Should have a list and a paragraph
+		expect(result.tokens.length).toBeGreaterThanOrEqual(2);
+		
+		// First token should be a list
+		expect(result.tokens[0].type).toBe(TokenType.UnorderedList);
+		
+		// Find the text token "AAA" - it should be in a separate paragraph, not in the code block
+		const lastToken = result.tokens[result.tokens.length - 1];
+		expect(lastToken.type).toBe(TokenType.Paragraph);
+		
+		const paraToken = lastToken as ParagraphToken;
+		const textContent = paraToken.children
+			?.filter((t) => t.type === TokenType.Text)
+			.map((t) => (t as TextToken).content)
+			.join('');
+		
+		expect(textContent).toContain('AAA');
+	});
+});
