@@ -194,10 +194,8 @@ export class MarkdownParser {
 		const start = this.position;
 		const line = this.peekLine();
 
-		const match = line.match(/^ {0,3}```(\w*)$/);
-		if (!match) {
-			return null;
-		}
+		const match = line.match(/^\s*```(\w*)$/);
+		if (!match) return null;
 
 		const language = match[1] || undefined;
 		this.position += line.length;
@@ -208,8 +206,7 @@ export class MarkdownParser {
 
 		while (this.position < this.source.length) {
 			const currentLine = this.peekLine();
-			// Also allow indented closing fence (up to 3 spaces)
-			if (currentLine.match(/^ {0,3}```\s*$/)) {
+			if (currentLine.match(/^\s*```\s*$/)) {
 				contentEnd = this.position;
 				this.position += currentLine.length;
 				this.skipNewlines();
@@ -663,7 +660,7 @@ export class MarkdownParser {
 	private looksLikeBlockStart(line: string): boolean {
 		return (
 			line.match(/^#{1,6}\s/) !== null ||
-			line.match(/^ {0,3}```/) !== null ||
+			line.match(/^\s*```/) !== null ||
 			line.match(/^(---+|\*\*\*+|___+)$/) !== null ||
 			line.startsWith('>') ||
 			line.match(/^\d+\.\s/) !== null ||
