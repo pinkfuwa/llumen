@@ -158,6 +158,12 @@ Yes, Llumen supports multiple user accounts. Each user has their own chats and s
 
 See the full [Troubleshooting Guide](./troubleshooting.md) for more solutions.
 
+### Does that support thinking block preservation
+
+Yes, Llumen keep previous thinking block in database and send back on next request, which means we support interleaved thinking.
+
+But multiple thinking block are displayed to user as single block on frontend.
+
 ## Contributing
 
 ### How can I contribute?
