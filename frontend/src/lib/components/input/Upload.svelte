@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { Upload } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
-	import Button from '$lib/ui/Button.svelte';
-	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import TipButton from '$lib/ui/TipButton.svelte';
 
 	let { files = $bindable([] as File[]), filetypes }: { files: File[]; filetypes: string } =
@@ -39,6 +37,6 @@
 	class="hidden"
 	bind:this={inputElement}
 	accept={filetypes}
-	multiple={false}
+	multiple={true}
 	onchange={onChange}
 />
