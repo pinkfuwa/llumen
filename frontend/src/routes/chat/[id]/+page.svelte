@@ -5,10 +5,10 @@
 	import Hallucination from '$lib/components/common/Hallucination.svelte';
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
-	import { haltCompletion, useRoom } from '$lib/api/chatroom.svelte';
+	import { haltCompletion, useRoom } from '$lib/api';
 	import { createUploadEffect } from '$lib/api/files.svelte';
 	import Scroll from '$lib/ui/Scroll.svelte';
-	import { createMessage, getStream } from '$lib/api/message.svelte.js';
+	import { createMessage, getStream } from '$lib/api';
 	import { untrack } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 

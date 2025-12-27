@@ -36,7 +36,10 @@ import { pushUserMessage } from './message.svelte';
 export interface CreateRoomRequest {
 	message: string;
 	modelId: number;
-	files: File[];
+	files: {
+		name: string;
+		id: number;
+	}[];
 	mode: ChatMode;
 }
 
@@ -52,34 +55,17 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			let chatId = chatRes.id;
 
-			let files: MessageCreateReqFile[] = [];
-
-			for (const file of param.files) {
-				try {
-					let id = await upload(file);
-					if (id == null) break;
-					files.push({
-						name: file.name,
-						id
-					});
-				} catch (e) {
-					console.warn(e);
-				}
-			}
-
 			const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
 				chat_id: chatRes.id,
 				text: param.message,
 				mode: param.mode,
 				model_id: param.modelId,
-				files
+				files: param.files
 			});
 
 			if (!res) return;
 
-			let filesMetadata = files.map((f) => ({ name: f.name, id: f.id }));
-
-			pushUserMessage(res.user_id, param.message, filesMetadata);
+			pushUserMessage(res.user_id, param.message, param.files);
 
 			SetInfiniteQueryData<ChatPaginateRespList>({
 				key: ['chatPaginate'],

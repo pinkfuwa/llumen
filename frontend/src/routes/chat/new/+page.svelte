@@ -7,6 +7,7 @@
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { page } from '$app/state';
 	import { PersistedState } from 'runed';
+	import { createUploadEffect } from '$lib/api';
 
 	let { mutate } = createRoom();
 
@@ -14,6 +15,8 @@
 	const modelId = new PersistedState<null | string>('DefaultModelId', null);
 	let files = $state([]);
 	let mode = $state(Mode.Normal);
+
+	const ensureUploaded = createUploadEffect(() => files);
 
 	$effect(() => {
 		const param = page.url.searchParams;
@@ -37,14 +40,16 @@
 		bind:modelId={modelId.current}
 		bind:mode
 		bind:files
-		onsubmit={() => {
+		onsubmit={async () => {
 			if (modelId.current == null) return;
+
+			const uploadedFiles = await ensureUploaded();
 
 			mutate(
 				{
 					message: content,
 					modelId: parseInt(modelId.current),
-					files,
+					files: uploadedFiles,
 					mode
 				},
 				(data) => goto('/chat/' + encodeURIComponent(data.id))

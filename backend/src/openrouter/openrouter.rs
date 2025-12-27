@@ -190,7 +190,7 @@ impl Openrouter {
             toolcall: merge!(toolcall),
             ocr: match overrides.ocr {
                 Some(v) => v,
-                None => capability.ocr.unwrap_or(OcrEngine::Disabled),
+                None => capability.ocr.unwrap_or(OcrEngine::Mistral),
             },
             audio: merge!(audio),
             reasoning: merge!(reasoning),
