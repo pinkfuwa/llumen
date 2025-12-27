@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use entity::file::{Column, Entity as File};
 use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter};
+use time::OffsetDateTime;
 use tokio::time::interval;
 
 use super::blob::BlobDB;
@@ -17,7 +18,7 @@ impl FileCleanupService {
         Self { conn, blob }
     }
 
-    pub fn start(self: Arc<Self>) {
+    pub fn start(self) {
         tokio::spawn(async move {
             let mut interval = interval(Duration::from_secs(300));
 
@@ -32,9 +33,7 @@ impl FileCleanupService {
     }
 
     async fn cleanup_expired_files(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)?
-            .as_secs() as i32;
+        let now = OffsetDateTime::now_utc().unix_timestamp() as i32;
 
         let expired_files = File::find()
             .filter(Column::ChatId.is_null())

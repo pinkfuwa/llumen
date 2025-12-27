@@ -30,7 +30,7 @@ import {
 import { APIFetch } from './state/errorHandle';
 import type { MutationResult } from './state/mutate';
 import { UpdateInfiniteQueryDataById } from './state';
-import { upload } from './files';
+import { upload } from './files.svelte';
 import { pushUserMessage } from './message.svelte';
 
 export interface CreateRoomRequest {
@@ -56,7 +56,7 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			for (const file of param.files) {
 				try {
-					let id = await upload(file, chatId);
+					let id = await upload(file);
 					if (id == null) break;
 					files.push({
 						name: file.name,

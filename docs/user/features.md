@@ -75,22 +75,44 @@ Deep Research mode uses a multi-step research process with specialized sub-agent
 
 ## File Uploads
 
-Llumen supports attaching files to your messages for analysis.
+Llumen supports attaching files to your messages for analysis. Files can be uploaded before you send your message, giving you time to compose your thoughts.
 
-### Supported File Types
+### Uploading Files
 
-| Type | Extensions | Use Cases |
-|------|------------|-----------|
-| Documents | PDF | Document analysis, summarization |
-| Images | PNG, JPEG, GIF, WebP | Visual questions, image description |
-| Code | Various text formats | Code review, debugging |
+There are three ways to attach files:
 
-### How to Upload
+1. **Click the upload button** - Select files from your device
+2. **Drag and drop** - Drag files directly onto the message input area
+3. **Paste** - Copy files to clipboard and paste them into the message input
 
-1. Click the attachment icon in the message input
-2. Select your file(s)
-3. Files appear as attachments in your message
-4. Send your message with the files
+All file types are accepted for upload, giving you maximum flexibility.
+
+### File Lifecycle
+
+- **Temporary storage**: Uploaded files are stored temporarily (1 hour) until you send your message
+- **Automatic upload**: Files begin uploading as soon as you add them
+- **Permanent storage**: When you send your message, attached files become permanently associated with the chat
+
+This approach ensures you can upload large files without worrying about timing, and unused files are automatically cleaned up.
+
+### Supported File Types by Model
+
+While you can upload any file type, model capabilities determine what can be analyzed:
+
+| Type | Extensions | Use Cases | Model Requirement |
+|------|------------|-----------|-------------------|
+| Images | PNG, JPEG, GIF, WebP, AVIF, BMP | Visual questions, image description | `image_input = true` |
+| Audio | MP3, WAV, OGG, M4A, etc. | Audio transcription, analysis | `audio_input = true` |
+| Documents | PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX | Document analysis, summarization | `other_file_input = true` |
+| Code/Text | TXT, MD, JSON, CSV, and programming files | Code review, debugging, analysis | Always supported |
+
+**Warning indicators**: If you upload a file type not supported by your selected model, a warning icon (⚠️) will appear. You can still send the message, but the model may not be able to process that file.
+
+### File Size Limits
+
+- Maximum file size: **100 MB**
+- Files are uploaded in the background as you add them
+- Large files may take time to upload; wait for upload completion before sending
 
 ### Image Analysis
 
@@ -98,8 +120,16 @@ When uploading images to a vision-capable model:
 - Ask questions about the image content
 - Request descriptions or analysis
 - Use for OCR (text extraction from images)
+- Compare multiple images in one message
 
-**Tip:** Ensure your selected model has `image = true` in its capabilities for vision features.
+**Tip:** Ensure your selected model has `image_input = true` in its capabilities for vision features.
+
+### Best Practices
+
+- Upload files early if they're large, so they're ready when you finish composing your message
+- Check the warning icon if you're unsure whether your file type is supported
+- Use text/code files for the most reliable analysis across all models
+- Keep total file count reasonable for better model performance
 
 ## Real-Time Streaming
 

@@ -6,7 +6,7 @@
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { haltCompletion, useRoom } from '$lib/api/chatroom.svelte';
-	import { UploadManager } from '$lib/api/files.js';
+	import { createUploadEffect } from '$lib/api/files.svelte';
 	import Scroll from '$lib/ui/Scroll.svelte';
 	import { createMessage, getStream } from '$lib/api/message.svelte.js';
 	import { untrack } from 'svelte';
@@ -41,8 +41,7 @@
 		});
 	});
 
-	let uploadManager = $derived(new UploadManager(id));
-	$effect(() => uploadManager.retain(files));
+	const ensureUploaded = createUploadEffect(() => files);
 
 	// svelte 5 bug
 	let stream = $state(false);
@@ -59,12 +58,13 @@
 			bind:mode
 			bind:files
 			onsubmit={async () => {
+				const uploadedFiles = await ensureUploaded();
 				mutate({
 					chat_id: id,
 					text: content,
 					mode: mode!,
 					model_id: parseInt(modelId!),
-					files: await uploadManager.getUploads(files)
+					files: uploadedFiles
 				});
 				content = '';
 				files = [];

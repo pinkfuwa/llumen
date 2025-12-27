@@ -231,7 +231,7 @@ export interface FileMetadata {
 }
 
 export interface FileRefreshReq {
-	id: number;
+	ids: number[];
 }
 
 export interface FileRefreshResp {
