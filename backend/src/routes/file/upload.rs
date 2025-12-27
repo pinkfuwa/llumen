@@ -5,16 +5,14 @@ use axum::extract::{Extension, Multipart, State};
 use entity::file::Entity as File;
 use sea_orm::{ActiveValue::Set, EntityTrait};
 use serde::Serialize;
+use time::OffsetDateTime;
 use typeshare::typeshare;
 
 use crate::routes::file::MAX_FILE_SIZE;
 use crate::{AppState, errors::*, middlewares::auth::UserId};
 
 fn get_valid_until_timestamp() -> i32 {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let now = OffsetDateTime::now_utc().unix_timestamp();
     (now + 3600) as i32
 }
 

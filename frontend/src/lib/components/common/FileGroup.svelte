@@ -1,9 +1,24 @@
 <script lang="ts">
-	let { files = $bindable([] as Array<{ name: string; id?: number }>), deletable = false } =
-		$props();
+	let {
+		files = $bindable([] as Array<{ name: string; id?: number }>),
+		deletable = false,
+		extensions = []
+	}: {
+		files: Array<{ name: string; id?: number }>;
+		deletable?: boolean;
+		extensions?: string[];
+	} = $props();
 
-	import { ArrowDownToLine, X } from '@lucide/svelte';
-	import { download } from '$lib/api/files';
+	import { ArrowDownToLine, X, AlertTriangle } from '@lucide/svelte';
+	import { download } from '$lib/api/files.svelte';
+
+	function isFileSupported(fileName: string): boolean {
+		if (extensions.length === 0) return true;
+
+		const lowerFileName = fileName.toLowerCase();
+
+		return extensions.some((ext) => lowerFileName.endsWith(ext));
+	}
 
 	async function downloadFile(fileId: number, fileName: string) {
 		let url = await download(fileId);
@@ -28,13 +43,23 @@
 				class="my-auto mr-2 shrink-0 rounded-md p-1 duration-150 hover:bg-primary hover:text-text-hover focus:ring-4 focus:ring-outline focus:outline-none"
 			>
 				{#if deletable}
-					<X
-						class="h-7 w-7"
-						onclick={() => {
-							files.splice(i, 1);
-							files = files;
-						}}
-					/>
+					{#if isFileSupported(file.name)}
+						<X
+							class="h-7 w-7"
+							onclick={() => {
+								files.splice(i, 1);
+								files = files;
+							}}
+						/>
+					{:else}
+						<AlertTriangle
+							class="h-7 w-7"
+							onclick={() => {
+								files.splice(i, 1);
+								files = files;
+							}}
+						/>
+					{/if}
 				{:else}
 					<ArrowDownToLine
 						class="h-7 w-7"

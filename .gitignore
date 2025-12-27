@@ -6,3 +6,6 @@ artifacts
 frontend/.svelte-kit
 frontend/build
 frontend/package-lock.json
+
+# zed bug: /target/rust-analyzer/flycheck0
+target/rust-analyzer/flycheck0

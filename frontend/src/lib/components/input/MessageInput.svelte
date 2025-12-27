@@ -14,7 +14,7 @@
 	import { getContext } from 'svelte';
 	import { type Readable } from 'svelte/store';
 	import { FileUp } from '@lucide/svelte';
-	import { getSupportedFileTypes } from './fileTypes';
+	import { getSupportedFileExtensions } from './fileTypes';
 
 	let {
 		mode = $bindable(Mode.Normal),
@@ -52,13 +52,14 @@
 		uselessFn(modelId);
 		return $models?.list.find((x) => x.id.toString() == modelId);
 	});
-	let filetypes = $derived(
-		selectModelCap == undefined ? '*' : getSupportedFileTypes(selectModelCap)
-	);
+	let extensions = $derived(getSupportedFileExtensions(selectModelCap));
 
 	const dropZone = createDropZone(() => container, {
-		allowedDataTypes: () => filetypes,
 		onDrop(newFiles: File[] | null) {
+			if (newFiles == null) return;
+			newFiles.forEach((f) => files.push(f));
+		},
+		onPaste(newFiles: File[] | null) {
 			if (newFiles == null) return;
 			newFiles.forEach((f) => files.push(f));
 		}
@@ -81,13 +82,6 @@
 <div
 	class="min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-[min(750px,75%)]"
 	bind:this={container}
-	onpaste={(event) => {
-		const clipboardData = event.clipboardData;
-		if (clipboardData == null || clipboardData.files.length == 0) return;
-		for (let i = 0; i < clipboardData.files.length; i++) {
-			files.push(clipboardData.files[i]);
-		}
-	}}
 >
 	{#if dropZone.isOver && editable}
 		<div
@@ -99,7 +93,7 @@
 	{/if}
 	{#if files.length != 0}
 		<div class="mb-2 max-h-[60vh] overflow-y-auto border-b border-outline pb-2">
-			<FileGroup {files} deletable />
+			<FileGroup {files} {extensions} deletable />
 		</div>
 	{/if}
 	<div class="flex flex-row items-center justify-between space-x-2 pr-2">
@@ -121,7 +115,7 @@
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
 			<ModelSelector bind:value={modelId} />
 			<ModeSelector bind:value={mode} limited={!selectModelCap?.tool} />
-			<UploadBtn bind:files {filetypes} />
+			<UploadBtn bind:files />
 		</div>
 		{#if content.length != 0}
 			<MarkdownBtn bind:editable />

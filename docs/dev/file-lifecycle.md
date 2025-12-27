@@ -47,29 +47,33 @@ When a user uploads a file via `POST /api/file/upload`:
   2. Creates a database record with:
      - `chat_id = NULL` (temporary file)
      - `owner_id = <current_user_id>`
-     - `valid_until = now + 3600` (1 hour)
+     - `valid_until = now + 3600` (1 hour, calculated using `time` crate)
   3. Stores file content in redb blob storage
   4. Returns the file ID
 
 **Code location**: `backend/src/routes/file/upload.rs`
 
+**Note**: The backend uses the `time` crate (`OffsetDateTime::now_utc().unix_timestamp()`) for timestamp calculations instead of `std::time::SystemTime`.
+
 ### 2. Refreshing Expiration
 
 Users can extend the expiration time via `POST /api/file/refresh`:
 
-- Request body:
+- Request body (batch refresh):
   ```json
   {
-    "id": 123
+    "ids": [123, 124, 125]
   }
   ```
 
 - The backend:
-  1. Verifies the user owns the file
-  2. Updates `valid_until` to `now + 3600`
+  1. Queries all files matching the provided IDs that belong to the user
+  2. Updates `valid_until` to `now + 3600` for each owned file
   3. Returns the new expiration timestamp
 
 **Code location**: `backend/src/routes/file/refresh.rs`
+
+**Note**: The refresh endpoint accepts a batch of file IDs, allowing multiple files to be refreshed in a single request. This is more efficient for scenarios where users have multiple files pending upload.
 
 ### 3. Chat Association
 
@@ -195,6 +199,38 @@ When testing file uploads:
 5. Test refresh endpoint extends expiration
 6. Verify ownership checks prevent unauthorized access
 
+## Frontend Integration
+
+### Upload Flow
+
+The frontend uses `createUploadEffect` to manage file uploads reactively:
+
+```typescript
+let files = $state<File[]>([]);
+const ensureUploaded = createUploadEffect(() => files);
+
+async function submit() {
+  const uploadedFiles = await ensureUploaded();
+  // uploadedFiles: { name: string, id: number }[]
+  // Use these IDs when creating the message
+}
+```
+
+Key features:
+- **Reactive uploads**: Files are automatically uploaded as they're added to the array
+- **Deduplication**: Same file (by name+size) won't be uploaded twice
+- **Cleanup**: Upload requests are aborted when component unmounts
+- **Type safety**: Returns properly typed file metadata
+
+### File Type Validation
+
+The frontend displays warnings for unsupported file types based on model capabilities:
+- All file types can be uploaded (no client-side restriction)
+- `FileGroup` component shows a warning icon for files not supported by the selected model
+- Supported extensions are determined by `getSupportedFileExtensions()` based on model capabilities
+
+This approach allows maximum flexibility while informing users of potential issues.
+
 ## Future Improvements
 
 Potential enhancements:
@@ -204,3 +240,4 @@ Potential enhancements:
 - Metrics on file storage usage and cleanup efficiency
 - Soft-delete with grace period before actual deletion
 - File preview generation for images/PDFs
+- Periodic refresh calls from frontend to extend expiration for long-lived drafts
