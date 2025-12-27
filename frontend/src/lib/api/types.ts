@@ -230,6 +230,14 @@ export interface FileMetadata {
 	id: number;
 }
 
+export interface FileRefreshReq {
+	id: number;
+}
+
+export interface FileRefreshResp {
+	valid_until: number;
+}
+
 export interface FileUploadResp {
 	id: number;
 }
