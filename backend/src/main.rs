@@ -220,6 +220,12 @@ async fn main() {
 
     let auth_header = var("TRUSTED_HEADER").ok();
 
+    let cleanup_service = Arc::new(utils::file_cleanup::FileCleanupService::new(
+        conn.clone(),
+        blob.clone(),
+    ));
+    cleanup_service.clone().start();
+
     let state = Arc::new(AppState {
         conn,
         key,
