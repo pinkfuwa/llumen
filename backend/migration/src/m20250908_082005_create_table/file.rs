@@ -17,6 +17,13 @@ impl MigrationTrait for Migration {
                     .col(integer_null(File::ChatId))
                     .col(integer_null(File::OwnerId))
                     .col(string_null(File::MimeType))
+                    // File table store reference to redb
+                    // It's set null, considering following case:
+                    // 1. user got deleted
+                    // 2. file got deleted
+                    // 3. content in redb was never removed
+                    //
+                    // IMPORTANT: DO NOT change it to cascade
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-file-chat_id-chat")

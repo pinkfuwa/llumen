@@ -2,7 +2,6 @@ pub use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::Database;
 
 mod m20250908_082005_create_table;
-// mod m20251219_060552_add_embedding;
 
 pub struct Migrator;
 
