@@ -1,7 +1,7 @@
 import { token } from '$lib/store';
 import { page } from '$app/state';
 import { goto } from '$app/navigation';
-import { CreateMutation, type CreateMutationResult } from './state';
+import { createMutation, type MutationResult } from './state';
 import { APIFetch } from './state/errorHandle';
 
 import type { LoginReq, LoginResp, RenewResp, RenewReq, HeaderAuthResp } from './types';
@@ -11,10 +11,10 @@ export interface User {
 	username: string;
 }
 
-export function Login(): CreateMutationResult<LoginReq, LoginResp> {
-	return CreateMutation({
+export function Login(): MutationResult<LoginReq, LoginResp> {
+	return createMutation({
 		path: 'auth/login',
-		onSuccess: (data) => {
+		onSuccess: (data: LoginResp) => {
 			const now = new Date();
 			const expireAt = new Date(data.exp);
 			const renewAt = new Date(now.getTime() + (expireAt.getTime() - now.getTime()) / 2);

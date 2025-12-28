@@ -10,7 +10,7 @@
 	let password = $state('');
 
 	let { mutate, isPending, isError } = Login();
-	let disabled = $derived($isPending || username == '' || password == '');
+	let disabled = $derived(isPending() || username == '' || password == '');
 
 	function handleSubmit(event: Event) {
 		event.preventDefault();
@@ -25,7 +25,7 @@
 				username: usernameVal,
 				password: passwordVal
 			},
-			(_) => {
+			(_data) => {
 				const callback = page.url.searchParams.get('callback');
 
 				if (callback) {
@@ -58,7 +58,7 @@
 		{$_('login.description')}
 	</p>
 	<div class="min-w-[80vw] items-center rounded-lg p-6 md:min-w-lg">
-		<form class="grid grid-rows-3 gap-4" onsubmit={handleSubmit} inert={$isPending}>
+		<form class="grid grid-rows-3 gap-4" onsubmit={handleSubmit} inert={isPending()}>
 			<div>
 				<Input id="username" type="text" placeholder="admin" bind:value={username} required>
 					{$_('login.username')}
@@ -71,9 +71,9 @@
 			</div>
 
 			<Button type="submit" class="mt-4 text-lg" {disabled}>
-				{#if $isError}
+				{#if isError()}
 					{$_('login.retry')}
-				{:else if $isPending}
+				{:else if isPending()}
 					{$_('login.loading')}
 				{:else}
 					{$_('login.submit')}

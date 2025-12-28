@@ -1,16 +1,14 @@
 <script lang="ts">
 	import { LoaderCircle } from '@lucide/svelte';
 	import Select from '$lib/ui/Select.svelte';
-	import { getContext } from 'svelte';
-	import type { Readable } from 'svelte/store';
-	import type { ModelListResp } from '$lib/api/types';
+	import { getModels } from '$lib/api/model.svelte';
 	import { _ } from 'svelte-i18n';
 	let { value = $bindable<string | undefined>(), disabled = false } = $props();
 
-	const data = getContext<Readable<ModelListResp | undefined>>('models');
+	const data = $derived(getModels());
 
 	let selectData = $derived(
-		$data?.list.map((x) => ({
+		data?.list.map((x) => ({
 			value: `${x.id}`,
 			label: x.display_name
 		}))

@@ -3,7 +3,6 @@
 	import { Star, X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 	import { token } from '$lib/store';
-	import { clearCache } from '$lib/api/state';
 	import { Dialog, Tabs } from 'bits-ui';
 	import SettingBtn from './SettingBtn.svelte';
 	import Account from './tabs/Account.svelte';
@@ -82,7 +81,6 @@
 							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
 							onclick={() => {
 								token.set(undefined);
-								clearCache();
 							}}
 						>
 							<LogOut class="inline-block h-5 w-5 md:mr-2" />
