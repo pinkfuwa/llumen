@@ -48,6 +48,8 @@ llumen is a LLM chat application. featuring three mode: normal chat, search and 
 * Never ignore errors; use effects or snippets, and expose user-friendly feedback via components.
   - Propagate critical errors (backend disconnect/reachable) with `dispatchError` from `frontend/src/lib/error.ts`.
   - For user-input errors (e.g., form validation), display inline messages without crashing the app.
+* `$effect` should be called during component initialization, `$state` should be at top-level(function...)
+* Runes should be used in svelte or svelte.ts file
 
 ## Query Management Library
 
