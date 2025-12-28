@@ -2,12 +2,12 @@
 	import { CheckLine } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import CheckPwd from '../../CheckPwd.svelte';
-	import { CreateUser } from '$lib/api/user';
+	import { createUser } from '$lib/api/user.svelte';
 
 	let func = $state<'general' | 'retypePwd' | 'notify'>('general');
 	let username = $state('');
 
-	let { mutate: createUserMutate } = CreateUser();
+	let { mutate: createUserMutate } = createUser();
 </script>
 
 {#if func == 'notify'}

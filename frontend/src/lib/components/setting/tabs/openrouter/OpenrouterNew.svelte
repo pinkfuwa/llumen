@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { createModel, defaultModelConfig } from '$lib/api/model';
+	import { createModel, defaultModelConfig } from '$lib/api/model.svelte';
 	import { TiltBtn } from '$lib/components';
 	import ConfigEditor from '$lib/components/setting/ConfigEditor.svelte';
 	import Button from '$lib/ui/Button.svelte';

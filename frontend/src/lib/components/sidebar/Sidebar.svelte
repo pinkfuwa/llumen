@@ -1,9 +1,5 @@
 <script lang="ts">
-	let {
-		addition = false,
-		currentRoom = undefined as undefined | number,
-		open = $bindable(false)
-	} = $props();
+	let { addition = false, open = $bindable(false) } = $props();
 
 	import CollapseHeader from './CollapseHeader.svelte';
 	import RoomPagination from '../room/RoomPagination.svelte';
@@ -18,7 +14,7 @@
 		<CollapseHeader onclick={() => (open = !open)} />
 	</div>
 	<div class="nobar min-w-0 grow overflow-y-auto">
-		<RoomPagination {addition} {currentRoom} />
+		<RoomPagination {addition} />
 	</div>
 	<div class="mt-4 shrink-0 border-t border-outline pt-4">
 		<Setting />

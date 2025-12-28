@@ -10,9 +10,8 @@
 	import { _ } from 'svelte-i18n';
 	import Stop from './Stop.svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { ChatMode as Mode, type ModelListResp } from '$lib/api/types';
-	import { getContext } from 'svelte';
-	import { type Readable } from 'svelte/store';
+	import { ChatMode as Mode } from '$lib/api/types';
+	import { getModels } from '$lib/api/model.svelte.js';
 	import { FileUp } from '@lucide/svelte';
 	import { getSupportedFileExtensions } from './fileTypes';
 
@@ -40,17 +39,16 @@
 
 	let container = $state<HTMLElement | null>();
 
-	const models = getContext<Readable<ModelListResp | undefined>>('models');
+	const models = $derived(getModels());
 
 	const modelIdValid = $derived(
-		modelId != null &&
-			($models == undefined || $models.list.some((m) => m.id.toString() == modelId))
+		modelId != null && (models == undefined || models.list.some((m) => m.id.toString() == modelId))
 	);
 
 	let selectModelCap = $derived.by(() => {
 		let uselessFn = (a: any) => {};
 		uselessFn(modelId);
-		return $models?.list.find((x) => x.id.toString() == modelId);
+		return models?.list.find((x) => x.id.toString() == modelId);
 	});
 	let extensions = $derived(getSupportedFileExtensions(selectModelCap));
 

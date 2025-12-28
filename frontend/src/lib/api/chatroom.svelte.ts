@@ -12,26 +12,24 @@ import type {
 	ChatDeleteReq,
 	ChatDeleteResp,
 	ChatUpdateReq,
-	ChatUpdateResp,
-	MessageCreateReqFile
+	ChatUpdateResp
 } from './types';
 import { ChatPaginateReqOrder, ChatMode } from './types';
 import {
-	CreateInfiniteQuery,
-	CreateMutation,
-	CreateQuery,
-	CreateRawMutation,
-	SetInfiniteQueryData,
+	createInfiniteQueryEffect,
+	createMutation,
+	createRawMutation,
+	createQueryEffect,
+	insertInfiniteQueryData,
+	updateInfiniteQueryDataById,
 	type Fetcher,
-	type InfiniteQueryResult,
-	type QueryResult,
+	type MutationResult,
+	type PageState,
 	type RawMutationResult
 } from './state';
 import { APIFetch } from './state/errorHandle';
-import type { MutationResult } from './state/mutate';
-import { UpdateInfiniteQueryDataById } from './state';
-import { upload } from './files.svelte';
 import { pushUserMessage } from './message.svelte';
+import { dev } from '$app/environment';
 
 export interface CreateRoomRequest {
 	message: string;
@@ -43,8 +41,61 @@ export interface CreateRoomRequest {
 	mode: ChatMode;
 }
 
+// Module-level state for infinite query
+let roomPages = $state<PageState<ChatPaginateRespList>[]>([]);
+
+// Module-level state for individual room
+let currentRoom = $state<ChatReadResp | undefined>(undefined);
+let currentRoomId = $state<number | undefined>(undefined);
+
+// Query effects
+export function useRoomsQueryEffect() {
+	if (dev) $inspect('roomPages', roomPages);
+	createInfiniteQueryEffect<ChatPaginateRespList>({
+		fetcher: new ChatFetcher(),
+		updatePages: (updater) => {
+			roomPages = updater(roomPages);
+		},
+		getPages: () => roomPages,
+		revalidateOnFocus: 'force'
+	});
+}
+
+export function useRoomQueryEffect(id: number) {
+	currentRoomId = id;
+	createQueryEffect<ChatReadReq, ChatReadResp>({
+		path: 'chat/read',
+		body: { id },
+		staleTime: Infinity,
+		updateData: (data) => {
+			if (currentRoomId === id) {
+				currentRoom = data;
+			}
+		}
+	});
+}
+
+// Getters
+export function getRoomPages(): PageState<ChatPaginateRespList>[] {
+	return roomPages;
+}
+
+export function getCurrentRoom(): ChatReadResp | undefined {
+	return currentRoom;
+}
+
+// Setters
+export function setRoomPages(pages: PageState<ChatPaginateRespList>[]) {
+	roomPages = pages;
+}
+
+export function setCurrentRoom(data: ChatReadResp | undefined) {
+	currentRoom = data;
+}
+
+// Mutations
 export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateResp> {
-	return CreateRawMutation({
+	return createRawMutation({
 		mutator: async (param) => {
 			let chatRes = await APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
 				model_id: param.modelId,
@@ -67,12 +118,10 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 
 			pushUserMessage(res.user_id, param.message, param.files);
 
-			SetInfiniteQueryData<ChatPaginateRespList>({
-				key: ['chatPaginate'],
-				data: {
-					id: chatId,
-					model_id: param.modelId
-				}
+			// Insert the new room into the infinite query
+			roomPages = insertInfiniteQueryData(roomPages, {
+				id: chatId,
+				model_id: param.modelId
 			});
 
 			await goto('/chat/' + encodeURIComponent(chatId));
@@ -82,6 +131,34 @@ export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateRes
 	});
 }
 
+export function haltCompletion() {
+	return createMutation({
+		path: 'chat/halt',
+		onSuccess: (data) => {
+			// no need to update cache, SSE will handle it
+		}
+	});
+}
+
+export function deleteRoom(): MutationResult<ChatDeleteReq, ChatDeleteResp> {
+	return createMutation<ChatDeleteReq, ChatDeleteResp>({
+		path: 'chat/delete'
+	});
+}
+
+export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
+	return createMutation({
+		path: 'chat/write'
+	});
+}
+
+export function updateRoomTitle(id: number, title: string) {
+	roomPages = updateInfiniteQueryDataById(roomPages, id, (data) => {
+		return { ...data, title };
+	});
+}
+
+// Fetcher implementation
 class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 	async range(startId: number, endId: number) {
 		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
@@ -94,7 +171,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 		return x?.list.sort((a, b) => b.id - a.id);
 	}
 	async forward(limit: number, id?: number) {
-		if (id != undefined) id = id + 1;
+		if (id !== undefined) id = id + 1;
 		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
 			t: 'limit',
 			c: {
@@ -106,7 +183,7 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 		return x?.list.sort((a, b) => b.id - a.id);
 	}
 	async backward(limit: number, id: number) {
-		if (id != undefined) id = id - 1;
+		if (id !== undefined) id = id - 1;
 		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
 			t: 'limit',
 			c: {
@@ -117,53 +194,4 @@ class ChatFetcher implements Fetcher<ChatPaginateRespList> {
 		});
 		return x?.list.sort((a, b) => b.id - a.id);
 	}
-}
-
-export function useRooms(): InfiniteQueryResult<ChatPaginateRespList> {
-	return CreateInfiniteQuery({
-		key: ['chatPaginate'],
-		fetcher: new ChatFetcher(),
-		revalidateOnFocus: 'force'
-	});
-}
-
-export function haltCompletion() {
-	return CreateMutation({
-		path: 'chat/halt',
-		onSuccess: (data) => {
-			// no need to update cache, SSE will handle it
-		}
-	});
-}
-
-export function useRoom(id: number): QueryResult<ChatReadResp> {
-	return CreateQuery<ChatReadReq, ChatReadResp>({
-		key: ['chatRead', id.toString()],
-		path: 'chat/read',
-		body: { id },
-		staleTime: Infinity
-	});
-}
-
-export function deleteRoom(): MutationResult<ChatDeleteReq, ChatDeleteResp> {
-	return CreateMutation<ChatDeleteReq, ChatDeleteResp>({
-		path: 'chat/delete'
-	});
-}
-
-export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
-	return CreateMutation({
-		path: 'chat/write'
-	});
-}
-
-export function updateRoomTitle(id: number, title: string) {
-	UpdateInfiniteQueryDataById<ChatPaginateRespList>({
-		key: ['chatPaginate'],
-		updater: (data) => {
-			if (data.id === id) data.title = title;
-			return data;
-		},
-		id
-	});
 }

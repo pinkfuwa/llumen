@@ -6,17 +6,18 @@ export { Login, RenewToken, TryHeaderAuth, initAuth, type User } from './auth';
 // Chatroom
 export {
 	createRoom,
-	useRooms,
+	useRoomsQueryEffect,
+	getRoomPages,
+	setRoomPages,
+	useRoomQueryEffect,
+	getCurrentRoom,
+	setCurrentRoom,
 	haltCompletion,
-	useRoom,
 	deleteRoom,
 	updateRoom,
 	updateRoomTitle,
 	type CreateRoomRequest
 } from './chatroom.svelte';
-
-// Document
-export type { Document } from './document';
 
 // Files
 export {
@@ -40,53 +41,58 @@ export {
 
 // Model
 export {
-	useModels,
-	DeleteModel,
+	useModelsQueryEffect,
+	useModelIdsQueryEffect,
+	getModels,
+	getModelIds,
+	setModels,
+	setModelIds,
+	deleteModel,
 	readModel,
 	checkConfig,
 	createModel,
 	updateModel,
-	useModelIds,
 	defaultModelConfig,
 	type Capabilty
-} from './model';
+} from './model.svelte';
 
 // User
 export {
-	useUsers,
-	CreateUser,
-	useUser,
-	UpdateUser,
-	DeleteUser,
+	useUsersQueryEffect,
+	useUserQueryEffect,
+	getUsers,
+	getCurrentUser,
+	setUsers,
+	setCurrentUser,
+	createUser,
+	updateUser,
+	deleteUser,
 	type User as UserType
-} from './user';
+} from './user.svelte';
 
 // Patch types
 export type { PartialAssistantChunk } from './patch';
 
 // State management (query/mutation utilities)
 export {
-	CreateQuery,
-	CreateMutation,
-	CreateRawMutation,
-	CreateInfiniteQuery,
-	SetQueryData,
-	SetInfiniteQueryData,
-	RemoveInfiniteQueryData,
-	RevalidateInfiniteQueryData,
-	UpdateInfiniteQueryDataById,
+	createQueryEffect,
+	createMutation,
+	createRawMutation,
+	createInfiniteQueryEffect,
+	insertInfiniteQueryData,
+	updateInfiniteQueryDataById,
+	removeInfiniteQueryData,
+	getInfiniteQueryData,
 	CreateMockMutation,
 	CreateMockQuery,
-	clearCache,
-	type QueryResult,
-	type QueryOption,
-	type CreateMutationResult,
+	type QueryEffectOption,
+	type MutationResult,
 	type RawMutationResult,
+	type CreateMutationOption,
 	type CreateRawMutateOption,
-	type InfiniteQueryResult,
-	type InfiniteQueryOption,
-	type Fetcher,
-	type PageEntry
+	type InfiniteQueryEffectOption,
+	type PageState,
+	type Fetcher
 } from './state';
 
 // Error handling
