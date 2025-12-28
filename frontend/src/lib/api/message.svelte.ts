@@ -504,6 +504,15 @@ export function createMessage(): MutationResult<MessageCreateReq, MessageCreateR
 	});
 }
 
+export function deleteMessage(): MutationResult<MessageDeleteReq, MessageDeleteReq> {
+	return createMutation({
+		path: 'message/delete',
+		onSuccess: (data, param) => {
+			messages = messages.filter((x) => x.id < param.id);
+		}
+	});
+}
+
 export function updateMessage(): RawMutationResult<
 	MessageCreateReq & { msgId: number },
 	MessageCreateResp
