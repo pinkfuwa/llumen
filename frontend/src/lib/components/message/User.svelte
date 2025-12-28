@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { SquarePen, Check, X } from '@lucide/svelte';
+	import { SquarePen, Check, X, Trash2 } from '@lucide/svelte';
 	import FileGroup from '$lib/components/common/FileGroup.svelte';
 	import { Markdown } from '$lib/components/markdown';
-	import { getStream } from '$lib/api/message.svelte';
+	import { getStream, deleteMessage } from '$lib/api/message.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
 	let {
@@ -10,7 +10,14 @@
 		files = [] as Array<{ name: string; id: number }>,
 		onupdate = (() => {}) as (text: string, files: Array<{ name: string; id: number }>) => void,
 		// streaming means the message just being updated(editing)
-		streaming = false
+		streaming = false,
+		messageId
+	}: {
+		content: string;
+		files?: Array<{ name: string; id: number }>;
+		onupdate?: (text: string, files: Array<{ name: string; id: number }>) => void;
+		streaming?: boolean;
+		messageId: number;
 	} = $props();
 
 	// TODO: use component lib
@@ -47,15 +54,16 @@
 	// getStream to bypass svelte bug
 	let blockEdit = $state(true);
 	getStream((streaming) => (blockEdit = streaming));
+
+	const { mutate: removeMessage } = deleteMessage();
 </script>
 
-<div class="flex w-full justify-end px-[5vw] lg:px-20 2xl:px-36">
-	<div
-		class="group/files {editable
-			? 'w-full md:w-[calc(100%-2rem)]'
-			: 'max-w-full md:max-w-[calc(100%-2rem)]'} wrap-break-word"
-	>
-		<div class="w-full rounded-md bg-user-bg p-4">
+<div class="group/files mt-4 w-full px-[5vw] lg:px-20 2xl:px-36">
+	<div class="flex justify-end">
+		<div
+			class="rounded-md bg-user-bg p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]"
+			data-state={editable ? 'edit' : 'text'}
+		>
 			{#if files.length != 0}
 				<div class="mb-2 overflow-auto border-b border-outline pb-2">
 					{#if editable}
@@ -82,43 +90,54 @@
 				<Markdown source={editBuffer} />
 			</div>
 		</div>
-		<div class="mt-1 flex justify-end" bind:this={btnGroup}>
-			<Button
-				class="p-2 data-[state=close]:hidden"
-				onclick={() => {
-					editable = false;
-					content = editBuffer;
-					editFiles = [...filesBuffer];
-				}}
-				data-state={editable ? 'open' : 'close'}
-				borderless
-			>
-				<X class="h-6 w-6" />
-			</Button>
-			<Button
-				class="p-2 data-[state=close]:hidden"
-				onclick={() => {
-					editable = false;
-					onupdate(content, editFiles);
-				}}
-				data-state={editable ? 'open' : 'close'}
-				borderless
-				disabled={blockEdit}
-			>
-				<Check class="h-6 w-6" />
-			</Button>
-			<Button
-				class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
-				onclick={() => {
-					editable = true;
-					editBuffer = content;
-					filesBuffer = [...editFiles];
-				}}
-				data-state={editable ? 'open' : 'close'}
-				borderless
-			>
-				<SquarePen class="h-6 w-6" />
-			</Button>
-		</div>
+	</div>
+	<div class="mt-1 flex justify-end" bind:this={btnGroup}>
+		<Button
+			class="p-2 data-[state=close]:hidden"
+			onclick={() => {
+				editable = false;
+				content = editBuffer;
+				editFiles = [...filesBuffer];
+			}}
+			data-state={editable ? 'open' : 'close'}
+			borderless
+		>
+			<X class="h-6 w-6" />
+		</Button>
+		<Button
+			class="p-2 data-[state=close]:hidden"
+			onclick={() => {
+				editable = false;
+				onupdate(content, editFiles);
+			}}
+			data-state={editable ? 'open' : 'close'}
+			borderless
+			disabled={blockEdit}
+		>
+			<Check class="h-6 w-6" />
+		</Button>
+		<Button
+			class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
+			onclick={() => {
+				editable = true;
+				editBuffer = content;
+				filesBuffer = [...editFiles];
+			}}
+			data-state={editable ? 'open' : 'close'}
+			borderless
+		>
+			<SquarePen class="h-6 w-6" />
+		</Button>
+		<Button
+			class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
+			onclick={() => {
+				removeMessage({ id: messageId });
+			}}
+			data-state={editable ? 'open' : 'close'}
+			borderless
+			disabled={blockEdit}
+		>
+			<Trash2 class="h-6 w-6" />
+		</Button>
 	</div>
 </div>
