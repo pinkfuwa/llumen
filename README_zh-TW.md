@@ -69,6 +69,12 @@ docker run -it --rm \
 
 *就這樣。* 不需要複雜設定。不需要安裝依賴套件。
 
+> [!TIP]
+> 想測試最新功能？我們也提供從最新 commit 編譯的 **nightly 版本**：
+> ```bash
+> ghcr.io/pinkfuwa/llumen:nightly
+> ```
+
 請參閱 [./docs/sample](./docs/sample) 查看 docker-compose 範例。
 
 ### :package: 其他方式
