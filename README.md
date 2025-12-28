@@ -71,6 +71,12 @@ docker run -it --rm \
 
 *That's it.* No pipelines to configure. No dependencies to install.
 
+> [!TIP]
+> Want to test the latest features? We also publish a **nightly version** built from the latest commit:
+> ```bash
+> ghcr.io/pinkfuwa/llumen:nightly
+> ```
+
 See [./docs/sample](./docs/sample) for docker-compose examples.
 
 ### :package: Other Methods
