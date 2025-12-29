@@ -12,10 +12,10 @@ This software uses third-party libraries and dependencies.
 Complete license information for all dependencies can be found in the source repository:
 
 Frontend Dependencies:
-  https://github.com/eason/llumen/blob/main/frontend/THIRDPARTY.txt
+  https://raw.githubusercontent.com/pinkfuwa/llumen/refs/heads/main/frontend/THIRDPARTY.txt
 
 Backend Dependencies:
-  https://github.com/eason/llumen/blob/main/backend/THIRDPARTY.toml
+  https://raw.githubusercontent.com/pinkfuwa/llumen/refs/heads/main/backend/THIRDPARTY.toml
 
 For the full source code and additional information, visit:
   https://github.com/eason/llumen
