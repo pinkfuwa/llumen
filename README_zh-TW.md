@@ -46,7 +46,12 @@
 - :art: **豐富媒體支援：** 支援 PDF 上傳、圖片生成，並可渲染複雜的 LaTeX/程式碼。
 - :handshake: **隨處執行：** 支援 Windows、Linux、Docker，並針對 **Arm64** 進行最佳化（沒錯，它在 Raspberry Pi 上也能飛快運行）。
 
-[![影片預覽](./docs/video.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
+
+
+
+
+
+[![影片預覽](./docs/video.webp)](https://github.com/user-attachments/assets/11baf93d-06d1-4359-8828-d7f4dd78efa9)
 
 ## :zap: 從 :zero: 開始
 
