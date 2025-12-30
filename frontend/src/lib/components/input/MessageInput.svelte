@@ -9,11 +9,12 @@
 	import MarkdownBtn from './MarkdownBtn.svelte';
 	import { _ } from 'svelte-i18n';
 	import Stop from './Stop.svelte';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { getModels } from '$lib/api/model.svelte.js';
 	import { FileUp } from '@lucide/svelte';
 	import { getSupportedFileExtensions } from './fileTypes';
+	import Confirm from './Confirm.svelte';
 
 	let {
 		mode = $bindable(Mode.Normal),
@@ -36,6 +37,8 @@
 	} = $props();
 
 	let editable = $state(true);
+	let showConfirm = $state(false);
+	let pendingNavigationUrl: string | null = $state(null);
 
 	let container = $state<HTMLElement | null>();
 
@@ -69,6 +72,20 @@
 		modelId = null;
 	});
 
+	beforeNavigate((navigation) => {
+		if (content.length == 0 && files.length == 0) return;
+
+		const navigationUrl = navigation.to?.url.pathname || null;
+		if (pendingNavigationUrl == navigationUrl) {
+			showConfirm = false;
+			pendingNavigationUrl = null;
+		} else {
+			navigation.cancel();
+			showConfirm = true;
+			pendingNavigationUrl = navigationUrl;
+		}
+	});
+
 	function submit() {
 		if (onsubmit && content.length > 0 && modelIdValid) {
 			disabled = true;
@@ -76,6 +93,14 @@
 		}
 	}
 </script>
+
+<Confirm
+	bind:open={showConfirm}
+	onconfirm={() => {
+		console.log(pendingNavigationUrl);
+		goto(pendingNavigationUrl!);
+	}}
+/>
 
 <div
 	class="min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-[min(750px,75%)]"

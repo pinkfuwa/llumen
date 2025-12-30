@@ -77,7 +77,13 @@
 		"research_agent": "研究代理",
 		"calling": "呼叫中",
 		"default_tool": "預設工具",
-		"hallucination_warning": "流明可能會犯錯，請謹慎使用生成資訊。"
+		"hallucination_warning": "流明可能會犯錯,請謹慎使用生成資訊。",
+		"confirm": {
+			"title": "離開此頁面?",
+			"message": "您有未儲存的變更。確定要離開此頁面嗎?",
+			"cancel": "取消",
+			"confirm": "離開"
+		}
 	},
 	"common": {
 		"loading": "載入中",
