@@ -50,6 +50,7 @@ llumen is a LLM chat application. featuring three mode: normal chat, search and 
   - For user-input errors (e.g., form validation), display inline messages without crashing the app.
 * `$effect` should be called during component initialization, `$state` should be at top-level(function...)
 * Runes should be used in svelte or svelte.ts file
+* Prefer using arrow function for callback(onclick/onpaste/...)
 
 ## Query Management Library
 
