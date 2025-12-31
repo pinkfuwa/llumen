@@ -3,100 +3,77 @@
 
   # Llumen
 
-  ### :rocket: The antidote to bloated AI interfaces.
-  ### A lightweight, performant chat application for the rest of us.
-
   [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://www.mozilla.org/en-US/MPL/2.0/)
   [![Nightly Docker](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml)
   [![status check](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml)
   ![MSRV](https://img.shields.io/static/v1?label=MSRV&message=1.89&color=orange&logo=rust)
   [![zh-tw](https://img.shields.io/badge/lang-zh--TW-green)](./README_zh-TW.md)
-
-  <img src="https://skillicons.dev/icons?i=rust,ts,svelte,tailwind" alt="Technology Stack" width="auto" height="70" />
 </div>
 
 ---
 
-## :bulb: Why we built llumen
+## Why Llumen?
 
-### The Problem: The "Self-Hosted" Tradeoff: Powerful but Complex
+**Most self-hosted interfaces are built for servers, not devices.** They're powerful but demand heavy resources and hours of configuration.
 
-If you have ever tried to self-host an LLM interface on a modest device, you know the struggle:
-1.  **The Bloat:** Python-based containers that eat Gigabytes of RAM just to idle.
-2.  **The Lag:** Waiting 30+ seconds for a server to boot and another minute to load chat history.
-3.  **The Config Hell:** Spending hours wrestling with pipelines just to get a simple feature like "Title Generation" to work reliably.
+Llumen carves out a different space: **privacy without the complexity**. You get the features you actually need, optimized for modest hardware: Raspberry Pi/old laptops/minimal VPS while keeping many features of commercial products.
 
-### The Solution: Simplicity by Engineering
+|  | Privacy | Power | Setup |
+| :--- | :--- | :--- | :--- |
+| **Commercial** (ChatGPT) | ❌ Cloud-only | ✅ High | ✅ Zero-config |
+| **Typical Self-Host** (Open WebUI) | ✅ Local | ✅ High | ❌ Config hell |
+| **llumen** | ✅ Local | ⚖️ Just enough | ✅ Zero-config |
 
-We refused to accept that "powerful" means "heavy." We built llumen to fill the gap between commercial products (easy to setup, but no privacy) and power-user tools (private, but heavy & complex).
+## Features
 
-| Feature | Typical "Power User" UI | **llumen** |
-| :--- | :--- | :--- |
-| **Asset Footprint** | HUGE (GBs) | **Tiny** (12MB) |
-| **RAM Usage** | High (Nightmare to Debug) | **< 128MB** |
-| **Setup Time** | Hours of config | **Zero-Config** |
-
-## :sparkles: Features
-
-Don't let the size fool you. Llumen is lightweight in resources, but heavy on capability.
-
-- :electric_plug: **OpenAI Compatible:** Works with OpenRouter, local models, or OpenAI-compatible server.
-- :rocket: **Blazing Fast:** Sub-second cold starts. No more waiting.
-- :brain: **Smart & Deep:** Built-in "Deep Research" capabilities, web-search integration.
-- :art: **Rich Media:** Handles PDF uploads, image generation, and renders complex LaTeX/Code.
-- :handshake: **Run Anywhere:** Windows, Linux, Docker, and fully optimized for **Arm64** (yes, it fly on a Raspberry Pi).
+| Feature | What You Get |
+| :--- | :--- |
+| Speed | Sub-second cold starts, real-time token streaming |
+| Chat Modes | Normal, Web Search, & Deep Research with autonomous agents |
+| Rich Media | PDF uploads, LaTeX rendering, image generation |
+| Universal API | Any OpenAI-compatible provider (OpenRouter, local models, etc.) |
+| Minimal Footprint | ~17MB binary, <128MB RAM usage |
 
 [![Video preview](./docs/video.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
 
-## :zap: Quickstart (The Proof)
+## Quickstart
 
-Prove the speed yourself. If you have Docker, you are 30 seconds away from chatting.
+> **Default Login:** `admin` / `P@88w0rd`
 
-> [!IMPORTANT]
-> **Default Credentials:**
-> - User: `admin`
-> - Pass: `P@88w0rd`
-
-### :whale: Docker (Recommended)
-
-Our multi-stage build produces a tiny, efficient container.
+### Docker (30-second setup)
 
 ```bash
 docker run -it --rm \
-  -e API_KEY="<YOUR_OPENROUTER_API_KEY>" \
+  -e API_KEY="<YOUR_OPENROUTER_KEY>" \
   -p 80:80 \
   -v "$(pwd)/data:/data" \
   ghcr.io/pinkfuwa/llumen:latest
 ```
 
-*That's it.* No pipelines to configure. No dependencies to install.
+That's it. No config files. No Python dependencies.
 
-> [!TIP]
-> Want to test the latest features? We also publish a **nightly version** built from the latest commit:
-> ```bash
-> ghcr.io/pinkfuwa/llumen:nightly
-> ```
+**Want bleeding edge?** Use `ghcr.io/pinkfuwa/llumen:nightly`
 
 See [./docs/sample](./docs/sample) for docker-compose examples.
 
-### :package: Other Methods
-Prefer a binary? We support that too. Check the [Releases](https://github.com/pinkfuwa/llumen/releases) for Windows and Linux binaries.
+### Native Binaries
 
-## :key: Configuration (Optional)
+Download from [Releases](https://github.com/pinkfuwa/llumen/releases) for Windows/Linux, including arm build.
 
-It works out of the box, but if you want to tweak it:
+## Configuration (Optional)
 
-- `API_KEY` (required) — Your OpenRouter/Provider key.
-- `OPENAI_API_BASE` — Custom endpoint (Default: `https://openrouter.ai/api`).
-- `DATA_PATH` — Directory path for data storage (Default: `.`). Stores `db.sqlite` and `blobs.redb`.
-- `BIND_ADDR` — Network interface (Default: `0.0.0.0:80`).
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `API_KEY` | OpenRouter/provider key | *required* |
+| `API_BASE` | Custom endpoint | `https://openrouter.ai/api` |
+| `DATA_PATH` | Storage directory | `.` |
+| `BIND_ADDR` | Network Socket | `0.0.0.0:80` |
 
-## :book: Documentation
+## Docs
 
-- **User Guide**: [./docs/user/README.md](./docs/user/README.md) - Full features and usage.
-- **For Developers**:
-  - Build from source: `./docs/chore/README.md`
-  - Architecture docs: `./docs/dev/README.md`
+- **User Guide**: [./docs/user/README.md](./docs/user/README.md)
+- **Developer Docs**: [./docs/dev/README.md](./docs/dev/README.md)
+- **Building from Source**: [./docs/chore/README.md](./docs/chore/README.md)
 
 <div align="center">
   Built with ❤️ by pinkfuwa. Keep it simple, keep it fast.
