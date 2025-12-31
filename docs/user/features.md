@@ -212,13 +212,17 @@ In the model selector, capabilities are indicated:
 
 See the [Configuration Guide](./configuration.md) for detailed model configuration options.
 
-## Keyboard Shortcuts
+## Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| `Enter` | Send message |
+| `Enter` | Send message(configurable in setting) |
 | `Shift + Enter` | New line in message |
 | `Escape` | Cancel editing |
+| `Ctrl + S` | Toggle sidebar |
+| `Ctrl + D` | Open new chat |
+| `Swipe right` | Open sidebar |
+| `Swipe left` | Close sidebar |
 
 ## Cost Tracking
 

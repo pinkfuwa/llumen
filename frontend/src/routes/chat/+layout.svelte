@@ -6,10 +6,12 @@
 	let { children, params } = $props();
 	import { Sidebar } from '$lib/components';
 	import OpenBtn from '$lib/components/sidebar/OpenBtn.svelte';
+	import { createSwipeGesture } from '$lib/components/sidebar/gesture';
 	import { onDestroy } from 'svelte';
 
 	let addition = $derived(params.id != undefined);
 	let open = $state(window.matchMedia('(width >= 48rem)').matches);
+	let contentElement: HTMLElement;
 
 	function uselessFn(i: any) {}
 	$effect(() => {
@@ -34,6 +36,24 @@
 
 	useUserQueryEffect();
 	useModelsQueryEffect();
+
+	$effect(() => {
+		if (!contentElement) {
+			return;
+		}
+
+		const cleanup = createSwipeGesture(contentElement, {
+			threshold: 50,
+			velocity: 0.3,
+			onSwipe: (direction) => {
+				if (direction === 'right' && !open) {
+					open = true;
+				}
+			}
+		});
+
+		return cleanup;
+	});
 </script>
 
 <OpenBtn bind:open />
@@ -43,7 +63,7 @@
 		<Sidebar {addition} bind:open />
 	</div>
 
-	<div class="absolute h-full w-full min-w-0 grow md:static md:w-auto">
+	<div bind:this={contentElement} class="absolute h-full w-full min-w-0 grow md:static md:w-auto">
 		{@render children()}
 	</div>
 </div>
