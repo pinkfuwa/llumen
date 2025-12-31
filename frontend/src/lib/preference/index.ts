@@ -29,7 +29,7 @@ function defaultPreference(): Required<UserPreference> {
 			window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 				? 'dark-pattern'
 				: 'light',
-		submit_on_enter: 'false'
+		submit_on_enter: 'true'
 	};
 }
 
