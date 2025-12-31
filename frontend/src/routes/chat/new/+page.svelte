@@ -54,6 +54,9 @@
 				},
 				(data) => goto('/chat/' + encodeURIComponent(data.id))
 			);
+
+			content = '';
+			files = [];
 		}}
 		large
 	/>
