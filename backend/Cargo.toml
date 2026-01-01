@@ -7,7 +7,6 @@ edition = "2024"
 default = []
 dev = []
 tracing = ["dep:tokio-console", "dep:tracing", "dep:console-subscriber", "dep:tracing-subscriber", "tokio/tracing"]
-intent_classification = ["dep:smartcore"]
 
 [profile.release]
 opt-level = "s"
@@ -55,11 +54,6 @@ getrandom = "0.3.4"
 [dependencies.rust-embed-for-web]
 version = "11.3.0"
 default-features = false
-
-[dependencies.smartcore]
-version = "0.4.8"
-optional = true
-features = ["serde", "getrandom"]
 
 [dependencies.image]
 version = "0.25.9"
