@@ -1,5 +1,4 @@
 import { events } from 'fetch-event-stream';
-import oboe from 'oboe';
 
 import { APIFetch, getError, RawAPIFetch } from './state/errorHandle';
 
@@ -68,7 +67,6 @@ function pushMessage(m: Message) {
 // State for tracking deep research plan being built during streaming
 let deepState = $state<{
 	currentStepIndex: number;
-	oboeInstance: oboe.Oboe;
 	fullJson: string;
 } | null>(null);
 
@@ -214,30 +212,19 @@ const Handlers: {
 		if (!deepState) {
 			deepState = {
 				currentStepIndex: -1,
-				oboeInstance: oboe()
-					.node('locale', function (value) {
-						plan.locale = value;
-					})
-					.node('has_enough_context', function (value) {
-						plan.has_enough_context = value;
-					})
-					.node('thought', function (value) {
-						plan.thought = value;
-					})
-					.node('title', function (value, path) {
-						if (path.length === 1) plan.title = value;
-					})
-					.node('steps[*]', function (step, path) {
-						plan.steps.push({
-							...step,
-							progress: []
-						});
-					}),
 				fullJson: ''
 			};
 		}
 		deepState!.fullJson += planChunk;
-		deepState!.oboeInstance.emit('data', planChunk);
+		try {
+			const lastChunk = firstMsg.inner.c.at(-1)!;
+			const agentCall = JSON.parse(deepState!.fullJson) as Deep;
+			JSON.parse(deepState!.fullJson);
+			for (const step of agentCall.steps) step.progress = [];
+			lastChunk.c = agentCall;
+		} catch (e) {
+			console.warn('invaild plan');
+		}
 	},
 
 	deep_step_start(stepIndex) {
@@ -245,11 +232,6 @@ const Handlers: {
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		if (!deepState) throw new Error('deepState is not initialized');
 		const lastChunk = firstMsg.inner.c.at(-1)!;
-		if (deepState.currentStepIndex == -1) {
-			const agentCall = JSON.parse(deepState!.fullJson) as Deep;
-			for (const step of agentCall.steps) step.progress = [];
-			lastChunk.c = agentCall;
-		}
 		deepState.currentStepIndex = stepIndex as number;
 		cursor!.index++;
 		cursor!.offset = 0;

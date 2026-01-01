@@ -3,7 +3,7 @@
 This file contains license information for all third-party dependencies used in the frontend.
 Generated from package.json and pnpm-lock.yaml.
 --------------------------------------------------------------------------------
-@codemirror/autocomplete@6.19.1
+@codemirror/autocomplete@6.20.0
 
 License: MIT
 Repository: https://github.com/codemirror/autocomplete
@@ -12,7 +12,7 @@ Email: marijn@haverbeke.berlin
 URL: http://marijnhaverbeke.nl
 License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/autocomplete/LICENSE
 --------------------------------------------------------------------------------
-@codemirror/commands@6.10.0
+@codemirror/commands@6.10.1
 
 License: MIT
 Repository: https://github.com/codemirror/commands
@@ -21,7 +21,7 @@ Email: marijn@haverbeke.berlin
 URL: http://marijnhaverbeke.nl
 License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/commands/LICENSE
 --------------------------------------------------------------------------------
-@codemirror/language@6.11.3
+@codemirror/language@6.12.1
 
 License: MIT
 Repository: https://github.com/codemirror/language
@@ -39,7 +39,7 @@ Email: marijn@haverbeke.berlin
 URL: http://marijnhaverbeke.nl
 License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/legacy-modes/LICENSE
 --------------------------------------------------------------------------------
-@codemirror/state@6.5.2
+@codemirror/state@6.5.3
 
 License: MIT
 Repository: https://github.com/codemirror/state
@@ -48,7 +48,7 @@ Email: marijn@haverbeke.berlin
 URL: http://marijnhaverbeke.nl
 License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/state/LICENSE
 --------------------------------------------------------------------------------
-@codemirror/view@6.38.8
+@codemirror/view@6.39.8
 
 License: MIT
 Repository: https://github.com/codemirror/view
@@ -56,14 +56,6 @@ Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 URL: http://marijnhaverbeke.nl
 License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/view/LICENSE
---------------------------------------------------------------------------------
-@lezer/common@1.3.0
-
-License: MIT
-Repository: https://github.com/lezer-parser/common
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
-License File: /project/eason/llumen/llumen/frontend/node_modules/@lezer/common/LICENSE
 --------------------------------------------------------------------------------
 @lezer/highlight@1.2.3
 
@@ -73,44 +65,13 @@ Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 License File: /project/eason/llumen/llumen/frontend/node_modules/@lezer/highlight/LICENSE
 --------------------------------------------------------------------------------
-@sveltejs/adapter-auto@6.1.1
-
-License: MIT
-Repository: https://github.com/sveltejs/kit
-License File: /project/eason/llumen/llumen/frontend/node_modules/@sveltejs/adapter-auto/LICENSE
---------------------------------------------------------------------------------
 @sveltejs/adapter-static@3.0.10
 
 License: MIT
 Repository: https://github.com/sveltejs/kit
 License File: /project/eason/llumen/llumen/frontend/node_modules/@sveltejs/adapter-static/LICENSE
 --------------------------------------------------------------------------------
-@sveltejs/kit@2.48.5
-
-License: MIT
-Repository: https://github.com/sveltejs/kit
-License File: /project/eason/llumen/llumen/frontend/node_modules/@sveltejs/kit/LICENSE
---------------------------------------------------------------------------------
-@sveltejs/vite-plugin-svelte@6.2.1
-
-License: MIT
-Repository: https://github.com/sveltejs/vite-plugin-svelte
-Publisher: dominikg
-License File: /project/eason/llumen/llumen/frontend/node_modules/@sveltejs/vite-plugin-svelte/LICENSE
---------------------------------------------------------------------------------
-@tailwindcss/vite@4.1.17
-
-License: MIT
-Repository: https://github.com/tailwindlabs/tailwindcss
-License File: /project/eason/llumen/llumen/frontend/node_modules/@tailwindcss/vite/LICENSE
---------------------------------------------------------------------------------
-@types/oboe@2.1.4
-
-License: MIT
-Repository: https://github.com/DefinitelyTyped/DefinitelyTyped
-License File: /project/eason/llumen/llumen/frontend/node_modules/@types/oboe/LICENSE
---------------------------------------------------------------------------------
-bits-ui@2.14.3
+bits-ui@2.14.4
 
 License: MIT
 Repository: https://github.com/huntabyte/bits-ui
@@ -136,54 +97,11 @@ Email: luke@lukeed.com
 URL: https://lukeed.com
 License File: /project/eason/llumen/llumen/frontend/node_modules/fetch-event-stream/license
 --------------------------------------------------------------------------------
-oboe@2.1.7
-
-License: BSD*
-Repository: https://github.com/jimhigson/oboe.js
-Publisher: Jim Higson
-License File: /project/eason/llumen/llumen/frontend/node_modules/oboe/LICENCE
---------------------------------------------------------------------------------
-prettier-plugin-svelte@3.4.0
-
-License: MIT
-Repository: https://github.com/sveltejs/prettier-plugin-svelte
-Publisher: James Birtles
-Email: jameshbirtles@gmail.com
-License File: /project/eason/llumen/llumen/frontend/node_modules/prettier-plugin-svelte/LICENSE
---------------------------------------------------------------------------------
-prettier-plugin-tailwindcss@0.6.14
-
-License: MIT
-Repository: https://github.com/tailwindlabs/prettier-plugin-tailwindcss
-License File: /project/eason/llumen/llumen/frontend/node_modules/prettier-plugin-tailwindcss/LICENSE
---------------------------------------------------------------------------------
-prettier@3.6.2
-
-License: MIT
-Repository: https://github.com/prettier/prettier
-Publisher: James Long
-License File: /project/eason/llumen/llumen/frontend/node_modules/prettier/LICENSE
---------------------------------------------------------------------------------
-runed@0.36.0
+runed@0.37.1
 
 License: MIT
 Repository: https://github.com/svecosystem/runed
 License File: /project/eason/llumen/llumen/frontend/node_modules/runed/LICENSE
---------------------------------------------------------------------------------
-shiki-codegen@3.15.0
-
-License: MIT
-Repository: https://github.com/shikijs/shiki
-Publisher: Anthony Fu
-Email: anthonyfu117@hotmail.com
-License File: /project/eason/llumen/llumen/frontend/node_modules/shiki-codegen/LICENSE
---------------------------------------------------------------------------------
-svelte-check@4.3.4
-
-License: MIT
-Repository: https://github.com/sveltejs/language-tools
-Publisher: The Svelte Community
-License File: /project/eason/llumen/llumen/frontend/node_modules/svelte-check/LICENSE
 --------------------------------------------------------------------------------
 svelte-i18n@4.0.1
 
@@ -193,35 +111,9 @@ Publisher: Christian Kaisermann
 Email: christian@kaisermann.me
 License File: /project/eason/llumen/llumen/frontend/node_modules/svelte-i18n/LICENSE
 --------------------------------------------------------------------------------
-svelte@5.43.10
-
-License: MIT
-Repository: https://github.com/sveltejs/svelte
-License File: /project/eason/llumen/llumen/frontend/node_modules/svelte/LICENSE.md
---------------------------------------------------------------------------------
-tailwindcss@4.1.17
-
-License: MIT
-Repository: https://github.com/tailwindlabs/tailwindcss
-License File: /project/eason/llumen/llumen/frontend/node_modules/tailwindcss/LICENSE
---------------------------------------------------------------------------------
-temml@0.12.1
+temml@0.13.1
 
 License: MIT
 Repository: https://github.com/ronkok/Temml
 License File: /project/eason/llumen/llumen/frontend/node_modules/temml/LICENSE
---------------------------------------------------------------------------------
-typescript@5.9.3
-
-License: Apache-2.0
-Repository: https://github.com/microsoft/TypeScript
-Publisher: Microsoft Corp.
-License File: /project/eason/llumen/llumen/frontend/node_modules/typescript/LICENSE.txt
---------------------------------------------------------------------------------
-vite@7.2.2
-
-License: MIT
-Repository: https://github.com/vitejs/vite
-Publisher: Evan You
-License File: /project/eason/llumen/llumen/frontend/node_modules/vite/LICENSE.md
 --------------------------------------------------------------------------------
