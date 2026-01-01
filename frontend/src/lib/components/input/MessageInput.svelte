@@ -69,7 +69,6 @@
 	afterNavigate((after) => {
 		content = '';
 		editable = true;
-		modelId = null;
 	});
 
 	beforeNavigate((navigation) => {
