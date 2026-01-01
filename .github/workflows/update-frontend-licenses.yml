@@ -1,0 +1,58 @@
+name: Update Frontend Licenses
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'frontend/pnpm-lock.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-licenses:
+    name: Update frontend THIRDPARTY.txt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: ./frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Generate licenses
+        working-directory: ./frontend
+        run: pnpm generate-licenses
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code frontend/THIRDPARTY.txt || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push if changed
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add frontend/THIRDPARTY.txt
+          git commit -m "chore: update frontend THIRDPARTY.txt [skip ci]"
+          git push

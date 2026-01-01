@@ -1,25 +1,22 @@
-import { globalCache } from './cache';
-
-export { CreateMutation, CreateRawMutation } from './mutate';
+export { createMutation, createRawMutation } from './mutate.svelte';
 export type {
-	MutationResult as CreateMutationResult,
-	CreateRawMutateOption,
-	RawMutationResult
-} from './mutate';
-export { CreateQuery } from './query';
-export type { QueryOption, QueryResult } from './query';
-export {
-	CreateInfiniteQuery,
-	RemoveInfiniteQueryData,
-	SetInfiniteQueryData,
-	RevalidateInfiniteQueryData,
-	UpdateInfiniteQueryDataById
-} from './infinite';
-export type { InfiniteQueryResult, InfiniteQueryOption, Fetcher, PageEntry } from './infinite';
-export { CreateMockMutation, CreateMockQuery } from './mock';
-export { SetQueryData } from './internal';
-export { getError } from './errorHandle';
+	MutationResult,
+	RawMutationResult,
+	CreateMutationOption,
+	CreateRawMutateOption
+} from './mutate.svelte';
 
-export function clearCache() {
-	globalCache.clear();
-}
+export { createQueryEffect } from './query.svelte';
+export type { QueryEffectOption } from './query.svelte';
+
+export {
+	createInfiniteQueryEffect,
+	insertInfiniteQueryData,
+	updateInfiniteQueryDataById,
+	removeInfiniteQueryData,
+	getInfiniteQueryData
+} from './infinite.svelte';
+export type { InfiniteQueryEffectOption, PageState, Fetcher } from './infinite.svelte';
+
+export { CreateMockMutation, CreateMockQuery } from './mock.svelte';
+export { getError } from './errorHandle';

@@ -148,8 +148,6 @@ async fn shutdown_signal() {
     }
 }
 
-/// get dir for sqlite url
-
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
@@ -166,7 +164,10 @@ async fn main() {
     let data_path = PathBuf::from(var("DATA_PATH").unwrap_or(".".to_owned()));
     let mut database_path = data_path.clone();
     database_path.push("db.sqlite");
-    let database_url = format!("sqlite://{}?mode=rwc", database_path.display());
+    let database_url = format!(
+        "sqlite://{}?mode=rwc",
+        database_path.display().to_string().replace('\\', "/")
+    );
     let mut blob_path = data_path.clone();
     blob_path.push("blobs.redb");
     let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
@@ -218,6 +219,8 @@ async fn main() {
     );
 
     let auth_header = var("TRUSTED_HEADER").ok();
+
+    utils::file_cleanup::FileCleanupService::new(conn.clone(), blob.clone()).start();
 
     let state = Arc::new(AppState {
         conn,

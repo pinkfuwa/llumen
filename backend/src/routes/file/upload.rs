@@ -5,10 +5,16 @@ use axum::extract::{Extension, Multipart, State};
 use entity::file::Entity as File;
 use sea_orm::{ActiveValue::Set, EntityTrait};
 use serde::Serialize;
+use time::OffsetDateTime;
 use typeshare::typeshare;
 
 use crate::routes::file::MAX_FILE_SIZE;
 use crate::{AppState, errors::*, middlewares::auth::UserId};
+
+fn get_valid_until_timestamp() -> i32 {
+    let now = OffsetDateTime::now_utc().unix_timestamp();
+    (now + 3600) as i32
+}
 
 #[derive(Debug, Serialize)]
 #[typeshare]
@@ -18,31 +24,36 @@ pub struct FileUploadResp {
 
 const FILE_FIELD: &str = "file";
 
-pub async fn read_attr_field(multipart: &mut Multipart, field_name: &str) -> anyhow::Result<i32> {
-    let field = multipart.next_field().await?;
-
-    if field.is_none() {
-        anyhow::bail!("missing field {}", field_name);
-    }
-
-    let value = field.unwrap().text().await?.parse::<i32>()?;
-    Ok(value)
-}
-
 pub async fn route(
     State(app): State<Arc<AppState>>,
     Extension(UserId(user_id)): Extension<UserId>,
     mut multipart: Multipart,
 ) -> JsonResult<FileUploadResp> {
-    // https://docs.rs/multer/3.1.0/multer/struct.Multipart.html#field-exclusivity
-    // > That is, a Field emitted by next_field() must be dropped before calling next_field() again.
-    // > Failure to do so will result in an error.
-    let chat_id = read_attr_field(&mut multipart, "chat_id")
+    let size_field = multipart
+        .next_field()
         .await
         .kind(ErrorKind::MalformedRequest)?;
 
-    let size = read_attr_field(&mut multipart, "size")
+    if size_field.is_none() {
+        return Err(Json(Error {
+            error: ErrorKind::MalformedRequest,
+            reason: "missing size field".into(),
+        }));
+    }
+
+    if size_field.as_ref().unwrap().name() != Some("size") {
+        return Err(Json(Error {
+            error: ErrorKind::MalformedRequest,
+            reason: "size must be sent before the file part".into(),
+        }));
+    }
+
+    let size = size_field
+        .unwrap()
+        .text()
         .await
+        .kind(ErrorKind::MalformedRequest)?
+        .parse::<i32>()
         .kind(ErrorKind::MalformedRequest)?;
 
     if size > MAX_FILE_SIZE as i32 {
@@ -67,7 +78,7 @@ pub async fn route(
     if content_field.as_ref().unwrap().name() != Some(FILE_FIELD) {
         return Err(Json(Error {
             error: ErrorKind::MalformedRequest,
-            reason: "chat_id must be sent before the file part".into(),
+            reason: "size must be sent before the file part".into(),
         }));
     }
 
@@ -76,9 +87,10 @@ pub async fn route(
     let mime_type = content_field.content_type().map(|c| c.to_string());
 
     let file_id = File::insert(entity::file::ActiveModel {
-        chat_id: Set(Some(chat_id)),
+        chat_id: Set(None),
         owner_id: Set(Some(user_id)),
         mime_type: Set(mime_type),
+        valid_until: Set(Some(get_valid_until_timestamp())),
         ..Default::default()
     })
     .exec(&app.conn)

@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { checkConfig } from '../../api/model';
+	import { checkConfig } from '../../api/model.svelte';
 	import Toml from '../codemirror/Toml.svelte';
 	import { _ } from 'svelte-i18n';
 	import Warning from './Warning.svelte';
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
 	import Button from '$lib/ui/Button.svelte';
+	import type { ModelCheckResp } from '$lib/api/types';
 
 	let { value = $bindable(''), children } = $props();
 
@@ -33,7 +34,7 @@
 				{
 					config: value
 				},
-				(x) => {
+				(x: ModelCheckResp) => {
 					if (x.reason == undefined) configChecked = true;
 					else errorReason = x.reason;
 

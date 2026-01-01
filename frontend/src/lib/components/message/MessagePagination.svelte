@@ -29,6 +29,7 @@
 				{content}
 				{files}
 				{streaming}
+				messageId={msg.id}
 				onupdate={(text, updatedFiles) => {
 					if (room == undefined) return;
 					if (room.model_id == undefined) dispatchError('internal', $_('error.select_model_first'));

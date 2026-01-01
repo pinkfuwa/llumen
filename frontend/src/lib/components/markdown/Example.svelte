@@ -67,7 +67,7 @@ function fibonacci(n) {
 	}
 </script>
 
-<div class="space-y-8 p-8 max-w-6xl mx-auto">
+<div class="mx-auto max-w-6xl space-y-8 p-8">
 	<div class="space-y-4">
 		<h1 class="text-3xl font-bold">Markdown Parsing Modes</h1>
 		<p class="text-gray-600">
@@ -77,29 +77,31 @@ function fibonacci(n) {
 			<button
 				onclick={simulateStreaming}
 				disabled={isStreaming}
-				class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+				class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				{isStreaming ? 'Streaming...' : 'Start Streaming Demo'}
 			</button>
 			<button
 				onclick={reset}
 				disabled={isStreaming}
-				class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+				class="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				Reset
 			</button>
 		</div>
 	</div>
 
-	<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+	<div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
 		<!-- Incremental Mode -->
 		<div class="space-y-2">
 			<div class="flex items-center gap-2">
 				<h2 class="text-xl font-semibold">Incremental Mode</h2>
-				<span class="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">Optimized</span>
+				<span class="rounded bg-green-50 px-2 py-1 text-sm text-green-600">Optimized</span>
 			</div>
-			<p class="text-sm text-gray-600">Parses in main thread with throttling. Reuses previous work.</p>
-			<div class="border rounded-lg p-4 bg-white shadow-sm min-h-[400px] overflow-auto">
+			<p class="text-sm text-gray-600">
+				Parses in main thread with throttling. Reuses previous work.
+			</p>
+			<div class="min-h-[400px] overflow-auto rounded-lg border bg-white p-4 shadow-sm">
 				<Root source={incrementalContent} incremental={true} />
 			</div>
 		</div>
@@ -108,28 +110,30 @@ function fibonacci(n) {
 		<div class="space-y-2">
 			<div class="flex items-center gap-2">
 				<h2 class="text-xl font-semibold">Normal Mode</h2>
-				<span class="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">Default</span>
+				<span class="rounded bg-blue-50 px-2 py-1 text-sm text-blue-600">Default</span>
 			</div>
 			<p class="text-sm text-gray-600">Parses in web worker. Full reparse on every update.</p>
-			<div class="border rounded-lg p-4 bg-white shadow-sm min-h-[400px] overflow-auto">
+			<div class="min-h-[400px] overflow-auto rounded-lg border bg-white p-4 shadow-sm">
 				<Root source={normalContent} incremental={false} />
 			</div>
 		</div>
 	</div>
 
-	<div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-		<h3 class="font-semibold mb-2">Performance Notes</h3>
+	<div class="rounded border-l-4 border-blue-500 bg-blue-50 p-4">
+		<h3 class="mb-2 font-semibold">Performance Notes</h3>
 		<ul class="space-y-1 text-sm text-gray-700">
 			<li>
-				<strong>Incremental mode</strong> is faster for streaming because it reuses parsing work
-				from complete regions (paragraphs, code blocks, tables, etc.)
+				<strong>Incremental mode</strong> is faster for streaming because it reuses parsing work from
+				complete regions (paragraphs, code blocks, tables, etc.)
 			</li>
 			<li>
-				<strong>Normal mode</strong> reparses the entire document but runs in a web worker to avoid
-				blocking the UI
+				<strong>Normal mode</strong> reparses the entire document but runs in a web worker to avoid blocking
+				the UI
 			</li>
 			<li>Both modes use 100ms throttling to batch rapid updates during streaming</li>
-			<li>For static content, either mode works well. For streaming, incremental is recommended.</li>
+			<li>
+				For static content, either mode works well. For streaming, incremental is recommended.
+			</li>
 		</ul>
 	</div>
 </div>

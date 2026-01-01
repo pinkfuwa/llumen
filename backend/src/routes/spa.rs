@@ -125,7 +125,7 @@ pub async fn spa_handler(uri: Uri, req: Request<Body>) -> Response<Body> {
 
     let mut builder = Response::builder()
         .status(StatusCode::OK)
-        .header(header::CONTENT_TYPE, file.mime_type().unwrap());
+        .header(header::CONTENT_TYPE, file.mime_type().unwrap_or_default());
 
     if current_version.map(|x| x == version).unwrap_or_default() {
         if !is_index {

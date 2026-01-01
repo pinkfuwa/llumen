@@ -3,12 +3,6 @@ type CleanupFunction = () => void;
 
 type CreateDropZoneOptions = {
 	/**
-	 * The allowed data types in the format `xxx/xxx`.
-	 * Supports `*` and `xxx/*` wildcards.
-	 * @default '*'
-	 */
-	allowedDataTypes: () => string;
-	/**
 	 * Whether to allow multiple files to be dropped.
 	 * @default true
 	 */
@@ -17,6 +11,10 @@ type CreateDropZoneOptions = {
 	 * Callback for when files are dropped.
 	 */
 	onDrop?(files: File[] | null, event: DragEvent): void;
+	/**
+	 * Callback for when files are pasted.
+	 */
+	onPaste?(files: File[] | null, event: ClipboardEvent): void;
 };
 
 type CreateDropZoneReturn = {
@@ -36,11 +34,10 @@ export function createDropZone(
 	// Inline utilities from sv-use
 	const noop = () => {};
 
-	const { allowedDataTypes, multiple = true, onDrop = noop } = options;
+	const { multiple = true, onDrop = noop, onPaste = noop } = options;
 
 	let cleanups: CleanupFunction[] = [];
 	let counter = 0;
-	let isValid = true;
 
 	const _target = $derived(target());
 	let isOver = $state(false);
@@ -65,6 +62,10 @@ export function createDropZone(
 					addListener('dragleave', (event) => handleDragEvent(event, 'leave')),
 					addListener('drop', (event) => handleDragEvent(event, 'drop'))
 				);
+
+				const pasteListener = (e: ClipboardEvent) => handlePasteEvent(e);
+				targetElement.addEventListener('paste', pasteListener);
+				cleanups.push(() => targetElement.removeEventListener('paste', pasteListener));
 			});
 		}
 
@@ -74,53 +75,26 @@ export function createDropZone(
 		};
 	});
 
+	function handlePasteEvent(event: ClipboardEvent) {
+		const clipboardFiles = event.clipboardData?.files;
+		if (!clipboardFiles || clipboardFiles.length === 0) return;
+
+		const list = Array.from(clipboardFiles);
+		const currentFiles = list.length === 0 ? null : multiple ? list : [list[0]];
+
+		if (currentFiles) {
+			files = currentFiles;
+			onPaste(currentFiles, event);
+		}
+	}
+
 	function getFiles(event: DragEvent) {
 		const list = Array.from(event.dataTransfer?.files ?? []);
 		return list.length === 0 ? null : multiple ? list : [list[0]];
 	}
 
-	function checkDataTypes(types: string[]): boolean {
-		if (types.length === 0) return false;
-
-		const allowedArray = $derived(allowedDataTypes().split(','));
-
-		return types.every((type) => {
-			return allowedArray.some((allowedType) => {
-				const [prefix] = allowedType.split('/');
-				if (allowedType.split('/')[1] === '*') {
-					return type.startsWith(prefix);
-				}
-				return type === allowedType;
-			});
-		});
-	}
-
-	function checkValidity(items: DataTransferItemList) {
-		const types = Array.from(items ?? []).map((item) => item.type);
-
-		const dataTypesValid = checkDataTypes(types);
-		const multipleFilesValid = multiple || items.length <= 1;
-
-		return dataTypesValid && multipleFilesValid;
-	}
-
-	function isSafari() {
-		return /^(?:(?!chrome|android).)*safari/i.test(navigator.userAgent) && !('chrome' in window);
-	}
-
 	function handleDragEvent(event: DragEvent, eventType: 'enter' | 'over' | 'leave' | 'drop') {
-		const dataTransferItemList = event.dataTransfer?.items;
-		isValid = (dataTransferItemList && checkValidity(dataTransferItemList)) ?? false;
-
-		// preventDefaultForUnhandled is hardcoded to false, so no always-prevent here
-
-		if (!isSafari() && !isValid) {
-			if (event.dataTransfer) {
-				event.dataTransfer.dropEffect = 'none';
-			}
-			return;
-		}
-
+		// Accept all file types
 		event.preventDefault();
 		if (event.dataTransfer) {
 			event.dataTransfer.dropEffect = 'copy';
@@ -144,10 +118,8 @@ export function createDropZone(
 			case 'drop':
 				counter = 0;
 				isOver = false;
-				if (isValid) {
-					files = currentFiles;
-					onDrop(currentFiles, event);
-				}
+				files = currentFiles;
+				onDrop(currentFiles, event);
 				break;
 		}
 	}

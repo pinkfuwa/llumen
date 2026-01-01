@@ -2,11 +2,11 @@
 	import { isLightTheme } from '$lib/preference';
 	import { onDestroy } from 'svelte';
 	import { derived, get, toStore, writable } from 'svelte/store';
-	import { useModelIds } from '$lib/api/model';
+	import { useModelIdsQueryEffect, getModelIds } from '$lib/api/model.svelte';
 	import { _ } from 'svelte-i18n';
 
 	const useCodeMirrorPromise = import('./index');
-	const modelIdsQuery = useModelIds();
+	useModelIdsQueryEffect();
 
 	let {
 		value = $bindable('# defaultConfig'),
@@ -21,12 +21,13 @@
 	let loaded = $state(false);
 
 	useCodeMirrorPromise.then((useCodeMirror) => {
+		const modelIdsStore = toStore(() => getModelIds()?.ids ?? []);
 		useCodeMirror.default({
 			isLightTheme: get(isLightTheme),
 			value: valWritable,
 			element: toStore(() => div!),
 			onDestroy: (x) => (callback = x),
-			modelIds: derived(modelIdsQuery.data, (res) => res?.ids ?? [])
+			modelIds: modelIdsStore
 		});
 		loaded = true;
 	});
