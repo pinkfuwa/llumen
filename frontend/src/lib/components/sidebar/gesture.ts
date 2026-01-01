@@ -3,14 +3,6 @@
  * Supports left and right swipe gestures for sidebar open/close
  */
 
-// Direction constants
-const DIRECTION_NONE = 1;
-const DIRECTION_LEFT = 2;
-const DIRECTION_RIGHT = 4;
-const DIRECTION_UP = 8;
-const DIRECTION_DOWN = 16;
-const DIRECTION_HORIZONTAL = DIRECTION_LEFT | DIRECTION_RIGHT;
-
 export type SwipeDirection = 'left' | 'right';
 
 interface TouchState {
@@ -31,29 +23,60 @@ interface SwipeOptions {
 /**
  * Compute the direction based on deltaX and deltaY
  */
-function getDirection(deltaX: number, deltaY: number): number {
+function getDirection(deltaX: number, deltaY: number): SwipeDirection | null {
 	if (deltaX === deltaY) {
-		return DIRECTION_NONE;
+		return null;
 	}
 
 	if (Math.abs(deltaX) >= Math.abs(deltaY)) {
-		return deltaX < 0 ? DIRECTION_LEFT : DIRECTION_RIGHT;
+		return deltaX < 0 ? 'left' : 'right';
 	}
 
-	return deltaY < 0 ? DIRECTION_UP : DIRECTION_DOWN;
+	return null;
 }
 
 /**
- * Convert direction constant to string
+ * Check if an element is horizontally scrollable
  */
-function directionToString(direction: number): SwipeDirection | null {
-	if (direction === DIRECTION_LEFT) {
-		return 'left';
+function isHorizontallyScrollable(element: Element): boolean {
+	return element.scrollWidth > element.clientWidth;
+}
+
+/**
+ * Check if an element is scrolled to the end in the given direction
+ */
+function isScrolledToEnd(element: Element, direction: SwipeDirection): boolean {
+	const scrollLeft = element.scrollLeft;
+	const maxScroll = element.scrollWidth - element.clientWidth;
+
+	if (direction === 'left') {
+		// Swiping left means scrolling right, check if at right end
+		return scrollLeft >= maxScroll - 1; // -1 for rounding errors
+	} else {
+		// Swiping right means scrolling left, check if at left end
+		return scrollLeft <= 1; // Allow 1px tolerance
 	}
-	if (direction === DIRECTION_RIGHT) {
-		return 'right';
+}
+
+/**
+ * Find if any parent element (up to the container) blocks the gesture in the given direction
+ */
+function hasScrollableParentBlockingDirection(
+	startElement: Element,
+	container: HTMLElement,
+	direction: SwipeDirection
+): boolean {
+	let current: Element | null = startElement;
+	while (current && current !== container) {
+		if (isHorizontallyScrollable(current)) {
+			// If it's scrollable but not at the end in this direction, it blocks the gesture
+			if (!isScrolledToEnd(current, direction)) {
+				return true;
+			}
+		}
+		current = current.parentElement;
 	}
-	return null;
+	return false;
 }
 
 /**
@@ -65,14 +88,18 @@ export function createSwipeGesture(element: HTMLElement, options: SwipeOptions):
 	const velocityThreshold = options.velocity ?? 0.3;
 
 	let touchState: TouchState | null = null;
+	let startTarget: Element | null = null;
 
 	function handleTouchStart(event: TouchEvent): void {
 		if (event.touches.length !== 1) {
 			touchState = null;
+			startTarget = null;
 			return;
 		}
 
 		const touch = event.touches[0];
+		startTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+
 		const now = Date.now();
 
 		touchState = {
@@ -108,6 +135,7 @@ export function createSwipeGesture(element: HTMLElement, options: SwipeOptions):
 		// Prevent division by zero
 		if (deltaTime === 0) {
 			touchState = null;
+			startTarget = null;
 			return;
 		}
 
@@ -117,22 +145,26 @@ export function createSwipeGesture(element: HTMLElement, options: SwipeOptions):
 		const direction = getDirection(deltaX, deltaY);
 
 		// Check if it's a horizontal swipe with enough velocity and distance
-		const isHorizontal = (direction & DIRECTION_HORIZONTAL) !== 0;
 		const hasEnoughDistance = distance > threshold;
 		const hasEnoughVelocity = velocity > velocityThreshold;
 
-		if (isHorizontal && hasEnoughDistance && hasEnoughVelocity) {
-			const directionString = directionToString(direction);
-			if (directionString) {
-				options.onSwipe(directionString);
+		if (direction && hasEnoughDistance && hasEnoughVelocity) {
+			// Check if any parent element is scrollable and blocks this direction
+			const isBlocked =
+				startTarget && hasScrollableParentBlockingDirection(startTarget, element, direction);
+
+			if (!isBlocked) {
+				options.onSwipe(direction);
 			}
 		}
 
 		touchState = null;
+		startTarget = null;
 	}
 
 	function handleTouchCancel(): void {
 		touchState = null;
+		startTarget = null;
 	}
 
 	// Add event listeners
