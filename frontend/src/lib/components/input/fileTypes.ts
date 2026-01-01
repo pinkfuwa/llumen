@@ -5,56 +5,38 @@ interface CapabilityFileType {
 }
 
 /** Mapping of capability flags to valid MIME‑type lists. */
-const IMAGE_TYPES = [
-	'image/avcs',
-	'image/avif',
-	'image/bmp',
-	'image/gif',
-	'image/png',
-	'image/webp',
-	'image/jpeg',
-	'image/webp',
-	'image/apng',
-	'image/bmp',
-	'image/vnd.wap.wbmp'
-];
+const IMAGE_TYPES = ['avif', 'webp', 'bmp', 'gif', 'png', 'jpg', 'jpeg'];
 
 const AUDIO_TYPES = ['audio/*'];
 
-const OTHER_TYPES = [
-	'application/pdf',
-	'application/msword',
-	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-	'application/vnd.ms-excel',
-	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-	'application/vnd.ms-powerpoint',
-	'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-];
+const OTHER_TYPES = ['pdf', 'doc', 'ppt', 'pptx', 'docs', 'xlsx'];
 
 // file that will directly upload without any processing
 const LITERAL_FILE = [
-	'text/*',
-	'image/svg+xml',
-	'.md',
-	'.txt',
-	'.ts',
-	'.rs',
-	'.py',
-	'.svelte',
-	'.svelte.ts',
-	'.json',
-	'.csv',
-	'.c',
-	'.cpp',
-	'.h',
-	'.hpp',
-	'.toml'
+	'md',
+	'txt',
+	'ts',
+	'rs',
+	'py',
+	'svelte',
+	'json',
+	'csv',
+	'c',
+	'cpp',
+	'h',
+	'hpp',
+	'toml',
+	'text',
+	'js'
 ];
 
-export function getSupportedFileTypes(capability: CapabilityFileType): string {
+export function getSupportedFileExtensions(capability?: CapabilityFileType): string[] {
+	if (!capability) {
+		return [];
+	}
+
 	const parts: string[] = [];
 
-	// clone the array to avoid mutation
 	parts.push(...LITERAL_FILE);
 
 	if (capability.image_input) {
@@ -69,5 +51,9 @@ export function getSupportedFileTypes(capability: CapabilityFileType): string {
 		parts.push(...OTHER_TYPES);
 	}
 
-	return parts.join(',');
+	return parts;
+}
+
+export function getAllFileExtensions(): string[] {
+	return [...LITERAL_FILE, ...IMAGE_TYPES, ...AUDIO_TYPES, ...OTHER_TYPES];
 }

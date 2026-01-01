@@ -1,10 +1,13 @@
 import { events } from 'fetch-event-stream';
-import oboe from 'oboe';
 
 import { APIFetch, getError, RawAPIFetch } from './state/errorHandle';
 
-import { CreateMutation, CreateRawMutation } from './state';
-import type { MutationResult, RawMutationResult } from './state/mutate';
+import {
+	createMutation,
+	createRawMutation,
+	type MutationResult,
+	type RawMutationResult
+} from './state';
 import type {
 	MessageDeleteReq,
 	MessageCreateReq,
@@ -21,7 +24,8 @@ import type {
 } from './types';
 import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
-import { UpdateInfiniteQueryDataById } from './state';
+import { updateInfiniteQueryDataById } from './state';
+import { getRoomPages, setRoomPages } from './chatroom.svelte';
 import { untrack } from 'svelte';
 import { dev } from '$app/environment';
 
@@ -63,7 +67,6 @@ function pushMessage(m: Message) {
 // State for tracking deep research plan being built during streaming
 let deepState = $state<{
 	currentStepIndex: number;
-	oboeInstance: oboe.Oboe;
 	fullJson: string;
 } | null>(null);
 
@@ -160,11 +163,8 @@ const Handlers: {
 	},
 
 	title(data, chatId) {
-		UpdateInfiniteQueryDataById({
-			key: ['chatPaginate'],
-			id: chatId,
-			updater: (chat) => ({ ...chat, title: data })
-		});
+		const pages = getRoomPages();
+		setRoomPages(updateInfiniteQueryDataById(pages, chatId, (chat) => ({ ...chat, title: data })));
 		cursor!.index++;
 		cursor!.offset = 0;
 	},
@@ -212,30 +212,19 @@ const Handlers: {
 		if (!deepState) {
 			deepState = {
 				currentStepIndex: -1,
-				oboeInstance: oboe()
-					.node('locale', function (value) {
-						plan.locale = value;
-					})
-					.node('has_enough_context', function (value) {
-						plan.has_enough_context = value;
-					})
-					.node('thought', function (value) {
-						plan.thought = value;
-					})
-					.node('title', function (value, path) {
-						if (path.length === 1) plan.title = value;
-					})
-					.node('steps[*]', function (step, path) {
-						plan.steps.push({
-							...step,
-							progress: []
-						});
-					}),
 				fullJson: ''
 			};
 		}
 		deepState!.fullJson += planChunk;
-		deepState!.oboeInstance.emit('data', planChunk);
+		try {
+			const lastChunk = firstMsg.inner.c.at(-1)!;
+			const agentCall = JSON.parse(deepState!.fullJson) as Deep;
+			JSON.parse(deepState!.fullJson);
+			for (const step of agentCall.steps) step.progress = [];
+			lastChunk.c = agentCall;
+		} catch (e) {
+			console.warn('invaild plan');
+		}
 	},
 
 	deep_step_start(stepIndex) {
@@ -243,11 +232,6 @@ const Handlers: {
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		if (!deepState) throw new Error('deepState is not initialized');
 		const lastChunk = firstMsg.inner.c.at(-1)!;
-		if (deepState.currentStepIndex == -1) {
-			const agentCall = JSON.parse(deepState!.fullJson) as Deep;
-			for (const step of agentCall.steps) step.progress = [];
-			lastChunk.c = agentCall;
-		}
 		deepState.currentStepIndex = stepIndex as number;
 		cursor!.index++;
 		cursor!.offset = 0;
@@ -494,10 +478,19 @@ export function pushUserMessage(user_id: number, content: string, files: FileMet
 }
 
 export function createMessage(): MutationResult<MessageCreateReq, MessageCreateResp> {
-	return CreateMutation({
+	return createMutation({
 		path: 'message/create',
 		onSuccess: (data, param) => {
 			pushUserMessage(data.user_id, param.text, param.files || []);
+		}
+	});
+}
+
+export function deleteMessage(): MutationResult<MessageDeleteReq, MessageDeleteReq> {
+	return createMutation({
+		path: 'message/delete',
+		onSuccess: (data, param) => {
+			messages = messages.filter((x) => x.id < param.id);
 		}
 	});
 }
@@ -507,7 +500,7 @@ export function updateMessage(): RawMutationResult<
 	MessageCreateResp
 > {
 	const { mutate: create } = createMessage();
-	return CreateRawMutation({
+	return createRawMutation({
 		mutator: (param) => {
 			return new Promise(async (resolve, reject) => {
 				await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', {

@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json, extract::State};
+use entity::file::{Column as FileColumn, Entity as File};
 use protocol::{FileMetadata, MessageInner};
-use sea_orm::{ActiveModelTrait, ActiveValue::Set};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -42,6 +43,25 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageCreateReq>,
 ) -> JsonResult<MessageCreateResp> {
+    let file_ids: Vec<i32> = req.files.iter().map(|f| f.id).collect();
+
+    if !file_ids.is_empty() {
+        File::update_many()
+            .filter(FileColumn::Id.is_in(file_ids.clone()))
+            .filter(FileColumn::OwnerId.eq(user_id))
+            .col_expr(
+                FileColumn::ChatId,
+                sea_orm::sea_query::Expr::value(req.chat_id),
+            )
+            .col_expr(
+                FileColumn::ValidUntil,
+                sea_orm::sea_query::Expr::value(Option::<i32>::None),
+            )
+            .exec(&app.conn)
+            .await
+            .raw_kind(ErrorKind::Internal)?;
+    }
+
     let files = req
         .files
         .into_iter()

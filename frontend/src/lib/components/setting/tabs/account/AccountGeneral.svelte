@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import { theme, locale, submitOnEnter } from '$lib/preference';
-	import { UpdateUser } from '$lib/api/user';
+	import { updateUser } from '$lib/api/user.svelte';
 	import { get } from 'svelte/store';
 	import Warning from '$lib/components/setting/Warning.svelte';
 	import type { UserPreference } from '$lib/api/types';
@@ -11,7 +11,7 @@
 	let localeData = $state(get(locale));
 	let submitOnEnterData = $state(get(submitOnEnter));
 
-	let { mutate, isPending, isError } = UpdateUser();
+	let { mutate, isPending, isError } = updateUser();
 
 	function mutatePreference(preference: UserPreference) {
 		mutate({ preference });
@@ -19,7 +19,7 @@
 	$inspect('themeData', themeData);
 </script>
 
-{#if $isError}
+{#if isError()}
 	<Warning>{$_('setting.account.error_sync_preference')}</Warning>
 {/if}
 <div class="mb-4 flex items-center justify-between border-b border-outline pb-2 text-lg">
@@ -34,7 +34,7 @@
 		]}
 		fallback="Select Theme"
 		bind:selected={themeData}
-		disabled={$isPending}
+		disabled={isPending()}
 		class="w-36 truncate"
 		popupClass="w-38"
 		onchange={() => mutatePreference({ theme: themeData })}
@@ -51,7 +51,7 @@
 			{ value: 'zh-tw', label: '繁體中文' }
 		]}
 		bind:selected={localeData}
-		disabled={$isPending}
+		disabled={isPending()}
 		class="w-36 truncate"
 		popupClass="w-38"
 		onchange={() => mutatePreference({ locale: localeData })}
@@ -66,7 +66,7 @@
 			{ value: 'false', label: $_('setting.disable') }
 		]}
 		bind:selected={submitOnEnterData}
-		disabled={$isPending}
+		disabled={isPending()}
 		class="w-36 truncate"
 		popupClass="w-38"
 		onchange={() => mutatePreference({ submit_on_enter: submitOnEnterData })}

@@ -1,0 +1,119 @@
+# Third-Party Licenses - Frontend
+
+This file contains license information for all third-party dependencies used in the frontend.
+Generated from package.json and pnpm-lock.yaml.
+--------------------------------------------------------------------------------
+@codemirror/autocomplete@6.20.0
+
+License: MIT
+Repository: https://github.com/codemirror/autocomplete
+Publisher: Marijn Haverbeke
+Email: marijn@haverbeke.berlin
+URL: http://marijnhaverbeke.nl
+License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/autocomplete/LICENSE
+--------------------------------------------------------------------------------
+@codemirror/commands@6.10.1
+
+License: MIT
+Repository: https://github.com/codemirror/commands
+Publisher: Marijn Haverbeke
+Email: marijn@haverbeke.berlin
+URL: http://marijnhaverbeke.nl
+License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/commands/LICENSE
+--------------------------------------------------------------------------------
+@codemirror/language@6.12.1
+
+License: MIT
+Repository: https://github.com/codemirror/language
+Publisher: Marijn Haverbeke
+Email: marijn@haverbeke.berlin
+URL: http://marijnhaverbeke.nl
+License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/language/LICENSE
+--------------------------------------------------------------------------------
+@codemirror/legacy-modes@6.5.2
+
+License: MIT
+Repository: https://github.com/codemirror/legacy-modes
+Publisher: Marijn Haverbeke
+Email: marijn@haverbeke.berlin
+URL: http://marijnhaverbeke.nl
+License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/legacy-modes/LICENSE
+--------------------------------------------------------------------------------
+@codemirror/state@6.5.3
+
+License: MIT
+Repository: https://github.com/codemirror/state
+Publisher: Marijn Haverbeke
+Email: marijn@haverbeke.berlin
+URL: http://marijnhaverbeke.nl
+License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/state/LICENSE
+--------------------------------------------------------------------------------
+@codemirror/view@6.39.8
+
+License: MIT
+Repository: https://github.com/codemirror/view
+Publisher: Marijn Haverbeke
+Email: marijn@haverbeke.berlin
+URL: http://marijnhaverbeke.nl
+License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/view/LICENSE
+--------------------------------------------------------------------------------
+@lezer/highlight@1.2.3
+
+License: MIT
+Repository: https://github.com/lezer-parser/highlight
+Publisher: Marijn Haverbeke
+Email: marijn@haverbeke.berlin
+License File: /project/eason/llumen/llumen/frontend/node_modules/@lezer/highlight/LICENSE
+--------------------------------------------------------------------------------
+@sveltejs/adapter-static@3.0.10
+
+License: MIT
+Repository: https://github.com/sveltejs/kit
+License File: /project/eason/llumen/llumen/frontend/node_modules/@sveltejs/adapter-static/LICENSE
+--------------------------------------------------------------------------------
+bits-ui@2.14.4
+
+License: MIT
+Repository: https://github.com/huntabyte/bits-ui
+Publisher: Hunter Johnston
+Email: https://github.com/huntabyte
+License File: /project/eason/llumen/llumen/frontend/node_modules/bits-ui/LICENSE
+--------------------------------------------------------------------------------
+codemirror@6.0.2
+
+License: MIT
+Repository: https://github.com/codemirror/basic-setup
+Publisher: Marijn Haverbeke
+Email: marijn@haverbeke.berlin
+URL: http://marijnhaverbeke.nl
+License File: /project/eason/llumen/llumen/frontend/node_modules/codemirror/LICENSE
+--------------------------------------------------------------------------------
+fetch-event-stream@0.1.6
+
+License: MIT
+Repository: https://github.com/lukeed/fetch-event-stream
+Publisher: Luke Edwards
+Email: luke@lukeed.com
+URL: https://lukeed.com
+License File: /project/eason/llumen/llumen/frontend/node_modules/fetch-event-stream/license
+--------------------------------------------------------------------------------
+runed@0.37.1
+
+License: MIT
+Repository: https://github.com/svecosystem/runed
+License File: /project/eason/llumen/llumen/frontend/node_modules/runed/LICENSE
+--------------------------------------------------------------------------------
+svelte-i18n@4.0.1
+
+License: MIT
+Repository: https://github.com/kaisermann/svelte-i18n
+Publisher: Christian Kaisermann
+Email: christian@kaisermann.me
+License File: /project/eason/llumen/llumen/frontend/node_modules/svelte-i18n/LICENSE
+--------------------------------------------------------------------------------
+temml@0.13.1
+
+License: MIT
+Repository: https://github.com/ronkok/Temml
+License File: /project/eason/llumen/llumen/frontend/node_modules/temml/LICENSE
+--------------------------------------------------------------------------------

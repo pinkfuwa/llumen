@@ -7,7 +7,10 @@ async fn main() {
     if let Ok(data_path) = env::var("DATA_PATH") {
         let mut db_path = PathBuf::from(data_path);
         db_path.push("db.sqlite");
-        let database_url = format!("sqlite://{}?mode=rwc", db_path.display());
+        let database_url = format!(
+            "sqlite://{}?mode=rwc",
+            db_path.display().to_string().replace('\\', "/")
+        );
         env::set_var("DATABASE_URL", database_url);
     }
 

@@ -1119,6 +1119,63 @@ let timeout = Duration::from_secs(30);  // Set timeout to 30 seconds
 - Database tests use migrations
 - Mock external services
 
+### Touchscreen Gestures
+
+Llumen implements native swipe gestures for sidebar navigation on touchscreen devices without external dependencies.
+
+#### Implementation
+
+The gesture system is implemented in `frontend/src/lib/components/sidebar/gesture.ts` based on Hammer.js's swipe recognizer but simplified for our specific use case.
+
+**Core Algorithm:**
+
+1. **Touch Start**: Record initial touch position and timestamp
+2. **Touch Move**: Track current position
+3. **Touch End**: Calculate velocity and direction
+   - `velocity = distance / time`
+   - `direction = getDirection(deltaX, deltaY)`
+4. **Validation**: Check if gesture meets thresholds
+   - Minimum distance: 50px
+   - Minimum velocity: 0.3 px/ms
+   - Direction must be horizontal
+
+**Integration:**
+
+```typescript
+// Sidebar component
+$effect(() => {
+  if (!sidebarElement) return;
+  
+  const cleanup = createSwipeGesture(sidebarElement, {
+    threshold: 50,
+    velocity: 0.3,
+    onSwipe: (direction) => {
+      if (direction === 'left' && open) {
+        open = false;
+      }
+    }
+  });
+  
+  return cleanup;
+});
+```
+
+**Design Decisions:**
+
+- **No external dependencies**: Simplified implementation keeps bundle size small
+- **Passive event listeners**: Ensures smooth scrolling performance
+- **Single-touch only**: Multi-touch gestures are ignored
+- **Horizontal only**: Vertical swipes don't interfere with page scrolling
+
+#### Testing
+
+The gesture system includes comprehensive tests using Vitest with jsdom environment:
+- Left/right swipe detection
+- Distance and velocity thresholds
+- Multi-touch rejection
+- Event listener cleanup
+- Touch cancellation handling
+
 ### Frontend Development
 
 **State Management:**

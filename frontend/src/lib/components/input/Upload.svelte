@@ -3,8 +3,7 @@
 	import { _ } from 'svelte-i18n';
 	import TipButton from '$lib/ui/TipButton.svelte';
 
-	let { files = $bindable([] as File[]), filetypes }: { files: File[]; filetypes: string } =
-		$props();
+	let { files = $bindable([] as File[]) }: { files: File[] } = $props();
 
 	let inputElement: HTMLInputElement | null = null;
 
@@ -32,11 +31,4 @@
 	<Upload class="inline-block" />
 </TipButton>
 
-<input
-	type="file"
-	class="hidden"
-	bind:this={inputElement}
-	accept={filetypes}
-	multiple={true}
-	onchange={onChange}
-/>
+<input type="file" class="hidden" bind:this={inputElement} multiple={true} onchange={onChange} />

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { downloadCompressed, download } from '$lib/api/files';
+	import { downloadCompressed, download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 
@@ -66,5 +66,7 @@
 		</div>
 	</div>
 {:else}
-	<div class="border-border my-2 flex justify-center rounded-lg border p-4">{$_('chat.loading_image')}</div>
+	<div class="border-border my-2 flex justify-center rounded-lg border p-4">
+		{$_('chat.loading_image')}
+	</div>
 {/if}
