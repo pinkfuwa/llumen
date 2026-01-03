@@ -429,7 +429,9 @@ export class MarkdownParser {
 			}
 		}
 
-		if (rows.length < 2) {
+		// A table needs at least a header row (rows.length >= 1)
+		// The separator line is required but not counted as a row
+		if (rows.length < 1) {
 			this.position = start;
 			return null;
 		}
