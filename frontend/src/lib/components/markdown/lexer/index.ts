@@ -110,6 +110,23 @@ export async function parseIncremental(
 		};
 	}
 
+	// Check if new content might change interpretation of previous content
+	// This handles the case where adding new lines converts previous paragraphs to tables, lists, etc.
+	const needsReparse = shouldReparseFromEarlier(state.prevResult, source, state.prevSource);
+
+	if (needsReparse) {
+		// Need to re-parse more aggressively
+		const result = parse(source);
+		return {
+			result,
+			state: {
+				prevSource: source,
+				prevResult: result,
+				newContentStart: source.length
+			}
+		};
+	}
+
 	// Find the last complete region in previous result
 	const lastCompleteRegionEnd = findLastCompleteRegion(state.prevResult, state.prevSource.length);
 
@@ -168,6 +185,80 @@ export async function parseIncremental(
 			newContentStart: source.length
 		}
 	};
+}
+
+/**
+ * Check if new content might change the interpretation of previous content
+ * This handles cases where adding new lines should trigger re-parsing from earlier
+ * 
+ * Examples:
+ * - Adding a table separator line after a line with pipes
+ * - Adding a list marker after a potential list item
+ * - Adding closing fence for code blocks
+ */
+function shouldReparseFromEarlier(
+	prevResult: ParseResult,
+	newSource: string,
+	oldSource: string
+): boolean {
+	if (prevResult.tokens.length === 0) {
+		return false;
+	}
+
+	const newContent = newSource.slice(oldSource.length);
+	const lastToken = prevResult.tokens[prevResult.tokens.length - 1];
+
+	// Check if last token is a paragraph that ends at the old source boundary
+	// and new content might convert it to a table
+	if (lastToken.type === 'Paragraph' && lastToken.end >= oldSource.length - 2) {
+		// Get the last line of old source
+		const lastLineStart = oldSource.lastIndexOf('\n', oldSource.length - 2) + 1;
+		const lastLine = oldSource.slice(lastLineStart).trim();
+
+		// Check if last line looks like a table row (has pipes or tabs)
+		const hasPipes = lastLine.includes('|');
+		const hasTabs = lastLine.includes('\t');
+
+		if (hasPipes || hasTabs) {
+			// Check if new content starts with a table separator
+			const newLines = newContent.trim().split('\n');
+			const firstNewLine = newLines[0];
+
+			// Table separator pattern: |---|---| or ---\t---
+			if (firstNewLine && /^[\|\s]*:?-+:?[\|\s:]*(:?-+:?[\|\s]*)*$/.test(firstNewLine.trim())) {
+				return true;
+			}
+		}
+	}
+
+	// Check if we're building a table incrementally (row by row)
+	// If the last token is a table or paragraph ending near the boundary,
+	// and new content has table-like structure, we might need to re-parse
+	if (lastToken.end >= oldSource.length - 2) {
+		const newLines = newContent.trim().split('\n');
+		if (newLines.length > 0) {
+			const firstNewLine = newLines[0].trim();
+
+			// If new line looks like a table row or separator
+			const looksLikeTableRow = firstNewLine.includes('|') || firstNewLine.includes('\t');
+			const looksLikeSeparator = /^[\|\s]*:?-+:?[\|\s:]*(:?-+:?[\|\s]*)*$/.test(firstNewLine);
+
+			if (looksLikeTableRow || looksLikeSeparator) {
+				// Check if previous content ends with something table-like
+				const prevLines = oldSource.trim().split('\n');
+				const lastPrevLine = prevLines[prevLines.length - 1];
+
+				if (
+					lastPrevLine &&
+					(lastPrevLine.includes('|') || lastPrevLine.includes('\t') || /^[\|\s]*:?-+:?/.test(lastPrevLine))
+				) {
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 /**
