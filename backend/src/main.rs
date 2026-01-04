@@ -29,6 +29,8 @@
 //!
 //! The MiMalloc allocator is used for better performance on memory-constrained systems.
 
+#![deny(unsafe_code)]
+
 mod chat;
 mod config;
 mod errors;
