@@ -5,8 +5,6 @@ use std::fmt;
 pub enum Error {
     /// Errors from HTTP client (reqwest)
     Http(reqwest::Error),
-    /// Errors from event streaming (reqwest_eventsource)
-    EventSource(reqwest_eventsource::Error),
     /// Errors from JSON serialization/deserialization
     Serde(serde_json::Error),
     /// Upstream Openrouter API returned an error
@@ -15,15 +13,14 @@ pub enum Error {
     MalformedResponse(&'static str),
     /// incompatible upstream, not a fatal error
     Incompatible(&'static str),
-    /// Cannot clone reqwest request (EventSource::new)
-    CannotCloneRequest(reqwest_eventsource::CannotCloneRequestError),
+    /// IO errors from streaming
+    Io(std::io::Error),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Http(e) => write!(f, "HTTP error: {}", e),
-            Error::EventSource(e) => write!(f, "EventSource error: {}", e),
             Error::Serde(e) => write!(f, "Serde error: {}", e),
             Error::Api { message, code } => {
                 if let Some(code) = code {
@@ -34,7 +31,7 @@ impl fmt::Display for Error {
             }
             Error::MalformedResponse(msg) => write!(f, "Malformed response: {}", msg),
             Error::Incompatible(msg) => write!(f, "Incompatible upstream: {}", msg),
-            Error::CannotCloneRequest(e) => write!(f, "Cannot clone reqwest request: {}", e),
+            Error::Io(e) => write!(f, "IO error: {}", e),
         }
     }
 }
@@ -43,8 +40,8 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Error::Http(e) => Some(e),
-            Error::EventSource(e) => Some(e),
             Error::Serde(e) => Some(e),
+            Error::Io(e) => Some(e),
             _ => None,
         }
     }
@@ -56,9 +53,9 @@ impl From<reqwest::Error> for Error {
     }
 }
 
-impl From<reqwest_eventsource::Error> for Error {
-    fn from(e: reqwest_eventsource::Error) -> Self {
-        Error::EventSource(e)
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Error::Io(e)
     }
 }
 
@@ -75,12 +72,6 @@ impl From<crate::openrouter::raw::ErrorInfo> for Error {
             message: e.message,
             code: e.code,
         }
-    }
-}
-
-impl From<reqwest_eventsource::CannotCloneRequestError> for Error {
-    fn from(e: reqwest_eventsource::CannotCloneRequestError) -> Self {
-        Error::CannotCloneRequest(e)
     }
 }
 

@@ -73,7 +73,7 @@ impl<'a> DeepAgent<'a> {
 
         let system_prompt = self.ctx.prompt.render_prompt_enhancer(self.get_locale())?;
 
-        let messages = vec![
+        let messages: Vec<openrouter::Message> = vec![
             openrouter::Message::System(system_prompt),
             openrouter::Message::User(original_prompt.to_string()),
         ];
@@ -117,7 +117,7 @@ impl<'a> DeepAgent<'a> {
     async fn plan(&mut self) -> Result<()> {
         let system_prompt = self.ctx.prompt.render_planner(self.get_locale())?;
 
-        let messages = vec![
+        let messages: Vec<openrouter::Message> = vec![
             openrouter::Message::System(system_prompt),
             openrouter::Message::User(self.enhanced_prompt.clone()),
         ];
@@ -208,7 +208,7 @@ impl<'a> DeepAgent<'a> {
 
         let mut progress = Vec::new();
 
-        let mut messages = vec![
+        let mut messages: Vec<openrouter::Message> = vec![
             openrouter::Message::System(system_prompt),
             openrouter::Message::System(step_system_message),
             openrouter::Message::User(step_input),
@@ -315,7 +315,7 @@ impl<'a> DeepAgent<'a> {
         let system_prompt = self.ctx.prompt.render_reporter(&self.get_locale())?;
         let report_input = self.ctx.prompt.render_report_input(&report_input_ctx)?;
 
-        let messages = vec![
+        let messages: Vec<openrouter::Message> = vec![
             openrouter::Message::System(system_prompt),
             openrouter::Message::User(report_input),
         ];
