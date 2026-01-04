@@ -258,6 +258,74 @@ impl MessagePart {
         }
     }
 
+    /// Create placeholder message parts for streaming files
+    /// Returns (description, placeholder) without actual file data
+    pub fn unknown_placeholder(filename: &str) -> (Self, Self) {
+        let ext = filename
+            .rsplit('.')
+            .next()
+            .map(|s| s.to_lowercase())
+            .unwrap_or_default();
+
+        // Detect file type by extension
+        let is_image_ext = matches!(
+            ext.as_str(),
+            "jpg" | "jpeg" | "png" | "gif" | "webp" | "bmp" | "ico" | "svg"
+        );
+        let is_audio_ext = matches!(
+            ext.as_str(),
+            "mp3" | "wav" | "ogg" | "flac" | "aac" | "m4a" | "opus"
+        );
+        let is_document_ext = matches!(ext.as_str(), "pdf" | "epub" | "doc" | "docx");
+
+        if is_image_ext {
+            return (
+                Self::text(format!("Uploaded file: {}", filename)),
+                Self {
+                    r#type: MultiPartMessageType::ImageUrl,
+                    image_url: Some(InputImage {
+                        url: String::new(), // Placeholder, will be filled during streaming
+                    }),
+                    ..Default::default()
+                },
+            );
+        }
+
+        if is_audio_ext {
+            return (
+                Self::text(format!("Uploaded file: {}", filename)),
+                Self {
+                    r#type: MultiPartMessageType::InputAudio,
+                    input_audio: Some(InputAudio {
+                        data: String::new(), // Placeholder
+                        format: ext,
+                    }),
+                    ..Default::default()
+                },
+            );
+        }
+
+        if is_document_ext {
+            return (
+                Self::text(format!("Uploaded file: {}", filename)),
+                Self {
+                    r#type: MultiPartMessageType::File,
+                    file: Some(InputFile {
+                        filename: filename.to_string(),
+                        file_data: String::new(), // Placeholder
+                    }),
+                    ..Default::default()
+                },
+            );
+        }
+
+        // Default to text content
+        (
+            Self::text(format!("Uploaded file: {}\n\n", filename)),
+            Self::text(String::new()), // Placeholder
+        )
+    }
+
     pub fn unknown(filename: &str, blob: Vec<u8>) -> (Self, Self) {
         infer::is_image(&blob);
 
