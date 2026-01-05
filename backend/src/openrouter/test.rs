@@ -71,7 +71,7 @@ async fn tool_calls() {
         }),
     };
 
-    let messages: Vec<Message> = vec![Message::User(
+    let messages = vec![Message::User(
         "What's the weather like in Paris?".to_string(),
     )];
 
@@ -171,7 +171,7 @@ async fn parallel_tool_calls() {
         }),
     };
 
-    let messages: Vec<Message> = vec![Message::User(
+    let messages = vec![Message::User(
         "What's the weather and current time in Paris and London?".to_string(),
     )];
 
