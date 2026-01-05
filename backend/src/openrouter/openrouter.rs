@@ -2,10 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use super::message::*;
-use crate::openrouter::stream_encode::{MessageWithStreams, StreamFileData, serialize_to_body};
-use crate::openrouter::{StreamCompletion, SyncStream, option::CompletionOption};
-use bytes::Bytes;
-use tokio_stream::StreamExt;
+use crate::openrouter::{StreamCompletion, option::CompletionOption};
 
 use super::{Model, error::Error, raw};
 use protocol::OcrEngine;
@@ -38,13 +35,13 @@ pub struct Openrouter {
 }
 
 impl Openrouter {
-    fn create_request<S: SyncStream>(
+    fn create_request(
         &self,
-        mut messages: Vec<Message<S>>,
+        mut messages: Vec<Message>,
         stream: bool,
         model: Model,
         option: CompletionOption,
-    ) -> (raw::CompletionReq, Vec<MessageWithStreams<S>>) {
+    ) -> raw::CompletionReq {
         // https://openrouter.ai/docs/api-reference/overview#assistant-prefill
         if matches!(messages.last(), Some(Message::Assistant { .. })) {
             messages.push(Message::User("".to_string()));
@@ -100,33 +97,12 @@ impl Openrouter {
 
         let tools: Vec<raw::Tool> = option.tools.into_iter().map(|t| t.into()).collect();
 
-        // Convert messages to raw messages and extract streaming files
-        let mut raw_messages = Vec::new();
-        let mut messages_with_streams = Vec::new();
-
-        for message in messages {
-            let (raw_message, stream_files) =
-                message.to_raw_message_with_streams(&model.id, &capability);
-            raw_messages.push(raw_message.clone());
-
-            let stream_file_data: Vec<StreamFileData<S>> = stream_files
-                .into_iter()
-                .map(|(part_index, file)| StreamFileData {
-                    part_index,
-                    stream: file.data,
-                    filename: file.name,
-                })
-                .collect();
-
-            messages_with_streams.push(MessageWithStreams {
-                message: raw_message,
-                stream_files: stream_file_data,
-            });
-        }
-
-        let req = raw::CompletionReq {
+        raw::CompletionReq {
             model: model.id.clone(),
-            messages: raw_messages,
+            messages: messages
+                .into_iter()
+                .map(|m| m.to_raw_message(&model.id, &capability))
+                .collect(),
             stream,
             temperature,
             repeat_penalty: model.repeat_penalty,
@@ -139,9 +115,7 @@ impl Openrouter {
             reasoning,
             modalities,
             response_format: None,
-        };
-
-        (req, messages_with_streams)
+        }
     }
 
     pub fn new(api_key: impl AsRef<str>, api_base: impl AsRef<str>) -> Self {
@@ -302,100 +276,42 @@ impl Openrouter {
         )
     }
 
-    pub async fn stream<S: SyncStream + Send + 'static>(
+    pub async fn stream(
         &self,
         model: Model,
-        messages: Vec<Message<S>>,
+        messages: Vec<Message>,
         option: CompletionOption,
     ) -> Result<StreamCompletion, Error> {
         #[cfg(debug_assertions)]
         check_message(&messages);
 
-        let (req, messages_with_streams) = self.create_request(messages, true, model, option);
+        let req = self.create_request(messages, true, model, option);
 
         req.log();
 
-        // Check if any message has streaming files
-        let has_streaming_files = messages_with_streams
-            .iter()
-            .any(|m| !m.stream_files.is_empty());
-
-        if has_streaming_files {
-            StreamCompletion::request_streaming(
-                &self.http_client,
-                &self.api_key,
-                &self.chat_completion_endpoint,
-                req,
-                messages_with_streams,
-            )
-            .await
-        } else {
-            StreamCompletion::request(
-                &self.http_client,
-                &self.api_key,
-                &self.chat_completion_endpoint,
-                req,
-            )
-            .await
-        }
+        StreamCompletion::request(
+            &self.http_client,
+            &self.api_key,
+            &self.chat_completion_endpoint,
+            req,
+        )
+        .await
     }
 
-    async fn send_complete_request<S: SyncStream + Send + 'static>(
+    async fn send_complete_request(
         &self,
         req: raw::CompletionReq,
-        messages_with_streams: Vec<MessageWithStreams<S>>,
     ) -> Result<ChatCompletion, Error> {
-        // Check if any message has streaming files
-        let has_streaming_files = messages_with_streams
-            .iter()
-            .any(|m| !m.stream_files.is_empty());
-
-        let res = if has_streaming_files {
-            // Use streaming body
-            let (rx, handle) = serialize_to_body(req, messages_with_streams).await;
-
-            let body_stream =
-                tokio_stream::wrappers::ReceiverStream::new(rx).filter_map(|result| match result {
-                    Ok(bytes) => Some(Ok::<Bytes, String>(bytes)),
-                    Err(e) => {
-                        log::error!("Streaming body error: {}", e);
-                        None
-                    }
-                });
-
-            let body = reqwest::Body::wrap_stream(body_stream);
-
-            let response = self
-                .http_client
-                .post(&self.chat_completion_endpoint)
-                .bearer_auth(&self.api_key)
-                .header("HTTP-Referer", HTTP_REFERER)
-                .header("X-Title", X_TITLE)
-                .header("Content-Type", "application/json")
-                .body(body)
-                .send()
-                .await
-                .map_err(Error::Http)?;
-
-            // Wait for serialization to complete
-            handle.await.map_err(|e| Error::Api {
-                message: format!("Serialization task failed: {}", e),
-                code: None,
-            })?;
-
-            response
-        } else {
-            // Use regular JSON serialization for non-streaming case
-            self.http_client
-                .post(&self.chat_completion_endpoint)
-                .bearer_auth(&self.api_key)
-                .header("HTTP-Referer", HTTP_REFERER)
-                .header("X-Title", X_TITLE)
-                .json(&req)
-                .send()
-                .await
-                .map_err(Error::Http)?
-        };
+        let res = self
+            .http_client
+            .post(&self.chat_completion_endpoint)
+            .bearer_auth(&self.api_key)
+            .header("HTTP-Referer", HTTP_REFERER)
+            .header("X-Title", X_TITLE)
+            .json(&req)
+            .send()
+            .await
+            .map_err(Error::Http)?;
 
         let json = res
             .json::<raw::CompletionResponse>()
@@ -471,10 +387,10 @@ impl Openrouter {
 
         option.image_generation = false;
 
-        let (req, messages_with_streams) = self.create_request(messages, false, model, option);
+        let req = self.create_request(messages, false, model, option);
         req.log();
 
-        self.send_complete_request(req, messages_with_streams).await
+        self.send_complete_request(req).await
     }
 
     pub async fn structured<T>(
@@ -497,7 +413,7 @@ impl Openrouter {
         // If not openrouter and no override, assume supported.
         let structured_output = self.get_capability(&model).structured_output;
 
-        let (mut req, messages_with_streams) = self.create_request(messages, false, model, option);
+        let mut req = self.create_request(messages, false, model, option);
 
         if structured_output {
             let schema = schemars::schema_for!(T);
@@ -517,9 +433,7 @@ impl Openrouter {
 
         req.log();
 
-        let completion = self
-            .send_complete_request(req, messages_with_streams)
-            .await?;
+        let completion = self.send_complete_request(req).await?;
         let result: T = serde_json::from_str(&completion.response).map_err(Error::Serde)?;
         Ok(StructuredCompletion {
             price: completion.price,
@@ -596,7 +510,7 @@ pub struct Embedding {
 
 #[cfg(debug_assertions)]
 #[allow(dead_code)]
-pub(super) fn check_message<S: SyncStream>(message: &[Message<S>]) {
+pub(super) fn check_message(message: &[Message]) {
     // For each ToolResult, check for ToolCall and its order
     let mut result_ids = message
         .iter()

@@ -1,4 +1,4 @@
-use std::{io::Write, path::Path, pin::Pin, task};
+use std::{path::Path, pin::Pin, task};
 
 use bytes::Bytes;
 use futures_util::FutureExt;
@@ -7,8 +7,6 @@ use tokio::task::JoinHandle;
 use tokio_stream::{Stream, StreamExt};
 
 use std::sync::Arc;
-
-use crate::openrouter::SyncStream;
 
 pub const TABLE: TableDefinition<i32, &[u8]> = TableDefinition::new("blobs");
 
@@ -35,14 +33,6 @@ impl AsRef<[u8]> for Reader {
 impl Reader {
     pub fn len(&self) -> usize {
         self.guard.value().len()
-    }
-}
-
-impl SyncStream for Reader {
-    fn read(&mut self, writer: &mut dyn Write) -> usize {
-        let data = self.guard.value();
-        writer.write_all(data).ok();
-        data.len()
     }
 }
 

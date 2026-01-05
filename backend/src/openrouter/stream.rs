@@ -1,13 +1,13 @@
 use std::{pin::Pin, task};
 
-use bytes::Bytes;
-use futures_util::{FutureExt, StreamExt as FuturesStreamExt};
+use futures_util::FutureExt;
 use reqwest::Client;
-use tokio_stream::Stream;
+use reqwest_eventsource::{Event, EventSource};
+use tokio_stream::{Stream, StreamExt};
 
 use super::Image;
-use super::stream_encode::{MessageWithStreams, serialize_to_body};
-use super::{HTTP_REFERER, SyncStream, X_TITLE, error::Error, raw};
+
+use super::{HTTP_REFERER, X_TITLE, error::Error, raw};
 
 #[derive(Default, Clone)]
 pub struct ToolCall {
@@ -23,7 +23,7 @@ pub struct Usage {
 }
 
 pub struct StreamCompletion {
-    source: Pin<Box<dyn Stream<Item = Result<eventsource_stream::Event, std::io::Error>> + Send>>,
+    source: EventSource,
     toolcalls: Vec<ToolCall>,
     usage: Usage,
     stop_reason: Option<raw::FinishReason>,
@@ -72,142 +72,34 @@ impl StreamCompletion {
         }
         .to_string();
 
-        let request = http_client
+        let builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
-            .json(&req)
-            .build()
-            .map_err(|e| Error::Api {
-                message: format!("Failed to build request: {}", e),
-                code: None,
-            })?;
+            .json(&req);
 
-        // Send request and get response stream
-        let response = http_client.execute(request).await.map_err(|e| Error::Api {
-            message: format!("Failed to execute request: {}", e),
-            code: None,
-        })?;
-
-        // Check status
-        let status = response.status();
-        if !status.is_success() {
-            let error_body = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(Error::Api {
-                message: format!("Request failed with status {}: {}", status, error_body),
-                code: Some(status.as_u16() as i32),
-            });
+        match EventSource::new(builder) {
+            Ok(source) => Ok(Self {
+                source,
+                toolcalls: Vec::new(),
+                usage: Usage::default(),
+                stop_reason: None,
+                responses: vec![],
+                annotations: None,
+                reasoning_details: None,
+                model_id,
+                images: Vec::new(),
+            }),
+            Err(e) => {
+                log::error!("Failed to create event source: {}", e);
+                Err(Error::CannotCloneRequest(e))
+            }
         }
-
-        // Create manual SSE parser
-        let byte_stream = response.bytes_stream();
-        let sse_stream = parse_sse_stream(byte_stream);
-
-        Ok(Self {
-            source: Box::pin(sse_stream),
-            toolcalls: Vec::new(),
-            usage: Usage::default(),
-            stop_reason: None,
-            responses: vec![],
-            annotations: None,
-            reasoning_details: None,
-            model_id,
-            images: Vec::new(),
-        })
     }
 
-    pub(super) async fn request_streaming<S: SyncStream + Send + 'static>(
-        http_client: &Client,
-        api_key: &str,
-        endpoint: &str,
-        req: raw::CompletionReq,
-        messages_with_streams: Vec<MessageWithStreams<S>>,
-    ) -> Result<StreamCompletion, Error> {
-        let model_id = {
-            let model_id = req.model.as_str();
-            match model_id.find(":") {
-                Some(pos) => model_id.split_at(pos).0,
-                None => model_id,
-            }
-        }
-        .to_string();
-
-        // Serialize to streaming body
-        let (rx, handle) = serialize_to_body(req, messages_with_streams).await;
-
-        let body_stream = FuturesStreamExt::filter_map(
-            tokio_stream::wrappers::ReceiverStream::new(rx),
-            |result| async move {
-                match result {
-                    Ok(bytes) => Some(Ok::<Bytes, String>(bytes)),
-                    Err(e) => {
-                        log::error!("Streaming body error: {}", e);
-                        None
-                    }
-                }
-            },
-        );
-
-        let body = reqwest::Body::wrap_stream(body_stream);
-
-        let request = http_client
-            .post(endpoint)
-            .bearer_auth(api_key)
-            .header("HTTP-Referer", HTTP_REFERER)
-            .header("X-Title", X_TITLE)
-            .header("Content-Type", "application/json")
-            .body(body)
-            .build()
-            .map_err(|e| Error::Api {
-                message: format!("Failed to build request: {}", e),
-                code: None,
-            })?;
-
-        // Send request and get response stream
-        let response = http_client.execute(request).await.map_err(|e| Error::Api {
-            message: format!("Failed to execute request: {}", e),
-            code: None,
-        })?;
-
-        // Check status
-        let status = response.status();
-        if !status.is_success() {
-            let error_body = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(Error::Api {
-                message: format!("Request failed with status {}: {}", status, error_body),
-                code: Some(status.as_u16() as i32),
-            });
-        }
-
-        // Create manual SSE parser
-        let byte_stream = response.bytes_stream();
-        let sse_stream = parse_sse_stream(byte_stream);
-
-        // Start serialization task in background
-        tokio::spawn(async move {
-            if let Err(e) = handle.await {
-                log::error!("Serialization task failed: {}", e);
-            }
-        });
-
-        Ok(Self {
-            source: Box::pin(sse_stream),
-            toolcalls: Vec::new(),
-            usage: Usage::default(),
-            stop_reason: None,
-            responses: vec![],
-            annotations: None,
-            reasoning_details: None,
-            model_id,
-            images: Vec::new(),
-        })
+    pub fn close(&mut self) {
+        self.source.close();
     }
 
     fn handle_choice(&mut self, choice: raw::Choice) -> StreamCompletionResp {
@@ -359,12 +251,29 @@ impl StreamCompletion {
         Ok(resp)
     }
 
+    async fn handle_error(&self, err: reqwest_eventsource::Error) -> Error {
+        use reqwest_eventsource::Error as EventErr;
+        if let EventErr::InvalidStatusCode(code, res) = err {
+            match res.json::<raw::ErrorResp>().await {
+                Ok(error) => Error::Api {
+                    message: error.error.message,
+                    code: Some(code.as_u16() as i32),
+                },
+                Err(e) => Error::Api {
+                    message: format!("cannot parse error message: {}", e),
+                    code: Some(code.as_u16() as i32),
+                },
+            }
+        } else {
+            Error::EventSource(err)
+        }
+    }
+
     pub async fn next(&mut self) -> Option<Result<StreamCompletionResp, Error>> {
-        use futures_util::StreamExt;
         loop {
             match self.source.next().await? {
-                Ok(event) if &event.data != "[DONE]" => {
-                    return match self.handle_data(&event.data) {
+                Ok(Event::Message(e)) if &e.data != "[DONE]" => {
+                    return match self.handle_data(&e.data) {
                         Ok(x) => Some(Ok(x)),
                         Err(Error::Incompatible(msg)) => {
                             log::warn!("Malbehave upstream: {}", msg);
@@ -374,8 +283,13 @@ impl StreamCompletion {
                     };
                 }
                 Err(e) => {
-                    log::error!("Stream error: {}", e);
-                    return Some(Err(Error::Io(e)));
+                    return match e {
+                        reqwest_eventsource::Error::StreamEnded => {
+                            log::debug!("Stream ended");
+                            None
+                        }
+                        e => Some(Err(self.handle_error(e).await)),
+                    };
                 }
                 _ => continue,
             }
@@ -447,83 +361,9 @@ impl Stream for StreamCompletion {
     }
 }
 
-// Parse SSE stream from raw bytes
-fn parse_sse_stream(
-    byte_stream: impl futures_util::Stream<Item = Result<Bytes, reqwest::Error>> + Send + 'static,
-) -> impl Stream<Item = Result<eventsource_stream::Event, std::io::Error>> + Send {
-    SseParser::new(byte_stream)
-}
-
-struct SseParser {
-    inner: Pin<Box<dyn Stream<Item = Result<Bytes, reqwest::Error>> + Send>>,
-    buffer: String,
-}
-
-impl SseParser {
-    fn new(inner: impl Stream<Item = Result<Bytes, reqwest::Error>> + Send + 'static) -> Self {
-        Self {
-            inner: Box::pin(inner),
-            buffer: String::new(),
-        }
-    }
-}
-
-impl Stream for SseParser {
-    type Item = Result<eventsource_stream::Event, std::io::Error>;
-
-    fn poll_next(
-        mut self: Pin<&mut Self>,
-        cx: &mut task::Context<'_>,
-    ) -> task::Poll<Option<Self::Item>> {
-        loop {
-            // First, try to parse an event from the buffer
-            if let Some(pos) = self.buffer.find("\n\n") {
-                let message = self.buffer[..pos].to_string();
-                self.buffer.drain(..pos + 2);
-
-                // Parse SSE message - handle multiple lines of data
-                let mut data_lines = Vec::new();
-                for line in message.lines() {
-                    if let Some(data) = line.strip_prefix("data: ") {
-                        data_lines.push(data);
-                    } else if line.starts_with("data:") {
-                        data_lines.push(&line[5..]);
-                    }
-                }
-
-                if !data_lines.is_empty() {
-                    let data = data_lines.join("\n");
-                    return task::Poll::Ready(Some(Ok(eventsource_stream::Event {
-                        event: "message".to_string(),
-                        data,
-                        id: String::new(),
-                        retry: None,
-                    })));
-                }
-                // If no data lines, continue to parse next message
-                continue;
-            }
-
-            // No complete message in buffer, read more bytes
-            match self.inner.as_mut().poll_next(cx) {
-                task::Poll::Ready(Some(Ok(bytes))) => {
-                    self.buffer.push_str(&String::from_utf8_lossy(&bytes));
-                    // Loop back to try parsing again
-                }
-                task::Poll::Ready(Some(Err(e))) => {
-                    return task::Poll::Ready(Some(Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        e.to_string(),
-                    ))));
-                }
-                task::Poll::Ready(None) => {
-                    return task::Poll::Ready(None);
-                }
-                task::Poll::Pending => {
-                    return task::Poll::Pending;
-                }
-            }
-        }
+impl Drop for StreamCompletion {
+    fn drop(&mut self) {
+        self.source.close();
     }
 }
 
@@ -549,94 +389,5 @@ impl StreamCompletionResp {
             StreamCompletionResp::ResponseToken(s) => s.is_empty(),
             _ => false,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use futures_util::StreamExt;
-
-    #[tokio::test]
-    async fn test_sse_parser_basic() {
-        let data = b"data: hello\n\ndata: world\n\n".to_vec();
-        let stream =
-            futures_util::stream::once(async { Ok::<Bytes, reqwest::Error>(Bytes::from(data)) });
-
-        let mut parser = parse_sse_stream(stream);
-
-        let event1 = parser.next().await.unwrap().unwrap();
-        assert_eq!(event1.data, "hello");
-
-        let event2 = parser.next().await.unwrap().unwrap();
-        assert_eq!(event2.data, "world");
-
-        assert!(parser.next().await.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_sse_parser_multiline_data() {
-        let data = b"data: line1\ndata: line2\n\n".to_vec();
-        let stream =
-            futures_util::stream::once(async { Ok::<Bytes, reqwest::Error>(Bytes::from(data)) });
-
-        let mut parser = parse_sse_stream(stream);
-
-        let event = parser.next().await.unwrap().unwrap();
-        assert_eq!(event.data, "line1\nline2");
-
-        assert!(parser.next().await.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_sse_parser_chunked_input() {
-        // Simulate SSE data arriving in chunks
-        let chunks = vec![
-            Ok::<Bytes, reqwest::Error>(Bytes::from("data: hel")),
-            Ok(Bytes::from("lo\n\nda")),
-            Ok(Bytes::from("ta: world\n\n")),
-        ];
-        let stream = futures_util::stream::iter(chunks);
-
-        let mut parser = parse_sse_stream(stream);
-
-        let event1 = parser.next().await.unwrap().unwrap();
-        assert_eq!(event1.data, "hello");
-
-        let event2 = parser.next().await.unwrap().unwrap();
-        assert_eq!(event2.data, "world");
-
-        assert!(parser.next().await.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_sse_parser_data_without_space() {
-        let data = b"data:hello\n\n".to_vec();
-        let stream =
-            futures_util::stream::once(async { Ok::<Bytes, reqwest::Error>(Bytes::from(data)) });
-
-        let mut parser = parse_sse_stream(stream);
-
-        let event = parser.next().await.unwrap().unwrap();
-        assert_eq!(event.data, "hello");
-
-        assert!(parser.next().await.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_sse_parser_empty_lines() {
-        let data = b"data: test\n\n\n\ndata: next\n\n".to_vec();
-        let stream =
-            futures_util::stream::once(async { Ok::<Bytes, reqwest::Error>(Bytes::from(data)) });
-
-        let mut parser = parse_sse_stream(stream);
-
-        let event1 = parser.next().await.unwrap().unwrap();
-        assert_eq!(event1.data, "test");
-
-        let event2 = parser.next().await.unwrap().unwrap();
-        assert_eq!(event2.data, "next");
-
-        assert!(parser.next().await.is_none());
     }
 }

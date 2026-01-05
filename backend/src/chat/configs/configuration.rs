@@ -31,7 +31,7 @@ pub struct ProcessState {
     pub ctx: Arc<Context>,
     pub completion_ctx: CompletionContext,
     pub model: openrouter::Model,
-    pub messages: Vec<openrouter::Message<crate::utils::blob::Reader>>,
+    pub messages: Vec<openrouter::Message>,
 }
 
 impl Configuration {
@@ -63,21 +63,15 @@ impl Configuration {
             }
 
             let mut state = ProcessState {
-                ctx: ctx.clone(),
+                ctx,
                 completion_ctx,
                 model,
                 messages,
             };
 
-            if let Some(err) = Self::process_loop(
-                &mut state,
-                completion_option,
-                tool_handler,
-                inject_context,
-                prompt,
-            )
-            .await
-            .err()
+            if let Some(err) = Self::process_loop(&mut state, completion_option, tool_handler)
+                .await
+                .err()
             {
                 state.completion_ctx.add_error(err.to_string());
             }
@@ -98,10 +92,8 @@ impl Configuration {
                 + Send
                 + Sync,
         >,
-        inject_context: bool,
-        prompt: prompt::PromptKind,
     ) -> Result<(), anyhow::Error> {
-        let message = std::mem::take(&mut state.messages);
+        let message = state.messages.clone();
 
         let model = openrouter::ModelBuilder::from_model(&state.model).build();
         let mut res: openrouter::StreamCompletion = state
@@ -203,29 +195,6 @@ impl Configuration {
         if finalized {
             return Ok(());
         }
-
-        // Rebuild messages from database for next iteration
-        let system_prompt = state.ctx.prompt.render(prompt, &state.completion_ctx)?;
-        let mut messages = vec![openrouter::Message::System(system_prompt)];
-
-        for m in &state.completion_ctx.messages {
-            messages.extend(db_message_to_openrouter(&state.ctx, &m.inner).await?);
-        }
-
-        if inject_context {
-            let context_message = state.ctx.prompt.render_context(&state.completion_ctx)?;
-            messages.push(openrouter::Message::User(context_message));
-        }
-
-        state.messages = messages;
-
-        Box::pin(Self::process_loop(
-            state,
-            completion_option,
-            tool_handler,
-            inject_context,
-            prompt,
-        ))
-        .await
+        Box::pin(Self::process_loop(state, completion_option, tool_handler)).await
     }
 }
