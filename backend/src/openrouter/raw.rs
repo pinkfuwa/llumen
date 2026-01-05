@@ -226,7 +226,7 @@ pub struct Message {
 }
 
 // `data:image/jpeg;base64,${base64Image}`;
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Debug, Clone, Serialize, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum MultiPartMessageType {
     #[default]

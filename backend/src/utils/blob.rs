@@ -1,4 +1,4 @@
-use std::{io::Write, path::Path, pin::Pin, task};
+use std::{path::Path, pin::Pin, task};
 
 use bytes::Bytes;
 use futures_util::FutureExt;
@@ -16,6 +16,7 @@ pub struct Reader {
     // use of 'static break redb
     guard: AccessGuard<'static, &'static [u8]>,
     txn: Option<ReadTransaction>,
+    position: usize,
 }
 
 impl Drop for Reader {
@@ -33,16 +34,27 @@ impl AsRef<[u8]> for Reader {
 }
 
 impl Reader {
-    pub fn len(&self) -> usize {
+    pub fn total_len(&self) -> usize {
         self.guard.value().len()
     }
 }
 
 impl SyncStream for Reader {
-    fn read(&mut self, writer: &mut dyn Write) -> usize {
+    fn read_chunk(&mut self, buf: &mut [u8]) -> usize {
         let data = self.guard.value();
-        writer.write_all(data).ok();
-        data.len()
+        let remaining = data.len().saturating_sub(self.position);
+        let to_read = std::cmp::min(buf.len(), remaining);
+
+        if to_read > 0 {
+            buf[..to_read].copy_from_slice(&data[self.position..self.position + to_read]);
+            self.position += to_read;
+        }
+
+        to_read
+    }
+
+    fn len(&self) -> usize {
+        self.guard.value().len()
     }
 }
 
@@ -77,12 +89,12 @@ impl Stream for MmapStream {
         mut self: Pin<&mut Self>,
         _cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<Self::Item>> {
-        if self.position >= self.reader.len() {
+        if self.position >= self.reader.total_len() {
             return task::Poll::Ready(None);
         }
 
         let position = self.position;
-        let end = std::cmp::min(position + CHUNK_SIZE, self.reader.len());
+        let end = std::cmp::min(position + CHUNK_SIZE, self.reader.total_len());
 
         if self.read_task.is_none() {
             let reader = self.reader.clone();
@@ -132,6 +144,7 @@ impl BlobDB {
         Some(Reader {
             guard,
             txn: Some(txn),
+            position: 0,
         })
     }
 

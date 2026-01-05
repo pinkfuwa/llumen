@@ -314,7 +314,16 @@ impl<S: SyncStream> Message<S> {
                 for file in files {
                     let mut data_vec = Vec::new();
                     let mut file_data = file.data;
-                    file_data.read(&mut data_vec);
+
+                    // Read all chunks into the vector
+                    let mut buffer = vec![0u8; 256 * 1024];
+                    loop {
+                        let read = file_data.read_chunk(&mut buffer);
+                        if read == 0 {
+                            break;
+                        }
+                        data_vec.extend_from_slice(&buffer[..read]);
+                    }
 
                     let (description, content) = raw::MessagePart::unknown(&file.name, data_vec);
                     parts.push(description);

@@ -18,60 +18,52 @@ pub fn encode_base64<S: SyncStream, W: Write>(
         writer.write_all(prefix.as_bytes())?;
     }
 
-    // Create a chunked writer that reads from source and writes base64 to writer
-    let mut chunk_buffer = Vec::with_capacity(CHUNK_SIZE);
-    let mut chunk_writer = ChunkWriter {
-        buffer: &mut chunk_buffer,
-        target: writer,
-    };
+    let mut read_buffer = vec![0u8; CHUNK_SIZE];
+    let mut leftover = Vec::new();
 
-    // Read from source into our chunk writer
-    source.read(&mut chunk_writer);
+    loop {
+        let read = source.read_chunk(&mut read_buffer);
+        if read == 0 {
+            // Stream finished, encode any leftover data
+            if !leftover.is_empty() {
+                let encoded = base64::engine::general_purpose::STANDARD.encode(&leftover);
+                writer.write_all(encoded.as_bytes())?;
+            }
+            break;
+        }
 
-    // Flush any remaining data
-    chunk_writer.flush()?;
+        // Combine leftover from previous iteration with new data
+        let data = if leftover.is_empty() {
+            &read_buffer[..read]
+        } else {
+            leftover.extend_from_slice(&read_buffer[..read]);
+            &leftover[..]
+        };
+
+        // Base64 encodes 3 bytes to 4 characters
+        // Process complete 3-byte chunks, keep remainder for next iteration
+        let processable_len = (data.len() / 3) * 3;
+
+        if processable_len > 0 {
+            let encoded =
+                base64::engine::general_purpose::STANDARD.encode(&data[..processable_len]);
+            writer.write_all(encoded.as_bytes())?;
+
+            // Keep remainder for next iteration
+            if processable_len < data.len() {
+                leftover = data[processable_len..].to_vec();
+            } else {
+                leftover.clear();
+            }
+        } else {
+            // Not enough data to encode yet, keep for next iteration
+            if leftover.is_empty() {
+                leftover = data.to_vec();
+            }
+        }
+    }
 
     Ok(())
-}
-
-/// A writer that accumulates data in chunks and encodes each chunk to base64
-struct ChunkWriter<'a, W: Write> {
-    buffer: &'a mut Vec<u8>,
-    target: &'a mut W,
-}
-
-impl<'a, W: Write> Write for ChunkWriter<'a, W> {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.buffer.extend_from_slice(buf);
-
-        // When buffer is full, encode and write
-        if self.buffer.len() >= CHUNK_SIZE {
-            self.flush_buffer()?;
-        }
-
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.flush_buffer()
-    }
-}
-
-impl<'a, W: Write> ChunkWriter<'a, W> {
-    fn flush_buffer(&mut self) -> std::io::Result<()> {
-        if self.buffer.is_empty() {
-            return Ok(());
-        }
-
-        // Encode the buffer to base64
-        let encoded = base64::engine::general_purpose::STANDARD.encode(&self.buffer);
-        self.target.write_all(encoded.as_bytes())?;
-
-        // Clear buffer for next chunk
-        self.buffer.clear();
-
-        Ok(())
-    }
 }
 
 #[cfg(test)]
@@ -91,13 +83,18 @@ mod tests {
     }
 
     impl SyncStream for TestStream {
-        fn read(&mut self, writer: &mut dyn Write) -> usize {
-            let len = self.data.len() - self.pos;
-            if len > 0 {
-                writer.write_all(&self.data[self.pos..]).ok();
-                self.pos = self.data.len();
+        fn read_chunk(&mut self, buf: &mut [u8]) -> usize {
+            let remaining = self.data.len() - self.pos;
+            let to_read = std::cmp::min(buf.len(), remaining);
+            if to_read > 0 {
+                buf[..to_read].copy_from_slice(&self.data[self.pos..self.pos + to_read]);
+                self.pos += to_read;
             }
-            len
+            to_read
+        }
+
+        fn len(&self) -> usize {
+            self.data.len()
         }
     }
 
@@ -170,36 +167,34 @@ mod tests {
         // Test with a stream that writes in multiple small chunks
         struct ChunkedStream {
             data: Vec<u8>,
-            chunk_size: usize,
             pos: usize,
         }
 
         impl ChunkedStream {
-            fn new(data: Vec<u8>, chunk_size: usize) -> Self {
-                Self {
-                    data,
-                    chunk_size,
-                    pos: 0,
-                }
+            fn new(data: Vec<u8>) -> Self {
+                Self { data, pos: 0 }
             }
         }
 
         impl SyncStream for ChunkedStream {
-            fn read(&mut self, writer: &mut dyn Write) -> usize {
-                let mut written = 0;
-                while self.pos < self.data.len() {
-                    let end = std::cmp::min(self.pos + self.chunk_size, self.data.len());
-                    writer.write_all(&self.data[self.pos..end]).ok();
-                    written += end - self.pos;
-                    self.pos = end;
+            fn read_chunk(&mut self, buf: &mut [u8]) -> usize {
+                let remaining = self.data.len() - self.pos;
+                let to_read = std::cmp::min(buf.len(), remaining);
+                if to_read > 0 {
+                    buf[..to_read].copy_from_slice(&self.data[self.pos..self.pos + to_read]);
+                    self.pos += to_read;
                 }
-                written
+                to_read
+            }
+
+            fn len(&self) -> usize {
+                self.data.len()
             }
         }
 
         // Test with data that will be written in small chunks
         let data = vec![0x41u8; 10000];
-        let mut stream = ChunkedStream::new(data.clone(), 1024);
+        let mut stream = ChunkedStream::new(data.clone());
 
         let mut output = Vec::new();
         encode_base64(&mut stream, &mut output, None).unwrap();

@@ -2,8 +2,9 @@ use bytes::Bytes;
 use std::io::Write;
 use tokio::sync::mpsc;
 
-use super::encode_base64;
+use super::chunked_stream::write_base64_stream;
 use crate::openrouter::{SyncStream, raw};
+use struson::writer::StringValueWriter;
 
 const BUFFER_SIZE: usize = 64 * 1024; // 64KB buffer for channel
 
@@ -231,16 +232,62 @@ fn write_message_part<W: Write, S: SyncStream + 'static>(
     };
     json_writer.string_value(type_str)?;
 
-    // text
-    if let Some(text) = &part.text {
-        json_writer.name("text")?;
-        json_writer.string_value(text)?;
-    }
-
     // Check if we need to stream a file for this part
     let mut stream_file_opt = stream_files
         .iter_mut()
         .find(|sf| sf.part_index == part_index);
+
+    // text - handle both static text and streamed text files
+    if let Some(text) = &part.text {
+        json_writer.name("text")?;
+        // If this is a Text type with a stream file, read from the stream
+        if part.r#type == raw::MultiPartMessageType::Text && stream_file_opt.is_some() {
+            let stream_data = stream_file_opt.as_mut().unwrap();
+            // Stream text content with chunked reading
+            use struson::writer::JsonWriter;
+            let mut string_writer = json_writer.string_value_writer()?;
+            string_writer.write_all(b"<content>")?;
+
+            // Use the write_text_stream helper but we need to manually handle the string writer
+            let mut buffer = vec![0u8; 256 * 1024];
+            let mut leftover = Vec::new();
+            loop {
+                let read = stream_data.stream.read_chunk(&mut buffer);
+                if read == 0 {
+                    if !leftover.is_empty() {
+                        string_writer.write_all(&leftover)?;
+                    }
+                    break;
+                }
+
+                // Process data - either just buffer or leftover + buffer
+                if leftover.is_empty() {
+                    // No leftover, process buffer directly
+                    let valid_len =
+                        super::chunked_stream::find_valid_utf8_boundary(&buffer[..read]);
+                    if valid_len > 0 {
+                        string_writer.write_all(&buffer[..valid_len])?;
+                    }
+                    if valid_len < read {
+                        leftover.extend_from_slice(&buffer[valid_len..read]);
+                    }
+                } else {
+                    // Have leftover, need to combine
+                    leftover.extend_from_slice(&buffer[..read]);
+                    let valid_len = super::chunked_stream::find_valid_utf8_boundary(&leftover);
+                    if valid_len > 0 {
+                        string_writer.write_all(&leftover[..valid_len])?;
+                        leftover.drain(..valid_len);
+                    }
+                }
+            }
+
+            string_writer.write_all(b"</content>")?;
+            string_writer.finish_value()?;
+        } else {
+            json_writer.string_value(text)?;
+        }
+    }
 
     // input_audio
     if let Some(input_audio) = &part.input_audio {
@@ -259,7 +306,7 @@ fn write_message_part<W: Write, S: SyncStream + 'static>(
             json_writer.string_value(&format)?;
 
             json_writer.name("data")?;
-            write_base64_stream_inline(json_writer, &mut stream_data.stream, None)?;
+            write_base64_stream(json_writer, &mut stream_data.stream, None)?;
             json_writer.end_object()?;
         } else {
             write_serde_value(json_writer, input_audio)?;
@@ -282,7 +329,7 @@ fn write_message_part<W: Write, S: SyncStream + 'static>(
                 None
             };
 
-            write_base64_stream_inline(json_writer, &mut stream_data.stream, mime_prefix)?;
+            write_base64_stream(json_writer, &mut stream_data.stream, mime_prefix)?;
             json_writer.end_object()?;
         } else {
             write_serde_value(json_writer, file)?;
@@ -300,7 +347,7 @@ fn write_message_part<W: Write, S: SyncStream + 'static>(
             let ext = stream_data.filename.rsplit('.').next().unwrap_or("png");
             let mime_prefix = format!("data:image/{};base64,", ext);
 
-            write_base64_stream_inline(json_writer, &mut stream_data.stream, Some(&mime_prefix))?;
+            write_base64_stream(json_writer, &mut stream_data.stream, Some(&mime_prefix))?;
             json_writer.end_object()?;
         } else {
             write_serde_value(json_writer, image_url)?;
@@ -308,36 +355,6 @@ fn write_message_part<W: Write, S: SyncStream + 'static>(
     }
 
     json_writer.end_object()?;
-    Ok(())
-}
-
-fn write_base64_stream_inline<W: Write, S: SyncStream + 'static>(
-    json_writer: &mut struson::writer::JsonStreamWriter<W>,
-    stream: &mut S,
-    prefix: Option<&str>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use struson::writer::JsonWriter;
-
-    // We accumulate each file's base64-encoded content in memory here because:
-    // 1. struson doesn't provide access to underlying writer during JSON construction
-    // 2. This is still a MAJOR improvement over the previous approach:
-    //    - BEFORE: Entire CompletionReq with ALL files serialized via .json(&req) - ALL files in memory at once
-    //    - NOW: Only ONE file's base64 at a time, streamed through channel in 64KB chunks
-    // 3. The Reader uses mmap, so the source file isn't copied into memory
-    // 4. Base64 encoding happens in 256KB chunks (see base64_encoder.rs)
-    // 5. The ChannelWriter flushes at 64KB boundaries, so the base64 string flows to HTTP immediately
-    //
-    // For a 100MB file:
-    // - Base64 encoded: ~133MB string in memory temporarily
-    // - Then written through channel and freed
-    // - vs OLD approach: 100MB + 133MB + rest of request ALL in memory simultaneously
-
-    let mut buffer = Vec::new();
-    encode_base64(stream, &mut buffer, prefix)?;
-
-    let base64_str = String::from_utf8(buffer)?;
-    json_writer.string_value(&base64_str)?;
-
     Ok(())
 }
 
