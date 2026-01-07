@@ -1,0 +1,82 @@
+name: Check Licenses
+
+on:
+  pull_request:
+    paths:
+      - 'backend/Cargo.lock'
+      - 'frontend/pnpm-lock.yaml'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/Cargo.lock'
+      - 'frontend/pnpm-lock.yaml'
+  workflow_dispatch:
+
+jobs:
+  check-backend-licenses:
+    name: Check backend THIRDPARTY.toml
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-bundle-licenses
+        run: cargo install cargo-bundle-licenses --version 2.0.0
+
+      - name: Generate licenses
+        working-directory: ./backend
+        run: cargo bundle-licenses --format toml --output THIRDPARTY.toml.new
+
+      - name: Check if licenses are up-to-date
+        working-directory: ./backend
+        run: |
+          if ! diff -q THIRDPARTY.toml THIRDPARTY.toml.new; then
+            echo "❌ Backend THIRDPARTY.toml is out of date!"
+            echo "Please run 'cd backend && cargo bundle-licenses --format toml --output THIRDPARTY.toml' and commit the changes."
+            exit 1
+          fi
+          echo "✅ Backend THIRDPARTY.toml is up to date"
+
+  check-frontend-licenses:
+    name: Check frontend THIRDPARTY.txt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: ./frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Generate licenses
+        working-directory: ./frontend
+        run: pnpm generate-licenses
+
+      - name: Check if licenses are up-to-date
+        working-directory: ./frontend
+        run: |
+          if git diff --exit-code THIRDPARTY.txt; then
+            echo "✅ Frontend THIRDPARTY.txt is up to date"
+          else
+            echo "❌ Frontend THIRDPARTY.txt is out of date!"
+            echo "Please run 'cd frontend && pnpm generate-licenses' and commit the changes."
+            exit 1
+          fi
