@@ -77,10 +77,18 @@ tests:
           - "document"
           - "documentation"
 
-  - description: "Language - Chinese responds in zh-tw"
+  - description: "Language - Traditional Chinese responds in zh-tw"
     vars:
       user_prompt: "你好，你是誰？"
       locale: "zh-tw"
+    assert:
+      - type: contains
+        value: "llumen"
+
+  - description: "Language - Simplified Chinese responds in zh-cn"
+    vars:
+      user_prompt: "你好，你是谁？"
+      locale: "zh-cn"
     assert:
       - type: contains
         value: "llumen"

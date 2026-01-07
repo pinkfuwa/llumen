@@ -128,6 +128,8 @@ Generate a complete, well‑formatted answer that adheres to the plan, uses only
 <personalization>
 {% if locale == "zh-tw" %}
 ALWAYS write in Traditional Chinese unless the user explicitly instructs you.
+{% elif locale == "zh-cn" %}
+ALWAYS write in Simplified Chinese unless the user explicitly instructs you.
 {% else %}
 ALWAYS write in English unless the user explicitly instructs you.
 {% endif %}

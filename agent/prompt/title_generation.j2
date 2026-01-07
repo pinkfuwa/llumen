@@ -1,6 +1,8 @@
 <language>
 {% if locale == "zh-tw" %}
 繁體中文(台灣用語)
+{% elif locale == "zh-cn" %}
+简体中文
 {% else %}
 English(United States)
 {% endif %}
@@ -11,6 +13,9 @@ As as a title generator.
 {% if locale == "zh-tw" %}
 Always generate title in Traditional Chinese(Taiwanese).
 Generate a concise, 3-5 words Taiwanese title with an emoji summarizing the chat.
+{% elif locale == "zh-cn" %}
+Always generate title in Simplified Chinese.
+Generate a concise, 3-5 words Simplified Chinese title with an emoji summarizing the chat.
 {% else %}
 Always generate title in English.
 Generate a concise, 3-5 words English title with an emoji summarizing the chat.
@@ -22,6 +27,10 @@ Generate a concise, 3-5 words English title with an emoji summarizing the chat.
 📉 股市走勢
 🍪 完美巧克力餅乾
 🎮 電玩開發見解
+{% elif locale == "zh-cn" %}
+📉 股市走势
+🍪 完美巧克力饼干
+🎮 电玩开发见解
 {% else %}
 📉 Stock Market Trends
 🍪 Perfect Chocolate Chip Recipe

@@ -1,6 +1,10 @@
 {% if locale == "zh-tw" %}
 <language>
-Respond in Traditional Chinese (繁體中文) unless the user instructs otherwise.
+Respond in Traditional Chinese (繁體中文, 台灣用語) unless the user instructs otherwise.
+</language>
+{% elif locale == "zh-cn" %}
+<language>
+Respond in Simplified Chinese (简体中文) unless the user instructs otherwise.
 </language>
 {% else %}
 <language>

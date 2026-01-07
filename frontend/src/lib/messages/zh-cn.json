@@ -1,0 +1,105 @@
+{
+	"setting": {
+		"account": {
+			"general": "通用",
+			"password": "密码",
+			"error_sync_preference": "同步偏好设置时发生错误",
+			"error_updating_password": "更新密码时发生错误",
+			"enter_new_password": "输入新密码"
+		},
+		"admin": {
+			"users": "用户",
+			"create": "创建用户",
+			"user_created": "已创建用户 {username}",
+			"type_password_for_user": "为 {username} 输入密码",
+			"user": "用户",
+			"created": "已创建"
+		},
+		"title": "设置",
+		"setting": "设置",
+		"theme": "主题",
+		"language": "语言",
+		"enter": "按 Enter 提交",
+		"disable": "关闭",
+		"enable": "启用",
+		"change_password": "更改密码",
+		"account_settings": "账号设置",
+		"admin_settings": "管理员设置",
+		"logout": "登出",
+		"create_user": "新增账号",
+		"username": "账号名称",
+		"config_override_warning": "此操作会覆盖所有人的 openrouter 模型设置",
+		"check_syntax": "检查语法",
+		"save_settings": "保存设置",
+		"create_setting": "创建新设置",
+		"github_star": "点个星星",
+		"old_password": "旧密码",
+		"add_model": "新增模型",
+		"edit_model": "编辑模型",
+		"pattern": "显示图案背景"
+	},
+	"login": {
+		"title": "登录流明",
+		"welcome": "欢迎使用流明 Llumen",
+		"description": "简易、开箱即用的 LLM 聊天界面",
+		"username": "账号名称",
+		"password": "密码",
+		"submit": "登录",
+		"retry": "重试",
+		"loading": "登录中"
+	},
+	"chat": {
+		"title": "流明 Llumen",
+		"welcome": "Ask anything!",
+		"question": "在此输入问题",
+		"model_mode": {
+			"normal": "正常聊天",
+			"search": "网页搜索",
+			"deep": "深度搜索"
+		},
+		"markdown_mode": {
+			"enable": "已启用 markdown 渲染",
+			"disable": "正常编辑文字"
+		},
+		"file": "上传文件",
+		"new": "新聊天室",
+		"assistant.response": "回答",
+		"error.no_output": "模型没有回应，请再试一次",
+		"stop_first": "暂停当前的对话以输入消息",
+		"default_title": "新聊天室",
+		"reasoning": "显示推理过程",
+		"upload_file": "上传文件",
+		"loading_image": "加载图片中...",
+		"failed_load_image": "无法加载图片",
+		"image_alt": "生成的图片",
+		"select_model": "选择模型",
+		"research_agent": "研究代理",
+		"calling": "调用中",
+		"default_tool": "默认工具",
+		"hallucination_warning": "流明可能会犯错，请谨慎使用生成信息。",
+		"confirm": {
+			"title": "离开此页面?",
+			"message": "您有未保存的更改。确定要离开此页面吗?",
+			"cancel": "取消",
+			"confirm": "离开"
+		}
+	},
+	"common": {
+		"loading": "加载中",
+		"error": "错误",
+		"loading_editor": "加载程序编辑器...",
+		"copied_clipboard": "已复制到剪贴板"
+	},
+	"error": {
+		"page_not_found": "找不到页面",
+		"internal_server_error": "内部服务器错误",
+		"access_denied": "拒绝访问",
+		"unauthorized": "未授权",
+		"bad_request": "错误请求",
+		"method_not_allowed": "不允许的方法",
+		"unknown_error": "未知错误",
+		"back_to_home": "返回首页",
+		"select_model_first": "请先选择一个模型",
+		"fail_to_delete": "删除失败"
+	}
+}
