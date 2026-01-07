@@ -16,7 +16,6 @@
 			"created": "created"
 		},
 		"title": "settings",
-		"hello_world": "Hello, {name} from en!",
 		"setting": "Setting",
 		"theme": "Theme",
 		"language": "Language",

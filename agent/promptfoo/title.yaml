@@ -81,6 +81,18 @@ tests:
         value:
           - "Meaning"
           - "Life"
+  - description: "Simplified Chinese title generation"
+    vars:
+      user_prompt: "什么是机器学习?"
+      agent_answer: |
+        机器学习是人工智能的一个分支，它使计算机能够在没有明确编程的情况下学习和改进。
+      locale: "zh-cn"
+      user_prefix: 请生成一个简洁的标题，以表情符号开头
+    assert:
+      - type: contains-any
+        value:
+          - "机器"
+          - "学习"
 
 #
 outputPath: ./promptfoo/promptfoo-results-title.json

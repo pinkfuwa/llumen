@@ -48,7 +48,8 @@
 	<Select
 		data={[
 			{ value: 'en', label: 'English' },
-			{ value: 'zh-tw', label: '繁體中文' }
+			{ value: 'zh-tw', label: '繁體中文' },
+			{ value: 'zh-cn', label: '简体中文' }
 		]}
 		bind:selected={localeData}
 		disabled={isPending()}
