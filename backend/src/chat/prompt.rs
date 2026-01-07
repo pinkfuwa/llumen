@@ -234,15 +234,14 @@ impl BasicContext {
     }
 }
 
-// improve prompt caching by offering day time instead of hour
 const TIME_FORMAT: &[BorrowedFormatItem<'static>] =
-    format_description!("[weekday], [year]-[month]-[day]");
+    format_description!("[weekday], [year]-[month repr:long]-[day]");
 
 const DEEP_TIME_FORMAT: &[BorrowedFormatItem<'static>] =
-    format_description!("[weekday], [hour]:[minute]:[second], [day] [month] [year]");
+    format_description!("[weekday], [hour]:[minute]:[second], [day] [month repr:long] [year]");
 
 const CONTEXT_TIME_FORMAT: &[BorrowedFormatItem<'static>] =
-    format_description!("[weekday], [hour]:[minute], [day] [month] [year]");
+    format_description!("[weekday], [hour]:[minute], [day] [month repr:long] [year]");
 
 impl Prompt {
     pub fn render(
