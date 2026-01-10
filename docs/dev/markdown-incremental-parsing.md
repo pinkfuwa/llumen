@@ -93,6 +93,81 @@ const result2 = await parseIncremental(source2, result1.state);
 // Only parses "Paragraph two." and reuses first two tokens
 ```
 
+## Code Block Highlighting
+
+### Closed vs Unclosed Tracking
+
+The parser tracks whether code blocks are **closed** (have both opening and closing ``` delimiters) or **unclosed** (missing the closing delimiter). This information is stored in the `CodeBlockToken.closed` boolean field.
+
+```typescript
+interface CodeBlockToken {
+  type: TokenType.CodeBlock;
+  language?: string;
+  content: string;
+  closed: boolean;  // true if closing ``` was found
+  start: number;
+  end: number;
+}
+```
+
+### Highlighting Behavior
+
+The rendering system uses the `closed` field to determine highlighting:
+
+- **Closed blocks** (`closed: true`): Immediately syntax highlighted with full language support
+- **Unclosed blocks** (`closed: false`): Displayed in monochrome (no syntax highlighting)
+
+This provides instant visual feedback during streaming:
+1. As code streams in, it appears unhighlighted (monochrome)
+2. When the closing ``` arrives, highlighting appears immediately
+3. Users see the exact moment when a code block is complete
+
+### Implementation
+
+The parser sets `closed: true` only when it encounters the closing ``` delimiter:
+
+```typescript
+// In tryParseCodeBlock()
+let closed = false;
+
+while (this.position < this.source.length) {
+  const currentLine = this.peekLine();
+  if (currentLine.match(/^\s*```\s*$/)) {
+    // Found closing delimiter
+    closed = true;
+    break;
+  }
+  // Continue reading content
+}
+
+return {
+  type: TokenType.CodeBlock,
+  language,
+  content,
+  closed,  // false if EOF reached without closing
+  start,
+  end: this.position
+};
+```
+
+The Code component then uses this information:
+
+```svelte
+<script>
+  const shouldHighlight = $derived(token.closed);
+</script>
+
+<ShikiCode text={content} lang={language} monochrome={!shouldHighlight} />
+```
+
+### Benefits for Streaming
+
+This approach eliminates the need for a global "monochrome mode" flag:
+- Each code block is independently tracked
+- Highlighting happens per-block as soon as it's complete
+- No need to wait for entire message to finish
+- Better user experience with immediate visual feedback
+
 ## Usage
 
 ### In Components

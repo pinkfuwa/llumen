@@ -203,6 +203,7 @@ export class MarkdownParser {
 
 		const contentStart = this.position;
 		let contentEnd = this.position;
+		let closed = false;
 
 		while (this.position < this.source.length) {
 			const currentLine = this.peekLine();
@@ -210,6 +211,7 @@ export class MarkdownParser {
 				contentEnd = this.position;
 				this.position += currentLine.length;
 				this.skipNewlines();
+				closed = true;
 				break;
 			}
 			this.position += currentLine.length;
@@ -227,6 +229,7 @@ export class MarkdownParser {
 			type: TokenType.CodeBlock,
 			language,
 			content,
+			closed,
 			start,
 			end: this.position
 		};

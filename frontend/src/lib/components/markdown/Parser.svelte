@@ -36,44 +36,43 @@
 	import Text from './Text.svelte';
 	import Parser from './Parser.svelte';
 
-	let { tokens, source, monochrome }: { tokens: Token[]; source: string; monochrome: boolean } =
-		$props();
+	let { tokens, source }: { tokens: Token[]; source: string } = $props();
 </script>
 
 {#each tokens as token}
 	{#if token.type === TokenType.Heading}
 		<Heading {token}>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</Heading>
 	{:else if token.type === TokenType.Paragraph}
 		<Paragraph>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</Paragraph>
 	{:else if token.type === TokenType.CodeBlock}
-		<Code token={token as CodeBlockToken} {monochrome} />
+		<Code token={token as CodeBlockToken} />
 	{:else if token.type === TokenType.Blockquote}
 		<Blockquote>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</Blockquote>
 	{:else if token.type === TokenType.OrderedList || token.type === TokenType.UnorderedList}
 		<List {token} {source}>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</List>
 	{:else if token.type === TokenType.ListItem}
 		<ListItem>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</ListItem>
 	{:else if token.type === TokenType.Table}
 		<Table>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</Table>
 	{:else if token.type === TokenType.TableRow}
 		<TableRow>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</TableRow>
 	{:else if token.type === TokenType.TableCell || token.type === TokenType.TableHeader}
 		<TableCell token={token as TableCellToken}>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</TableCell>
 	{:else if token.type === TokenType.HorizontalRule}
 		<Hr />
@@ -83,21 +82,21 @@
 		<LatexSpan token={token as LatexInlineToken} />
 	{:else if token.type === TokenType.Bold}
 		<Strong>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</Strong>
 	{:else if token.type === TokenType.Italic}
 		<Italic>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</Italic>
 	{:else if token.type === TokenType.Strikethrough}
 		<Del {token} {source}>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</Del>
 	{:else if token.type === TokenType.InlineCode}
 		<Codespan token={token as InlineCodeToken} />
 	{:else if token.type === TokenType.Link}
 		<Link token={token as LinkToken}>
-			<Parser tokens={token.children || []} {source} {monochrome} />
+			<Parser tokens={token.children || []} {source} />
 		</Link>
 	{:else if token.type === TokenType.Image}
 		<Image token={token as ImageToken} />

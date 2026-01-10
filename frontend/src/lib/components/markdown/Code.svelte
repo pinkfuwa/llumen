@@ -5,10 +5,11 @@
 	import ShikiCode from '../shiki/Code.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
-	let { token, monochrome }: { token: CodeBlockToken; monochrome: boolean } = $props();
+	let { token }: { token: CodeBlockToken } = $props();
 
 	const language = $derived(token.language || 'text');
 	const content = $derived(token.content);
+	const shouldHighlight = $derived(token.closed);
 </script>
 
 <!-- TODO: handle latex -->
@@ -18,5 +19,5 @@
 			<ClipboardCopy class="h-6 w-6" />
 		</Button>
 	{/if}
-	<ShikiCode text={content} lang={language} {monochrome} />
+	<ShikiCode text={content} lang={language} monochrome={!shouldHighlight} />
 </div>
