@@ -450,15 +450,24 @@ function handleToolResult(result: string) {
 	}
 }
 
-export function getMessages() {
-	return messages;
+export function getMessages(): {
+	readonly messages: Message[];
+} {
+	return {
+		get messages() {
+			return messages;
+		}
+	};
 }
 
-export function getStream(updater: (x: boolean) => void) {
-	$effect(() => {
-		const stream = messages.at(0)?.stream ? true : false;
-		updater(stream);
-	});
+export function getStream(): {
+	readonly stream: boolean;
+} {
+	return {
+		get stream() {
+			return messages.at(0)?.stream ? true : false;
+		}
+	};
 }
 
 export function pushUserMessage(user_id: number, content: string, files: FileMetadata[]) {

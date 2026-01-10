@@ -5,7 +5,7 @@
 	import Hallucination from '$lib/components/common/Hallucination.svelte';
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
-	import { haltCompletion, useRoomQueryEffect, getCurrentRoom } from '$lib/api';
+	import { haltCompletion, useRoomQueryEffect, getCurrentRoom, getMessages } from '$lib/api';
 	import { createUploadEffect } from '$lib/api/files.svelte';
 	import Scroll from '$lib/ui/Scroll.svelte';
 	import { createMessage, getStream } from '$lib/api';
@@ -47,14 +47,12 @@
 
 	const ensureUploaded = createUploadEffect(() => files);
 
-	// svelte 5 bug
-	let stream = $state(false);
-	getStream((x) => (stream = x));
+	let stream = $derived(getStream().stream);
 </script>
 
 <Hallucination />
 
-<Scroll class="nobar flex h-full flex-col-reverse">
+<Scroll class="nobar flex h-full flex-col-reverse" key={getMessages().messages.length}>
 	<div class="sticky bottom-1 z-10 mt-4 flex justify-center">
 		<MessageInput
 			bind:content
