@@ -89,6 +89,29 @@ describe('MarkdownParser - Block-Level Tokens', () => {
 			const codeBlock = result.tokens[0] as CodeBlockToken;
 			expect(codeBlock.content).toBe('  indented\n    more indented');
 		});
+
+		test('marks closed code block as closed', () => {
+			const markdown = '```javascript\nconst x = 42;\n```';
+			const result = parse(markdown);
+			const codeBlock = result.tokens[0] as CodeBlockToken;
+			expect(codeBlock.closed).toBe(true);
+		});
+
+		test('marks unclosed code block as not closed', () => {
+			const markdown = '```javascript\nconst x = 42;';
+			const result = parse(markdown);
+			const codeBlock = result.tokens[0] as CodeBlockToken;
+			expect(codeBlock.closed).toBe(false);
+			expect(codeBlock.content).toBe('const x = 42;');
+		});
+
+		test('marks streaming code block as not closed', () => {
+			const markdown = '```python\ndef hello():\n    print("world")';
+			const result = parse(markdown);
+			const codeBlock = result.tokens[0] as CodeBlockToken;
+			expect(codeBlock.closed).toBe(false);
+			expect(codeBlock.language).toBe('python');
+		});
 	});
 
 	describe('Blockquotes', () => {

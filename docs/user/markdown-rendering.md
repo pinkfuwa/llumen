@@ -148,13 +148,13 @@ Citations are rendered with special styling and can be used for references or fo
 - Large documents loaded at once
 - Content that changes completely (not just appends)
 
-### Monochrome Mode
+### Code Block Highlighting
 
-```svelte
-<Root source={markdownText} monochrome={true} />
-```
+Code blocks are syntax highlighted automatically when they are **closed** (have both opening and closing ``` delimiters). Unclosed code blocks remain unhighlighted, which is particularly useful during streaming:
 
-Disables syntax highlighting in code blocks for a minimal, monochrome appearance.
+- **Closed blocks**: Immediately highlighted with full syntax support
+- **Unclosed blocks**: Displayed in monochrome until closing delimiter appears
+- This provides instant visual feedback when a code block is complete during streaming responses
 
 ## Performance Tips
 
@@ -179,9 +179,8 @@ Disables syntax highlighting in code blocks for a minimal, monochrome appearance
 
 Markdown components use Tailwind CSS classes and can be customized via:
 
-1. **Component props**: `monochrome` for styling variants
-2. **CSS overrides**: Target component classes in your styles
-3. **Theme customization**: Modify Tailwind config for global changes
+1. **CSS overrides**: Target component classes in your styles
+2. **Theme customization**: Modify Tailwind config for global changes
 
 ## Technical Details
 

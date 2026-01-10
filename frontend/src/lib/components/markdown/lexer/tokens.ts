@@ -72,6 +72,7 @@ export interface CodeBlockToken extends Token {
 	type: TokenType.CodeBlock;
 	language?: string;
 	content: string;
+	closed: boolean;
 }
 
 /**

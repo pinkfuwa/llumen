@@ -5,11 +5,7 @@
 	import { parseIncremental, type IncrementalState } from './lexer';
 	import type { ParseResult } from './lexer';
 
-	const {
-		source,
-		incremental = false,
-		monochrome = false
-	}: { source: string; incremental?: boolean; monochrome?: boolean } = $props();
+	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
 
 	let incrementalState: IncrementalState | null = $state(null);
 	let result: ParseResult | null = $state(null);
@@ -90,6 +86,6 @@
 	</div>
 {:else}
 	<div class="space-y-2">
-		<Parser tokens={result.tokens} {source} {monochrome} />
+		<Parser tokens={result.tokens} {source} />
 	</div>
 {/if}
