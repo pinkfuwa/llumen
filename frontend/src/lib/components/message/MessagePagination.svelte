@@ -19,7 +19,7 @@
 	useSSEEffect(() => chatId);
 </script>
 
-{#each getMessages() as msg}
+{#each getMessages().messages as msg}
 	{#key msg.id}
 		{@const streaming = msg.stream}
 		{#if msg.inner.t == 'user'}
@@ -28,7 +28,6 @@
 			<User
 				{content}
 				{files}
-				{streaming}
 				messageId={msg.id}
 				onupdate={(text, updatedFiles) => {
 					if (room == undefined) return;

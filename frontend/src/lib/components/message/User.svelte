@@ -10,13 +10,11 @@
 		files = [] as Array<{ name: string; id: number }>,
 		onupdate = (() => {}) as (text: string, files: Array<{ name: string; id: number }>) => void,
 		// streaming means the message just being updated(editing)
-		streaming = false,
 		messageId
 	}: {
 		content: string;
 		files?: Array<{ name: string; id: number }>;
 		onupdate?: (text: string, files: Array<{ name: string; id: number }>) => void;
-		streaming?: boolean;
 		messageId: number;
 	} = $props();
 
@@ -41,19 +39,9 @@
 	});
 
 	let btnGroup = $state<null | HTMLDivElement>(null);
-	let scrolled = false;
-	$effect(() => {
-		if (streaming && !scrolled) {
-			btnGroup?.scrollIntoView({
-				behavior: 'instant'
-			});
-			scrolled = true;
-		}
-	});
 
 	// getStream to bypass svelte bug
-	let blockEdit = $state(true);
-	getStream((streaming) => (blockEdit = streaming));
+	let blockEdit = $derived(getStream().stream);
 
 	const { mutate: removeMessage } = deleteMessage();
 </script>

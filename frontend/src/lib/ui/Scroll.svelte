@@ -1,20 +1,38 @@
 <script lang="ts">
 	import type { Component } from '@lucide/svelte';
+	import { untrack } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
 
-	const props = $props<
+	let {
+		damping = 0.2,
+		children,
+		key = $bindable(null),
+		...props
+	} = $props<
 		HTMLAttributes<HTMLElement> & {
 			children: Component;
 			damping?: number;
+			key?: any;
 		}
 	>();
-
-	const { damping = 0.2, children } = props;
 
 	let scrollElement = $state<null | HTMLDivElement>(null);
 	let velocity = $state(0);
 	let animationFrameId: number | null = null;
 	let isAnimating = $derived(animationFrameId != null);
+
+	let lastKey = $state(key);
+
+	$effect(() => {
+		if (!scrollElement) return;
+		if (key !== lastKey) {
+			untrack(() => (lastKey = key));
+			scrollElement.scrollTo({
+				top: 0,
+				behavior: 'instant'
+			});
+		}
+	});
 
 	const velocityThreshold = 3;
 
