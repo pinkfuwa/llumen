@@ -1,5 +1,9 @@
 llumen is a LLM chat application. featuring three mode: normal chat, search and deep research.
 
+# Strong Size Awareness
+
+Our project emphasizes performance and binary-size. We choose minimal dependency for both frontend and backend.
+
 # Rust coding guidelines
 
 * Prioritize code correctness and clarity. Speed and efficiency are secondary priorities unless otherwise specified.
@@ -35,6 +39,24 @@ llumen is a LLM chat application. featuring three mode: normal chat, search and 
   });
   ```
 
+## Database government
+
+We use sea-orm without entity-codegen. When modifying migration files, ensure they are compatible with the current database schema. don't generate entity-codegen.
+
+## Agent and subagent
+
+There are three agent: normal/search/deep-research
+
+The **subagent pattern** is the superset of simple tool for handling complex, multi-step tasks in LLM applications.
+
+To create new subagent:
+1. Define a tool in `get_tools` with a unique name and schema.
+2. On tool call, invoke `handoff_tool`, passing the pipeline and tool arguments.
+3. Use mutable `CompletionContext` for all state updates.
+4. On error, append an **error chunk** to the assistant output.
+5. When sub-agent finished its job, return ture is agent take the final output, or return false to trigger next completion(common pattern for simple tool call).
+6. create/modify agent to wire subagent to agent
+
 # Svelte 5 coding guidelines
 
 * Prioritize declarative code and reactivity clarity using Svelte 5 runes.
@@ -55,56 +77,35 @@ llumen is a LLM chat application. featuring three mode: normal chat, search and 
 ## Query Management Library
 
 `frontend/src/lib/api/state/index.ts` emphasizes small bundle sizes by omitting advanced features like automatic deduplication in queries and signal-based inputs.
-Instead, it relies on manual top-level invocation (e.g., via setContext) for sharing queries across components.
 
 Following are step to connect new endpoint:
 1. run codegen to generate typescript type from rust code.
 2. Create file for corresponding resource type in `frontend/src/lib/api/<resource>(.svelte).ts`
 3. use custom query management library
   ```ts
-  export function useRoom(id: number): QueryResult<ChatReadResp> {
-  	return CreateQuery<ChatReadReq, ChatReadResp>({
-  		key: ['chatRead', id.toString()],
-  		path: 'chat/read', // hit /api/chat/read
-  		body: { id }, // request body, matching ChatReadReq
-  		revalidateOnFocus: false,
-  		staleTime: Infinity
+  export function getUsers(): UserListResp | undefined {
+  	return users;
+  }
+  export function useUsersQueryEffect() {
+  	createQueryEffect<Record<string, never>, UserListResp>({
+  		path: 'user/list',
+  		body: {},
+  		updateData: (data) => {
+  			users = data;
+  		}
   	});
   }
   ```
 4. call the function just created inside reactivity context(must be called during component initialization)
 
-## Database government
+# Tech Stack
 
-We use sea-orm without entity-codegen. When modifying migration files, ensure they are compatible with the current database schema. don't generate entity-codegen.
-
-## Strong Size Awareness
-
-Our project emphasizes performance and binary-size. We choose minimal dependency for both frontend and backend.
-
-## Agent and subagent
-
-There are three agent: normal/search/deep-research
-
-The **subagent pattern** is the superset of simple tool for handling complex, multi-step tasks in LLM applications.
-
-To create new subagent:
-1. Define a tool in `get_tools` with a unique name and schema.
-2. On tool call, invoke `handoff_tool`, passing the pipeline and tool arguments.
-3. Use mutable `CompletionContext` for all state updates.
-4. On error, append an **error chunk** to the assistant output.
-5. When sub-agent finished its job, return ture is agent take the final output, or return false to trigger next completion(common pattern for simple tool call).
-6. create/modify agent to wire subagent to agent
-
-### backend tech stack
 * Rust
 * Axum
 * SeaORM
 * Tokio
 * mLua with luau sandboxing
 * typeshare(codegen)
-
-### Frontend tech stack
 * Svelte 5(SPA)
 * TailwindCSS
 * Vite
@@ -112,12 +113,12 @@ To create new subagent:
 * bit-ui
 * lezer(for markdown parsing)
 
-## Document your changes
+# Keep document in sync
 
 * document user-facing changes in `docs/user/`
 * document architecture changes in `docs/dev/`
 
-## Common mistakes
+# Common mistakes
 
 - Editing `frontend/src/lib/api/types.ts` break codegen(always run codegen with typeshare instead: `cd backend && just gen-ts`)
 - Failing a CI test(see `.github/workflows/check.yml` for tests included)
