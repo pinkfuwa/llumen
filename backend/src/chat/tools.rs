@@ -64,12 +64,76 @@ impl CrawlTool {
             anyhow::bail!("HTTP error: {}", status);
         }
 
-        let html = response.text().await.context("Failed to read response")?;
+        // Get response bytes
+        let bytes = response.bytes().await.context("Failed to read response")?;
 
-        // Convert HTML to markdown using html2text
-        let markdown = html2text::from_read(html.as_bytes(), 80);
+        // Limit content to 120,000 characters
+        const MAX_CHARS: usize = 120_000;
+        let content_bytes = if bytes.len() > MAX_CHARS {
+            &bytes[..MAX_CHARS]
+        } else {
+            &bytes
+        };
 
-        markdown.map_err(|e| anyhow::anyhow!("Failed to convert HTML to markdown: {}", e))
+        // Use infer to detect actual content type from magic bytes
+        if let Some(kind) = infer::get(content_bytes) {
+            let mime_type = kind.mime_type();
+
+            // Reject image content types
+            if mime_type.starts_with("image/") {
+                anyhow::bail!(
+                    "This URL returns an Image content type. Image parsing is not supported."
+                );
+            }
+
+            // Reject PDF content types
+            if mime_type.contains("pdf") {
+                anyhow::bail!("This URL returns a PDF content type. PDF parsing is not supported.");
+            }
+
+            // Reject other document types
+            if mime_type.contains("application/msword")
+                || mime_type.contains("application/vnd.openxmlformats-officedocument")
+                || mime_type.contains("application/vnd.ms-excel")
+                || mime_type.contains("application/vnd.ms-powerpoint")
+                || mime_type.contains("application/zip")
+                || mime_type.contains("application/x-tar")
+                || mime_type.contains("application/x-rar")
+            {
+                anyhow::bail!(
+                    "This URL returns a Document content type. Document parsing is not supported."
+                );
+            }
+
+            // Reject other binary formats
+            if mime_type.starts_with("video/") || mime_type.starts_with("audio/") {
+                anyhow::bail!(
+                    "This URL returns a media file content type. Media file parsing is not supported."
+                );
+            }
+        }
+
+        // Convert bytes to string
+        let content_str = String::from_utf8_lossy(content_bytes);
+
+        // Check if content looks like HTML
+        let trimmed = content_str.trim();
+        let is_html = trimmed.starts_with("<!DOCTYPE html")
+            || trimmed.starts_with("<!doctype html")
+            || trimmed.starts_with("<html")
+            || trimmed.starts_with("<HTML")
+            || trimmed.contains("<body")
+            || trimmed.contains("<div");
+
+        if is_html {
+            // Convert HTML to markdown using html2text
+            let markdown = html2text::from_read(content_str.as_bytes(), 80)
+                .map_err(|e| anyhow::anyhow!("Failed to convert HTML to markdown: {}", e))?;
+            Ok(markdown)
+        } else {
+            // Return plain text as-is
+            Ok(content_str.to_string())
+        }
     }
 }
 
