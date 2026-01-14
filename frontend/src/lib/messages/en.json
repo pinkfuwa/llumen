@@ -82,6 +82,14 @@
 			"message": "You have unsaved changes. Are you sure you want to leave this page?",
 			"cancel": "Cancel",
 			"confirm": "Leave"
+		},
+		"convert_to_file": {
+			"title": "Convert Text to File Attachment",
+			"description": "Convert the current message text into a file attachment. The textbox will be cleared and the file will be attached.",
+			"filename_label": "Filename",
+			"file_hint": "Default extension: .md",
+			"cancel": "Cancel",
+			"convert": "Convert"
 		}
 	},
 	"common": {
