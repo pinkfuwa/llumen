@@ -82,6 +82,14 @@
 			"message": "您有未儲存的變更。確定要離開此頁面嗎?",
 			"cancel": "取消",
 			"confirm": "離開"
+		},
+		"convert_to_file": {
+			"title": "將文字轉換為檔案附件",
+			"description": "將目前訊息文字轉換為檔案附件。文字方塊將被清空，檔案將被附加。",
+			"filename_label": "檔案名稱",
+			"file_hint": "預設副檔名：.md",
+			"cancel": "取消",
+			"convert": "轉換"
 		}
 	},
 	"common": {
