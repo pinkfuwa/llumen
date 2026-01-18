@@ -132,9 +132,22 @@ impl CompletionReq {
     pub fn log(&self) {
         #[cfg(feature = "dev")]
         if let Ok(req) = serde_json::to_string_pretty(&self) {
+            fn truncate_base64_in_json(json: &str) -> String {
+                use regex::Regex;
+
+                let re =
+                    Regex::new(r#"("(?:data|file_data|url)"\s*:\s*"[^"]{64})[^"]{1,}""#).unwrap();
+                re.replace_all(json, |caps: &regex::Captures| {
+                    let prefix = &caps[1];
+                    format!(r#"{}...""#, prefix)
+                })
+                .to_string()
+            }
+
+            let truncated = truncate_base64_in_json(&req);
             log::debug!(
                 "sending completion\n===============\n{}\n===============",
-                req
+                truncated
             );
         }
         #[cfg(not(feature = "dev"))]

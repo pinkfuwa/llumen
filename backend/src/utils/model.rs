@@ -6,6 +6,7 @@ use crate::openrouter;
 impl From<ModelConfig> for openrouter::Model {
     fn from(value: ModelConfig) -> Self {
         let capability = openrouter::MaybeCapability {
+            text_output: None,
             image_output: None,
             image_input: value.capability.image,
             structured_output: value.capability.json,

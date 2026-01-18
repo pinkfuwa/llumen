@@ -1,6 +1,62 @@
 use crate::openrouter::{CompletionOption, Message, Model, ModelBuilder, Openrouter, Tool};
 use std::env;
 
+#[tokio::test]
+async fn test_text_output_capability() {
+    // Test that text_output capability is correctly detected for different model types
+
+    // Test with a fake API key and base URL (won't make actual requests)
+    let openrouter = Openrouter::new("test_key", "https://openrouter.ai/api");
+
+    // Test 1: Image-only model with prefix (not in listing)
+    let image_only_model = Model {
+        id: "black-forest-labs/flux-2".to_string(),
+        ..Default::default()
+    };
+    let capability = openrouter.get_capability(&image_only_model);
+    assert_eq!(
+        capability.text_output, false,
+        "Image-only model should not support text output"
+    );
+
+    // Test 2: Another image-only model with different prefix
+    let image_only_model2 = Model {
+        id: "sourceful/image-model".to_string(),
+        ..Default::default()
+    };
+    let capability2 = openrouter.get_capability(&image_only_model2);
+    assert_eq!(
+        capability2.text_output, false,
+        "Sourceful image-only model should not support text output"
+    );
+
+    // Test 3: Future model (not in listing, no prefix) - should default to text support
+    let future_model = Model {
+        id: "openai/gpt-5-turbo".to_string(),
+        ..Default::default()
+    };
+    let capability3 = openrouter.get_capability(&future_model);
+    assert_eq!(
+        capability3.text_output, true,
+        "Future model should default to supporting text output"
+    );
+
+    // Test 4: User override - even image-only model can be overridden
+    let overridden_model = Model {
+        id: "black-forest-labs/flux-2".to_string(),
+        capability: crate::openrouter::MaybeCapability {
+            text_output: Some(true),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let capability4 = openrouter.get_capability(&overridden_model);
+    assert_eq!(
+        capability4.text_output, true,
+        "User override should take precedence"
+    );
+}
+
 #[test]
 fn test_tool_call_structure() {
     // Test that ToolCall can hold multiple tool calls
