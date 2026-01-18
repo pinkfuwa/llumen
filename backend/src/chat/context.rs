@@ -293,15 +293,22 @@ impl CompletionContext {
             .temperature(0.2)
             .build();
 
-        let completion = self
+        let mut title = match self
             .ctx
             .openrouter
             .complete(messages, model.into(), option)
-            .await?;
-
-        self.update_usage(completion.price as f32, completion.token as i32);
-
-        let mut title = completion.response;
+            .await
+        {
+            Ok(completion) => {
+                self.update_usage(completion.price as f32, completion.token as i32);
+                completion.response
+            }
+            Err(openrouter::Error::TextOutputNotSupported) => {
+                // Model doesn't support text output, use last user message as fallback
+                String::new()
+            }
+            Err(e) => return Err(e.into()),
+        };
 
         if title.is_empty() {
             let last_user_message = self.messages.iter().find_map(|msg| match &msg.inner {

@@ -3,6 +3,7 @@ use protocol::OcrEngine;
 
 #[derive(Clone, Default)]
 pub struct Capability {
+    pub text_output: bool,
     pub image_output: bool,
     pub image_input: bool,
     pub structured_output: bool,
@@ -14,6 +15,7 @@ pub struct Capability {
 
 #[derive(Clone, Default)]
 pub struct MaybeCapability {
+    pub text_output: Option<bool>,
     pub image_output: Option<bool>,
     pub image_input: Option<bool>,
     pub structured_output: Option<bool>,
@@ -127,6 +129,11 @@ impl ModelBuilder {
 
     pub fn audio(mut self, audio: bool) -> Self {
         self.capability.audio = Some(audio);
+        self
+    }
+
+    pub fn text_output(mut self, text_output: bool) -> Self {
+        self.capability.text_output = Some(text_output);
         self
     }
 

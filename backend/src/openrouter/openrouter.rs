@@ -184,6 +184,7 @@ impl Openrouter {
             };
         }
         super::Capability {
+            text_output: merge!(text_output),
             image_output: merge!(image_output),
             image_input: merge!(image_input),
             structured_output: merge!(structured_output),
@@ -207,6 +208,20 @@ impl Openrouter {
         let model = models.get(model_id);
 
         if model.is_none() {
+            // Model not in listing - check if it's image-only
+            const IMAGE_ONLY_PREFIXES: &[&str] =
+                &["black-forest-labs/", "sourceful/", "bytedance-seed/"];
+            if IMAGE_ONLY_PREFIXES
+                .iter()
+                .any(|prefix| model_id.starts_with(prefix))
+            {
+                // Image-only model: explicitly set text_output to false
+                return super::MaybeCapability {
+                    text_output: Some(false),
+                    ..Default::default()
+                };
+            }
+            // Future model or unknown - return default (None values will default to true)
             return super::MaybeCapability::default();
         }
 
@@ -218,6 +233,12 @@ impl Openrouter {
             .contains(&raw::Modality::File);
 
         super::MaybeCapability {
+            text_output: Some(
+                model
+                    .architecture
+                    .output_modalities
+                    .contains(&raw::Modality::Text),
+            ),
             image_output: Some(
                 model
                     .architecture
@@ -365,23 +386,9 @@ impl Openrouter {
         );
 
         if !self.compatibility_mode {
-            const IMAGE_ONLY_PREFIXES: &[&str] = &["black-forest-labs/", "sourceful/"];
-            if IMAGE_ONLY_PREFIXES
-                .iter()
-                .any(|prefix| model.id.starts_with(prefix))
-            {
-                return Ok(ChatCompletion::new());
-            }
-
-            let models = self.models.read().unwrap();
-            if let Some(model) = models.get(&model.id) {
-                if !model
-                    .architecture
-                    .output_modalities
-                    .contains(&raw::Modality::Text)
-                {
-                    return Ok(ChatCompletion::new());
-                }
+            let capability = self.get_capability(&model);
+            if !capability.text_output {
+                return Err(Error::TextOutputNotSupported);
             }
         }
 

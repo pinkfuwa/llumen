@@ -214,6 +214,7 @@ impl Message {
 impl From<protocol::ModelCapability> for super::MaybeCapability {
     fn from(capability: protocol::ModelCapability) -> Self {
         super::MaybeCapability {
+            text_output: None,
             image_output: capability.image,
             image_input: None,
             structured_output: capability.json,

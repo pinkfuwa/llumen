@@ -43,7 +43,7 @@ impl FileCleanupService {
             .await?;
 
         for file in expired_files {
-            log::info!("Cleaning up expired file: {}", file.id);
+            log::debug!("Cleaning up expired file: {}", file.id);
 
             if let Err(e) = self.blob.delete(file.id) {
                 log::warn!(

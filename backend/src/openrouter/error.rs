@@ -17,6 +17,8 @@ pub enum Error {
     Incompatible(&'static str),
     /// Cannot clone reqwest request (EventSource::new)
     CannotCloneRequest(reqwest_eventsource::CannotCloneRequestError),
+    /// Model does not support text output
+    TextOutputNotSupported,
 }
 
 impl fmt::Display for Error {
@@ -35,6 +37,7 @@ impl fmt::Display for Error {
             Error::MalformedResponse(msg) => write!(f, "Malformed response: {}", msg),
             Error::Incompatible(msg) => write!(f, "Incompatible upstream: {}", msg),
             Error::CannotCloneRequest(e) => write!(f, "Cannot clone reqwest request: {}", e),
+            Error::TextOutputNotSupported => write!(f, "Model does not support text output"),
         }
     }
 }
