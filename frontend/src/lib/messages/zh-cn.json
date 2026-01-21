@@ -83,13 +83,24 @@
 			"cancel": "取消",
 			"confirm": "离开"
 		},
+		"actions_menu": "操作菜单",
+		"record_audio": "录制音频",
 		"convert_to_file": {
 			"title": "将文本转换为文件附件",
 			"description": "将当前消息文本转换为文件附件。文本框将被清空，文件将被附加。",
 			"filename_label": "文件名",
 			"file_hint": "默认扩展名：.md",
+			"action": "转换为文件",
 			"cancel": "取消",
 			"convert": "转换"
+		},
+		"record_audio_dialog": {
+			"title": "录制音频",
+			"description": "录制音频并作为 MP3 文件附加到您的消息中。",
+			"click_to_start": "点击麦克风开始录制",
+			"recording": "正在录制中...",
+			"cancel": "取消",
+			"stop": "停止录制"
 		}
 	},
 	"common": {
