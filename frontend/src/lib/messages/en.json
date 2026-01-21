@@ -83,13 +83,24 @@
 			"cancel": "Cancel",
 			"confirm": "Leave"
 		},
+		"actions_menu": "Actions menu",
+		"record_audio": "Record Audio",
 		"convert_to_file": {
 			"title": "Convert Text to File Attachment",
 			"description": "Convert the current message text into a file attachment. The textbox will be cleared and the file will be attached.",
 			"filename_label": "Filename",
 			"file_hint": "Default extension: .md",
+			"action": "Convert to File",
 			"cancel": "Cancel",
 			"convert": "Convert"
+		},
+		"record_audio_dialog": {
+			"title": "Record Audio",
+			"description": "Record audio to attach as an MP3 file to your message.",
+			"click_to_start": "Click the microphone to start recording",
+			"recording": "Recording in progress...",
+			"cancel": "Cancel",
+			"stop": "Stop Recording"
 		}
 	},
 	"common": {

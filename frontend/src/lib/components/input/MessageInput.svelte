@@ -2,7 +2,7 @@
 	import { createDropZone } from './dropzone.svelte';
 	import Textbox from './Textbox.svelte';
 	import ModeSelector from './ModeSelector.svelte';
-	import UploadBtn from './Upload.svelte';
+	import ActionMenu from './ActionMenu.svelte';
 	import Send from './Send.svelte';
 	import FileGroup from '../common/FileGroup.svelte';
 	import ModelSelector from './ModelSelector.svelte';
@@ -15,7 +15,6 @@
 	import { FileUp } from '@lucide/svelte';
 	import { getSupportedFileExtensions } from './fileTypes';
 	import Confirm from './Confirm.svelte';
-	import Modal from '$lib/ui/Modal.svelte';
 
 	let {
 		mode = $bindable(Mode.Normal),
@@ -40,8 +39,6 @@
 	let editable = $state(true);
 	let showConfirm = $state(false);
 	let pendingNavigationUrl: string | null = $state(null);
-	let showConvertToFileDialog = $state(false);
-	let convertFileName = $state('');
 
 	let container = $state<HTMLElement | null>();
 
@@ -94,33 +91,6 @@
 			onsubmit();
 		}
 	}
-
-	function handleContextMenu(event: MouseEvent) {
-		event.preventDefault();
-		if (content.trim().length === 0) {
-			return;
-		}
-		showConvertToFileDialog = true;
-	}
-
-	function handleConvertToFile() {
-		let fileName = convertFileName.trim();
-		if (!fileName) {
-			fileName = 'message';
-		}
-
-		if (!fileName.includes('.')) {
-			fileName = fileName + '.md';
-		}
-
-		const blob = new Blob([content], { type: 'text/markdown' });
-		const file = new File([blob], fileName, { type: 'text/markdown' });
-
-		files.push(file);
-		content = '';
-		showConvertToFileDialog = false;
-		convertFileName = '';
-	}
 </script>
 
 <Confirm
@@ -135,7 +105,6 @@
 	role="region"
 	class="min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-[min(750px,75%)]"
 	bind:this={container}
-	oncontextmenu={handleContextMenu}
 >
 	{#if dropZone.isOver && editable}
 		<div
@@ -169,52 +138,10 @@
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
 			<ModelSelector bind:value={modelId} />
 			<ModeSelector bind:value={mode} limited={!selectModelCap?.tool} />
-			<UploadBtn bind:files />
+			<ActionMenu bind:files bind:content {disabled} />
 		</div>
 		{#if content.length != 0}
 			<MarkdownBtn bind:editable />
 		{/if}
 	</div>
 </div>
-
-<Modal bind:open={showConvertToFileDialog} title={$_('chat.convert_to_file.title')}>
-	{#snippet children()}
-		<div class="space-y-4">
-			<p class="text-sm text-text/80">
-				{$_('chat.convert_to_file.description')}
-			</p>
-			<div>
-				<label for="filename" class="mb-2 block text-sm font-medium">
-					{$_('chat.convert_to_file.filename_label')}
-				</label>
-				<input
-					id="filename"
-					type="text"
-					bind:value={convertFileName}
-					placeholder="message.md"
-					class="w-full rounded-md border border-outline bg-chat-input-bg px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-hidden"
-				/>
-				<p class="mt-1 text-xs text-text/60">
-					{$_('chat.convert_to_file.file_hint')}
-				</p>
-			</div>
-		</div>
-	{/snippet}
-	{#snippet footer()}
-		<button
-			onclick={() => {
-				showConvertToFileDialog = false;
-				convertFileName = '';
-			}}
-			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-primary focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
-			{$_('chat.convert_to_file.cancel')}
-		</button>
-		<button
-			onclick={handleConvertToFile}
-			class="rounded-md border border-outline bg-primary px-4 py-2 transition-colors hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
-			{$_('chat.convert_to_file.convert')}
-		</button>
-	{/snippet}
-</Modal>
