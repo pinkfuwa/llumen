@@ -86,7 +86,7 @@
 	});
 
 	function submit() {
-		if (onsubmit && content.length > 0 && modelIdValid) {
+		if (onsubmit && (content.length > 0 || files.length > 0) && modelIdValid) {
 			disabled = true;
 			onsubmit();
 		}
@@ -131,7 +131,10 @@
 		{#if disabled}
 			<Stop onclick={oncancel} />
 		{:else}
-			<Send onclick={submit} disabled={content.length == 0 || !modelIdValid} />
+			<Send
+				onclick={submit}
+				disabled={(content.length == 0 && files.length == 0) || !modelIdValid}
+			/>
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
