@@ -53,7 +53,8 @@
 			data-state={editable ? 'edit' : 'text'}
 		>
 			{#if files.length != 0}
-				<div class="mb-2 overflow-auto border-b border-outline pb-2">
+				{@const separator = editable || content.trim().length > 0}
+				<div class="mb-2 overflow-auto{separator ? ' border-b border-outline pb-2' : ''}">
 					{#if editable}
 						<FileGroup bind:files={editFiles} deletable={true} />
 					{:else}
