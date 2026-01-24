@@ -4,20 +4,6 @@ llumen is a LLM chat application. featuring three mode: normal chat, search and 
 
 Our project emphasizes performance and binary-size. We choose minimal dependency for both frontend and backend.
 
-# Conventional Commits
-
-llumen repo follow conventional commits
-
-The Conventional Commits specification is a lightweight convention on top of commit messages. The commit message should be structured as follows:
-```
-<type>: <description>
-
-[optional body]
-
-[optional footer(s)]
-[BREAKING CHANGE: `function_name` changed]
-```
-
 # Rust coding guidelines
 
 * Prioritize code correctness and clarity. Speed and efficiency are secondary priorities unless otherwise specified.
@@ -54,15 +40,40 @@ The Conventional Commits specification is a lightweight convention on top of com
   ```
 * Always follow separation of concerns principle
 
-# Separation of Concerns
+# general coding guidelines
 
-Separation of concerns guidance:
+## Use correct tools
 
-- Place UI and presentation logic in frontend/src/lib/ui (components, view helpers, styles). Keep this folder as the single place for UI-specific utilities and components.
-- For Svelte components and frontend logic, prefer placing UI-only helpers, components, and styles under frontend/src/lib/ui to keep presentation concerns isolated.
-- Keep route handlers in backend/src/routes and limit them to high-level request/response orchestration and input validation; routes should be thin.
-- Put business/domain logic and data access into backend/src/lib (services, use-cases, repositories) so routes remain thin and reusable.
-- Avoid mixing UI, business, and persistence code across layers; prefer clear module boundaries and single-responsibility functions.
+* Always use pnpm instead of npm
+* Always use just for scripting system(called by developer)
+* Always use plain bash script in `packages` for build script
+
+## Conventional Commits
+
+The Conventional Commits specification is a lightweight convention on top of commit messages. The commit message should be structured as follows:
+```
+<type>: <description>
+
+[optional body]
+
+[optional footer(s)]
+[BREAKING CHANGE: `function_name` changed]
+```
+
+## Separation of Concerns
+
+* Place UI and presentation logic in frontend/src/lib/ui (components, view helpers, styles). Keep this folder as the single place for UI-specific utilities and components.
+* For Svelte components and frontend logic, prefer placing UI-only helpers, components, and styles under frontend/src/lib/ui to keep presentation concerns isolated.
+* Keep route handlers in backend/src/routes and limit them to high-level request/response orchestration and input validation; routes should be thin.
+* Put business/domain logic and data access into backend/src/lib (services, use-cases, repositories) so routes remain thin and reusable.
+* Avoid mixing UI, business, and persistence code across layers; prefer clear module boundaries and single-responsibility functions.
+
+## Always check before commit
+
+* If backend changed, run `cargo check` and `cargo test`.
+* If frontend changed, run `pnpm check` and `pnpm test`.
+* If very complex logic changed, check `.github/workflows/check.yml` and try pass all CI tests.
+* If dependency changed, regenerate third-party licenses by `pnpm run generate-licenses` in frontend and `cargo bundle-licenses --format toml` in backend.
 
 ## Database government
 
@@ -142,9 +153,3 @@ Following are step to connect new endpoint:
 
 * document user-facing changes in `docs/user/`
 * document architecture changes in `docs/dev/`
-
-# Common mistakes
-
-- Editing `frontend/src/lib/api/types.ts` break codegen(always run codegen with typeshare instead: `cd backend && just gen-ts`)
-- Failing a CI test(see `.github/workflows/check.yml` for tests included)
-- The usage of npm(always use pnpm instead)
