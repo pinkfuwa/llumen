@@ -1,4 +1,13 @@
-llumen is a LLM chat application. featuring three mode: normal chat, search and deep research.
+llumen is a LLM chat web-application. featuring three mode: normal chat, search and deep research.
+
+# Structure
+
+llumen follow mono repo file structure:
+* `./frontend`: svelte 5(static-adapter) frontend
+* `./backend`: axum backend
+* `./agent`: prompt and regression prompt test
+* `./package`: build script and deployment declaration
+* `./docs`: document.
 
 # Strong Size Awareness
 
