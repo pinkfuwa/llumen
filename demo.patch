@@ -1,0 +1,1069 @@
+From b4b966222ff4e9256081187e0f4cd3cc914f7a48 Mon Sep 17 00:00:00 2001
+From: "Eason(G Ray)" <30045503+Eason0729@users.noreply.github.com>
+Date: Wed, 24 Dec 2025 20:34:50 +0800
+Subject: [PATCH] patch demo
+
+Signed-off-by: Eason(G Ray) <30045503+Eason0729@users.noreply.github.com>
+---
+ README.demo.md                         | 198 ++++++++++++++++++++++
+ backend/src/chat/configs/search.rs     |   1 -
+ backend/src/openrouter/raw.rs          |   2 +-
+ backend/src/routes/auth/header_auth.rs |   8 +-
+ backend/src/routes/chat/delete.rs      |   6 +
+ backend/src/routes/message/create.rs   |   8 +-
+ backend/src/routes/message/delete.rs   |   7 +
+ backend/src/routes/model/create.rs     |  38 +----
+ backend/src/routes/model/delete.rs     |  14 +-
+ backend/src/routes/model/write.rs      |  30 +---
+ backend/src/routes/user/create.rs      |  21 +--
+ backend/src/routes/user/delete.rs      |  24 +--
+ backend/src/routes/user/read.rs        |  22 +--
+ backend/src/routes/user/update.rs      |  60 +------
+ demo.sql                               |  82 +++++++++
+ docs/DEMO_DEPLOYMENT.md                | 221 +++++++++++++++++++++++++
+ frontend/src/lib/api/state/mock.ts     |   7 +-
+ frontend/src/lib/api/user.ts           |  22 ++-
+ frontend/src/lib/preference/index.ts   |   8 +-
+ frontend/src/routes/+page.svelte       |   3 +-
+ frontend/src/routes/login/+page.svelte |   2 +-
+ 21 files changed, 593 insertions(+), 191 deletions(-)
+ create mode 100644 README.demo.md
+ create mode 100644 demo.sql
+ create mode 100644 docs/DEMO_DEPLOYMENT.md
+
+diff --git a/README.demo.md b/README.demo.md
+new file mode 100644
+index 0000000..9bbd3ad
+--- /dev/null
++++ b/README.demo.md
+@@ -0,0 +1,198 @@
++# Llumen Demo
++
++This is the **demo branch** of Llumen - a modern LLM chat web application with restricted operations for public demonstration.
++
++## 🚀 Quick Start
++
++### Using Docker
++
++```bash
++docker run -d \
++  --name llumen-demo \
++  -e API_KEY="<YOUR_OPENROUTER_API_KEY>" \
++  -p 80:80 \
++  -v "$(pwd)/data:/data" \
++  ghcr.io/pinkfuwa/llumen:demo
++```
++
++### Setup Demo Content
++
++After the container starts, apply the tutorial content:
++
++```bash
++# Copy demo SQL to container
++docker cp demo.sql llumen-demo:/tmp/demo.sql
++
++# Execute the script
++docker exec llumen-demo sqlite3 /data/db.sqlite < /tmp/demo.sql
++```
++
++### Access the Demo
++
++Open your browser to `http://localhost` and log in with:
++
++- **Username**: `admin`
++- **Password**: `P@88w0rd`
++
++You'll be automatically redirected to a pre-configured tutorial chat that showcases Llumen's features.
++
++## ✨ Demo Features
++
++The demo includes an interactive tutorial that demonstrates:
++
++- 📝 **Markdown Support** - Rich text editing with tables, code blocks, and formatting
++- 📎 **File Upload** - Attach images and documents to conversations
++- 🔍 **Search Mode** - Toggle between normal chat and search-enhanced mode
++- ⚙️ **Model Configuration** - TOML-based model setup
++- 🎨 **Theme Switching** - Dark/light mode support
++- 🌐 **Localization** - Multi-language interface
++
++## 🔒 Demo Restrictions
++
++To protect the demo environment, the following operations are **disabled**:
++
++### Backend Restrictions
++- ❌ Cannot delete chat ID 1 (tutorial chat)
++- ❌ Cannot create/delete messages in chat ID 1
++- ❌ Cannot create, update, or delete models
++- ❌ Cannot create, update, read, or delete users
++
++### What You CAN Do
++- ✅ Create new chats (chat ID != 1)
++- ✅ Send messages in new chats
++- ✅ Upload files to new chats
++- ✅ Use existing models configured in the system
++- ✅ View the tutorial content in chat ID 1
++- ✅ Change UI preferences (theme, locale) - stored in browser
++
++## 📚 Documentation
++
++For complete deployment and configuration details, see:
++
++- [Demo Deployment Guide](docs/DEMO_DEPLOYMENT.md) - Full setup instructions
++- [Main README](README.md) - General Llumen documentation
++- [User Documentation](docs/user/) - User guides and tutorials
++- [Developer Documentation](docs/dev/) - Architecture and development guides
++
++## 🛠️ Configuration
++
++### Required Environment Variables
++
++- `API_KEY` - Your OpenRouter API key ([Get one here](https://openrouter.ai/keys))
++
++### Optional Environment Variables
++
++- `DATABASE_URL` - Custom database connection (default: SQLite at `/data/db.sqlite`)
++- `RUST_LOG` - Logging level (default: `info`)
++- `PORT` - Internal port (default: `3000`)
++
++## 🔄 Resetting Demo Data
++
++To restore the tutorial content:
++
++```bash
++docker exec llumen-demo sqlite3 /data/db.sqlite < /tmp/demo.sql
++```
++
++## 📦 Building from Source
++
++```bash
++# Clone the repository
++git clone https://github.com/pinkfuwa/llumen.git
++cd llumen
++
++# Checkout demo branch
++git checkout demo
++
++# Build with Docker
++docker build -t llumen:demo .
++
++# Run
++docker run -d \
++  -e API_KEY="your_key" \
++  -p 80:80 \
++  -v "$(pwd)/data:/data" \
++  llumen:demo
++```
++
++## 🌐 Production Deployment
++
++For production deployments, consider:
++
++1. **Use HTTPS** - Set up a reverse proxy (nginx, Caddy, Traefik)
++2. **Rate Limiting** - Protect against abuse
++3. **Monitoring** - Set up logging and metrics
++4. **Backups** - Regular database backups
++5. **Update Strategy** - Plan for updates without data loss
++
++Example nginx configuration:
++
++```nginx
++server {
++    listen 443 ssl http2;
++    server_name demo.example.com;
++
++    ssl_certificate /etc/ssl/certs/cert.pem;
++    ssl_certificate_key /etc/ssl/private/key.pem;
++
++    location / {
++        proxy_pass http://localhost:80;
++        proxy_set_header Host $host;
++        proxy_set_header X-Real-IP $remote_addr;
++        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
++        proxy_set_header X-Forwarded-Proto $scheme;
++    }
++}
++```
++
++## 🐛 Troubleshooting
++
++### Demo content not showing
++- Ensure `demo.sql` was executed after first run
++- Verify database file exists at `/data/db.sqlite`
++- Check container logs: `docker logs llumen-demo`
++
++### Cannot send messages
++- Verify `API_KEY` environment variable is set
++- Check OpenRouter API key is valid and has credits
++- Review logs for specific error messages
++
++### File uploads not working
++- Ensure `/data/files` directory has proper permissions
++- Check available disk space
++- Verify file size limits
++
++### Container won't start
++- Check port 80 is not already in use
++- Verify Docker daemon is running
++- Review container logs for errors
++
++## 🤝 Contributing
++
++This is a demo branch. For contributing to the main project, please see:
++
++- [CONTRIBUTING.md](CONTRIBUTING.md)
++- [Development Documentation](docs/dev/)
++
++## 📄 License
++
++Llumen is licensed under the MIT License. See [LICENSE](LICENSE) for details.
++
++## 🔗 Links
++
++- **Main Repository**: https://github.com/pinkfuwa/llumen
++- **Docker Hub**: https://ghcr.io/pinkfuwa/llumen
++- **Documentation**: [docs/](docs/)
++- **Issues**: https://github.com/pinkfuwa/llumen/issues
++
++## 💬 Support
++
++For questions and support:
++
++1. Check the [documentation](docs/)
++2. Search [existing issues](https://github.com/pinkfuwa/llumen/issues)
++3. Open a new issue with details about your problem
++
++---
++
++**Note**: This demo branch is specifically configured for public demonstrations with restricted operations. For a full-featured deployment, use the `main` branch instead.
+\ No newline at end of file
+diff --git a/backend/src/chat/configs/search.rs b/backend/src/chat/configs/search.rs
+index f2ac33e..c01f7b1 100644
+--- a/backend/src/chat/configs/search.rs
++++ b/backend/src/chat/configs/search.rs
+@@ -9,7 +9,6 @@ pub fn search_configuration() -> Configuration {
+ 
+     Configuration {
+         completion_option: openrouter::CompletionOption::builder()
+-            .web_search(true)
+             .tools(&[get_web_search_tool_def(), get_crawl_tool_def()])
+             .build(),
+         tool_handler: Arc::new(|state, toolcalls| {
+diff --git a/backend/src/openrouter/raw.rs b/backend/src/openrouter/raw.rs
+index 73b9d99..e8c6094 100644
+--- a/backend/src/openrouter/raw.rs
++++ b/backend/src/openrouter/raw.rs
+@@ -167,7 +167,7 @@ impl Plugin {
+         Self {
+             id: "file-parser".to_string(),
+             pdf: Some(PdfPlugin {
+-                engine: "mistral-ocr".to_string(),
++                engine: "pdf-text".to_string(),
+             }),
+         }
+     }
+diff --git a/backend/src/routes/auth/header_auth.rs b/backend/src/routes/auth/header_auth.rs
+index 5c6de5c..da4af2c 100644
+--- a/backend/src/routes/auth/header_auth.rs
++++ b/backend/src/routes/auth/header_auth.rs
+@@ -16,12 +16,8 @@ pub struct HeaderAuthResp {
+     pub exp: Option<String>,
+ }
+ 
+-pub async fn route(
+-    State(app): State<Arc<AppState>>,
+-    headers: HeaderMap,
+-) -> JsonResult<HeaderAuthResp> {
+-    let header = app.auth_header.as_deref();
+-    let username = header.and_then(|x| headers.get(x).and_then(|x| x.to_str().ok()));
++pub async fn route(State(app): State<Arc<AppState>>) -> JsonResult<HeaderAuthResp> {
++    let username = Some("admin".to_string());
+ 
+     if username.is_none() {
+         return Ok(Json(HeaderAuthResp {
+diff --git a/backend/src/routes/chat/delete.rs b/backend/src/routes/chat/delete.rs
+index a4219d4..cef6830 100644
+--- a/backend/src/routes/chat/delete.rs
++++ b/backend/src/routes/chat/delete.rs
+@@ -25,6 +25,12 @@ pub async fn route(
+     Extension(UserId(user_id)): Extension<UserId>,
+     Json(req): Json<ChatDeleteReq>,
+ ) -> JsonResult<ChatDeleteResp> {
++    if req.id == 1 {
++        return Err(Json(Error {
++            error: ErrorKind::Internal,
++            reason: "not available in demo".to_string(),
++        }));
++    }
+     let result = chat::Entity::delete_by_id(req.id)
+         .filter(chat::Column::OwnerId.eq(user_id))
+         .exec(&app.conn)
+diff --git a/backend/src/routes/message/create.rs b/backend/src/routes/message/create.rs
+index 7ece08b..9757796 100644
+--- a/backend/src/routes/message/create.rs
++++ b/backend/src/routes/message/create.rs
+@@ -8,7 +8,7 @@ use typeshare::typeshare;
+ 
+ use crate::{
+     AppState,
+-    errors::{ErrorKind, JsonResult, WithKind},
++    errors::{Error, ErrorKind, JsonResult, WithKind},
+     middlewares::auth::UserId,
+     utils::chat::ChatMode,
+ };
+@@ -42,6 +42,12 @@ pub async fn route(
+     Extension(UserId(user_id)): Extension<UserId>,
+     Json(req): Json<MessageCreateReq>,
+ ) -> JsonResult<MessageCreateResp> {
++    if req.chat_id == 1 {
++        return Err(Json(Error {
++            error: ErrorKind::Internal,
++            reason: "not available in demo".to_string(),
++        }));
++    }
+     let files = req
+         .files
+         .into_iter()
+diff --git a/backend/src/routes/message/delete.rs b/backend/src/routes/message/delete.rs
+index 74d29e4..4ce9397 100644
+--- a/backend/src/routes/message/delete.rs
++++ b/backend/src/routes/message/delete.rs
+@@ -37,6 +37,13 @@ pub async fn route(
+             })
+         })?;
+ 
++    if message.chat_id == 1 {
++        return Err(Json(Error {
++            error: ErrorKind::Internal,
++            reason: "not available in demo".to_string(),
++        }));
++    }
++
+     if chat.map(|m| m.owner_id) != Some(user_id) {
+         return Err(Json(Error {
+             error: ErrorKind::ResourceNotFound,
+diff --git a/backend/src/routes/model/create.rs b/backend/src/routes/model/create.rs
+index 64d766d..a668f11 100644
+--- a/backend/src/routes/model/create.rs
++++ b/backend/src/routes/model/create.rs
+@@ -29,38 +29,12 @@ pub struct ModelCreateResp {
+ }
+ 
+ pub async fn route(
+-    State(app): State<Arc<AppState>>,
++    State(_app): State<Arc<AppState>>,
+     Extension(UserId(_)): Extension<UserId>,
+-    Json(req): Json<ModelCreateReq>,
++    Json(_req): Json<ModelCreateReq>,
+ ) -> JsonResult<ModelCreateResp> {
+-    let raw_config = req.config;
+-
+-    match <ModelConfig as ModelChecker>::from_toml(&raw_config) {
+-        Ok(config) => {
+-            let model: openrouter::Model = config.clone().into();
+-            let caps = app.processor.get_capability(&model);
+-
+-            let id = Model::insert(model::ActiveModel {
+-                config: Set(raw_config),
+-                ..Default::default()
+-            })
+-            .exec(&app.conn)
+-            .await
+-            .kind(ErrorKind::Internal)?
+-            .last_insert_id;
+-
+-            Ok(Json(ModelCreateResp {
+-                id,
+-                image_input: caps.image_input,
+-                audio_input: caps.audio,
+-                other_file_input: caps.ocr != OcrEngine::Disabled,
+-                tool: caps.toolcall,
+-                display_name: config.display_name,
+-            }))
+-        }
+-        Err(reason) => Err(Json(Error {
+-            error: ErrorKind::MalformedRequest,
+-            reason: reason.to_string(),
+-        })),
+-    }
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
++    }))
+ }
+diff --git a/backend/src/routes/model/delete.rs b/backend/src/routes/model/delete.rs
+index 73c5027..83cd832 100644
+--- a/backend/src/routes/model/delete.rs
++++ b/backend/src/routes/model/delete.rs
+@@ -21,14 +21,12 @@ pub struct ModelDeleteResp {
+ }
+ 
+ pub async fn route(
+-    State(app): State<Arc<AppState>>,
++    State(_app): State<Arc<AppState>>,
+     Extension(UserId(_)): Extension<UserId>,
+-    Json(req): Json<ModelDeleteReq>,
++    Json(_req): Json<ModelDeleteReq>,
+ ) -> JsonResult<ModelDeleteResp> {
+-    model::Entity::delete_by_id(req.id)
+-        .exec(&app.conn)
+-        .await
+-        .kind(ErrorKind::ResourceNotFound)?;
+-
+-    Ok(Json(ModelDeleteResp { deleted: true }))
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
++    }))
+ }
+diff --git a/backend/src/routes/model/write.rs b/backend/src/routes/model/write.rs
+index c76e6ff..e402456 100644
+--- a/backend/src/routes/model/write.rs
++++ b/backend/src/routes/model/write.rs
+@@ -24,32 +24,12 @@ pub struct ModelWriteResp {
+ }
+ 
+ pub async fn route(
+-    State(app): State<Arc<AppState>>,
++    State(_app): State<Arc<AppState>>,
+     Extension(UserId(_)): Extension<UserId>,
+-    Json(req): Json<ModelWriteReq>,
++    Json(_req): Json<ModelWriteReq>,
+ ) -> JsonResult<ModelWriteResp> {
+-    let config = req.config;
+-
+-    let display_name = <ModelConfig as ModelChecker>::from_toml(&config)
+-        .map_err(|e| {
+-            Json(Error {
+-                error: ErrorKind::MalformedRequest,
+-                reason: e.to_string(),
+-            })
+-        })?
+-        .display_name;
+-
+-    let result = model::Entity::update_many()
+-        .col_expr(model::Column::Config, config.into())
+-        .filter(model::Column::Id.eq(req.id))
+-        .exec(&app.conn)
+-        .await
+-        .kind(ErrorKind::ResourceNotFound)?;
+-
+-    let wrote = result.rows_affected > 0;
+-
+-    Ok(Json(ModelWriteResp {
+-        display_name,
+-        wrote,
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
+     }))
+ }
+diff --git a/backend/src/routes/user/create.rs b/backend/src/routes/user/create.rs
+index 3efb48e..91639ad 100644
+--- a/backend/src/routes/user/create.rs
++++ b/backend/src/routes/user/create.rs
+@@ -22,23 +22,12 @@ pub struct UserCreateResp {
+ }
+ 
+ pub async fn route(
+-    State(app): State<Arc<AppState>>,
++    State(_app): State<Arc<AppState>>,
+     Extension(UserId(_)): Extension<UserId>,
+-    Json(req): Json<UserCreateReq>,
++    Json(_req): Json<UserCreateReq>,
+ ) -> JsonResult<UserCreateResp> {
+-    let password_hash = app.hasher.hash_password(&req.password);
+-    let new_user = user::ActiveModel {
+-        name: ActiveValue::Set(req.username),
+-        password: ActiveValue::Set(password_hash),
+-        ..Default::default()
+-    };
+-
+-    let new_user = User::insert(new_user)
+-        .exec(&app.conn)
+-        .await
+-        .kind(ErrorKind::Internal)?;
+-
+-    Ok(Json(UserCreateResp {
+-        user_id: new_user.last_insert_id,
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
+     }))
+ }
+diff --git a/backend/src/routes/user/delete.rs b/backend/src/routes/user/delete.rs
+index 4152815..bdb1cf2 100644
+--- a/backend/src/routes/user/delete.rs
++++ b/backend/src/routes/user/delete.rs
+@@ -21,24 +21,12 @@ pub struct UserDeleteResp {
+ }
+ 
+ pub async fn route(
+-    State(app): State<Arc<AppState>>,
+-    Extension(UserId(user_id)): Extension<UserId>,
+-    Json(req): Json<UserDeleteReq>,
++    State(_app): State<Arc<AppState>>,
++    Extension(UserId(_user_id)): Extension<UserId>,
++    Json(_req): Json<UserDeleteReq>,
+ ) -> JsonResult<UserDeleteResp> {
+-    if user_id == req.user_id {
+-        return Err(Json(Error {
+-            error: ErrorKind::ResourceNotFound,
+-            reason: "You cannot delete yourself".to_string(),
+-        }));
+-    }
+-    let res = User::delete_by_id(req.user_id)
+-        .exec(&app.conn)
+-        .await
+-        .kind(ErrorKind::Internal)?;
+-
+-    log::info!("user({}) is deleted by {}", req.user_id, user_id);
+-
+-    Ok(Json(UserDeleteResp {
+-        deleted: res.rows_affected == 1,
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
+     }))
+ }
+diff --git a/backend/src/routes/user/read.rs b/backend/src/routes/user/read.rs
+index eb74d70..b440afc 100644
+--- a/backend/src/routes/user/read.rs
++++ b/backend/src/routes/user/read.rs
+@@ -25,22 +25,12 @@ pub struct UserReadResp {
+ }
+ 
+ pub async fn route(
+-    State(app): State<Arc<AppState>>,
+-    Extension(UserId(user_id)): Extension<UserId>,
+-    Json(req): Json<UserReadReq>,
++    State(_app): State<Arc<AppState>>,
++    Extension(UserId(_user_id)): Extension<UserId>,
++    Json(_req): Json<UserReadReq>,
+ ) -> JsonResult<UserReadResp> {
+-    let user_id = req.user_id.unwrap_or(user_id);
+-
+-    let res = User::find_by_id(user_id)
+-        .one(&app.conn)
+-        .await
+-        .kind(ErrorKind::Internal)?
+-        .ok_or("")
+-        .kind(ErrorKind::ResourceNotFound)?;
+-
+-    Ok(Json(UserReadResp {
+-        user_id: res.id,
+-        username: res.name,
+-        preference: res.preference,
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
+     }))
+ }
+diff --git a/backend/src/routes/user/update.rs b/backend/src/routes/user/update.rs
+index 2e87cd8..32fc115 100644
+--- a/backend/src/routes/user/update.rs
++++ b/backend/src/routes/user/update.rs
+@@ -25,58 +25,12 @@ pub struct UserUpdateResp {
+ }
+ 
+ pub async fn route(
+-    State(app): State<Arc<AppState>>,
+-    Extension(UserId(user_id)): Extension<UserId>,
+-    Json(req): Json<UserUpdateReq>,
++    State(_app): State<Arc<AppState>>,
++    Extension(UserId(_user_id)): Extension<UserId>,
++    Json(_req): Json<UserUpdateReq>,
+ ) -> JsonResult<UserUpdateResp> {
+-    let UserUpdateReq {
+-        user_id: user_id_req,
+-        preference,
+-        password,
+-    } = req;
+-    let user_id = user_id_req.unwrap_or(user_id);
+-
+-    // Please note that update to same value does not result in error
+-    // But update no value does result in error
+-    debug_assert!(
+-        preference.is_some() || password.is_some(),
+-        "no field to update"
+-    );
+-
+-    let txn = app.conn.begin().await.kind(ErrorKind::Internal)?;
+-
+-    let res = User::find_by_id(user_id)
+-        .one(&txn)
+-        .await
+-        .kind(ErrorKind::Internal)?
+-        .ok_or("")
+-        .kind(ErrorKind::ResourceNotFound)?;
+-
+-    let mut active_model = res.into_active_model();
+-
+-    // merge two preferences
+-    // frontend can do partial update, but not reset to None
+-    if let Some(preference) = preference {
+-        let mut new_preference = active_model.preference.take().unwrap();
+-        if let Some(theme) = preference.theme {
+-            new_preference.theme = Some(theme);
+-        }
+-        if let Some(language) = preference.locale {
+-            new_preference.locale = Some(language);
+-        }
+-        if let Some(language) = preference.submit_on_enter {
+-            new_preference.submit_on_enter = Some(language);
+-        }
+-        active_model.preference = sea_orm::ActiveValue::Set(new_preference);
+-    }
+-    if let Some(password) = password {
+-        let password_hash = app.hasher.hash_password(&password);
+-        active_model.password = sea_orm::ActiveValue::Set(password_hash);
+-    }
+-
+-    active_model.update(&txn).await.kind(ErrorKind::Internal)?;
+-
+-    txn.commit().await.kind(ErrorKind::Internal)?;
+-
+-    Ok(Json(UserUpdateResp { user_id }))
++    Err(Json(Error {
++        error: ErrorKind::Internal,
++        reason: "not available in demo".to_string(),
++    }))
+ }
+diff --git a/demo.sql b/demo.sql
+new file mode 100644
+index 0000000..b94a53a
+--- /dev/null
++++ b/demo.sql
+@@ -0,0 +1,82 @@
++/* --------------------------------------------------------------
++   1️⃣  User message (id = 1) – unchanged apart from kind flag
++   -------------------------------------------------------------- */
++UPDATE message
++SET
++    kind        = 1,          -- 1 = user‑message
++    price       = 0.0,
++    token_count = 0
++WHERE id = 1;
++
++/* --------------------------------------------------------------
++   2️⃣  First user chunk (id = 1) – simple welcome line
++   -------------------------------------------------------------- */
++UPDATE chunk
++SET
++    content = 'Welcome to **Llumen** – a modern LLM‑chat web‑app. '
++            || 'Let's walk through its core features.',
++    kind    = 0               -- plain‑text/markdown
++WHERE id = 1;
++
++/* --------------------------------------------------------------
++   3️⃣  Placeholder "reasoning" chunk (id = 3) – fake content
++   -------------------------------------------------------------- */
++UPDATE chunk
++SET
++    content = '**Reasoning (placeholder)**' || char(10) ||
++              '- This block is intentionally left vague.' || char(10) ||
++              '- It is only displayed to keep the UI layout consistent.' || char(10) ||
++              '- No substantive information is provided here.',
++    kind    = 1               -- markdown‑styled placeholder
++WHERE id = 3;
++
++/* --------------------------------------------------------------
++   4️⃣  Assistant response (id = 2) – keep price & token info
++   -------------------------------------------------------------- */
++UPDATE message
++SET
++    kind        = 2,                     -- 2 = assistant‑response
++    price       = 0.00104109395761043,
++    token_count = 5616
++WHERE id = 2;
++
++/* --------------------------------------------------------------
++   5️⃣  Full tutorial now lives in the *answer* chunk (id = 4)
++   -------------------------------------------------------------- */
++UPDATE chunk
++SET
++    content = '**Answer – Llumen Tutorial**' || char(10) || char(10) ||
++              '### Features on a new chat' || char(10) ||
++              '1. **Markdown** support – write rich text, tables, code blocks, …' || char(10) ||
++              '2. **File upload** and **search‑mode** toggle located under the message input.' || char(10) || char(10) ||
++              '### Features on each message' || char(10) ||
++              '1. **Edit** button under the user's own messages (no need to clone the chat).' || char(10) ||
++              '2. **Completion cost** badge displayed beneath the assistant's response.' || char(10) || char(10) ||
++              '### Settings (bottom‑left gear icon in sidebar)' || char(10) ||
++              '1. **Model configuration** via a TOML file.' || char(10) ||
++              '2. **Preference configuration** – locale & theme selection.' || char(10) ||
++              '3. **User management** panel.' || char(10) || char(10) ||
++              '### Run Llumen with Docker' || char(10) ||
++              '```bash' || char(10) ||
++              'docker run -it --rm -e API_KEY="<YOUR_OPENROUTER_API_KEY>" -p 80:80 -v "$(pwd)/data:/data" ghcr.io/pinkfuwa/llumen:latest' || char(10) ||
++              '```' || char(10) || char(10) ||
++              'Open **http://localhost** (or port 80) and log in with the default admin credentials:' || char(10) ||
++              '- **Username:** `admin`' || char(10) ||
++              '- **Password:** `P@88w0rd`' || char(10) || char(10) ||
++              'You are now ready to explore Markdown editing, file uploads, model tuning via TOML, theme switching, and user administration.',
++    kind    = 0               -- plain‑text/markdown (final answer)
++WHERE id = 4;
++
++/* --------------------------------------------------------------
++   6️⃣  (Optional) Keep the demo file entry accurate
++   -------------------------------------------------------------- */
++UPDATE file
++SET
++    mime_type = 'image/png'   -- demo.png is a PNG image
++WHERE id = 1;
++
++UPDATE chunk
++SET
++    content = '{"name":"demo.png","id":1,"description":"Sample image used in the tutorial"}',
++    kind    = 7           -- 7 = JSON‑metadata chunk (kept from the original schema)
++WHERE id = 2;
+diff --git a/docs/DEMO_DEPLOYMENT.md b/docs/DEMO_DEPLOYMENT.md
+new file mode 100644
+index 0000000..1bc1795
+--- /dev/null
++++ b/docs/DEMO_DEPLOYMENT.md
+@@ -0,0 +1,221 @@
++# Demo Deployment Guide
++
++This guide explains how to deploy and configure the Llumen demo site.
++
++## Overview
++
++The demo branch includes several restrictions to prevent users from modifying critical data:
++
++### Backend Restrictions
++
++- **Chat Operations**: Chat ID 1 (tutorial chat) cannot be deleted
++- **Message Operations**: Messages in chat ID 1 cannot be created or deleted
++- **Model Operations**: All model CRUD operations are disabled (create, delete, update)
++- **User Operations**: All user management operations are disabled (create, delete, read, update)
++
++### Frontend Changes
++
++- **Mock API**: User-related API calls use mock data to avoid unnecessary backend requests
++- **Default Route**: Users are redirected to `/chat/1` instead of `/chat/new` after login
++- **Preference Handling**: User preferences are mocked on the frontend
++
++### Configuration Changes
++
++- **Search Mode**: Web search is disabled in search configuration
++- **PDF Engine**: Changed from `mistral-ocr` to `pdf-text` for document parsing
++
++## Database Setup
++
++After deploying the application, you need to populate the database with tutorial content:
++
++1. Ensure your database is initialized with migrations
++2. Run the demo SQL script to populate tutorial content:
++
++```bash
++# For SQLite (default)
++sqlite3 data/db.sqlite < demo.sql
++
++# For PostgreSQL
++psql -h localhost -U your_user -d llumen < demo.sql
++```
++
++The `demo.sql` script will:
++- Create a welcome message (message ID 1)
++- Set up tutorial chunks explaining Llumen features
++- Configure a sample file attachment (demo.png)
++- Populate chat ID 1 with interactive tutorial content
++
++## Docker Deployment
++
++### Standard Demo Deployment
++
++```bash
++docker run -d \
++  --name llumen-demo \
++  -e API_KEY="<YOUR_OPENROUTER_API_KEY>" \
++  -p 80:80 \
++  -v "$(pwd)/data:/data" \
++  ghcr.io/pinkfuwa/llumen:demo
++```
++
++### With Docker Compose
++
++Create a `docker-compose.demo.yml`:
++
++```yaml
++version: '3.8'
++
++services:
++  llumen-demo:
++    image: ghcr.io/pinkfuwa/llumen:demo
++    container_name: llumen-demo
++    environment:
++      - API_KEY=${OPENROUTER_API_KEY}
++    ports:
++      - "80:80"
++    volumes:
++      - ./data:/data
++    restart: unless-stopped
++```
++
++Run with:
++
++```bash
++OPENROUTER_API_KEY="your_key_here" docker-compose -f docker-compose.demo.yml up -d
++```
++
++## Post-Deployment Setup
++
++### 1. Initialize Database
++
++On first run, the database will be created automatically with migrations.
++
++### 2. Apply Demo Content
++
++```bash
++# Copy demo.sql to the container
++docker cp demo.sql llumen-demo:/tmp/demo.sql
++
++# Execute the SQL script
++docker exec llumen-demo sqlite3 /data/db.sqlite < /tmp/demo.sql
++```
++
++### 3. Create Demo Image (Optional)
++
++If you want to include the demo.png referenced in the tutorial:
++
++```bash
++# Create a sample image or use your own
++docker cp demo.png llumen-demo:/data/files/1.png
++```
++
++### 4. Access the Demo
++
++Navigate to `http://localhost` (or your configured domain) and log in with:
++
++- **Username**: `admin`
++- **Password**: `P@88w0rd`
++
++## Environment Variables
++
++Required:
++- `API_KEY`: Your OpenRouter API key for LLM access
++
++Optional:
++- `DATABASE_URL`: Custom database connection string (defaults to SQLite)
++- `RUST_LOG`: Logging level (default: `info`)
++- `PORT`: Internal port (default: `3000`)
++
++## Maintenance
++
++### Resetting Demo Data
++
++To reset the demo to its initial state:
++
++```bash
++# Backup current database
++docker exec llumen-demo cp /data/db.sqlite /data/db.sqlite.backup
++
++# Reapply demo content
++docker exec llumen-demo sqlite3 /data/db.sqlite < /tmp/demo.sql
++```
++
++### Monitoring
++
++Check application logs:
++
++```bash
++docker logs -f llumen-demo
++```
++
++### Updating
++
++To update to the latest demo version:
++
++```bash
++docker pull ghcr.io/pinkfuwa/llumen:demo
++docker-compose -f docker-compose.demo.yml down
++docker-compose -f docker-compose.demo.yml up -d
++```
++
++## Security Considerations
++
++1. **Change Default Password**: After deployment, consider changing the admin password through the UI (though user operations are restricted in demo mode)
++2. **API Key Protection**: Never commit your `API_KEY` to version control
++3. **Rate Limiting**: Consider adding rate limiting if exposing to public internet
++4. **Reverse Proxy**: Use nginx or similar for SSL/TLS termination:
++
++```nginx
++server {
++    listen 443 ssl http2;
++    server_name demo.llumen.example.com;
++
++    ssl_certificate /path/to/cert.pem;
++    ssl_certificate_key /path/to/key.pem;
++
++    location / {
++        proxy_pass http://localhost:80;
++        proxy_set_header Host $host;
++        proxy_set_header X-Real-IP $remote_addr;
++        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
++        proxy_set_header X-Forwarded-Proto $scheme;
++    }
++}
++```
++
++## Troubleshooting
++
++### Demo Content Not Showing
++
++1. Verify the SQL script was applied successfully
++2. Check that chat ID 1 exists in the database
++3. Ensure file ID 1 is properly configured
++
++### API Errors
++
++1. Verify `API_KEY` environment variable is set correctly
++2. Check OpenRouter API key validity
++3. Review logs for specific error messages
++
++### Permission Issues
++
++Ensure the data directory has proper permissions:
++
++```bash
++chmod -R 755 data/
++```
++
++## Development
++
++To build the demo branch locally:
++
++```bash
++git checkout demo
++docker build -t llumen:demo .
++```
++
++## Additional Resources
++
++- [Main README](../README.md)
++- [User Documentation](user/)
++- [Development Documentation](dev/)
+\ No newline at end of file
+diff --git a/frontend/src/lib/api/state/mock.ts b/frontend/src/lib/api/state/mock.ts
+index d1ce6d2..f1d3692 100644
+--- a/frontend/src/lib/api/state/mock.ts
++++ b/frontend/src/lib/api/state/mock.ts
+@@ -6,14 +6,19 @@ export async function sleep(ms: number) {
+ 	return new Promise((resolve) => setTimeout(resolve, ms));
+ }
+ 
+-export function CreateMockMutation<P, D>(result: D): MutationResult<P, D> {
++export function CreateMockMutation<P, D>(
++	result: D,
++	oncall?: (param: P) => void
++): MutationResult<P, D> {
+ 	const isPending = writable(false);
+ 	const isError = writable(false);
+ 
+ 	return {
+ 		mutate: async (param: P, callback?: (data: D) => void) => {
++			if (oncall) oncall(param);
+ 			isPending.set(true);
+ 			await sleep(10);
++			if (callback) callback(result);
+ 			isPending.set(false);
+ 			return result;
+ 		},
+diff --git a/frontend/src/lib/api/user.ts b/frontend/src/lib/api/user.ts
+index b5019a7..535d6cd 100644
+--- a/frontend/src/lib/api/user.ts
++++ b/frontend/src/lib/api/user.ts
+@@ -4,7 +4,9 @@ import {
+ 	type QueryResult,
+ 	CreateMutation,
+ 	type CreateMutationResult,
+-	SetQueryData
++	SetQueryData,
++	CreateMockMutation,
++	CreateMockQuery
+ } from './state';
+ 
+ import type {
+@@ -50,20 +52,22 @@ export function CreateUser(): CreateMutationResult<UserCreateReq, UserCreateResp
+ }
+ 
+ export function useUser(): QueryResult<UserReadResp> {
+-	return CreateQuery<UserReadReq, UserReadResp>({
+-		key: ['currentUser'],
+-		path: 'user/read',
+-		body: {}
++	return CreateMockQuery({
++		user_id: 1,
++		username: 'admin',
++		preference: {}
+ 	});
+ }
+ 
+ export function UpdateUser(): CreateMutationResult<UserUpdateReq, UserUpdateResp> {
+-	return CreateMutation({
+-		path: 'user/update',
+-		onSuccess(data, param) {
++	return CreateMockMutation(
++		{
++			user_id: 1
++		},
++		(param) => {
+ 			if (param.preference) updatePreference(param.preference);
+ 		}
+-	});
++	);
+ }
+ 
+ export function DeleteUser(): CreateMutationResult<UserDeleteReq, UserReadResp> {
+diff --git a/frontend/src/lib/preference/index.ts b/frontend/src/lib/preference/index.ts
+index bbb08f2..6c2b01a 100644
+--- a/frontend/src/lib/preference/index.ts
++++ b/frontend/src/lib/preference/index.ts
+@@ -14,11 +14,15 @@ import { onDestroy } from 'svelte';
+ import { isLightTheme as isLightThemeFn } from './theme';
+ 
+ function getRemotePreference() {
+-	return APIFetch<UserReadResp, UserReadReq>('user/read', {});
++	return Promise.resolve({
++		user_id: 1,
++		username: 'admin',
++		preference: {}
++	});
+ }
+ 
+ function setRemotePreference(preference: UserPreference) {
+-	return APIFetch<UserUpdateResp, UserUpdateReq>('user/update', { preference });
++	return Promise.resolve({ user_id: 1 });
+ }
+ 
+ function defaultPreference(): Required<UserPreference> {
+diff --git a/frontend/src/routes/+page.svelte b/frontend/src/routes/+page.svelte
+index 532b3f9..c5a3025 100644
+--- a/frontend/src/routes/+page.svelte
++++ b/frontend/src/routes/+page.svelte
+@@ -4,7 +4,8 @@
+ 	import { LoaderCircle } from '@lucide/svelte';
+ 
+ 	$effect(() => {
+-		if ($token) goto('/chat/new');
++		if ($token) goto('/chat/1');
++		else goto('/login');
+ 	});
+ </script>
+ 
+diff --git a/frontend/src/routes/login/+page.svelte b/frontend/src/routes/login/+page.svelte
+index bfc77c6..6ae2ca2 100644
+--- a/frontend/src/routes/login/+page.svelte
++++ b/frontend/src/routes/login/+page.svelte
+@@ -35,7 +35,7 @@
+ 					return;
+ 				}
+ 
+-				goto('/chat/new');
++				goto('/chat/1');
+ 			}
+ 		);
+ 	}
+-- 
+2.52.0
+
