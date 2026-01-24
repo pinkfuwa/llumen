@@ -52,11 +52,17 @@ The Conventional Commits specification is a lightweight convention on top of com
       }
   });
   ```
-* Always follow separation of concerns principle:
-  - Place UI and presentation logic in frontend/src/lib/ui (components, view helpers, styles). Keep this folder as the single place for UI-specific utilities and components.
-  - Keep route handlers in backend/src/routes and limit them to high-level request/response orchestration and input validation; routes should be thin.
-  - Put business/domain logic and data access into backend/src/lib (services, use-cases, repositories) so routes remain thin and reusable.
-  - Avoid mixing UI, business, and persistence code across layers; prefer clear module boundaries and single-responsibility functions.
+* Always follow separation of concerns principle
+
+# Separation of Concerns
+
+Separation of concerns guidance:
+
+- Place UI and presentation logic in frontend/src/lib/ui (components, view helpers, styles). Keep this folder as the single place for UI-specific utilities and components.
+- For Svelte components and frontend logic, prefer placing UI-only helpers, components, and styles under frontend/src/lib/ui to keep presentation concerns isolated.
+- Keep route handlers in backend/src/routes and limit them to high-level request/response orchestration and input validation; routes should be thin.
+- Put business/domain logic and data access into backend/src/lib (services, use-cases, repositories) so routes remain thin and reusable.
+- Avoid mixing UI, business, and persistence code across layers; prefer clear module boundaries and single-responsibility functions.
 
 ## Database government
 
