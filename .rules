@@ -4,6 +4,20 @@ llumen is a LLM chat application. featuring three mode: normal chat, search and 
 
 Our project emphasizes performance and binary-size. We choose minimal dependency for both frontend and backend.
 
+# Conventional Commits
+
+llumen repo follow conventional commits
+
+The Conventional Commits specification is a lightweight convention on top of commit messages. The commit message should be structured as follows:
+```
+<type>: <description>
+
+[optional body]
+
+[optional footer(s)]
+[BREAKING CHANGE: `function_name` changed]
+```
+
 # Rust coding guidelines
 
 * Prioritize code correctness and clarity. Speed and efficiency are secondary priorities unless otherwise specified.
@@ -38,6 +52,11 @@ Our project emphasizes performance and binary-size. We choose minimal dependency
       }
   });
   ```
+* Always follow separation of concerns principle:
+  - Place UI and presentation logic in frontend/src/lib/ui (components, view helpers, styles). Keep this folder as the single place for UI-specific utilities and components.
+  - Keep route handlers in backend/src/routes and limit them to high-level request/response orchestration and input validation; routes should be thin.
+  - Put business/domain logic and data access into backend/src/lib (services, use-cases, repositories) so routes remain thin and reusable.
+  - Avoid mixing UI, business, and persistence code across layers; prefer clear module boundaries and single-responsibility functions.
 
 ## Database government
 
