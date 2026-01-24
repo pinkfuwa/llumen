@@ -83,6 +83,7 @@ The Conventional Commits specification is a lightweight convention on top of com
 * If frontend changed, run `pnpm check` and `pnpm test`.
 * If very complex logic changed, check `.github/workflows/check.yml` and try pass all CI tests.
 * If dependency changed, regenerate third-party licenses by `pnpm run generate-licenses` in frontend and `cargo bundle-licenses --format toml` in backend.
+* `pnpm build` and `cargo build` is usually unnecessary.
 
 ## Database government
 
