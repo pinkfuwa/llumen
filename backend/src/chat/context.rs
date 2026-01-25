@@ -121,12 +121,20 @@ pub struct CompletionContext {
 
 impl CompletionContext {
     /// Creates a new completion context.
-    pub async fn new(
-        ctx: Arc<Context>,
+    async fn load_entities(
+        ctx: &Context,
         user_id: i32,
         chat_id: i32,
         model_id: i32,
-    ) -> Result<Self, anyhow::Error> {
+    ) -> Result<
+        (
+            user::Model,
+            (chat::Model, Vec<message::Model>),
+            model::Model,
+            message::Model,
+        ),
+        anyhow::Error,
+    > {
         let db = &ctx.db;
 
         let (user, chat_with_msgs, model, msg) = join!(
@@ -145,21 +153,36 @@ impl CompletionContext {
 
         let msg = msg?;
         let user = user?.ok_or_else(|| anyhow::anyhow!("User not found"))?;
-        let (chat, msgs) = chat_with_msgs?
+        let chat_with_msgs = chat_with_msgs?
             .into_iter()
             .next()
             .ok_or_else(|| anyhow::anyhow!("Chat not found"))?;
         let model = model?.ok_or_else(|| anyhow::anyhow!("Model not found"))?;
 
-        let mut chat = chat.into_active_model();
-        chat.model_id = ActiveValue::Set(Some(model.id));
+        Ok((user, chat_with_msgs, model, msg))
+    }
 
-        let mut publisher = ctx
-            .channel
+    fn make_chat_active_model(chat: chat::Model, model_id: i32) -> chat::ActiveModel {
+        let mut chat = chat.into_active_model();
+        chat.model_id = ActiveValue::Set(Some(model_id));
+        chat
+    }
+
+    fn claim_publisher(
+        ctx: &Arc<Context>,
+        chat_id: i32,
+    ) -> Result<Publisher<Token>, anyhow::Error> {
+        ctx.channel
             .clone()
             .publish(chat_id)
-            .context("only one publisher is allow at same time")?;
+            .context("only one publisher is allow at same time")
+    }
 
+    fn init_publisher_tokens(
+        mut publisher: Publisher<Token>,
+        msgs: &[message::Model],
+        msg: &message::Model,
+    ) -> Result<Publisher<Token>, anyhow::Error> {
         let user_msg_id = msgs
             .iter()
             .filter(|m| matches!(m.inner, MessageInner::User { .. }))
@@ -171,6 +194,22 @@ impl CompletionContext {
             id: msg.id,
             user_msg_id,
         });
+
+        Ok(publisher)
+    }
+
+    pub async fn new(
+        ctx: Arc<Context>,
+        user_id: i32,
+        chat_id: i32,
+        model_id: i32,
+    ) -> Result<Self, anyhow::Error> {
+        let (user, (chat, msgs), model, msg) =
+            Self::load_entities(&ctx, user_id, chat_id, model_id).await?;
+
+        let chat = Self::make_chat_active_model(chat, model.id);
+        let publisher = Self::claim_publisher(&ctx, chat_id)?;
+        let publisher = Self::init_publisher_tokens(publisher, &msgs, &msg)?;
 
         Ok(Self {
             model,
