@@ -10,3 +10,6 @@ frontend/package-lock.json
 
 # zed bug: /target/rust-analyzer/flycheck0
 target/rust-analyzer/flycheck0
+
+# pnpm
+/.pnpm-store
