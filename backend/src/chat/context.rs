@@ -43,6 +43,7 @@ pub struct Context {
 
 impl Context {
     // TODO: put API Key in main
+    /// Creates a chat subsystem context that prepares routing, prompt, and tool dependencies.
     pub fn new(
         db: DatabaseConnection,
         openrouter: openrouter::Openrouter,
@@ -61,6 +62,7 @@ impl Context {
         })
     }
 
+    /// Prepares a completion context for the specified user/chat/model tuple.
     pub fn get_completion_context(
         self: &Arc<Self>,
         user_id: i32,
@@ -69,9 +71,11 @@ impl Context {
     ) -> impl std::future::Future<Output = Result<CompletionContext, anyhow::Error>> + '_ {
         CompletionContext::new(self.clone(), user_id, chat_id, model_id)
     }
+    /// Halts the streaming completion for the chat, notifying any subscribers.
     pub async fn halt_completion(&self, chat_id: i32) {
         self.channel.stop(chat_id).await
     }
+    /// Subscribes to the chat token stream, optionally resuming from a cursor.
     pub fn subscribe(
         self: Arc<Self>,
         chat_id: i32,
@@ -79,18 +83,22 @@ impl Context {
     ) -> impl Stream<Item = Token> + 'static {
         self.channel.clone().subscribe(chat_id, cursor)
     }
+    /// Returns true when no publisher currently owns the channel for the chat.
     pub fn is_streaming(&self, chat_id: i32) -> bool {
         !self.channel.publishable(chat_id)
     }
 
+    /// Retrieves the list of model identifiers exposed by the OpenRouter client.
     pub fn get_model_ids(&self) -> Vec<String> {
         self.openrouter.get_model_ids()
     }
 
+    /// Returns the capability information for a single OpenRouter model.
     pub fn get_capability(&self, model: &openrouter::Model) -> openrouter::Capability {
         self.openrouter.get_capability(model)
     }
 
+    /// Delegates completion processing to the configured chat workflow.
     pub fn process(
         self: Arc<Self>,
         completion_ctx: CompletionContext,
@@ -121,6 +129,8 @@ pub struct CompletionContext {
 
 impl CompletionContext {
     /// Creates a new completion context.
+    /// Loads user, chat, model, and drafting message records from the database for initialization.
+    /// Loads user, chat, model, and drafting message records from the database for initialization.
     async fn load_entities(
         ctx: &Context,
         user_id: i32,
@@ -162,12 +172,14 @@ impl CompletionContext {
         Ok((user, chat_with_msgs, model, msg))
     }
 
+    /// Converts a persistent chat record into the mutable active model used during completion.
     fn make_chat_active_model(chat: chat::Model, model_id: i32) -> chat::ActiveModel {
         let mut chat = chat.into_active_model();
         chat.model_id = ActiveValue::Set(Some(model_id));
         chat
     }
 
+    /// Claims the exclusive publisher slot for the specified chat.
     fn claim_publisher(
         ctx: &Arc<Context>,
         chat_id: i32,
@@ -178,6 +190,7 @@ impl CompletionContext {
             .context("only one publisher is allow at same time")
     }
 
+    /// Emits the initial start token that links the completion to the preceding user message.
     fn init_publisher_tokens(
         mut publisher: Publisher<Token>,
         msgs: &[message::Model],
@@ -198,6 +211,7 @@ impl CompletionContext {
         Ok(publisher)
     }
 
+    /// Creates and prepares the completion context for a new request.
     pub async fn new(
         ctx: Arc<Context>,
         user_id: i32,
@@ -222,23 +236,27 @@ impl CompletionContext {
         })
     }
 
+    /// Updates the chat mode stored for this completion.
     pub fn set_mode(&mut self, mode: ModeKind) {
         self.chat.mode = ActiveValue::Set(mode);
     }
 
+    /// Returns the stored chat mode.
     pub fn get_mode(&self) -> ModeKind {
         self.chat.mode.clone().unwrap()
     }
 
+    /// Returns the active chat identifier.
     pub fn get_chat_id(&self) -> i32 {
         self.chat.id.clone().unwrap()
     }
 
+    /// Returns the requesting user's identifier.
     pub fn get_user_id(&self) -> i32 {
         self.user.id
     }
 
-    /// get user assistant id
+    /// Returns the assistant message identifier in progress.
     pub fn get_message_id(&self) -> i32 {
         self.message.id
     }
@@ -248,6 +266,7 @@ impl CompletionContext {
         self.publisher.publish(token)
     }
 
+    /// Streams tokens from the provided source into the publisher, respecting halt signals.
     pub async fn put_stream<E>(
         &mut self,
         mut stream: impl Stream<Item = Result<Token, E>> + Unpin,
@@ -272,11 +291,14 @@ impl CompletionContext {
         }
     }
 
+    /// Records usage metrics arising from the completion.
+    /// Records accumulated price and token usage.
     pub fn update_usage(&mut self, price: f32, token_count: i32) {
         self.message.price += price;
         self.message.token_count += token_count;
     }
 
+    /// Parses the stored model configuration for use with OpenRouter.
     pub fn get_model_config(&self) -> anyhow::Result<ModelConfig> {
         <ModelConfig as ModelChecker>::from_toml(&self.model.config).context("invalid config")
     }
@@ -385,12 +407,13 @@ impl CompletionContext {
         Ok(())
     }
 
+    /// Records a completion error, stores it on the message, and emits an error token.
     pub fn add_error(&mut self, msg: String) {
         self.message.inner.add_error(msg.clone());
         self.add_token(Token::Error(msg));
     }
 
-    /// Saves the completion to the database.
+    /// Saves the completion to the database and publishes the completion token.
     pub async fn save(mut self) -> Result<(), anyhow::Error> {
         let message_id = self.message.id;
 
@@ -430,6 +453,7 @@ impl CompletionContext {
         Ok(())
     }
 
+    /// Returns the most recent user message text, if available.
     pub fn latest_user_message(&self) -> Option<&str> {
         self.messages
             .iter()
