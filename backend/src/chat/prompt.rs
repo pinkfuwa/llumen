@@ -96,7 +96,10 @@ pub struct Prompt {
     _templates: Vec<String>,
 }
 
+/// Loads prompt templates and prepares a Jinja environment.
+/// Handles prompt template rendering for chat completions.
 impl Prompt {
+    /// Instantiates prompt handling with embedded assets.
     pub fn new() -> Result<Self> {
         let mut templates = Vec::new();
         let mut env = Environment::new();

@@ -9,6 +9,7 @@ use crate::{
 };
 use anyhow::Result;
 
+/// Loads file blobs referenced by a message.
 async fn load_files(
     db: Arc<BlobDB>,
     handles: &[FileMetadata],
@@ -38,6 +39,7 @@ async fn load_files(
     Ok(results)
 }
 
+/// Loads assistant-generated images from blob storage.
 async fn load_assistant_images(
     db: Arc<BlobDB>,
     file_ids: &[i32],
@@ -67,6 +69,7 @@ async fn load_assistant_images(
     Ok(results)
 }
 
+/// Converts database message representation into OpenRouter messages, including attachments.
 pub async fn db_message_to_openrouter(
     ctx: &Context,
     message: &MessageInner,
@@ -164,6 +167,7 @@ pub async fn db_message_to_openrouter(
     Ok(result.into_iter())
 }
 
+/// Translates streaming OpenRouter responses into assistant message chunks.
 pub fn openrouter_stream_to_assitant_chunk(
     msgs: &[openrouter::StreamCompletionResp],
 ) -> impl Iterator<Item = AssistantChunk> {
@@ -194,6 +198,7 @@ pub fn openrouter_stream_to_assitant_chunk(
     result.into_iter()
 }
 
+/// Converts a stream response token into a chat buffer token, ignoring metadata-only tokens.
 pub fn openrouter_to_buffer_token(token: openrouter::StreamCompletionResp) -> chat::Token {
     match token {
         openrouter::StreamCompletionResp::ResponseToken(content) => chat::Token::Assistant(content),
@@ -211,6 +216,7 @@ pub fn openrouter_to_buffer_token(token: openrouter::StreamCompletionResp) -> ch
     }
 }
 
+/// Converts a stream response token into a chat deep-step token representation.
 pub fn openrouter_to_buffer_token_deep_step(
     token: openrouter::StreamCompletionResp,
 ) -> chat::Token {
@@ -226,6 +232,7 @@ pub fn openrouter_to_buffer_token_deep_step(
     }
 }
 
+/// Converts a stream response token into a deep-report token, dropping usage/tool tokens.
 pub fn openrouter_to_buffer_token_deep_report(
     token: openrouter::StreamCompletionResp,
 ) -> chat::Token {

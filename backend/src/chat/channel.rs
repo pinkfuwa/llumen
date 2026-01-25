@@ -8,6 +8,7 @@ use tokio::sync::{Notify, mpsc, watch};
 use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
 
+/// Defines how chat stream tokens merge and slice across buffered chunks.
 pub trait Mergeable
 where
     Self: Sized + Clone,
@@ -21,6 +22,7 @@ pub type LockedMap<K, V> = Mutex<HashMap<K, Weak<V>>>;
 pub type LockedVec<S> = Mutex<Vec<S>>;
 pub type LockedOption<T> = Mutex<Option<T>>;
 
+/// Internal buffer state shared by subscribers and publishers.
 pub struct Inner<S: Mergeable + Clone> {
     buffer: LockedVec<S>,
     sender: LockedOption<watch::Sender<()>>,
@@ -46,16 +48,19 @@ impl<S: Mergeable + Clone + Send> Inner<S> {
     }
 }
 
+/// Manages channel lifecycles for streaming chat tokens.
 pub struct Context<S: Mergeable> {
     map: Arc<LockedMap<i32, Inner<S>>>,
 }
 
 impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
+    /// Creates a new channel context ready to produce publishers/subscribers.
     pub fn new() -> Self {
         Self {
             map: Arc::new(Mutex::new(HashMap::new())),
         }
     }
+    /// Signals a stop to all subscribers for the given channel id.
     pub async fn stop(&self, id: i32) {
         let maybe_inner = {
             let map = self.map.lock().unwrap();
@@ -69,10 +74,12 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
             }
         }
     }
+    /// Cleans up dead entries to prevent unbounded map growth.
     fn remove_weak(&self) {
         let mut map = self.map.lock().unwrap();
         map.retain(|_, v| v.strong_count() > 0);
     }
+    /// Ensures there is an `Inner` for the channel, creating one when necessary.
     fn get_inner(&self, id: i32) -> Arc<Inner<S>> {
         let mut map = self.map.lock().unwrap();
         match map.get(&id).map(|w| w.upgrade()).flatten() {
@@ -85,6 +92,7 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         }
     }
 
+    /// Builds a subscriber for the channel at the provided id.
     fn get_subscriber(&self, id: i32) -> Subscriber<S> {
         let inner = self.get_inner(id);
         let receiver = inner.receiver.clone();
@@ -95,6 +103,7 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         }
     }
 
+    /// Starts streaming tokens for a subscriber, optionally resuming from a cursor.
     pub fn subscribe(self: Arc<Self>, id: i32, cursor: Option<Cursor>) -> impl Stream<Item = S> {
         let mut subscriber = self.get_subscriber(id);
         if let Some(cursor) = cursor {
@@ -130,9 +139,11 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
 
         ReceiverStream::new(rx)
     }
+    /// Returns true when a new publisher can be created for the channel.
     pub fn publishable(&self, id: i32) -> bool {
         self.get_inner(id).sender.lock().unwrap().is_some()
     }
+    /// Claims the channel to become the single publisher that writes into it.
     pub fn publish(self: Arc<Self>, id: i32) -> Option<Publisher<S>> {
         self.remove_weak();
         let inner = self.get_inner(id);
@@ -170,6 +181,7 @@ pub struct Publisher<S: Mergeable> {
 }
 
 impl<S: Mergeable + Clone + Send + 'static> Publisher<S> {
+    /// Appends a token for subscribers, merging with the previous chunk when possible.
     pub fn publish(&mut self, item: S) {
         let mut buffer = self.inner.buffer.lock().unwrap();
         if let Some(last) = buffer.last_mut() {
@@ -181,6 +193,7 @@ impl<S: Mergeable + Clone + Send + 'static> Publisher<S> {
         }
         self.sender.send_replace(());
     }
+    /// Returns a future that resolves once the publisher is halted.
     pub fn wait_halt(&self) -> impl Future<Output = ()> + Send + 'static {
         let inner = self.inner.clone();
         async move {
