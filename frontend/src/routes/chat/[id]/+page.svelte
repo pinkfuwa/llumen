@@ -41,7 +41,7 @@
 			if (inited) return;
 			inited = true;
 			mode = room.mode;
-			if (room?.model_id) modelId = room?.model_id.toString();
+			modelId = room?.model_id ? room.model_id.toString() : null;
 		});
 	});
 
