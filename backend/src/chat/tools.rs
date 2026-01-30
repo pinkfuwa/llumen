@@ -1,7 +1,7 @@
 mod crawl;
-mod web_search;
 mod lua;
+mod web_search;
 
 pub use crawl::*;
-pub use web_search::*;
 pub use lua::*;
+pub use web_search::*;

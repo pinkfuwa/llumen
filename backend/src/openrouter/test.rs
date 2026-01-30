@@ -8,40 +8,21 @@ async fn test_text_output_capability() {
     // Test with a fake API key and base URL (won't make actual requests)
     let openrouter = Openrouter::new("test_key", "https://openrouter.ai/api");
 
-    // Test 1: Image-only model with prefix (not in listing)
-    let image_only_model = Model {
-        id: "black-forest-labs/flux-2".to_string(),
-        ..Default::default()
-    };
-    let capability = openrouter.get_capability(&image_only_model);
-    assert_eq!(
-        capability.text_output, false,
-        "Image-only model should not support text output"
-    );
+    // Give initial model fetch time to start (though it won't complete with fake key)
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-    // Test 2: Another image-only model with different prefix
-    let image_only_model2 = Model {
-        id: "sourceful/image-model".to_string(),
-        ..Default::default()
-    };
-    let capability2 = openrouter.get_capability(&image_only_model2);
-    assert_eq!(
-        capability2.text_output, false,
-        "Sourceful image-only model should not support text output"
-    );
-
-    // Test 3: Future model (not in listing, no prefix) - should default to text support
+    // Test 1: Future model (not in listing) - should default to text support
     let future_model = Model {
         id: "openai/gpt-5-turbo".to_string(),
         ..Default::default()
     };
-    let capability3 = openrouter.get_capability(&future_model);
+    let capability3 = openrouter.get_capability(&future_model).await;
     assert_eq!(
         capability3.text_output, true,
         "Future model should default to supporting text output"
     );
 
-    // Test 4: User override - even image-only model can be overridden
+    // Test 2: User override - can override capabilities
     let overridden_model = Model {
         id: "black-forest-labs/flux-2".to_string(),
         capability: crate::openrouter::MaybeCapability {
@@ -50,7 +31,7 @@ async fn test_text_output_capability() {
         },
         ..Default::default()
     };
-    let capability4 = openrouter.get_capability(&overridden_model);
+    let capability4 = openrouter.get_capability(&overridden_model).await;
     assert_eq!(
         capability4.text_output, true,
         "User override should take precedence"

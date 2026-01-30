@@ -1,6 +1,8 @@
+mod capability;
 mod error;
 mod message;
 mod model;
+mod model_cache;
 mod openrouter;
 mod option;
 #[allow(dead_code)]

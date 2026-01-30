@@ -21,6 +21,6 @@ pub async fn route(
     Extension(UserId(_)): Extension<UserId>,
     Json(_): Json<ModelIdsReq>,
 ) -> JsonResult<ModelIdsResp> {
-    let ids = app.processor.get_model_ids();
+    let ids = app.processor.get_model_ids().await;
     Ok(Json(ModelIdsResp { ids }))
 }

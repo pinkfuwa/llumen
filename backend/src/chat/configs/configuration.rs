@@ -58,7 +58,7 @@ impl Configuration {
             }
 
             if inject_context {
-                let capability = ctx.get_capability(&model);
+                let capability = ctx.get_capability(&model).await;
                 if capability.text_output {
                     let context_message = ctx.prompt.render_context(&completion_ctx)?;
                     messages.push(openrouter::Message::User(context_message));

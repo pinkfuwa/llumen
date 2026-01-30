@@ -42,25 +42,24 @@ pub async fn route(
         .await
         .kind(ErrorKind::Internal)?;
 
-    let list = models
-        .into_iter()
-        .filter_map(|m| {
-            let config =
-                <ModelConfig as ModelChecker>::from_toml(&m.config).expect("corruptted database");
+    let mut list = Vec::new();
+    for m in models {
+        let config =
+            <ModelConfig as ModelChecker>::from_toml(&m.config).expect("corruptted database");
 
-            let model: openrouter::Model = config.clone().into();
+        let model: openrouter::Model = config.clone().into();
 
-            let caps = app.processor.get_capability(&model);
+        let caps = app.processor.get_capability(&model).await;
 
-            Some(ModelList {
-                id: m.id,
-                image_input: caps.image_input,
-                audio_input: caps.audio,
-                other_file_input: caps.ocr != OcrEngine::Disabled,
-                tool: caps.toolcall,
-                display_name: config.display_name,
-            })
-        })
-        .collect::<Vec<_>>();
+        list.push(ModelList {
+            id: m.id,
+            image_input: caps.image_input,
+            audio_input: caps.audio,
+            other_file_input: caps.ocr != OcrEngine::Disabled,
+            tool: caps.toolcall,
+            display_name: config.display_name,
+        });
+    }
+
     Ok(Json(ModelListResp { list }))
 }
