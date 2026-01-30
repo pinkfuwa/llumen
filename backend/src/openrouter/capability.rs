@@ -12,8 +12,10 @@ impl<'a> CapabilityResolver<'a> {
 
     /// Get capability of a model (considers user overrides)
     pub async fn get_capability(&self, model: &Model) -> Capability {
+        let model_id = model.id.split(':').next().unwrap();
+
         let overrides: MaybeCapability = model.capability.clone().into();
-        let capability = self.get_openrouter_capability(&model.id).await;
+        let capability = self.get_openrouter_capability(model_id).await;
 
         macro_rules! merge {
             ($v:ident) => {

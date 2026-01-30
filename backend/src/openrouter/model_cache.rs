@@ -156,6 +156,8 @@ impl ModelCacheManager {
     /// Ensure a model is in cache. Fetch the model list if missing.
     /// Uses a mutex to ensure only one fetch happens at a time.
     pub async fn ensure_model(&self, model_id: &str) -> Result<(), Error> {
+        let model_id = model_id.split(':').next().unwrap();
+
         // Fast path: check if model already exists
         {
             let models = self.models.read().await;
