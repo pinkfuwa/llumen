@@ -69,6 +69,10 @@ The Conventional Commits specification is a lightweight convention on top of com
 [BREAKING CHANGE: `function_name` changed]
 ```
 
+## Don't change git config
+
+Please never change git config by running `git config --global user.name` or `git config --global user.email`
+
 ## Separation of Concerns
 
 * Place UI and presentation logic in frontend/src/lib/ui (components, view helpers, styles). Keep this folder as the single place for UI-specific utilities and components.
