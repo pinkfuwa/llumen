@@ -1,41 +1,25 @@
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
-
 use super::message::*;
 use crate::openrouter::{StreamCompletion, option::CompletionOption};
 
+use super::capability::CapabilityResolver;
+use super::model_cache::ModelCacheManager;
 use super::{Model, error::Error, raw};
 use protocol::OcrEngine;
 
 static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
 
-async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<raw::Model>, Error> {
-    let client = reqwest::Client::new();
-    let response = client
-        .get(url)
-        .bearer_auth(api_key)
-        .header("HTTP-Referer", HTTP_REFERER)
-        .header("X-Title", X_TITLE)
-        .send()
-        .await?;
-
-    let model: raw::ModelListResponse = response.json().await?;
-    Ok(model.data)
-}
-
 pub struct Openrouter {
     pub(super) api_key: String,
     pub(super) chat_completion_endpoint: String,
     pub(super) embedding_endpoint: String,
-    models: Arc<RwLock<HashMap<String, raw::Model>>>,
+    model_cache: ModelCacheManager,
     http_client: reqwest::Client,
-    // true if not openrouter
     compatibility_mode: bool,
 }
 
 impl Openrouter {
-    fn create_request(
+    async fn create_request(
         &self,
         mut messages: Vec<Message>,
         stream: bool,
@@ -47,7 +31,7 @@ impl Openrouter {
             messages.push(Message::User("".to_string()));
         }
 
-        let capability = self.get_capability(&model);
+        let capability = self.get_capability(&model).await;
 
         let mut plugins = Vec::new();
         let mut modalities = Vec::new();
@@ -63,8 +47,13 @@ impl Openrouter {
                 log::debug!("inserting web search context");
                 plugins.push(raw::Plugin::web());
             }
-            if option.image_generation && capability.image_output {
-                modalities.extend(["text".to_string(), "image".to_string()]);
+
+            if capability.image_output {
+                modalities.push("image".to_string());
+            }
+
+            if capability.text_output {
+                modalities.push("text".to_string());
             }
         }
 
@@ -125,6 +114,7 @@ impl Openrouter {
         let embedding_endpoint = format!("{}/v1/embeddings", api_base.trim_end_matches('/'));
         let chat_completion_endpoint =
             format!("{}/v1/chat/completions", api_base.trim_end_matches('/'));
+        let models_endpoint = format!("{}/v1/models", api_base.trim_end_matches('/'));
 
         log::info!(
             "Using endpoint {} for completions",
@@ -136,165 +126,27 @@ impl Openrouter {
             log::warn!("Custom API_BASE detected, disabling plugin support");
         }
 
-        let models = Arc::new(RwLock::new(HashMap::new()));
-
-        {
-            let models = models.clone();
-            let api_key = api_key.clone();
-            let endpoint = format!("{}/v1/models", api_base.trim_end_matches('/'));
-            tokio::spawn(async move {
-                match fetch_models(&endpoint, &api_key).await {
-                    Ok(model_list) => {
-                        log::info!("{} models available", model_list.len());
-                        let map: HashMap<String, raw::Model> =
-                            model_list.into_iter().map(|m| (m.id.clone(), m)).collect();
-                        *models.write().unwrap() = map;
-                    }
-                    Err(err) => log::error!("Failed to fetch models: {}", err),
-                }
-            });
-        }
+        let model_cache = ModelCacheManager::new(models_endpoint, api_key.clone());
 
         Self {
             api_key,
             chat_completion_endpoint,
             embedding_endpoint,
-            models,
+            model_cache,
             http_client: reqwest::Client::new(),
             compatibility_mode,
         }
     }
 
     /// Get a list of available model IDs
-    pub fn get_model_ids(&self) -> Vec<String> {
-        self.models.read().unwrap().keys().cloned().collect()
+    pub async fn get_model_ids(&self) -> Vec<String> {
+        self.model_cache.get_model_ids().await
     }
 
-    /// get capability of a model(consider user overrides)
-    pub fn get_capability(&self, model: &Model) -> super::Capability {
-        let overrides: super::MaybeCapability = model.capability.clone().into();
-        let capability = self.get_openrouter_capability(&model.id);
-
-        macro_rules! merge {
-            ($v:ident) => {
-                match overrides.$v {
-                    Some(v) => v,
-                    None => capability.$v.unwrap_or(true),
-                }
-            };
-        }
-        super::Capability {
-            text_output: merge!(text_output),
-            image_output: merge!(image_output),
-            image_input: merge!(image_input),
-            structured_output: merge!(structured_output),
-            toolcall: merge!(toolcall),
-            ocr: match overrides.ocr {
-                Some(v) => v,
-                None => capability.ocr.unwrap_or(OcrEngine::Mistral),
-            },
-            audio: merge!(audio),
-            reasoning: merge!(reasoning),
-        }
-    }
-
-    /// get openrouter capabilities
-    fn get_openrouter_capability(&self, model_id: &str) -> super::MaybeCapability {
-        if self.compatibility_mode {
-            return super::MaybeCapability::default();
-        }
-
-        let models = self.models.read().unwrap();
-        let model = models.get(model_id);
-
-        if model.is_none() {
-            // Model not in listing - check if it's image-only
-            const IMAGE_ONLY_PREFIXES: &[&str] =
-                &["black-forest-labs/", "sourceful/", "bytedance-seed/"];
-            if IMAGE_ONLY_PREFIXES
-                .iter()
-                .any(|prefix| model_id.starts_with(prefix))
-            {
-                // Image-only model: explicitly set text_output to false
-                return super::MaybeCapability {
-                    text_output: Some(false),
-                    ..Default::default()
-                };
-            }
-            // Future model or unknown - return default (None values will default to true)
-            return super::MaybeCapability::default();
-        }
-
-        let model = model.unwrap();
-
-        let supports_file_modality = model
-            .architecture
-            .input_modalities
-            .contains(&raw::Modality::File);
-
-        super::MaybeCapability {
-            text_output: Some(
-                model
-                    .architecture
-                    .output_modalities
-                    .contains(&raw::Modality::Text),
-            ),
-            image_output: Some(
-                model
-                    .architecture
-                    .output_modalities
-                    .contains(&raw::Modality::Image),
-            ),
-            image_input: Some(
-                model
-                    .architecture
-                    .input_modalities
-                    .contains(&raw::Modality::Image),
-            ),
-            structured_output: Some(
-                model
-                    .supported_parameters
-                    .contains(&raw::SupportedParams::StructuredOutput),
-            ),
-            toolcall: Some(
-                model
-                    .supported_parameters
-                    .contains(&raw::SupportedParams::Tools),
-            ),
-            ocr: Some(if supports_file_modality {
-                OcrEngine::Native
-            } else {
-                OcrEngine::Text
-            }),
-            audio: Some(
-                model
-                    .architecture
-                    .input_modalities
-                    .contains(&raw::Modality::Audio),
-            ),
-            reasoning: Some(
-                model
-                    .supported_parameters
-                    .contains(&raw::SupportedParams::Reasoning),
-            ),
-        }
-    }
-
-    /// Check if a model supports tools (function calling)
-    /// Returns None if model not found or not using OpenRouter
-    pub fn supports_tools(&self, model_id: &str) -> Option<bool> {
-        if self.compatibility_mode {
-            return None;
-        }
-
-        let models = self.models.read().unwrap();
-        let model = models.get(model_id)?;
-
-        Some(
-            model
-                .supported_parameters
-                .contains(&raw::SupportedParams::Tools),
-        )
+    /// Get capability of a model (considers user overrides)
+    pub async fn get_capability(&self, model: &Model) -> super::Capability {
+        let resolver = CapabilityResolver::new(&self.model_cache);
+        resolver.get_capability(model).await
     }
 
     pub async fn stream(
@@ -306,7 +158,11 @@ impl Openrouter {
         #[cfg(debug_assertions)]
         check_message(&messages);
 
-        let req = self.create_request(messages, true, model, option);
+        if !self.compatibility_mode {
+            self.model_cache.ensure_model(&model.id).await?;
+        }
+
+        let req = self.create_request(messages, true, model, option).await;
 
         req.log();
 
@@ -386,7 +242,11 @@ impl Openrouter {
         );
 
         if !self.compatibility_mode {
-            let capability = self.get_capability(&model);
+            self.model_cache.ensure_model(&model.id).await?;
+        }
+
+        if !self.compatibility_mode {
+            let capability = self.get_capability(&model).await;
             if !capability.text_output {
                 return Err(Error::TextOutputNotSupported);
             }
@@ -394,7 +254,7 @@ impl Openrouter {
 
         option.image_generation = false;
 
-        let req = self.create_request(messages, false, model, option);
+        let req = self.create_request(messages, false, model, option).await;
         req.log();
 
         self.send_complete_request(req).await
@@ -414,19 +274,17 @@ impl Openrouter {
             "Image generation supported only on streaming"
         );
 
-        // to determine does it support structured output,
-        // first look for capabilities override(capabilities from model)
-        // Then check if openrouter is used, trust what openrouter give us
-        // If not openrouter and no override, assume supported.
-        let structured_output = self.get_capability(&model).structured_output;
+        if !self.compatibility_mode {
+            self.model_cache.ensure_model(&model.id).await?;
+        }
 
-        let mut req = self.create_request(messages, false, model, option);
+        let structured_output = self.get_capability(&model).await.structured_output;
+
+        let mut req = self.create_request(messages, false, model, option).await;
 
         if structured_output {
             let schema = schemars::schema_for!(T);
             let schema_json = serde_json::to_value(&schema).map_err(|e| Error::Serde(e))?;
-
-            // structure need to be marked with `#[schemars(deny_unknown_fields)]`
 
             req.response_format = Some(raw::ResponseFormat {
                 r#type: "json_schema".to_string(),

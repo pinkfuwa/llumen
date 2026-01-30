@@ -89,13 +89,13 @@ impl Context {
     }
 
     /// Retrieves the list of model identifiers exposed by the OpenRouter client.
-    pub fn get_model_ids(&self) -> Vec<String> {
-        self.openrouter.get_model_ids()
+    pub async fn get_model_ids(&self) -> Vec<String> {
+        self.openrouter.get_model_ids().await
     }
 
     /// Returns the capability information for a single OpenRouter model.
-    pub fn get_capability(&self, model: &openrouter::Model) -> openrouter::Capability {
-        self.openrouter.get_capability(model)
+    pub async fn get_capability(&self, model: &openrouter::Model) -> openrouter::Capability {
+        self.openrouter.get_capability(model).await
     }
 
     /// Delegates completion processing to the configured chat workflow.

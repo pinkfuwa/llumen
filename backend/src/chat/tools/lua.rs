@@ -1,5 +1,5 @@
 use crate::runner;
-use anyhow::{Result};
+use anyhow::Result;
 use std::sync::Arc;
 
 /// Lua REPL tool for code execution

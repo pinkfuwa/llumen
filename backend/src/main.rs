@@ -191,7 +191,8 @@ async fn main() {
 
     conn.execute(sea_orm::Statement::from_string(
         conn.get_database_backend(),
-        "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;".to_owned(),
+        "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;PRAGMA busy_timeout=1000;"
+            .to_owned(),
     ))
     .await
     .expect("Failed to set pragmas");

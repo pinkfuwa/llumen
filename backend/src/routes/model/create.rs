@@ -38,7 +38,7 @@ pub async fn route(
     match <ModelConfig as ModelChecker>::from_toml(&raw_config) {
         Ok(config) => {
             let model: openrouter::Model = config.clone().into();
-            let caps = app.processor.get_capability(&model);
+            let caps = app.processor.get_capability(&model).await;
 
             let id = Model::insert(model::ActiveModel {
                 config: Set(raw_config),
