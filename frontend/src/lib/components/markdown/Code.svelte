@@ -15,7 +15,11 @@
 <!-- TODO: handle latex -->
 <div class="group/codeblock relative">
 	{#if content.split('\n').length >= 2}
-		<Button borderless class=" absolute top-1 right-1 p-2" onclick={() => copy(content)}>
+		<Button
+			borderless
+			class=" absolute top-1 right-1 p-2 group-hover/codeblock:visible md:invisible"
+			onclick={() => copy(content)}
+		>
 			<ClipboardCopy class="h-6 w-6" />
 		</Button>
 	{/if}
