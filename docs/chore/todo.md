@@ -1,8 +1,0 @@
-- [ ] Add test to state management
-- [ ] Rewrite state management lib to use $state(replace stores)
-- [ ] Enable pagination on messages
-- [ ] Document lua's function usage in coder's prompt to improve lua coding performance of backend
-- [ ] Fix auto-complete in middle of the word(code-mirror)
-- [ ] Investigate the reason of background repaint on setting overlay
-- [ ] Test and improve deep-research's prompt performance
-- [ ] Prepare for next feature (artifact): preact with themed component
