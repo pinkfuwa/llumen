@@ -19,10 +19,7 @@
         "groups": [
           {
             "group": "Overview",
-            "pages": [
-              "index",
-              "features/overview"
-            ]
+            "pages": ["index", "features/overview"]
           },
           {
             "group": "Features",
@@ -43,6 +40,7 @@
             "pages": [
               "user-guide/installation",
               "user-guide/configuration",
+              "user-guide/model-config",
               "user-guide/first-steps"
             ]
           },
@@ -111,13 +109,7 @@
     ]
   },
   "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "cursor"
-    ]
+    "options": ["copy", "view", "chatgpt", "claude", "cursor"]
   },
   "footer": {
     "socials": {
