@@ -1,0 +1,251 @@
+---
+title: "Troubleshooting"
+description: "Solutions to common problems"
+---
+
+## Connection Issues
+
+<Accordion title="Can't access llumen from browser">
+  **Symptoms:** Connection refused, timeout
+
+  **Solutions:**
+  1. Check if llumen is running:
+     ```bash
+     docker ps  # or
+     curl http://localhost/api/health
+     ```
+  
+  2. Verify port binding:
+     ```bash
+     docker logs llumen
+     # Should see: "Listening on 0.0.0.0:80"
+     ```
+  
+  3. Check firewall:
+     ```bash
+     sudo ufw allow 80
+     ```
+  
+  4. Try different port:
+     ```bash
+     docker run -p 8080:80 ... ghcr.io/pinkfuwa/llumen:latest
+     ```
+</Accordion>
+
+<Accordion title="Port 80 already in use">
+  **Error:** "bind: address already in use"
+
+  **Solutions:**
+  1. Find what's using port 80:
+     ```bash
+     sudo lsof -i :80
+     ```
+  
+  2. Use different port:
+     ```bash
+     docker run -p 8080:80 ... ghcr.io/pinkfuwa/llumen:latest
+     ```
+     Access at http://localhost:8080
+</Accordion>
+
+## API Issues
+
+<Accordion title="API key not working">
+  **Symptoms:** 401 errors, "Invalid API key"
+
+  **Solutions:**
+  1. Verify key is set:
+     ```bash
+     docker exec llumen env | grep API_KEY
+     ```
+  
+  2. Check key format:
+     - OpenRouter: starts with `sk-or-v1-`
+     - OpenAI: starts with `sk-`
+  
+  3. Verify key is valid at provider's website
+  
+  4. Restart after setting key:
+     ```bash
+     docker restart llumen
+     ```
+</Accordion>
+
+<Accordion title="Slow or no responses">
+  **Symptoms:** Requests timeout, very slow responses
+
+  **Solutions:**
+  1. Check API provider status
+  
+  2. Test API directly:
+     ```bash
+     curl https://openrouter.ai/api/v1/chat/completions \
+       -H "Authorization: Bearer $API_KEY" \
+       -H "Content-Type: application/json" \
+       -d '{"model":"openai/gpt-3.5-turbo","messages":[{"role":"user","content":"Hi"}]}'
+     ```
+  
+  3. Try different model (smaller/faster)
+  
+  4. Check network connectivity
+  
+  5. Verify rate limits not exceeded
+</Accordion>
+
+## Docker Issues
+
+<Accordion title="Permission denied">
+  **Error:** "Permission denied while trying to connect"
+
+  **Solutions:**
+  1. Add user to docker group:
+     ```bash
+     sudo usermod -aG docker $USER
+     newgrp docker
+     ```
+  
+  2. Or use sudo:
+     ```bash
+     sudo docker run ...
+     ```
+  
+  3. Check Docker service:
+     ```bash
+     sudo systemctl status docker
+     sudo systemctl start docker
+     ```
+</Accordion>
+
+<Accordion title="Out of disk space">
+  **Error:** "no space left on device"
+
+  **Solutions:**
+  1. Check disk space:
+     ```bash
+     df -h
+     ```
+  
+  2. Clean Docker:
+     ```bash
+     docker system prune -a
+     ```
+  
+  3. Remove unused volumes:
+     ```bash
+     docker volume prune
+     ```
+</Accordion>
+
+## Data Issues
+
+<Accordion title="Conversations not saving">
+  **Symptoms:** History disappears after restart
+
+  **Solutions:**
+  1. Verify volume mount:
+     ```bash
+     docker inspect llumen | grep -A 10 Mounts
+     ```
+  
+  2. Check permissions:
+     ```bash
+     ls -la ./llumen-data
+     ```
+  
+  3. Ensure DATA_PATH set:
+     ```bash
+     docker run -e DATA_PATH=/data -v ./data:/data ...
+     ```
+</Accordion>
+
+<Accordion title="Cannot upload files">
+  **Symptoms:** Upload fails, errors in logs
+
+  **Solutions:**
+  1. Check available disk space
+  
+  2. Verify file size < 50MB
+  
+  3. Check file format (PDF must be valid)
+  
+  4. Review container logs:
+     ```bash
+     docker logs llumen
+     ```
+</Accordion>
+
+## Performance Issues
+
+<Accordion title="High memory usage">
+  **Solutions:**
+  1. Set memory limit:
+     ```bash
+     docker run --memory="256m" ... ghcr.io/pinkfuwa/llumen:latest
+     ```
+  
+  2. Clear conversation history
+  
+  3. Restart container:
+     ```bash
+     docker restart llumen
+     ```
+</Accordion>
+
+<Accordion title="Slow UI">
+  **Solutions:**
+  1. Check browser console for errors
+  
+  2. Clear browser cache
+  
+  3. Try different browser
+  
+  4. Check network latency:
+     ```bash
+     ping your-llumen-server
+     ```
+</Accordion>
+
+## Getting Help
+
+### Check Logs
+
+```bash
+# Docker
+docker logs llumen
+docker logs -f llumen  # Follow
+
+# Native
+journalctl -u llumen -f
+```
+
+### Collect Debug Info
+
+When reporting issues, include:
+- llumen version
+- Installation method (Docker/native)
+- Operating system
+- Error messages from logs
+- Steps to reproduce
+
+### Community Support
+
+- [GitHub Discussions](https://github.com/pinkfuwa/llumen/discussions)
+- [Issue Tracker](https://github.com/pinkfuwa/llumen/issues)
+- Include debug info from above
+
+### Common Error Codes
+
+| Code | Meaning | Solution |
+|------|---------|----------|
+| 401 | Unauthorized | Check API key |
+| 403 | Forbidden | Check permissions |
+| 404 | Not found | Check URL/route |
+| 500 | Server error | Check logs |
+| 502 | Bad gateway | Check proxy config |
+| 503 | Service unavailable | Check if running |
+
+## Still Having Issues?
+
+<Card title="Create an Issue" href="https://github.com/pinkfuwa/llumen/issues/new">
+  Report bugs or request help on GitHub
+</Card>

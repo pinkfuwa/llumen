@@ -1,97 +1,71 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Welcome to Llumen"
+description: "Privacy-first AI chat interface, optimized for modest hardware"
 ---
 
-## Setting up
+<img src="/images/theme/llumen.webp" class="rounded-lg block dark:hidden" className="rounded-lg"/>
+<img src="/images/theme/sunset.webp" class="rounded-lg hidden dark:block" className="rounded-lg"/>
+      
+## Why Llumen?
 
-Get your documentation site up and running in minutes.
+**Most self-hosted AI interfaces are built for servers, not devices.** They're powerful but demand heavy resources and hours of configuration.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Llumen carves out a different space: **privacy without the complexity**. You get the features you actually need, optimized for modest hardware like Raspberry Pi, old laptops, or minimal VPS—while keeping many features of commercial products.
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={3}>
+  <Card title="Private" icon="shield-check">
+    100% local. Your conversations never leave your device.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Lightweight" icon="feather">
+    ~17MB binary, &lt;128MB RAM usage
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Zero-config" icon="bolt">
+    30-second Docker setup. No config files needed.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Quick Comparison
 
-Everything you need to create world-class documentation.
+|  | Privacy | Power | Setup |
+| :--- | :--- | :--- | :--- |
+| **Commercial** (ChatGPT) | ❌ Cloud-only | ✅ High | ✅ Zero-config |
+| **Typical Self-Host** (Open WebUI) | ✅ Local | ✅ High | ❌ Config hell |
+| **llumen** | ✅ Local | ⚖️ Just enough | ✅ Zero-config |
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Key Features
 
-## Need inspiration?
+<CardGroup cols={2}>
+  <Card title="Chat Modes" icon="messages" href="/features/chat-modes">
+    Normal, Web Search, and Deep Research with autonomous agents
+  </Card>
+  <Card title="Rich Media" icon="image" href="/features/rich-media">
+    PDF uploads, LaTeX rendering, image generation
+  </Card>
+  <Card title="Beautiful Themes" icon="palette" href="/features/themes">
+    Multiple gorgeous mobile-optimized themes
+  </Card>
+  <Card title="Lightning Fast" icon="gauge-high" href="/features/performance">
+    Sub-second cold starts, real-time streaming
+  </Card>
+</CardGroup>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+## Get Started
+
+<CardGroup cols={2}>
+  <Card title="Install" icon="download" href="/user-guide/installation">
+    Get llumen running in 30 seconds
+  </Card>
+  <Card title="Configure" icon="gear" href="/user-guide/configuration">
+    Simple environment variable setup
+  </Card>
+  <Card title="First Steps" icon="rocket" href="/user-guide/first-steps">
+    Learn the basics and start chatting
+  </Card>
+  <Card title="API Providers" icon="plug" href="/user-guide/api-providers">
+    Use OpenRouter, local models, and more
+  </Card>
+</CardGroup>
+
+<Note>
+  **Default Login:** `admin` / `P@88w0rd` (Remember to change this!)
+</Note>

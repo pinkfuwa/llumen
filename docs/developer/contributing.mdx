@@ -1,0 +1,64 @@
+---
+title: "Contributing"
+description: "Help improve llumen"
+---
+
+## Welcome Contributors!
+
+Llumen is open source (MPL 2.0) and welcomes contributions.
+
+## Ways to Contribute
+
+<CardGroup cols={2}>
+  <Card title="Report Bugs" icon="bug">
+    Found an issue? Report it on GitHub
+  </Card>
+  <Card title="Suggest Features" icon="lightbulb">
+    Have an idea? Open a discussion
+  </Card>
+  <Card title="Improve Docs" icon="book">
+    Documentation can always be better
+  </Card>
+  <Card title="Write Code" icon="code">
+    Fix bugs or implement features
+  </Card>
+</CardGroup>
+
+## Before You Start
+
+1. Check [existing issues](https://github.com/pinkfuwa/llumen/issues)
+2. Read the code of conduct
+3. Fork the repository
+4. Set up your [development environment](/developer/building)
+
+## Code Guidelines
+
+### Rust
+
+- No `unwrap()` or `panic!()` in production code
+- Use `?` for error propagation
+- Document public APIs
+- Write tests for new features
+- Follow project style (`cargo fmt`)
+
+### JavaScript/Svelte
+
+- Handle errors properly
+- Use async/await over promises
+- Minimize dependencies
+- Keep components small and focused
+
+## Pull Request Process
+
+1. Create branch: `git checkout -b feature/your-feature`
+2. Make changes with tests
+3. Test: `cargo test && npm test`
+4. Commit: `git commit -m "feat: add feature"`
+5. Push and create PR
+6. Address review feedback
+
+## Next Steps
+
+<Card title="Building" href="/developer/building">
+  Learn how to build llumen
+</Card>

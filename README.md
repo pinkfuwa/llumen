@@ -75,11 +75,19 @@ Download from [Releases](https://github.com/pinkfuwa/llumen/releases) for Window
 | `DATA_PATH` | Storage directory | `.` |
 | `BIND_ADDR` | Network Socket | `0.0.0.0:80` |
 
-## Docs
+## Documentation
 
-- **User Guide**: [./docs/user/README.md](./docs/user/README.md)
-- **Developer Docs**: [./docs/dev/README.md](./docs/dev/README.md)
-- **Building from Source**: [./docs/chore/README.md](./docs/chore/README.md)
+📚 **[Read the full documentation](./docs)** - Complete guides for users and developers
+
+- **[Getting Started](./docs/quickstart.mdx)** - 30-second setup guide
+- **[User Guide](./docs/user)** - Installation, configuration, and features
+- **[Developer Docs](./docs/developer)** - Architecture, contributing, and API reference
+
+> Documentation is built with [Mintlify](https://mintlify.com). To preview locally:
+> ```bash
+> cd docs
+> npx mintlify dev
+> ```
 
 <div align="center">
   Built with ❤️ by pinkfuwa. Keep it simple, keep it fast.

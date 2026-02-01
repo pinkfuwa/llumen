@@ -1,0 +1,78 @@
+---
+title: "Performance"
+description: "Lightning-fast, resource-efficient AI chat"
+---
+
+## Why Performance Matters
+
+When running AI on modest hardware, every millisecond and megabyte counts. Llumen is engineered from the ground up for efficiency.
+
+## Resource Requirements
+
+### Minimum Specs
+
+These are the **absolute minimum** requirements:
+
+| Component | Requirement |
+|-----------|-------------|
+| CPU | 1 core, 1 GHz |
+| RAM | 256MB available |
+| Storage | 50MB |
+| Network | 1 Mbps |
+
+**Example devices:**
+- Raspberry Pi 3B+
+- Old laptops (5+ years)
+- Budget VPS ($3-5/month)
+
+<Note>
+    50MB is insufficient if you plan to upload file.
+</Note>
+
+## Optimization Tips
+
+### For Minimal Devices
+
+<Accordion title="Reduce memory usage">
+  - Set SQLite page cache size(default 128MB)
+  - Limit conversation history length
+  - Disable image generation
+  - Use text-only responses
+</Accordion>
+
+<Accordion title="Improve response time">
+  - Choose faster API providers
+  - Use smaller language models
+  - Enable response caching
+  - Optimize network path
+</Accordion>
+
+## Trade-offs
+
+Llumen makes deliberate trade-offs for performance:
+
+### What We Optimized For
+- ✅ Fast startup
+- ✅ Low memory usage
+- ✅ Small binary size
+- ✅ Efficient streaming
+- ✅ Mobile performance
+
+### What We Don't Do
+- ❌ Built-in model hosting
+- ❌ Heavy analytics
+- ❌ Complex plugins
+- ❌ Bloated features
+
+This keeps llumen lean and fast for its core purpose.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/user-guide/installation">
+    Install and see the performance yourself
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/developer/architecture">
+    Learn how llumen achieves its performance
+  </Card>
+</CardGroup>

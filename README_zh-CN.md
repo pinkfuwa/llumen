@@ -77,9 +77,17 @@ docker run -it --rm \
 
 ## 文档
 
-- **用户指南**：[./docs/user/README.md](./docs/user/README.md)
-- **开发者文档**：[./docs/dev/README.md](./docs/dev/README.md)
-- **从头编译**：[./docs/chore/README.md](./docs/chore/README.md)
+📚 **[查看完整文档](./docs)** - 用户和开发者完整指南
+
+- **[快速开始](./docs/quickstart.mdx)** - 30 秒快速安装指南
+- **[用户指南](./docs/user)** - 安装、配置和功能说明
+- **[开发者文档](./docs/developer)** - 架构、贡献指南和 API 参考
+
+> 文档使用 [Mintlify](https://mintlify.com) 构建。本地预览：
+> ```bash
+> cd docs
+> npx mintlify dev
+> ```
 
 <div align="center">
   Built with ❤️ by pinkfuwa. Keep it simple, keep it fast.

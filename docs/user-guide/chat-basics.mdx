@@ -1,0 +1,108 @@
+---
+title: "Chat Basics"
+description: "Essential chatting techniques"
+---
+
+## Conversation Fundamentals
+
+### Starting a Conversation
+
+Click "New Chat" or just start typing in the input box.
+
+### Sending Messages
+
+- **Type and press Enter**: Send immediately
+- **Shift + Enter**: Add new line without sending
+- **Click Send button**: Alternative to Enter
+
+### Message Formatting
+
+Llumen supports full Markdown:
+
+```
+**Bold text**
+*Italic text*
+`inline code`
+[Links](https://example.com)
+
+- Bullet lists
+- Second item
+
+1. Numbered lists
+2. Second item
+```
+
+## Context and Memory
+
+### Conversation Context
+
+- Llumen remembers the entire conversation
+- Refer to previous messages naturally
+- Build on earlier topics
+
+Example:
+```
+You: Explain REST APIs
+
+Llumen: [explains REST]
+
+You: How does that compare to GraphQL?
+       ↑ "that" refers to REST from previous message
+```
+
+### Context Limits
+
+- Each conversation has a token limit
+- Older messages may be truncated
+- Start new conversation for unrelated topics
+
+## Effective Prompting
+
+### Be Clear and Specific
+
+❌ Poor: "How do I code?"
+✅ Good: "How do I write a function in Python that reads a CSV file?"
+
+### Provide Examples
+
+```
+Write a function similar to this but for JSON:
+
+def read_csv(file_path):
+    with open(file_path) as f:
+        return csv.reader(f)
+```
+
+### Request Specific Formats
+
+```
+Explain dependency injection:
+- Use simple language
+- Give a code example in Rust
+- Show both good and bad examples
+```
+
+## Message Actions
+
+### Regenerate Response
+
+Don't like the answer? Click "Regenerate" to get a different response.
+
+### Copy Messages
+
+Click the copy icon to copy message text to clipboard.
+
+### Edit Messages
+
+Edit your sent messages to rephrase and get better responses.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Search Mode" href="/user-guide/search-mode">
+    Add web search to your queries
+  </Card>
+  <Card title="Research Mode" href="/user-guide/research-mode">
+    Deep dive into topics
+  </Card>
+</CardGroup>

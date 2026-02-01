@@ -1,0 +1,67 @@
+---
+title: "Media Upload"
+description: "Working with PDFs and images"
+---
+
+## PDF Upload
+
+### How to Upload
+
+1. Click attachment icon in chat input
+2. Select PDF file (max 50MB)
+3. Wait for processing
+4. Start asking questions
+
+### Supported Formats
+
+- Standard PDF/A
+- Text-based PDFs (not scanned images without OCR)
+- Multi-page documents
+- Password-protected PDFs (you'll be prompted for password)
+
+### Use Cases
+
+```
+Summarize this research paper
+
+What does the author say about [topic] in section 3?
+
+Extract all the key findings
+
+Create a bullet-point summary of each section
+```
+
+### Best Practices
+
+- Use text-based PDFs for best results
+- Large files take longer to process
+- Ask specific questions about content
+- Reference specific sections or pages
+
+## Privacy & Security
+
+- All processing happens locally
+- Files are not stored permanently
+- Temporary files cleared after session
+- No external services used
+
+## Troubleshooting
+
+<Accordion title="PDF fails to upload">
+  - Check file size (< 50MB)
+  - Ensure it's a valid PDF
+  - Try compressing the PDF
+  - Check available disk space
+</Accordion>
+
+<Accordion title="Can't read PDF content">
+  - Verify it's text-based, not scanned images
+  - Check if PDF is corrupted
+  - Try converting to a newer PDF format
+</Accordion>
+
+## Next Steps
+
+<Card title="API Providers" href="/user-guide/api-providers">
+  Configure AI models for better document analysis
+</Card>

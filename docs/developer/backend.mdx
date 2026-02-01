@@ -1,0 +1,187 @@
+---
+title: "Backend Development"
+description: "Working with the Rust/Axum backend"
+---
+
+## Overview
+
+The backend is built with:
+- **Rust** (1.89+)
+- **Axum** (web framework)
+- **Tokio** (async runtime)
+- **serde** (serialization)
+
+## Project Structure
+
+```
+backend/
+├── src/
+│   ├── main.rs          # Entry point, server setup
+│   ├── routes/          # API route handlers
+│   │   ├── mod.rs
+│   │   ├── auth.rs      # Authentication
+│   │   ├── chat.rs      # Chat endpoints
+│   │   └── files.rs     # File uploads
+│   ├── models/          # Data structures
+│   │   ├── mod.rs
+│   │   ├── user.rs
+│   │   └── conversation.rs
+│   ├── services/        # Business logic
+│   │   ├── llm.rs       # LLM API client
+│   │   └── storage.rs   # File storage
+│   └── lib.rs
+└── Cargo.toml
+```
+
+## Running in Development
+
+```bash
+cd backend
+
+# With auto-reload
+cargo watch -x run
+
+# Or manual
+cargo run
+```
+
+Server starts on `0.0.0.0:80` by default.
+
+## Adding a New Endpoint
+
+### 1. Define Route
+
+```rust
+// routes/example.rs
+use axum::{Json, extract::Query};
+
+pub async fn example_handler(
+    Query(params): Query<ExampleParams>,
+) -> Result<Json<ExampleResponse>, AppError> {
+    // Handler logic
+    Ok(Json(ExampleResponse { /* ... */ }))
+}
+```
+
+### 2. Register Route
+
+```rust
+// main.rs
+let app = Router::new()
+    .route("/api/example", get(example_handler));
+```
+
+### 3. Test
+
+```bash
+curl http://localhost/api/example
+```
+
+## Error Handling
+
+Use the project's error types:
+
+```rust
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug)]
+pub enum Error {
+    NotFound,
+    Unauthorized,
+    InvalidInput(String),
+    Internal(String),
+}
+
+// Convert to HTTP response
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        let (status, message) = match self {
+            Error::NotFound => (StatusCode::NOT_FOUND, "Not found"),
+            Error::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized"),
+            Error::InvalidInput(msg) => (StatusCode::BAD_REQUEST, &msg),
+            Error::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal error"),
+        };
+        (status, message).into_response()
+    }
+}
+```
+
+## Database Operations
+
+```rust
+// Using file-based storage
+pub async fn save_conversation(
+    conversation: &Conversation,
+) -> Result<()> {
+    let path = format!("data/conversations/{}.json", conversation.id);
+    let json = serde_json::to_string_pretty(conversation)?;
+    tokio::fs::write(&path, json).await?;
+    Ok(())
+}
+```
+
+## Streaming Responses
+
+Using Server-Sent Events:
+
+```rust
+use axum::response::sse::{Event, Sse};
+use futures::stream::Stream;
+
+pub async fn stream_chat(
+    Json(request): Json<ChatRequest>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    let stream = async_stream::stream! {
+        for token in generate_tokens(&request.message).await {
+            yield Ok(Event::default().data(token));
+        }
+        yield Ok(Event::default().event("done").data(""));
+    };
+    
+    Sse::new(stream)
+}
+```
+
+## Testing
+
+### Unit Tests
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_example_handler() {
+        let response = example_handler(/* ... */).await.unwrap();
+        assert_eq!(response.field, expected_value);
+    }
+}
+```
+
+### Integration Tests
+
+```rust
+// tests/integration_test.rs
+#[tokio::test]
+async fn test_full_flow() {
+    let app = create_app();
+    let response = app
+        .oneshot(Request::builder().uri("/api/chat").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    
+    assert_eq!(response.status(), StatusCode::OK);
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Frontend" href="/developer/frontend">
+    Frontend development guide
+  </Card>
+  <Card title="Architecture" href="/developer/architecture">
+    System architecture
+  </Card>
+</CardGroup>

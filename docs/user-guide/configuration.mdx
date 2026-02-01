@@ -1,0 +1,273 @@
+---
+title: "Configuration"
+description: "Environment variables and settings"
+---
+
+## Environment Variables
+
+Llumen uses environment variables for configuration. No config files needed!
+
+### Required
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `API_KEY` | OpenRouter or OpenAI API key | `sk-or-v1-...` |
+
+### Optional
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `API_BASE` | Custom API endpoint | `https://openrouter.ai/api` |
+| `DATA_PATH` | Storage directory | `.` (current dir) |
+| `BIND_ADDR` | Network socket | `0.0.0.0:80` |
+
+## Docker Configuration
+
+### Basic Example
+
+```bash
+docker run -d \
+  -e API_KEY="sk-or-v1-..." \
+  -e DATA_PATH="/data" \
+  -e BIND_ADDR="0.0.0.0:8080" \
+  -p 8080:8080 \
+  -v ./llumen-data:/data \
+  ghcr.io/pinkfuwa/llumen:latest
+```
+
+### Using Environment File
+
+Create `.env` file:
+
+```bash
+API_KEY=sk-or-v1-your-key-here
+API_BASE=https://openrouter.ai/api
+DATA_PATH=/data
+BIND_ADDR=0.0.0.0:80
+```
+
+Run with env file:
+
+```bash
+docker run -d --env-file .env -p 80:80 -v ./data:/data ghcr.io/pinkfuwa/llumen:latest
+```
+
+## API Provider Configuration
+
+### OpenRouter (Recommended)
+
+1. Sign up at [openrouter.ai](https://openrouter.ai)
+2. Generate an API key
+3. Set the key:
+
+```bash
+export API_KEY="sk-or-v1-..."
+# API_BASE defaults to OpenRouter, no need to set
+```
+
+**Why OpenRouter?**
+- Access to 100+ models
+- Pay-per-use pricing
+- No subscriptions
+- Automatic fallbacks
+
+### OpenAI
+
+```bash
+export API_KEY="sk-..."
+export API_BASE="https://api.openai.com"
+```
+
+### Local Models (Ollama)
+
+```bash
+# Start Ollama
+ollama serve
+
+# Configure llumen
+export API_KEY="ollama"
+export API_BASE="http://localhost:11434/v1"
+```
+
+### Custom Endpoints
+
+Any OpenAI-compatible API works:
+
+```bash
+export API_KEY="your-key"
+export API_BASE="https://your-endpoint.com/v1"
+```
+
+## Storage Configuration
+
+### Data Directory
+
+Llumen stores:
+- Conversation history
+- User preferences
+- Session data
+- Uploaded files (temporary)
+
+**Docker:**
+```bash
+-v ./llumen-data:/data
+-e DATA_PATH=/data
+```
+
+**Native:**
+```bash
+export DATA_PATH=/var/lib/llumen
+mkdir -p $DATA_PATH
+./llumen
+```
+
+### Data Structure
+
+```
+data/
+├── conversations/
+│   └── *.json
+├── users/
+│   └── users.db
+└── uploads/
+    └── (temporary files)
+```
+
+## Network Configuration
+
+### Binding Address
+
+**Listen on all interfaces (default):**
+```bash
+BIND_ADDR=0.0.0.0:80
+```
+
+**Localhost only:**
+```bash
+BIND_ADDR=127.0.0.1:80
+```
+
+**Custom port:**
+```bash
+BIND_ADDR=0.0.0.0:8080
+```
+
+### Behind Reverse Proxy
+
+If using Nginx, Caddy, or similar:
+
+```bash
+# Llumen listens locally
+BIND_ADDR=127.0.0.1:3000
+
+# Reverse proxy handles external access
+```
+
+Example Nginx config:
+
+```nginx
+server {
+    listen 80;
+    server_name llumen.example.com;
+    
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+## UI Settings
+
+Settings configurable through the web interface:
+
+### Appearance
+- Theme selection
+- Dark/light mode
+- Font size
+- Pattern overlays
+
+### Chat Behavior
+- Default chat mode
+- Token streaming
+- Message formatting
+- Auto-scroll
+
+### Privacy
+- Conversation history
+- Anonymous usage
+- Local storage only
+
+## Advanced Configuration
+
+### Multiple Instances
+
+Run multiple llumen instances:
+
+```bash
+# Instance 1
+docker run -d --name llumen-1 -p 8001:80 -e API_KEY="..." -v ./data1:/data ghcr.io/pinkfuwa/llumen:latest
+
+# Instance 2
+docker run -d --name llumen-2 -p 8002:80 -e API_KEY="..." -v ./data2:/data ghcr.io/pinkfuwa/llumen:latest
+```
+
+### Custom API Models
+
+Configure specific models in the UI after login.
+
+### Resource Limits
+
+Docker resource constraints:
+
+```bash
+docker run -d \
+  --memory="256m" \
+  --cpus="1.0" \
+  -e API_KEY="..." \
+  ghcr.io/pinkfuwa/llumen:latest
+```
+
+## Security Best Practices
+
+<Accordion title="Change default password">
+  1. Log in with `admin` / `P@88w0rd`
+  2. Go to Settings → Security
+  3. Change password immediately
+  4. Use a strong, unique password
+</Accordion>
+
+<Accordion title="Protect API keys">
+  - Never commit `.env` files to git
+  - Use secrets management in production
+  - Rotate keys periodically
+  - Use separate keys per instance
+</Accordion>
+
+<Accordion title="Network security">
+  - Use HTTPS in production (reverse proxy)
+  - Restrict access with firewall rules
+  - Consider VPN for remote access
+  - Don't expose to public internet without auth
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="First Steps" icon="rocket" href="/user-guide/first-steps">
+    Start using llumen
+  </Card>
+  <Card title="API Providers" icon="plug" href="/user-guide/api-providers">
+    Detailed API configuration
+  </Card>
+  <Card title="Docker Compose" icon="docker" href="/user-guide/docker-compose">
+    Production deployment
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/user-guide/troubleshooting">
+    Fix issues
+  </Card>
+</CardGroup>

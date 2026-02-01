@@ -1,0 +1,191 @@
+---
+title: "Frontend Development"
+description: "Working with the Svelte 5 frontend"
+---
+
+## Overview
+
+The frontend is built with:
+- **Svelte 5** (reactive framework)
+- **Vite** (build tool)
+- **static-adapter** (pre-rendering)
+
+## Project Structure
+
+```
+frontend/
+├── src/
+│   ├── lib/
+│   │   ├── components/    # Svelte components
+│   │   ├── stores/        # State management
+│   │   └── utils/         # Utilities
+│   ├── routes/            # Pages
+│   │   ├── +page.svelte   # Home
+│   │   └── chat/
+│   │       └── +page.svelte
+│   └── app.html           # HTML template
+├── static/                # Static assets
+│   ├── favicon.svg
+│   └── ...
+└── vite.config.js
+```
+
+## Running in Development
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Dev server with HMR
+npm run dev
+```
+
+Dev server: http://localhost:5173
+
+## Creating Components
+
+```svelte
+<!-- ChatMessage.svelte -->
+<script>
+  export let message;
+  export let role = 'user';
+  
+  $: isUser = role === 'user';
+</script>
+
+<div class="message" class:user={isUser}>
+  <div class="content">
+    {message.content}
+  </div>
+</div>
+
+<style>
+  .message {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+  
+  .message.user {
+    background: var(--user-bg);
+  }
+</style>
+```
+
+## State Management
+
+Using Svelte stores:
+
+```javascript
+// stores/conversation.js
+import { writable } from 'svelte/store';
+
+export const messages = writable([]);
+export const isStreaming = writable(false);
+
+export function addMessage(message) {
+  messages.update(msgs => [...msgs, message]);
+}
+```
+
+## API Calls
+
+```javascript
+// lib/api.js
+export async function sendMessage(content, mode = 'normal') {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content, mode })
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to send message');
+  }
+  
+  return response.body; // For streaming
+}
+```
+
+## Streaming Responses
+
+```javascript
+// Handle SSE stream
+async function streamResponse(messageId) {
+  const response = await sendMessage(content);
+  const reader = response.getReader();
+  const decoder = new TextDecoder();
+  
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    const chunk = decoder.decode(value);
+    const lines = chunk.split('\n\n');
+    
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = JSON.parse(line.slice(6));
+        updateMessage(messageId, data.content);
+      }
+    }
+  }
+}
+```
+
+## Styling
+
+Use scoped CSS in components:
+
+```svelte
+<style>
+  /* Scoped to this component */
+  .button {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+  }
+  
+  .button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Global styles */
+  :global(body) {
+    font-family: system-ui;
+  }
+</style>
+```
+
+## Building
+
+```bash
+# Production build
+npm run build
+
+# Output: build/ directory with static files
+```
+
+## Testing
+
+```bash
+# Run tests
+npm test
+
+# With coverage
+npm run test:coverage
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Backend" href="/developer/backend">
+    Backend development guide
+  </Card>
+  <Card title="Deployment" href="/developer/deployment">
+    Deployment strategies
+  </Card>
+</CardGroup>

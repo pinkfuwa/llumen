@@ -1,43 +1,83 @@
-# Mintlify Starter Kit
+# Llumen Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+This directory contains the Mintlify documentation for llumen.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+## Structure
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+- **Documentation Tab** - Product overview and features
+  - Features overview
+  - Chat modes (Normal, Search, Research)
+  - Rich media support (PDFs, LaTeX, images)
+  - Themes and UI customization
+  - Performance details
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+- **User Guide Tab** - Installation and usage
+  - Installation (Docker, native binaries)
+  - Configuration (environment variables, API providers)
+  - First steps and chat basics
+  - Search mode and research mode guides
+  - Media upload
+  - API provider configuration
+  - Docker Compose examples
+  - Troubleshooting
 
-## Development
+- **Developer Docs Tab** - Technical documentation
+  - Architecture overview
+  - Building from source
+  - Contributing guidelines
+  - Backend development (Rust/Axum)
+  - Frontend development (Svelte 5)
+  - Deployment strategies
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
+## Preview Locally
 
+Install Mintlify CLI and run:
+
+```bash
+cd docs
+npx mintlify dev
 ```
-npm i -g mint
-```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+Visit http://localhost:3000 to see the docs.
 
-```
-mint dev
-```
+## Deployment
 
-View your local preview at `http://localhost:3000`.
+These docs are designed to be deployed with Mintlify. Push to your Git repository and connect it in the [Mintlify dashboard](https://dashboard.mintlify.com).
 
-## Publishing changes
+## Features
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+- ✅ Linden theme (clean, modern)
+- ✅ Custom llumen logo (icon + text)
+- ✅ Mobile-optimized screenshots
+- ✅ Three-tab navigation
+- ✅ Comprehensive coverage of all features
+- ✅ Step-by-step user guides
+- ✅ Developer documentation
+- ✅ Dark/light mode support
+- ✅ Search and contextual menu
 
-## Need help?
+## Theme Configuration
 
-### Troubleshooting
+The docs use llumen's brand colors:
+- Primary: `#EF7722` (llumen orange)
+- Light: `#FF8A3D`
+- Dark: `#D96815`
 
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
+## Images
 
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+All images are stored in `/images/` including:
+- Mobile theme screenshots
+- Settings screenshots  
+- UI examples
+
+## Contributing
+
+To improve the docs:
+1. Edit the `.mdx` files
+2. Test locally with `mintlify dev`
+3. Commit and push changes
+4. Docs auto-deploy via Mintlify
+
+## License
+
+Same as llumen - Mozilla Public License 2.0

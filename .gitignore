@@ -13,3 +13,5 @@ target/rust-analyzer/flycheck0
 
 # pnpm
 /.pnpm-store
+
+/docs.backup*

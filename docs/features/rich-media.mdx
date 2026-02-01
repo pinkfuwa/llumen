@@ -1,0 +1,178 @@
+---
+title: "Rich Media Support"
+description: "PDFs, images, LaTeX, and more"
+---
+
+## Media Capabilities
+
+Llumen supports various media types to enhance your conversations and workflows.
+
+<img src="/images/multimedia/light.webp" class="rounded-lg block dark:hidden" className="rounded-lg"/>
+<img src="/images/multimedia/dark.webp" class="rounded-lg hidden dark:block" className="rounded-lg"/>
+
+## PDF Upload & Chat
+
+Upload PDF documents and have natural conversations about their content.
+
+### Features
+- Drag-and-drop upload
+- Text extraction
+- Context-aware responses
+- Multi-page support
+
+### Use Cases
+- Research paper analysis
+- Document summarization
+- Quote extraction
+- Technical documentation help
+- Legal document review
+
+### How to Use
+1. Click the attachment icon in chat
+2. Select your PDF file
+3. Wait for processing
+4. Ask questions about the content
+
+```
+Summarize the key findings in section 3
+
+What does the paper say about [specific topic]?
+
+Extract all the important dates mentioned
+```
+
+<Note>
+  PDF processing happens locally. Your documents never leave your device.
+</Note>
+
+## LaTeX Rendering
+
+Full LaTeX support for mathematical and scientific content.
+
+### Features
+- Inline math: `$E = mc^2$`
+- Display equations: `$$\int_a^b f(x)dx$$`
+- Complex formulas
+- Automatic rendering
+
+### Examples
+
+**Inline Math:**
+```
+The quadratic formula is $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$
+```
+
+**Display Math:**
+```
+$$
+\nabla \times \vec{\mathbf{B}} -\, \frac1c\, \frac{\partial\vec{\mathbf{E}}}{\partial t} = \frac{4\pi}{c}\vec{\mathbf{j}}
+$$
+```
+
+### Use Cases
+- Mathematical discussions
+- Physics problems
+- Scientific papers
+- Engineering calculations
+- Academic work
+
+## Image Generation
+
+Generate images directly within your conversations.
+
+### Features
+- Text-to-image generation
+- Multiple styles
+- Various aspect ratios
+- Quick iterations
+
+### How to Use
+1. Enable image generation in settings
+2. Configure your image API (if different from chat)
+3. Request images in chat
+
+```
+Generate an image of a sunset over mountains
+
+Create a diagram showing the software architecture
+
+Draw a minimalist logo for a tech startup
+```
+
+## Code Syntax Highlighting
+
+Beautiful syntax highlighting for all major programming languages.
+
+### Supported Languages
+- Rust, Python, JavaScript/TypeScript
+- Go, Java, C/C++
+- Shell scripts, SQL, YAML
+- And many more
+
+### Features
+- Automatic language detection
+- Line numbers
+- Copy button
+- Dark/light theme support
+
+### Example
+```rust
+fn main() {
+    println!("Hello, llumen!");
+}
+```
+
+## Markdown Support
+
+Full Markdown rendering for rich formatting.
+
+### Supported Elements
+- **Bold** and *italic* text
+- Headers (H1-H6)
+- Lists (ordered and unordered)
+- Code blocks
+- Tables
+- Blockquotes
+- Links and images
+- Task lists
+
+### Use Cases
+- Formatted notes
+- Documentation
+- Project planning
+- Meeting notes
+- Technical writing
+
+## File Upload Best Practices
+
+<Accordion title="Supported PDF formats">
+  - Standard PDF/A
+  - Text-based PDFs (not scanned images)
+  - Multi-page documents
+  - Up to 50MB per file
+</Accordion>
+
+<Accordion title="Optimizing uploads">
+  - Compress large PDFs before uploading
+  - Use text-based PDFs, not scanned images
+  - Split very large documents
+  - Remove unnecessary pages
+</Accordion>
+
+<Accordion title="Privacy & Security">
+  - All processing happens locally
+  - Files are not stored permanently
+  - No data sent to external services
+  - Automatic cleanup after session
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Media Upload Guide" icon="upload" href="/user-guide/media-upload">
+    Detailed guide on uploading files
+  </Card>
+  <Card title="Configuration" icon="gear" href="/user-guide/configuration">
+    Set up image generation and more
+  </Card>
+</CardGroup>

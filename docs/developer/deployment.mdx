@@ -1,0 +1,218 @@
+---
+title: "Deployment"
+description: "Deploy llumen to production"
+---
+
+## Deployment Options
+
+<CardGroup cols={2}>
+  <Card title="Docker" icon="docker">
+    Easiest, works everywhere
+  </Card>
+  <Card title="Native Binary" icon="server">
+    Maximum performance
+  </Card>
+  <Card title="Reverse Proxy" icon="network-wired">
+    With Nginx or Caddy
+  </Card>
+  <Card title="Cloud" icon="cloud">
+    DigitalOcean, AWS, etc.
+  </Card>
+</CardGroup>
+
+## Docker Deployment
+
+### Basic
+
+```bash
+docker run -d \
+  --name llumen \
+  --restart unless-stopped \
+  -e API_KEY="your-key" \
+  -p 80:80 \
+  -v ./data:/data \
+  ghcr.io/pinkfuwa/llumen:latest
+```
+
+### With Docker Compose
+
+See [Docker Compose guide](/user-guide/docker-compose) for detailed configurations.
+
+## Native Binary Deployment
+
+### 1. Build
+
+```bash
+cargo build --release --locked
+strip target/release/llumen
+```
+
+### 2. Deploy
+
+```bash
+# Copy binary
+scp target/release/llumen user@server:/usr/local/bin/
+
+# Create systemd service
+sudo nano /etc/systemd/system/llumen.service
+```
+
+```ini
+[Unit]
+Description=Llumen AI Chat
+After=network.target
+
+[Service]
+Type=simple
+User=llumen
+Environment="API_KEY=your-key"
+Environment="DATA_PATH=/var/lib/llumen"
+ExecStart=/usr/local/bin/llumen
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+# Enable and start
+sudo systemctl enable llumen
+sudo systemctl start llumen
+```
+
+## Reverse Proxy
+
+### Nginx
+
+```nginx
+server {
+    listen 80;
+    server_name llumen.example.com;
+    
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+### Caddy (Auto HTTPS)
+
+```
+llumen.example.com {
+    reverse_proxy localhost:3000
+}
+```
+
+## Cloud Providers
+
+### DigitalOcean
+
+1. Create Droplet (Ubuntu, $5/month)
+2. Install Docker
+3. Run llumen container
+4. Point domain to droplet IP
+
+### AWS
+
+1. Launch EC2 instance (t2.micro eligible for free tier)
+2. Configure security groups
+3. Deploy with Docker or systemd
+4. Use Route 53 for DNS
+
+### Other Options
+
+- Hetzner (cheap VPS)
+- Linode
+- Vultr
+- Oracle Cloud (free tier)
+
+## Security Checklist
+
+- [ ] Change default password
+- [ ] Use HTTPS (Let's Encrypt)
+- [ ] Configure firewall
+- [ ] Set up backups
+- [ ] Monitor logs
+- [ ] Use strong API keys
+- [ ] Regular updates
+
+## Monitoring
+
+### Logs
+
+```bash
+# Docker
+docker logs -f llumen
+
+# Systemd
+journalctl -u llumen -f
+```
+
+### Health Check
+
+```bash
+curl http://localhost/api/health
+```
+
+### Resource Usage
+
+```bash
+# Docker
+docker stats llumen
+
+# System
+htop
+```
+
+## Backups
+
+### Data Directory
+
+```bash
+# Backup
+tar -czf llumen-backup-$(date +%Y%m%d).tar.gz data/
+
+# Restore
+tar -xzf llumen-backup-20240101.tar.gz
+```
+
+### Automated Backups
+
+```bash
+# Cron job
+0 2 * * * /usr/local/bin/backup-llumen.sh
+```
+
+## Updates
+
+### Docker
+
+```bash
+docker pull ghcr.io/pinkfuwa/llumen:latest
+docker stop llumen
+docker rm llumen
+docker run -d ... ghcr.io/pinkfuwa/llumen:latest
+```
+
+### Native Binary
+
+```bash
+# Download new version
+wget https://github.com/pinkfuwa/llumen/releases/download/latest/llumen
+sudo systemctl stop llumen
+sudo mv llumen /usr/local/bin/
+sudo systemctl start llumen
+```
+
+## Next Steps
+
+<Card title="Troubleshooting" href="/user-guide/troubleshooting">
+  Fix common deployment issues
+</Card>

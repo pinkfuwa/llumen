@@ -1,55 +1,33 @@
 llumen is a LLM chat web-application. featuring three mode: normal chat, search and deep research.
 
-# Structure
+# Architecture
 
 llumen follow mono repo file structure:
 * `./frontend`: svelte 5(static-adapter) frontend
 * `./backend`: axum backend
 * `./agent`: prompt and regression prompt test
 * `./package`: build script and deployment declaration
-* `./docs`: document.
+* `./docs`: document with mintlify
 
-# Strong Size Awareness
+Tech Stack:
+* Rust
+* Axum
+* SeaORM
+* Tokio
+* mLua with luau sandboxing
+* typeshare(codegen)
+* Svelte 5(SPA)
+* TailwindCSS
+* Vite
+* TypeScript
+* bit-ui
+* lezer(for markdown parsing)
+
+# General coding guidelines
+
+## Strong Size Awareness
 
 Our project emphasizes performance and binary-size. We choose minimal dependency for both frontend and backend.
-
-# Rust coding guidelines
-
-* Prioritize code correctness and clarity. Speed and efficiency are secondary priorities unless otherwise specified.
-* Do not write organizational or comments that summarize the code. Comments should only be written in order to explain "why" the code is written in some way in the case there is a reason that is tricky / non-obvious.
-* Prefer implementing functionality in existing files unless it is a new logical component. Avoid creating many small files.
-* Avoid using functions that panic like `unwrap()`, instead use mechanisms like `?` to propagate errors.
-* Be careful with operations like indexing which may panic if the indexes are out of bounds.
-* Never silently discard errors with `let _ =` on fallible operations. Always handle errors appropriately:
-  - Propagate errors with `?` when the calling function should handle them
-  - Use `.log_err()` or similar when you need to ignore errors but want visibility
-  - Use explicit error handling with `match` or `if let Err(...)` when you need custom logic
-  - For error cause by user's bad request body, send the rrror by return `Json<Error>`
-  Example:
-  ```rust
-  pub trait WithKind<T> {
-      fn kind(self, kind: ErrorKind) -> Result<T, Json<Error>>;
-      fn raw_kind(self, kind: ErrorKind) -> Result<T, Error>;
-  }
-  impl<T, E> WithKind<T> for Result<T, E>;
-  ```
-  - For error cause by false output of LLM, place insert chunk to top-level message.
-* Never create files with `mod.rs` paths - prefer `src/some_module.rs` instead of `src/some_module/mod.rs`.
-* Use full words for variable names (no abbreviations like "q" for "queue")
-* Always use `cargo add` to add new dependency, which should automatically chose latest version
-* Use variable shadowing to scope clones in async contexts for clarity, minimizing the lifetime of borrowed references.
-  Example:
-  ```rust
-  executor.spawn({
-      let task_ran = task_ran.clone();
-      async move {
-          *task_ran.borrow_mut() = true;
-      }
-  });
-  ```
-* Always follow separation of concerns principle
-
-# general coding guidelines
 
 ## Use correct tools
 
@@ -88,6 +66,42 @@ Please never change git config by running `git config --global user.name` or `gi
 * If very complex logic changed, check `.github/workflows/check.yml` and try pass all CI tests.
 * If dependency changed, regenerate third-party licenses by `pnpm run generate-licenses` in frontend and `cargo bundle-licenses --format toml` in backend.
 * `pnpm build`, `cargo build` and `cargo test --release` is usually unnecessary.
+
+# Rust coding guidelines
+
+* Prioritize code correctness and clarity. Speed and efficiency are secondary priorities unless otherwise specified.
+* Do not write organizational or comments that summarize the code. Comments should only be written in order to explain "why" the code is written in some way in the case there is a reason that is tricky / non-obvious.
+* Prefer implementing functionality in existing files unless it is a new logical component. Avoid creating many small files.
+* Avoid using functions that panic like `unwrap()`, instead use mechanisms like `?` to propagate errors.
+* Be careful with operations like indexing which may panic if the indexes are out of bounds.
+* Never silently discard errors with `let _ =` on fallible operations. Always handle errors appropriately:
+  - Propagate errors with `?` when the calling function should handle them
+  - Use `.log_err()` or similar when you need to ignore errors but want visibility
+  - Use explicit error handling with `match` or `if let Err(...)` when you need custom logic
+  - For error cause by user's bad request body, send the rrror by return `Json<Error>`
+  Example:
+  ```rust
+  pub trait WithKind<T> {
+      fn kind(self, kind: ErrorKind) -> Result<T, Json<Error>>;
+      fn raw_kind(self, kind: ErrorKind) -> Result<T, Error>;
+  }
+  impl<T, E> WithKind<T> for Result<T, E>;
+  ```
+  - For error cause by false output of LLM, place insert chunk to top-level message.
+* Never create files with `mod.rs` paths - prefer `src/some_module.rs` instead of `src/some_module/mod.rs`.
+* Use full words for variable names (no abbreviations like "q" for "queue")
+* Always use `cargo add` to add new dependency, which should automatically chose latest version
+* Use variable shadowing to scope clones in async contexts for clarity, minimizing the lifetime of borrowed references.
+  Example:
+  ```rust
+  executor.spawn({
+      let task_ran = task_ran.clone();
+      async move {
+          *task_ran.borrow_mut() = true;
+      }
+  });
+  ```
+* Always follow separation of concerns principle
 
 ## Database government
 
@@ -148,22 +162,46 @@ Following are step to connect new endpoint:
   ```
 4. call the function just created inside reactivity context(must be called during component initialization)
 
-# Tech Stack
+# Mintlify documentation
 
-* Rust
-* Axum
-* SeaORM
-* Tokio
-* mLua with luau sandboxing
-* typeshare(codegen)
-* Svelte 5(SPA)
-* TailwindCSS
-* Vite
-* TypeScript
-* bit-ui
-* lezer(for markdown parsing)
+## Working relationship
+- You can push back on ideas-this can lead to better documentation. Cite sources and explain your reasoning when you do so
+- ALWAYS ask for clarification rather than making assumptions
+- NEVER lie, guess, or make up anything
 
-# Keep document in sync
+## Project context
+- Format: MDX files with YAML frontmatter
+- Config: docs.json for navigation, theme, settings
+- Components: Mintlify components
 
-* document user-facing changes in `docs/user/`
-* document architecture changes in `docs/dev/`
+## Content strategy
+- Document just enough for user success - not too much, not too little
+- Prioritize accuracy and usability
+- Make content evergreen when possible
+- Search for existing content before adding anything new. Avoid duplication unless it is done for a strategic reason
+- Check existing patterns for consistency
+- Start by making the smallest reasonable changes
+
+## docs.json
+
+- Refer to the [docs.json schema](https://mintlify.com/docs.json) when building the docs.json file and site navigation
+
+## Frontmatter requirements for pages
+- title: Clear, descriptive page title
+- description: Concise summary for SEO/navigation
+
+## Writing standards
+- Second-person voice ("you")
+- Prerequisites at start of procedural content
+- Test all code examples before publishing
+- Match style and formatting of existing pages
+- Include both basic and advanced use cases
+- Language tags on all code blocks
+- Alt text on all images
+- Relative paths for internal links
+
+## Do not
+- Skip frontmatter on any MDX file
+- Use absolute URLs for internal links
+- Include untested code examples
+- Make assumptions - always ask for clarification

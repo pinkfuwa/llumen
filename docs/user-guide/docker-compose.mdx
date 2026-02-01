@@ -1,0 +1,291 @@
+---
+title: "Docker Compose"
+description: "Production-ready Docker deployments"
+---
+
+## Basic Docker Compose
+
+Create `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    container_name: llumen
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - API_KEY=${API_KEY}
+      - DATA_PATH=/data
+    volumes:
+      - ./llumen-data:/data
+```
+
+Create `.env`:
+
+```bash
+API_KEY=sk-or-v1-your-key-here
+```
+
+Run:
+
+```bash
+docker-compose up -d
+```
+
+## With Reverse Proxy
+
+### Nginx
+
+```yaml
+version: '3.8'
+
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: unless-stopped
+    environment:
+      - API_KEY=${API_KEY}
+      - BIND_ADDR=0.0.0.0:3000
+    volumes:
+      - ./data:/data
+    expose:
+      - "3000"
+    networks:
+      - web
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - llumen
+    networks:
+      - web
+
+networks:
+  web:
+```
+
+### Caddy (Easier HTTPS)
+
+```yaml
+version: '3.8'
+
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: unless-stopped
+    environment:
+      - API_KEY=${API_KEY}
+    volumes:
+      - ./data:/data
+    networks:
+      - web
+
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - llumen
+    networks:
+      - web
+
+networks:
+  web:
+
+volumes:
+  caddy_data:
+  caddy_config:
+```
+
+**Caddyfile:**
+
+```
+llumen.yourdomain.com {
+    reverse_proxy llumen:80
+}
+```
+
+Caddy automatically handles HTTPS certificates!
+
+## With Ollama
+
+Run local LLMs alongside llumen:
+
+```yaml
+version: '3.8'
+
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - API_KEY=ollama
+      - API_BASE=http://ollama:11434/v1
+    volumes:
+      - ./data:/data
+    depends_on:
+      - ollama
+    networks:
+      - ai
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ai
+
+networks:
+  ai:
+
+volumes:
+  ollama_data:
+```
+
+Pull models:
+
+```bash
+docker-compose exec ollama ollama pull llama3
+docker-compose exec ollama ollama pull mistral
+```
+
+## Resource Limits
+
+Prevent resource exhaustion:
+
+```yaml
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+    # ... rest of config
+```
+
+## Health Checks
+
+```yaml
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # ... rest of config
+```
+
+## Logging
+
+```yaml
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # ... rest of config
+```
+
+## Multiple Instances
+
+Load balanced setup:
+
+```yaml
+version: '3.8'
+
+services:
+  llumen-1:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: unless-stopped
+    environment:
+      - API_KEY=${API_KEY}
+    volumes:
+      - ./data1:/data
+
+  llumen-2:
+    image: ghcr.io/pinkfuwa/llumen:latest
+    restart: unless-stopped
+    environment:
+      - API_KEY=${API_KEY}
+    volumes:
+      - ./data2:/data
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-lb.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - llumen-1
+      - llumen-2
+```
+
+## Management Commands
+
+```bash
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f llumen
+
+# Restart service
+docker-compose restart llumen
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+
+# Update to latest image
+docker-compose pull
+docker-compose up -d
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deployment" href="/developer/deployment">
+    Advanced deployment patterns
+  </Card>
+  <Card title="Troubleshooting" href="/user-guide/troubleshooting">
+    Fix common issues
+  </Card>
+</CardGroup>

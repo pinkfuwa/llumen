@@ -1,0 +1,285 @@
+---
+title: "Installation"
+description: "Get llumen running in 30 seconds"
+---
+
+## Quick Start
+
+Choose your preferred installation method:
+
+<CardGroup cols={2}>
+  <Card title="Docker" icon="docker" href="#docker-recommended">
+    Easiest setup, works everywhere
+  </Card>
+  <Card title="Native Binary" icon="download" href="#native-binary">
+    Maximum performance, no container
+  </Card>
+</CardGroup>
+
+## Docker (Recommended)
+
+The fastest way to get started. No dependencies, no configuration needed.
+
+### Basic Setup
+
+```bash
+docker run -it --rm \
+  -e API_KEY="<YOUR_OPENROUTER_KEY>" \
+  -p 80:80 \
+  -v "$(pwd)/data:/data" \
+  ghcr.io/pinkfuwa/llumen:latest
+```
+
+<Note>
+  Replace `<YOUR_OPENROUTER_KEY>` with your actual API key from [OpenRouter](https://openrouter.ai)
+</Note>
+
+### What This Does
+
+- Downloads the latest llumen image (~17MB)
+- Starts the server on port 80
+- Creates a `data` folder for persistent storage
+- Sets your API key for LLM access
+
+### Access Your Instance
+
+Open your browser and navigate to:
+- **Local**: http://localhost
+- **Network**: http://YOUR_IP_ADDRESS
+
+**Default credentials:**
+- Username: `admin`
+- Password: `P@88w0rd`
+
+<Warning>
+  Change the default password immediately after first login!
+</Warning>
+
+### Persistent Storage
+
+To keep your conversations and settings:
+
+```bash
+docker run -d \
+  --name llumen \
+  -e API_KEY="your-key-here" \
+  -p 80:80 \
+  -v ./llumen-data:/data \
+  --restart unless-stopped \
+  ghcr.io/pinkfuwa/llumen:latest
+```
+
+### Using Nightly Builds
+
+For the latest features (may be unstable):
+
+```bash
+docker run -p 80:80 \
+  -e API_KEY="your-key-here" \
+  -v ./data:/data \
+  ghcr.io/pinkfuwa/llumen:nightly
+```
+
+## Native Binary
+
+For maximum performance and minimal resource usage.
+
+### Download
+
+Get the latest release for your platform:
+
+**Linux (x86_64):**
+```bash
+wget https://github.com/pinkfuwa/llumen/releases/download/latest/llumen-x86_64-unknown-linux-gnu
+chmod +x llumen-x86_64-unknown-linux-gnu
+```
+
+**Linux (ARM64/aarch64):**
+```bash
+wget https://github.com/pinkfuwa/llumen/releases/download/latest/llumen-aarch64-unknown-linux-gnu
+chmod +x llumen-aarch64-unknown-linux-gnu
+```
+
+**Windows:**
+```bash
+# Download from GitHub Releases page
+https://github.com/pinkfuwa/llumen/releases/download/latest/llumen-x86_64-pc-windows-msvc.exe
+```
+
+### Run
+
+```bash
+# Set API key
+export API_KEY="your-openrouter-key"
+
+# Run llumen
+./llumen-x86_64-unknown-linux-gnu
+```
+
+Or combine them:
+
+```bash
+API_KEY="your-key" ./llumen-x86_64-unknown-linux-gnu
+```
+
+### System Service (Linux)
+
+Run llumen as a systemd service:
+
+```bash
+# Create service file
+sudo nano /etc/systemd/system/llumen.service
+```
+
+```ini
+[Unit]
+Description=Llumen AI Chat
+After=network.target
+
+[Service]
+Type=simple
+User=llumen
+Environment="API_KEY=your-key-here"
+Environment="DATA_PATH=/var/lib/llumen"
+ExecStart=/usr/local/bin/llumen
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+# Enable and start
+sudo systemctl enable llumen
+sudo systemctl start llumen
+```
+
+## Platform-Specific Notes
+
+<Accordion title="Raspberry Pi">
+  **Recommended model:** Raspberry Pi 4 (2GB+)
+  
+  **Installation:**
+  ```bash
+  # Use ARM64 binary
+  wget https://github.com/pinkfuwa/llumen/releases/download/latest/llumen-aarch64-unknown-linux-gnu
+  chmod +x llumen-aarch64-unknown-linux-gnu
+  ./llumen-aarch64-unknown-linux-gnu
+  ```
+  
+  **Performance:**
+  - Cold start: ~1 second
+  - Memory usage: ~110MB
+  - Works great on Pi 4
+  - Pi 3B+ is minimum
+</Accordion>
+
+<Accordion title="Windows">
+  **Download:** Get the `.exe` from [releases](https://github.com/pinkfuwa/llumen/releases)
+  
+  **Run:**
+  ```powershell
+  # PowerShell
+  $env:API_KEY="your-key"
+  .\llumen.exe
+  ```
+  
+  **Firewall:** You may need to allow llumen through Windows Firewall
+</Accordion>
+
+<Accordion title="macOS">
+  **Status:** Binaries not currently provided
+  
+  **Alternative:** Use Docker or build from source
+  
+  ```bash
+  docker run -p 80:80 \
+    -e API_KEY="your-key" \
+    ghcr.io/pinkfuwa/llumen:latest
+  ```
+</Accordion>
+
+<Accordion title="VPS / Cloud">
+  **Recommended specs:**
+  - 1 CPU core
+  - 512MB RAM
+  - 1GB storage
+  - Cost: $3-5/month
+  
+  **Providers:** DigitalOcean, Linode, Vultr, Hetzner
+  
+  **Setup:**
+  ```bash
+  # Update system
+  sudo apt update && sudo apt upgrade -y
+  
+  # Install Docker
+  curl -fsSL https://get.docker.com | sh
+  
+  # Run llumen
+  docker run -d \
+    --name llumen \
+    -e API_KEY="your-key" \
+    -p 80:80 \
+    -v /opt/llumen:/data \
+    --restart unless-stopped \
+    ghcr.io/pinkfuwa/llumen:latest
+  ```
+</Accordion>
+
+## Verification
+
+Check that llumen is running:
+
+```bash
+# Check if server is responding
+curl http://localhost/api/health
+
+# Expected response
+{"status":"ok"}
+```
+
+## Troubleshooting
+
+<Accordion title="Port 80 already in use">
+  Use a different port:
+  ```bash
+  docker run -p 8080:80 ... ghcr.io/pinkfuwa/llumen:latest
+  ```
+  Access at http://localhost:8080
+</Accordion>
+
+<Accordion title="Permission denied">
+  On Linux:
+  ```bash
+  # Use Docker without sudo
+  sudo usermod -aG docker $USER
+  newgrp docker
+  
+  # Or run on different port
+  docker run -p 8080:80 ...
+  ```
+</Accordion>
+
+<Accordion title="Can't connect from network">
+  - Check firewall settings
+  - Ensure using `0.0.0.0:80` not `127.0.0.1:80`
+  - Verify correct IP address
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/user-guide/configuration">
+    Configure API keys, paths, and more
+  </Card>
+  <Card title="First Steps" icon="rocket" href="/user-guide/first-steps">
+    Learn the basics
+  </Card>
+  <Card title="Docker Compose" icon="docker" href="/user-guide/docker-compose">
+    Advanced Docker setup
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/user-guide/troubleshooting">
+    Fix common issues
+  </Card>
+</CardGroup>
