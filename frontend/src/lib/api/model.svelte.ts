@@ -139,5 +139,5 @@ export const defaultModelConfig = [
 	'# don\'t put "online" suffix.',
 	'model_id="openai/gpt-oss-20b"',
 	'',
-	'# For more settings, see https://github.com/pinkfuwa/llumen/blob/main/docs/user/README.md'
+	'# For more settings, see https://llumen-docs.easonabc.eu.org/user-guide/model-config'
 ].join('\n');
