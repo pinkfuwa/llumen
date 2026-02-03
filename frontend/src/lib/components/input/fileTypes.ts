@@ -1,7 +1,8 @@
 interface CapabilityFileType {
 	image_input: boolean;
 	audio_input: boolean;
-	other_file_input: boolean;
+	native_file_input: boolean;
+	ocr_file_input: boolean;
 }
 
 /** Mapping of capability flags to valid MIME‑type lists. */
@@ -9,10 +10,10 @@ const IMAGE_TYPES = ['avif', 'webp', 'bmp', 'gif', 'png', 'jpg', 'jpeg'];
 
 const AUDIO_TYPES = ['audio/*'];
 
-const OTHER_TYPES = ['pdf', 'doc', 'ppt', 'pptx', 'docs', 'xlsx'];
+const NATIVE_TYPES: string[] = ['pdf'];
 
 // file that will directly upload without any processing
-const LITERAL_FILE = [
+const LITERAL_TYPES = [
 	'md',
 	'txt',
 	'ts',
@@ -30,6 +31,8 @@ const LITERAL_FILE = [
 	'js'
 ];
 
+const OCR_TYPES = ['pdf'];
+
 export function getSupportedFileExtensions(capability?: CapabilityFileType): string[] {
 	if (!capability) {
 		return [];
@@ -37,7 +40,7 @@ export function getSupportedFileExtensions(capability?: CapabilityFileType): str
 
 	const parts: string[] = [];
 
-	parts.push(...LITERAL_FILE);
+	parts.push(...LITERAL_TYPES);
 
 	if (capability.image_input) {
 		parts.push(...IMAGE_TYPES);
@@ -47,13 +50,17 @@ export function getSupportedFileExtensions(capability?: CapabilityFileType): str
 		parts.push(...AUDIO_TYPES);
 	}
 
-	if (capability.other_file_input) {
-		parts.push(...OTHER_TYPES);
+	if (capability.native_file_input) {
+		parts.push(...NATIVE_TYPES);
+	}
+
+	if (capability.ocr_file_input) {
+		parts.push(...OCR_TYPES);
 	}
 
 	return parts;
 }
 
 export function getAllFileExtensions(): string[] {
-	return [...LITERAL_FILE, ...IMAGE_TYPES, ...AUDIO_TYPES, ...OTHER_TYPES];
+	return [...LITERAL_TYPES, ...IMAGE_TYPES, ...AUDIO_TYPES, ...NATIVE_TYPES];
 }

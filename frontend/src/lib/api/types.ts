@@ -363,9 +363,10 @@ export interface ModelIdsResp {
 export interface ModelList {
 	id: number;
 	display_name: string;
+	ocr_file_input: boolean;
 	image_input: boolean;
 	audio_input: boolean;
-	other_file_input: boolean;
+	native_file_input: boolean;
 	tool: boolean;
 }
 
