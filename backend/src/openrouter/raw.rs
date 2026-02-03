@@ -306,7 +306,10 @@ impl MessagePart {
         if infer::is_document(&blob) || infer::is_book(&blob) {
             return (
                 Self::text(format!("Uploaded file: {}\n\n", filename)),
-                Self::text("<content>Error: cannot parse file</content>".to_string()),
+                Self::text(
+                    "<content>Error: cannot parse file. supported format: PDF.</content>"
+                        .to_string(),
+                ),
             );
         }
 
