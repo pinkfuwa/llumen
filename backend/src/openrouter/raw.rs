@@ -272,8 +272,6 @@ impl MessagePart {
     }
 
     pub fn unknown(filename: &str, blob: Vec<u8>) -> (Self, Self) {
-        infer::is_image(&blob);
-
         let ext = filename
             .rsplit('.')
             .next()
@@ -298,22 +296,32 @@ impl MessagePart {
             );
         }
 
-        if infer::archive::is_pdf(&blob)
-            || infer::archive::is_epub(&blob)
-            || infer::is_document(&blob)
-        {
+        if infer::archive::is_pdf(&blob) {
             return (
                 Self::text(format!("Uploaded file: {}", filename)),
                 Self::pdf(filename.to_string(), &blob),
             );
         }
 
-        let content = String::from_utf8_lossy(&blob);
+        if infer::is_document(&blob) || infer::is_book(&blob) {
+            return (
+                Self::text(format!("Uploaded file: {}\n\n", filename)),
+                Self::text("<content>Error: cannot parse file</content>".to_string()),
+            );
+        }
 
-        (
-            Self::text(format!("Uploaded file: {}\n\n", filename)),
-            Self::text(format!("<content>{}</content>", content)),
-        )
+        // TODO: add video
+
+        match String::from_utf8(blob) {
+            Ok(content) => (
+                Self::text(format!("Uploaded file: {}\n\n", filename)),
+                Self::text(format!("<content>{}</content>", content)),
+            ),
+            Err(_) => (
+                Self::text(format!("Uploaded file: {}\n\n", filename)),
+                Self::text("<content>Error: cannot parse file</content>".to_string()),
+            ),
+        }
     }
 
     pub fn image_url(url: String) -> Self {
