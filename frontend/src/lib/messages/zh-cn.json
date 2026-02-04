@@ -101,6 +101,13 @@
 			"recording": "正在录制中...",
 			"cancel": "取消",
 			"stop": "停止录制"
+		},
+		"unsupported_files": {
+			"title": "不支持的文件格式",
+			"description": "您尝试上传的部分文件不被所选模型支持。您可以选择继续上传所有文件，或仅上传支持的文件。",
+			"hint": "不支持的文件可能无法被模型正确处理。",
+			"upload_all": "仍然上传所有",
+			"upload_supported": "仅上传支持的"
 		}
 	},
 	"common": {

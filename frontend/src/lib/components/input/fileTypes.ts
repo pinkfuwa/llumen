@@ -64,3 +64,35 @@ export function getSupportedFileExtensions(capability?: CapabilityFileType): str
 export function getAllFileExtensions(): string[] {
 	return [...LITERAL_TYPES, ...IMAGE_TYPES, ...AUDIO_TYPES, ...NATIVE_TYPES];
 }
+
+export function isFileSupported(fileName: string, extensions: string[]): boolean {
+	if (extensions.length === 0) return true;
+
+	const lowerFileName = fileName.toLowerCase();
+
+	return extensions.some((ext) => {
+		if (ext.endsWith('/*')) {
+			// Handle MIME type patterns like 'audio/*'
+			return false; // Will be checked by MIME type separately
+		}
+		return lowerFileName.endsWith('.' + ext);
+	});
+}
+
+export function separateFiles(files: File[], extensions: string[]): {
+	supported: File[];
+	unsupported: File[];
+} {
+	const supported: File[] = [];
+	const unsupported: File[] = [];
+
+	for (const file of files) {
+		if (isFileSupported(file.name, extensions)) {
+			supported.push(file);
+		} else {
+			unsupported.push(file);
+		}
+	}
+
+	return { supported, unsupported };
+}

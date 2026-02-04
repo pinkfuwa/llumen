@@ -101,6 +101,13 @@
 			"recording": "Recording in progress...",
 			"cancel": "Cancel",
 			"stop": "Stop Recording"
+		},
+		"unsupported_files": {
+			"title": "Unsupported File Formats",
+			"description": "Some files you're trying to upload are not supported by the selected model. You can either upload all files anyway or exclude the unsupported ones.",
+			"hint": "Unsupported files may not be processed correctly by the model.",
+			"upload_all": "Upload All Anyway",
+			"upload_supported": "Upload Supported Only"
 		}
 	},
 	"common": {

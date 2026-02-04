@@ -13,8 +13,9 @@
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { getModels } from '$lib/api/model.svelte.js';
 	import { FileUp } from '@lucide/svelte';
-	import { getSupportedFileExtensions } from './fileTypes';
+	import { getSupportedFileExtensions, separateFiles } from './fileTypes';
 	import Confirm from './Confirm.svelte';
+	import UnsupportedFilesModal from './UnsupportedFilesModal.svelte';
 
 	let {
 		mode = $bindable(Mode.Normal),
@@ -39,6 +40,9 @@
 	let editable = $state(true);
 	let showConfirm = $state(false);
 	let pendingNavigationUrl: string | null = $state(null);
+	let showUnsupportedModal = $state(false);
+	let pendingFiles: File[] = $state([]);
+	let pendingUnsupportedFiles: File[] = $state([]);
 
 	let container = $state<HTMLElement | null>();
 
@@ -55,14 +59,40 @@
 	});
 	let extensions = $derived(getSupportedFileExtensions(selectModelCap));
 
+	function handleNewFiles(newFiles: File[]) {
+		const { supported, unsupported } = separateFiles(newFiles, extensions);
+
+		if (unsupported.length > 0) {
+			pendingFiles = supported;
+			pendingUnsupportedFiles = unsupported;
+			showUnsupportedModal = true;
+		} else {
+			supported.forEach((f) => files.push(f));
+		}
+	}
+
+	function uploadAllFiles() {
+		[...pendingFiles, ...pendingUnsupportedFiles].forEach((f) => files.push(f));
+		showUnsupportedModal = false;
+		pendingFiles = [];
+		pendingUnsupportedFiles = [];
+	}
+
+	function uploadSupportedOnly() {
+		pendingFiles.forEach((f) => files.push(f));
+		showUnsupportedModal = false;
+		pendingFiles = [];
+		pendingUnsupportedFiles = [];
+	}
+
 	const dropZone = createDropZone(() => container, {
 		onDrop(newFiles: File[] | null) {
 			if (newFiles == null) return;
-			newFiles.forEach((f) => files.push(f));
+			handleNewFiles(newFiles);
 		},
 		onPaste(newFiles: File[] | null) {
 			if (newFiles == null) return;
-			newFiles.forEach((f) => files.push(f));
+			handleNewFiles(newFiles);
 		}
 	});
 
@@ -99,6 +129,13 @@
 		console.log(pendingNavigationUrl);
 		goto(pendingNavigationUrl!);
 	}}
+/>
+
+<UnsupportedFilesModal
+	bind:open={showUnsupportedModal}
+	unsupportedFiles={pendingUnsupportedFiles}
+	onUploadAll={uploadAllFiles}
+	onUploadSupported={uploadSupportedOnly}
 />
 
 <div
@@ -141,7 +178,7 @@
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
 			<ModelSelector bind:value={modelId} />
 			<ModeSelector bind:value={mode} limited={!selectModelCap?.tool} />
-			<ActionMenu bind:files bind:content {disabled} />
+			<ActionMenu bind:files bind:content {disabled} onFilesAdded={handleNewFiles} />
 		</div>
 		{#if content.length != 0}
 			<MarkdownBtn bind:editable />

@@ -10,11 +10,13 @@
 	let {
 		files = $bindable([]),
 		content = $bindable(''),
-		disabled = false
+		disabled = false,
+		onFilesAdded
 	}: {
 		files: File[];
 		content: string;
 		disabled?: boolean;
+		onFilesAdded?: (files: File[]) => void;
 	} = $props();
 
 	let dropdownOpen = $state(false);
@@ -38,7 +40,12 @@
 	function onChange(event: Event) {
 		const target = event.target as HTMLInputElement;
 		if (target.files) {
-			files = [...files, ...Array.from(target.files)];
+			const newFiles = Array.from(target.files);
+			if (onFilesAdded) {
+				onFilesAdded(newFiles);
+			} else {
+				files = [...files, ...newFiles];
+			}
 		}
 		if (inputElement) {
 			inputElement.value = '';
@@ -182,12 +189,18 @@
 
 <Modal bind:open={showConvertToFileDialog} title={$_('chat.convert_to_file.title')}>
 	{#snippet children()}
-		<div class="space-y-4">
-			<p class="text-sm text-text/80">
+		<form
+			class="space-y-4"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleConvertToFile();
+			}}
+		>
+			<p>
 				{$_('chat.convert_to_file.description')}
 			</p>
 			<div>
-				<label for="filename" class="mb-2 block text-sm font-medium">
+				<label for="filename" class="mb-2 block">
 					{$_('chat.convert_to_file.filename_label')}
 				</label>
 				<input
@@ -197,11 +210,11 @@
 					placeholder="message.md"
 					class="w-full rounded-md border border-outline bg-chat-input-bg px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-hidden"
 				/>
-				<p class="mt-1 text-xs text-text/60">
+				<p class="mt-1 text-sm text-text/60">
 					{$_('chat.convert_to_file.file_hint')}
 				</p>
 			</div>
-		</div>
+		</form>
 	{/snippet}
 	{#snippet footer()}
 		<button
@@ -225,7 +238,7 @@
 <Modal bind:open={showRecordAudioDialog} title={$_('chat.record_audio_dialog.title')}>
 	{#snippet children()}
 		<div class="space-y-4">
-			<p class="text-sm text-text/80">
+			<p>
 				{$_('chat.record_audio_dialog.description')}
 			</p>
 			{#if isRecording}
