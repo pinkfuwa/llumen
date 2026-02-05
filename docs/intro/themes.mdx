@@ -9,45 +9,15 @@ Llumen features gorgeous, mobile-first themes designed for comfortable extended 
 
 ## Available Themes
 
-### Llumen (Default)
-
-<img src="/images/mobile-theme/llumen.webp" alt="Llumen Theme" />
-
-The signature llumen theme with warm orange accents and a clean layout.
-
-**Best for:** General use, balanced aesthetics
-
-### Llumen with Pattern
-
-<img src="/images/mobile-theme/llumen-with-pattern.webp" alt="Llumen with Pattern" />
-
-The default theme enhanced with subtle geometric patterns.
-
-**Best for:** Users who want more visual interest
-
-### Ocean
-
-<img src="/images/mobile-theme/ocean.webp" alt="Ocean Theme" />
-
-Cool, calming blues reminiscent of deep waters.
-
-**Best for:** Long reading sessions, reduced eye strain
-
-### Sunset
-
-<img src="/images/mobile-theme/sunset.webp" alt="Sunset Theme" />
-
-Warm gradients inspired by sunset colors.
-
-**Best for:** Evening use, cozy atmosphere
-
-### Sunset with Pattern
-
-<img src="/images/mobile-theme/sunset-with-pattern.webp" alt="Sunset with Pattern" />
-
-Sunset theme with added pattern overlay for extra visual flair.
-
-**Best for:** Users who love rich, layered designs
+<Slide
+  prefix="/images/mobile-theme/"
+  imgs={[
+    "llumen.webp",
+    "llumen-with-pattern.webp",
+    "ocean.webp",
+    "sunset.webp",
+    "sunset-with-pattern.webp"
+]}/>
 
 ## Theme Features
 
@@ -56,108 +26,13 @@ Sunset theme with added pattern overlay for extra visual flair.
 All themes are optimized for mobile devices:
 - **Touch-friendly**: Large tap targets, swipe gestures
 - **Responsive**: Adapts perfectly to any screen size
-- **Fast**: Optimized rendering for smooth scrolling
+- **Gesture**: Optimized gesture
 - **Readable**: Carefully chosen typography and spacing
 
-### Dark Mode Support
-
-Every theme includes:
-- Automatic dark/light mode switching
-- Respect for system preferences
-- Comfortable contrast ratios
-- Reduced blue light in dark mode
-
-### Customization
-
-While themes come pre-configured, advanced users can customize:
-- Primary and accent colors
-- Font sizes and families
-- Spacing and padding
-- Border radius and shadows
-
-<Note>
-  Theme customization requires modifying the frontend code. See the [Developer Docs](/developer/frontend) for details.
-</Note>
-
-## Changing Themes
-
-### In the UI
-
-1. Open the settings menu
-2. Navigate to **Appearance**
-3. Select your preferred theme
-4. Changes apply immediately
-
-<img src="/images/setting.png" alt="Settings Panel" />
-
-### Via Configuration
-
-Themes can also be set via environment variables for Docker deployments:
-
-```bash
-docker run -e THEME=ocean ghcr.io/pinkfuwa/llumen:latest
-```
-
-Available values: `llumen`, `llumen-pattern`, `ocean`, `sunset`, `sunset-pattern`
-
-## Design Philosophy
-
-Llumen's themes follow these principles:
-
-### 1. Mobile-First
-Most users interact with AI on their phones. Every theme is designed mobile-first, then scaled up to desktop.
-
-### 2. Readability
-- High contrast ratios (WCAG AA compliant)
-- Comfortable font sizes
-- Generous line spacing
-- Clear visual hierarchy
-
-### 3. Performance
-- Minimal CSS
-- No heavy animations
-- Efficient rendering
-- Fast theme switching
-
-### 4. Personality
-Each theme has its own character while maintaining usability. Choose based on your mood and context.
-
-## Accessibility
+### Accessibility
 
 All themes support:
 - Keyboard navigation
 - Screen readers
-- High contrast mode
 - Reduced motion preferences
 - Custom font sizing
-
-## Creating Custom Themes
-
-Developers can create custom themes by:
-
-1. Defining color variables in CSS
-2. Creating theme config in `frontend/`
-3. Adding theme selector option
-4. Testing across devices
-
-See the [Frontend Development Guide](/developer/frontend) for detailed instructions.
-
-## Community Themes
-
-Have you created a beautiful theme? Share it with the community!
-
-1. Fork the repository
-2. Add your theme to `frontend/src/lib/themes/`
-3. Submit a pull request
-4. Include screenshots
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="Configuration" icon="gear" href="/user-guide/configuration">
-    Learn how to configure llumen
-  </Card>
-  <Card title="Frontend Development" icon="code" href="/developer/frontend">
-    Build custom themes
-  </Card>
-</CardGroup>

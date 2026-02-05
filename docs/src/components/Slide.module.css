@@ -1,0 +1,15 @@
+.container {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.img {
+    height: 500px;
+    width: auto;
+    aspect-ratio: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+}

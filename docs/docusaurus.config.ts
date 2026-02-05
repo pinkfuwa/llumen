@@ -100,11 +100,7 @@ const config: Config = {
             },
             {
               label: "User Guide",
-              to: "/user-guide/installation",
-            },
-            {
-              label: "Developer",
-              to: "/developer/architecture",
+              to: "/user",
             },
           ],
         },
