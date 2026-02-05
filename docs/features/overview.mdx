@@ -38,15 +38,18 @@ Llumen is designed for users who want privacy and simplicity without sacrificing
 
 ### 🎨 Beautiful Interface
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 <Tabs>
-  <Tab title="Default">
-      <img src="/images/theme/llumen.webp" class="rounded-lg block dark:hidden" className="rounded-lg"/>
-      <img src="/images/theme/sunset.webp" class="rounded-lg hidden dark:block" className="rounded-lg"/>
-  </Tab>
-  <Tab title="Different Background">
-    <img src="/images/theme/llumen-with-pattern.webp" class="rounded-lg block dark:hidden" className="rounded-lg"/>
-    <img src="/images/theme/sunset-with-pattern.webp" class="rounded-lg hidden dark:block" className="rounded-lg"/>
-  </Tab>
+  <TabItem value="default" label="Default">
+      <img src="/images/theme/llumen.webp" className="rounded-lg block dark:hidden" />
+      <img src="/images/theme/sunset.webp" className="rounded-lg hidden dark:block" />
+  </TabItem>
+  <TabItem value="pattern" label="Different Background">
+    <img src="/images/theme/llumen-with-pattern.webp" className="rounded-lg block dark:hidden" />
+    <img src="/images/theme/sunset-with-pattern.webp" className="rounded-lg hidden dark:block" />
+  </TabItem>
 </Tabs>
 
 - **Mobile-optimized**: First-class mobile experience

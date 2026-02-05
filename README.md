@@ -79,14 +79,15 @@ Download from [Releases](https://github.com/pinkfuwa/llumen/releases) for Window
 
 📚 **[Read the full documentation](./docs)** - Complete guides for users and developers
 
-- **[Getting Started](./docs/quickstart.mdx)** - 30-second setup guide
-- **[User Guide](./docs/user)** - Installation, configuration, and features
+- **[Getting Started](./docs/index.mdx)** - Welcome and overview
+- **[User Guide](./docs/user-guide)** - Installation, configuration, and features
 - **[Developer Docs](./docs/developer)** - Architecture, contributing, and API reference
 
-> Documentation is built with [Mintlify](https://mintlify.com). To preview locally:
+> Documentation is built with [Docusaurus](https://docusaurus.io). To preview locally:
 > ```bash
 > cd docs
-> npx mintlify dev
+> pnpm install
+> pnpm start
 > ```
 
 <div align="center">
