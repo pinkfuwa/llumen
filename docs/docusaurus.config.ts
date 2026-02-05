@@ -7,8 +7,8 @@ const config: Config = {
   tagline: "A powerful LLM chat application",
   favicon: "img/favicon.ico",
 
-  url: "https://llumen.dev",
-  baseUrl: "/",
+  url: "https://pinkfuwa.github.io",
+  baseUrl: "/llumen",
 
   organizationName: "pinkfuwa",
   projectName: "llumen",
