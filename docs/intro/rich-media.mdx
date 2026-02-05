@@ -33,48 +33,14 @@ Upload PDF documents and have natural conversations about their content.
 3. Wait for processing
 4. Ask questions about the content
 
-```
-Summarize the key findings in section 3
-
-What does the paper say about [specific topic]?
-
-Extract all the important dates mentioned
-```
-
-<Note>
-  PDF processing happens locally. Your documents never leave your device.
-</Note>
-
 ## LaTeX Rendering
 
 Full LaTeX support for mathematical and scientific content.
 
-### Features
-- Inline math: `$E = mc^2$`
-- Display equations: `$$\int_a^b f(x)dx$$`
-- Complex formulas
-- Automatic rendering
-
-### Examples
-
 **Inline Math:**
 ```
-The quadratic formula is $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$
+The quadratic formula is $ x = \frac{-b \pm \sqrt{b^2-4ac}}{2a} $
 ```
-
-**Display Math:**
-```
-$$
-\nabla \times \vec{\mathbf{B}} -\, \frac1c\, \frac{\partial\vec{\mathbf{E}}}{\partial t} = \frac{4\pi}{c}\vec{\mathbf{j}}
-$$
-```
-
-### Use Cases
-- Mathematical discussions
-- Physics problems
-- Scientific papers
-- Engineering calculations
-- Academic work
 
 ## Image Generation
 
@@ -135,44 +101,3 @@ Full Markdown rendering for rich formatting.
 - Blockquotes
 - Links and images
 - Task lists
-
-### Use Cases
-- Formatted notes
-- Documentation
-- Project planning
-- Meeting notes
-- Technical writing
-
-## File Upload Best Practices
-
-<Accordion title="Supported PDF formats">
-  - Standard PDF/A
-  - Text-based PDFs (not scanned images)
-  - Multi-page documents
-  - Up to 50MB per file
-</Accordion>
-
-<Accordion title="Optimizing uploads">
-  - Compress large PDFs before uploading
-  - Use text-based PDFs, not scanned images
-  - Split very large documents
-  - Remove unnecessary pages
-</Accordion>
-
-<Accordion title="Privacy & Security">
-  - All processing happens locally
-  - Files are not stored permanently
-  - No data sent to external services
-  - Automatic cleanup after session
-</Accordion>
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="Media Upload Guide" icon="upload" href="/user-guide/media-upload">
-    Detailed guide on uploading files
-  </Card>
-  <Card title="Configuration" icon="gear" href="/user-guide/configuration">
-    Set up image generation and more
-  </Card>
-</CardGroup>

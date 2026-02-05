@@ -1,74 +1,52 @@
-import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
 const sidebars: SidebarsConfig = {
-  docs: [
+  intro: [
     {
-      type: 'category',
-      label: 'Overview',
-      items: ['index', 'features/overview'],
+      type: "doc",
+      label: "Introduction",
+      id: "intro/introduction",
     },
     {
-      type: 'category',
-      label: 'Features',
+      type: "category",
+      label: "Features",
       items: [
-        'features/chat-modes',
-        'features/rich-media',
-        'features/themes',
-        'features/performance',
+        "intro/chat-modes",
+        "intro/rich-media",
+        "intro/themes",
+        "intro/performance",
       ],
     },
   ],
-  userGuide: [
+  user: [
     {
-      type: 'category',
-      label: 'Getting Started',
-      items: [
-        'user-guide/installation',
-        'user-guide/configuration',
-        'user-guide/model-config',
-        'user-guide/first-steps',
-      ],
+      type: "doc",
+      label: "Installation",
+      id: "user/installation",
     },
     {
-      type: 'category',
-      label: 'Usage',
-      items: [
-        'user-guide/chat-basics',
-        'user-guide/search-mode',
-        'user-guide/research-mode',
-        'user-guide/media-upload',
-      ],
+      type: "doc",
+      label: "First Step",
+      id: "user/first-steps",
     },
     {
-      type: 'category',
-      label: 'Advanced',
-      items: [
-        'user-guide/api-providers',
-        'user-guide/docker-compose',
-        'user-guide/troubleshooting',
-      ],
+      type: "doc",
+      label: "API Provider",
+      id: "user/api-provider",
+    },
+    {
+      type: "category",
+      label: "Configuration",
+      items: ["user/config/model", "user/config/environment"],
+    },
+    {
+      type: "doc",
+      label: "Docker sample",
+      id: "user/docker",
     },
   ],
-  developer: [
-    {
-      type: 'category',
-      label: 'Development',
-      items: [
-        'developer/architecture',
-        'developer/building',
-        'developer/contributing',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Technical Details',
-      items: [
-        'developer/backend',
-        'developer/frontend',
-        'developer/deployment',
-      ],
-    },
-  ],
+  // TODO: finish dev
+  // developer: [],
 };
 
 export default sidebars;

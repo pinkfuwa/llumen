@@ -36,6 +36,33 @@ Run:
 docker-compose up -d
 ```
 
+## Author's real setup
+
+```yaml
+services:
+  llumen:
+    image: ghcr.io/pinkfuwa/llumen:nightly
+    restart: on-failure:4
+    environment:
+      - "API_KEY=sk-or-<api-key>"
+      - "TRUSTED_HEADER=Remote-User"
+    volumes:
+      - "./data:/data"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.llumen.rule=Host(`llumen.example.com`)"
+      - "traefik.http.services.llumen.loadbalancer.server.port=80"
+      - "traefik.http.routers.llumen.tls.domains[0].main=example.com"
+      - "traefik.http.routers.llumen.tls.domains[0].sans=*.example.com"
+      - "traefik.http.routers.llumen.tls.certresolver=gcp"
+      - "traefik.http.routers.llumen.middlewares=authelia"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    memswap_limit: 1G
+```
+
 ## With Reverse Proxy
 
 ### Nginx
@@ -169,42 +196,6 @@ docker-compose exec ollama ollama pull llama3
 docker-compose exec ollama ollama pull mistral
 ```
 
-## Resource Limits
-
-Prevent resource exhaustion:
-
-```yaml
-services:
-  llumen:
-    image: ghcr.io/pinkfuwa/llumen:latest
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 256M
-        reservations:
-          cpus: '0.5'
-          memory: 128M
-    # ... rest of config
-```
-
-## Health Checks
-
-```yaml
-services:
-  llumen:
-    image: ghcr.io/pinkfuwa/llumen:latest
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    # ... rest of config
-```
-
 ## Logging
 
 ```yaml
@@ -218,42 +209,6 @@ services:
         max-size: "10m"
         max-file: "3"
     # ... rest of config
-```
-
-## Multiple Instances
-
-Load balanced setup:
-
-```yaml
-version: '3.8'
-
-services:
-  llumen-1:
-    image: ghcr.io/pinkfuwa/llumen:latest
-    restart: unless-stopped
-    environment:
-      - API_KEY=${API_KEY}
-    volumes:
-      - ./data1:/data
-
-  llumen-2:
-    image: ghcr.io/pinkfuwa/llumen:latest
-    restart: unless-stopped
-    environment:
-      - API_KEY=${API_KEY}
-    volumes:
-      - ./data2:/data
-
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx-lb.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - llumen-1
-      - llumen-2
 ```
 
 ## Management Commands
@@ -278,14 +233,3 @@ docker-compose down -v
 docker-compose pull
 docker-compose up -d
 ```
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="Deployment" href="/developer/deployment">
-    Advanced deployment patterns
-  </Card>
-  <Card title="Troubleshooting" href="/user-guide/troubleshooting">
-    Fix common issues
-  </Card>
-</CardGroup>

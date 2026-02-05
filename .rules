@@ -162,7 +162,7 @@ Following are step to connect new endpoint:
   ```
 4. call the function just created inside reactivity context(must be called during component initialization)
 
-# Mintlify documentation
+# Docusaurus documentation
 
 ## Working relationship
 - You can push back on ideas-this can lead to better documentation. Cite sources and explain your reasoning when you do so
@@ -181,10 +181,6 @@ Following are step to connect new endpoint:
 - Search for existing content before adding anything new. Avoid duplication unless it is done for a strategic reason
 - Check existing patterns for consistency
 - Start by making the smallest reasonable changes
-
-## docs.json
-
-- Refer to the [docs.json schema](https://mintlify.com/docs.json) when building the docs.json file and site navigation
 
 ## Frontmatter requirements for pages
 - title: Clear, descriptive page title

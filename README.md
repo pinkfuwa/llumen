@@ -77,19 +77,8 @@ Download from [Releases](https://github.com/pinkfuwa/llumen/releases) for Window
 
 ## Documentation
 
-📚 **[Read the full documentation](./docs)** - Complete guides for users and developers
-
-- **[Getting Started](./docs/index.mdx)** - Welcome and overview
-- **[User Guide](./docs/user-guide)** - Installation, configuration, and features
-- **[Developer Docs](./docs/developer)** - Architecture, contributing, and API reference
-
-> Documentation is built with [Docusaurus](https://docusaurus.io). To preview locally:
-> ```bash
-> cd docs
-> pnpm install
-> pnpm start
-> ```
+TODO: fill documentation link
 
 <div align="center">
-  Built with ❤️ by pinkfuwa. Keep it simple, keep it fast.
+  Built with :heart: by pinkfuwa. Keep it simple, keep it fast.
 </div>

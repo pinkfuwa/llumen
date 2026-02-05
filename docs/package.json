@@ -25,8 +25,12 @@
     "@docusaurus/preset-classic": "^3.9.2",
     "@docusaurus/tsconfig": "^3.9.2",
     "@docusaurus/types": "^3.9.2",
+    "prism-react-renderer": "^2.4.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "lucide-react": "^0.563.0"
   }
 }

@@ -1,5 +1,5 @@
 ---
-title: "Configuration"
+title: "Environment"
 description: "Environment variables and settings"
 ---
 
@@ -20,10 +20,11 @@ Llumen uses environment variables for configuration. No config files needed!
 | `API_BASE` | Custom API endpoint | `https://openrouter.ai/api` |
 | `DATA_PATH` | Storage directory | `.` (current dir) |
 | `BIND_ADDR` | Network socket | `0.0.0.0:80` |
+| `TRUSTED_HEADER` | middleware auth | None |
 
 ## Docker Configuration
 
-### Basic Example
+### Example
 
 ```bash
 docker run -d \
@@ -33,23 +34,6 @@ docker run -d \
   -p 8080:8080 \
   -v ./llumen-data:/data \
   ghcr.io/pinkfuwa/llumen:latest
-```
-
-### Using Environment File
-
-Create `.env` file:
-
-```bash
-API_KEY=sk-or-v1-your-key-here
-API_BASE=https://openrouter.ai/api
-DATA_PATH=/data
-BIND_ADDR=0.0.0.0:80
-```
-
-Run with env file:
-
-```bash
-docker run -d --env-file .env -p 80:80 -v ./data:/data ghcr.io/pinkfuwa/llumen:latest
 ```
 
 ## API Provider Configuration

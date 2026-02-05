@@ -12,7 +12,7 @@ Choose your preferred installation method:
     Easiest setup, works everywhere
   </Card>
   <Card title="Native Binary" icon="download" href="#native-binary">
-    Maximum performance, no container
+    Flexible deployment
   </Card>
 </CardGroup>
 
@@ -116,49 +116,10 @@ export API_KEY="your-openrouter-key"
 ./llumen-x86_64-unknown-linux-gnu
 ```
 
-Or combine them:
-
-```bash
-API_KEY="your-key" ./llumen-x86_64-unknown-linux-gnu
-```
-
-### System Service (Linux)
-
-Run llumen as a systemd service:
-
-```bash
-# Create service file
-sudo nano /etc/systemd/system/llumen.service
-```
-
-```ini
-[Unit]
-Description=Llumen AI Chat
-After=network.target
-
-[Service]
-Type=simple
-User=llumen
-Environment="API_KEY=your-key-here"
-Environment="DATA_PATH=/var/lib/llumen"
-ExecStart=/usr/local/bin/llumen
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-# Enable and start
-sudo systemctl enable llumen
-sudo systemctl start llumen
-```
-
 ## Platform-Specific Notes
 
 <Accordion title="Raspberry Pi">
-  **Recommended model:** Raspberry Pi 4 (2GB+)
-  
+
   **Installation:**
   ```bash
   # Use ARM64 binary
@@ -166,12 +127,6 @@ sudo systemctl start llumen
   chmod +x llumen-aarch64-unknown-linux-gnu
   ./llumen-aarch64-unknown-linux-gnu
   ```
-  
-  **Performance:**
-  - Cold start: ~1 second
-  - Memory usage: ~110MB
-  - Works great on Pi 4
-  - Pi 3B+ is minimum
 </Accordion>
 
 <Accordion title="Windows">
@@ -187,58 +142,6 @@ sudo systemctl start llumen
   **Firewall:** You may need to allow llumen through Windows Firewall
 </Accordion>
 
-<Accordion title="macOS">
-  **Status:** Binaries not currently provided
-  
-  **Alternative:** Use Docker or build from source
-  
-  ```bash
-  docker run -p 80:80 \
-    -e API_KEY="your-key" \
-    ghcr.io/pinkfuwa/llumen:latest
-  ```
-</Accordion>
-
-<Accordion title="VPS / Cloud">
-  **Recommended specs:**
-  - 1 CPU core
-  - 512MB RAM
-  - 1GB storage
-  - Cost: $3-5/month
-  
-  **Providers:** DigitalOcean, Linode, Vultr, Hetzner
-  
-  **Setup:**
-  ```bash
-  # Update system
-  sudo apt update && sudo apt upgrade -y
-  
-  # Install Docker
-  curl -fsSL https://get.docker.com | sh
-  
-  # Run llumen
-  docker run -d \
-    --name llumen \
-    -e API_KEY="your-key" \
-    -p 80:80 \
-    -v /opt/llumen:/data \
-    --restart unless-stopped \
-    ghcr.io/pinkfuwa/llumen:latest
-  ```
-</Accordion>
-
-## Verification
-
-Check that llumen is running:
-
-```bash
-# Check if server is responding
-curl http://localhost/api/health
-
-# Expected response
-{"status":"ok"}
-```
-
 ## Troubleshooting
 
 <Accordion title="Port 80 already in use">
@@ -249,16 +152,11 @@ curl http://localhost/api/health
   Access at http://localhost:8080
 </Accordion>
 
-<Accordion title="Permission denied">
-  On Linux:
-  ```bash
-  # Use Docker without sudo
-  sudo usermod -aG docker $USER
-  newgrp docker
-  
-  # Or run on different port
-  docker run -p 8080:80 ...
-  ```
+<Accordion title="Unable to connect 80">
+    Docker build has default port 80.
+
+    Other deployment option has default port 3000, and bind only to local interface
+    (You cannot access llumen from other device).
 </Accordion>
 
 <Accordion title="Can't connect from network">
@@ -266,20 +164,3 @@ curl http://localhost/api/health
   - Ensure using `0.0.0.0:80` not `127.0.0.1:80`
   - Verify correct IP address
 </Accordion>
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="Configuration" icon="gear" href="/user-guide/configuration">
-    Configure API keys, paths, and more
-  </Card>
-  <Card title="First Steps" icon="rocket" href="/user-guide/first-steps">
-    Learn the basics
-  </Card>
-  <Card title="Docker Compose" icon="docker" href="/user-guide/docker-compose">
-    Advanced Docker setup
-  </Card>
-  <Card title="Troubleshooting" icon="wrench" href="/user-guide/troubleshooting">
-    Fix common issues
-  </Card>
-</CardGroup>

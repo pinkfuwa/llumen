@@ -1,0 +1,63 @@
+---
+title: "API Providers"
+description: "Configure language model providers"
+---
+
+# Provider Selection
+
+- OpenRouter: wide range of model, native support(modality detection with openrouter API)
+- OpenAI: Functional, require more setup(need to specify modality)
+- Ollama: Limited by hardware
+
+## OpenRouter (Recommended)
+
+**Setup:**
+
+1. Sign up at [openrouter.ai](https://openrouter.ai)
+2. Generate API key
+3. Set in llumen:
+
+```bash
+export API_KEY="sk-or-v1-your-key"
+# API_BASE defaults to OpenRouter
+```
+
+## OpenAI
+
+**Setup:**
+
+```bash
+export API_KEY="sk-your-openai-key"
+export API_BASE="https://api.openai.com"
+```
+
+## Local Models (Ollama)
+
+**Setup:**
+
+1. Install [Ollama](https://ollama.ai)
+2. Pull models:
+   ```bash
+   ollama pull llama3
+   ollama pull mistral
+   ```
+3. Configure llumen:
+   ```bash
+   export API_KEY="ollama"
+   export API_BASE="http://localhost:11434/v1"
+   ```
+
+## Other Providers
+
+Any OpenAI-compatible API works:
+
+```bash
+export API_KEY="your-key"
+export API_BASE="https://your-provider.com/v1"
+```
+
+**Tested Compatible services:**
+- Groq
+- Ollama Cloud
+- Naga.ac
+- Copilot API
