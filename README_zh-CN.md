@@ -77,18 +77,8 @@ docker run -it --rm \
 
 ## 文档
 
-📚 **[查看完整文档](./docs)** - 用户和开发者完整指南
+https://pinkfuwa.github.io/llumen/
 
-- **[快速开始](./docs/index.mdx)** - 欢迎和概述
-- **[用户指南](./docs/user-guide)** - 安装、配置和功能说明
-- **[开发者文档](./docs/developer)** - 架构、贡献指南和 API 参考
-
-> 文档使用 [Docusaurus](https://docusaurus.io) 构建。本地预览：
-> ```bash
-> cd docs
-> pnpm install
-> pnpm start
-> ```
 
 <div align="center">
   Built with ❤️ by pinkfuwa. Keep it simple, keep it fast.

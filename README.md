@@ -77,7 +77,7 @@ Download from [Releases](https://github.com/pinkfuwa/llumen/releases) for Window
 
 ## Documentation
 
-TODO: fill documentation link
+https://pinkfuwa.github.io/llumen/
 
 <div align="center">
   Built with :heart: by pinkfuwa. Keep it simple, keep it fast.
