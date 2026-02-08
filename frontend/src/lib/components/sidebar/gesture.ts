@@ -98,7 +98,11 @@ export function createSwipeGesture(element: HTMLElement, options: SwipeOptions):
 		}
 
 		const touch = event.touches[0];
-		startTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+		if (typeof document.elementFromPoint === 'function') {
+			startTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+		} else {
+			startTarget = event.target instanceof Element ? event.target : null;
+		}
 
 		const now = Date.now();
 

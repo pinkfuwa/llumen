@@ -1,13 +1,14 @@
 <script lang="ts">
 	let {
-		editable = $bindable(false),
+		isEditing = $bindable(false),
 		value = $bindable(''),
 		placeholder = '',
 		disabled = false,
 		onsubmit,
 		minRow = 1
 	}: {
-		editable: boolean;
+		// True shows the textarea editor; false shows markdown preview.
+		isEditing: boolean;
 		value: string;
 		placeholder: string;
 		disabled: boolean;
@@ -16,9 +17,8 @@
 	} = $props();
 
 	import { default as Markdown } from '$lib/components/markdown/Root.svelte';
-	import { submitOnEnter } from '$lib/preference';
 	import { onDestroy } from 'svelte';
-	import { get } from 'svelte/store';
+	import { shouldSubmitOnEnter } from './submitOnEnter';
 
 	let input = $state<null | HTMLElement>(null);
 
@@ -40,7 +40,7 @@
 
 		if (input !== document.activeElement) {
 			input?.focus();
-			editable = true;
+			isEditing = true;
 			event.preventDefault();
 		}
 	}
@@ -62,7 +62,7 @@
 
 	let renderValue = $state(value);
 	$effect(() => {
-		if (!editable) renderValue = value;
+		if (!isEditing) renderValue = value;
 	});
 </script>
 
@@ -75,21 +75,14 @@
 	bind:this={input}
 	{disabled}
 	aria-label="type message"
-	data-state={editable ? 'show' : 'hide'}
+	data-state={isEditing ? 'show' : 'hide'}
 	onkeypress={(event) => {
-		if (
-			!virtualKeyboard &&
-			event.key == 'Enter' &&
-			!event.shiftKey &&
-			get(submitOnEnter) == 'true' &&
-			onsubmit
-		)
-			onsubmit();
+		if (shouldSubmitOnEnter(event, { virtualKeyboard }) && onsubmit) onsubmit();
 	}}
 ></textarea>
 <div
 	class="new-message markdown max-h-96 min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-y-auto p-4 pr-2 wrap-break-word data-[state=hide]:hidden md:max-h-[60vh]"
-	data-state={editable ? 'hide' : 'show'}
+	data-state={isEditing ? 'hide' : 'show'}
 >
 	<Markdown source={renderValue} />
 </div>

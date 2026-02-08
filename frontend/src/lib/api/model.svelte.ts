@@ -74,6 +74,11 @@ export function setModelIds(data: ModelIdsResp | undefined) {
 	modelIds = data;
 }
 
+async function refreshModels() {
+	const res = await APIFetch<ModelListResp>('model/list', {});
+	if (res) models = res;
+}
+
 // Mutations
 export function deleteModel(): MutationResult<ModelDeleteReq, ModelDeleteResp> {
 	return createMutation({
@@ -105,13 +110,8 @@ export function checkConfig(): MutationResult<ModelCheckReq, ModelCheckResp> {
 export function createModel(): MutationResult<ModelCreateReq, ModelCreateResp> {
 	return createMutation({
 		path: 'model/create',
-		onSuccess(data, param) {
-			if (models !== undefined) {
-				models = {
-					...models,
-					list: [...models.list, data]
-				};
-			}
+		onSuccess() {
+			void refreshModels();
 		}
 	});
 }

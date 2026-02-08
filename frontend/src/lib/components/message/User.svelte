@@ -3,6 +3,7 @@
 	import FileGroup from '$lib/components/common/FileGroup.svelte';
 	import { Markdown } from '$lib/components/markdown';
 	import { getStream, deleteMessage } from '$lib/api/message.svelte';
+	import { shouldSubmitOnEnter } from '$lib/components/input/submitOnEnter';
 	import Button from '$lib/ui/Button.svelte';
 
 	let {
@@ -19,17 +20,24 @@
 	} = $props();
 
 	// TODO: use component lib
-	let editable = $state(false);
+	let isEditing = $state(false);
 	let editBuffer = $state(content);
 	let filesBuffer = $state<Array<{ name: string; id: number }>>([]);
-	let editFiles = $state<Array<{ name: string; id: number }>>([...files]);
+	let editFiles = $state<Array<{ name: string; id: number }>>([]);
+
+	$effect(() => {
+		if (isEditing) return;
+		editBuffer = content;
+		editFiles = [...files];
+		filesBuffer = [...files];
+	});
 
 	// bind to markdown height when rendering
 	let markdownHeight = $state(0);
 	// save height when not rendering
 	let renderHeight = $state(0);
 	$effect(() => {
-		if (editable) return;
+		if (isEditing) return;
 		renderHeight = Math.max(24, markdownHeight);
 	});
 
@@ -40,40 +48,62 @@
 
 	let btnGroup = $state<null | HTMLDivElement>(null);
 
-	// getStream to bypass svelte bug
-	let blockEdit = $derived(getStream().stream);
+	// Keep the edit UI open but block submit while a stream is active (e.g., other tab sends a message).
+	let editLocked = $derived(getStream().stream);
 
 	const { mutate: removeMessage } = deleteMessage();
+
+	let virtualKeyboard = $state(false);
+	if ('virtualKeyboard' in navigator) {
+		navigator.virtualKeyboard.overlaysContent = true;
+
+		navigator.virtualKeyboard.addEventListener('geometrychange', () => {
+			virtualKeyboard = true;
+			navigator.virtualKeyboard.overlaysContent = false;
+		});
+	}
+
+	function submitEdit() {
+		if (editLocked) return;
+		isEditing = false;
+		onupdate(content, editFiles);
+	}
 </script>
 
 <div class="group/files mt-4 w-full px-[5vw] lg:px-20 2xl:px-36">
 	<div class="flex justify-end">
 		<div
 			class="rounded-md bg-user-bg p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]"
-			data-state={editable ? 'edit' : 'text'}
+			data-state={isEditing ? 'edit' : 'text'}
 		>
 			{#if files.length != 0}
-				{@const separator = editable || content.trim().length > 0}
+				{@const separator = isEditing || content.trim().length > 0}
 				<div class="mb-2 overflow-auto{separator ? ' border-b border-outline pb-2' : ''}">
-					{#if editable}
+					{#if isEditing}
 						<FileGroup bind:files={editFiles} deletable={true} />
 					{:else}
 						<FileGroup files={editFiles} deletable={false} />
 					{/if}
 				</div>
 			{/if}
-			{#if editable}
+			{#if isEditing}
 				<div class="flex max-h-[60vh] w-full flex-col-reverse overflow-y-auto">
 					<textarea
 						class="editor inline field-sizing-content w-full flex-grow resize-none overflow-x-auto"
 						bind:value={content}
 						style="height: {actualHeight}px"
+						onkeypress={(event) => {
+							if (shouldSubmitOnEnter(event, { virtualKeyboard })) {
+								event.preventDefault();
+								submitEdit();
+							}
+						}}
 					></textarea>
 				</div>
 			{/if}
 			<div
 				bind:clientHeight={markdownHeight}
-				data-state={editable ? 'hide' : 'shown'}
+				data-state={isEditing ? 'hide' : 'shown'}
 				class="data-[state=hide]:hidden"
 			>
 				<Markdown source={editBuffer} />
@@ -84,35 +114,32 @@
 		<Button
 			class="p-2 data-[state=close]:hidden"
 			onclick={() => {
-				editable = false;
+				isEditing = false;
 				content = editBuffer;
 				editFiles = [...filesBuffer];
 			}}
-			data-state={editable ? 'open' : 'close'}
+			data-state={isEditing ? 'open' : 'close'}
 			borderless
 		>
 			<X class="h-6 w-6" />
 		</Button>
 		<Button
 			class="p-2 data-[state=close]:hidden"
-			onclick={() => {
-				editable = false;
-				onupdate(content, editFiles);
-			}}
-			data-state={editable ? 'open' : 'close'}
+			onclick={submitEdit}
+			data-state={isEditing ? 'open' : 'close'}
 			borderless
-			disabled={blockEdit}
+			disabled={editLocked}
 		>
 			<Check class="h-6 w-6" />
 		</Button>
 		<Button
 			class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
 			onclick={() => {
-				editable = true;
+				isEditing = true;
 				editBuffer = content;
 				filesBuffer = [...editFiles];
 			}}
-			data-state={editable ? 'open' : 'close'}
+			data-state={isEditing ? 'open' : 'close'}
 			borderless
 		>
 			<SquarePen class="h-6 w-6" />
@@ -122,9 +149,9 @@
 			onclick={() => {
 				removeMessage({ id: messageId });
 			}}
-			data-state={editable ? 'open' : 'close'}
+			data-state={isEditing ? 'open' : 'close'}
 			borderless
-			disabled={blockEdit}
+			disabled={editLocked}
 		>
 			<Trash2 class="h-6 w-6" />
 		</Button>

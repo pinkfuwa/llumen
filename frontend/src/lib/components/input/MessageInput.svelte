@@ -37,7 +37,8 @@
 		large?: boolean;
 	} = $props();
 
-	let editable = $state(true);
+	// True keeps the textarea editor active; false shows markdown preview.
+	let isEditing = $state(true);
 	let showConfirm = $state(false);
 	let pendingNavigationUrl: string | null = $state(null);
 	let showUnsupportedModal = $state(false);
@@ -98,7 +99,7 @@
 
 	afterNavigate((after) => {
 		content = '';
-		editable = true;
+		isEditing = true;
 	});
 
 	beforeNavigate((navigation) => {
@@ -143,7 +144,7 @@
 	class="min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-[min(750px,75%)]"
 	bind:this={container}
 >
-	{#if dropZone.isOver && editable}
+	{#if dropZone.isOver && isEditing}
 		<div
 			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-lg bg-primary text-2xl"
 		>
@@ -158,7 +159,7 @@
 	{/if}
 	<div class="flex flex-row items-center justify-between space-x-2 pr-2">
 		<Textbox
-			bind:editable
+			bind:isEditing
 			placeholder={disabled ? $_('chat.stop_first') : $_('chat.question')}
 			bind:value={content}
 			onsubmit={submit}
@@ -180,8 +181,8 @@
 			<ModeSelector bind:value={mode} limited={!selectModelCap?.tool} />
 			<ActionMenu bind:files bind:content {disabled} onFilesAdded={handleNewFiles} />
 		</div>
-		{#if content.length != 0}
-			<MarkdownBtn bind:editable />
-		{/if}
-	</div>
+	{#if content.length != 0}
+		<MarkdownBtn bind:isEditing />
+	{/if}
+</div>
 </div>
