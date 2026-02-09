@@ -5,51 +5,34 @@ providers:
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnv: API_KEY
-      max_tokens: 4096
+      max_tokens: 512
       temperature: 0.2
 
   - id: openrouter:mistralai/mistral-small-3.2-24b-instruct
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnv: API_KEY
-      max_tokens: 4096
+      max_tokens: 512
       temperature: 0.2
 
   - id: openrouter:qwen/qwen-2.5-7b-instruct
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnv: API_KEY
-      max_tokens: 4096
+      max_tokens: 512
       temperature: 0.2
 
 defaultTest:
   options:
-    provider: openrouter:openai/gpt-oss-120b
+    transformVars: file://./title_transform.js:transformVars
+    transform: file://./title_transform.js:transformOutput
   vars:
     system_message: file://../prompt/title_generation.j2
     locale: "en"
-    user_prefix: Please generate a concise title, starting with a emoji
 
 prompts:
   - >
-    [
-      {
-        "role": "system",
-        "content": {{ system_message | dump }}
-      },
-      {
-        "role": "user",
-        "content": {{ user_prompt | dump }}
-      },
-      {
-        "role": "assistant",
-        "content": {{ agent_answer | dump }}
-      },
-      {
-        "role": "user",
-        "content": {{ user_prefix | dump }}
-      }
-    ]
+    {{ title_messages | dump }}
 
 tests:
   - description: "Normal chat"
@@ -87,12 +70,45 @@ tests:
       agent_answer: |
         机器学习是人工智能的一个分支，它使计算机能够在没有明确编程的情况下学习和改进。
       locale: "zh-cn"
-      user_prefix: 请生成一个简洁的标题，以表情符号开头
     assert:
       - type: contains-any
         value:
           - "机器"
           - "学习"
+  - description: "Traditional Chinese title generation"
+    vars:
+      user_prompt: "台灣夜市有什麼必吃美食？"
+      agent_answer: |
+        台灣夜市有許多經典小吃，例如鹽酥雞、珍珠奶茶、蚵仔煎與滷味。各地夜市特色不同，可以依照口味挑選。
+      locale: "zh-tw"
+    assert:
+      - type: contains-any
+        value:
+          - "台灣"
+          - "夜市"
+          - "美食"
+  - description: "Rust lifetime troubleshooting"
+    vars:
+      user_prompt: "Why does Rust complain about lifetimes in this function?"
+      agent_answer: |
+        Rust needs explicit lifetimes when it can't infer how long references live. Add named lifetimes to the function signature and avoid returning references to local data.
+    assert:
+      - type: contains-any
+        value:
+          - "Rust"
+          - "lifetime"
+          - "borrow"
+  - description: "Project planning summary"
+    vars:
+      user_prompt: "Help me draft a 3-step rollout plan for a new feature."
+      agent_answer: |
+        Start with internal testing, then limited beta rollout, and finally a full public launch with monitoring and support.
+    assert:
+      - type: contains-any
+        value:
+          - "Plan"
+          - "Rollout"
+          - "Launch"
 
 #
 outputPath: ./promptfoo/promptfoo-results-title.json

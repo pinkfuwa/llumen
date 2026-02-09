@@ -9,17 +9,18 @@ English(United States)
 </language>
 
 <task>
-As as a title generator.
+You are a title generator.
 {% if locale == "zh-tw" %}
 Always generate title in Traditional Chinese(Taiwanese).
-Generate a concise, 3-5 words Taiwanese title with an emoji summarizing the chat.
+Generate a concise, short Taiwanese title with exactly one emoji at the start, summarizing the chat.
 {% elif locale == "zh-cn" %}
 Always generate title in Simplified Chinese.
-Generate a concise, 3-5 words Simplified Chinese title with an emoji summarizing the chat.
+Generate a concise, short Simplified Chinese title with exactly one emoji at the start, summarizing the chat.
 {% else %}
 Always generate title in English.
-Generate a concise, 3-5 words English title with an emoji summarizing the chat.
+Generate a concise, 3-5 words English title with exactly one emoji at the start, summarizing the chat.
 {% endif %}
+Do not add labels, prefixes, or extra sentences.
 </task>
 
 <example>
@@ -39,7 +40,8 @@ Generate a concise, 3-5 words English title with an emoji summarizing the chat.
 </example>
 
 <format>
-Plain-text ONLY, do not use any additional text or formatting.
-
-ONLY output title
+Plain-text ONLY, single line.
+Start with the emoji, then a single space, then the title.
+No quotes, no markdown, no trailing period, no extra emojis.
+ONLY output the title.
 </format>

@@ -79,7 +79,7 @@ features = ["release_max_level_debug"]
 
 [dependencies.time]
 version = "0.3.41"
-features = ["formatting", "macros", "parsing"]
+features = ["formatting", "macros", "parsing", "local-offset"]
 
 [dependencies.tower-http]
 version = "0.6.6"

@@ -3,7 +3,7 @@ use minijinja::Environment;
 use protocol::ModelConfig;
 use rust_embed_for_web::{EmbedableFile, RustEmbed};
 use serde::Serialize;
-use time::UtcDateTime;
+use time::{OffsetDateTime, UtcOffset};
 use time::format_description::BorrowedFormatItem;
 use time::macros::format_description;
 
@@ -94,6 +94,7 @@ impl DeepPromptKind {
 pub struct Prompt {
     env: Environment<'static>,
     _templates: Vec<String>,
+    local_offset: UtcOffset,
 }
 
 /// Loads prompt templates and prepares a Jinja environment.
@@ -166,9 +167,12 @@ impl Prompt {
             env.add_template(name, template)?;
         }
 
+        let local_offset = UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC);
+
         Ok(Self {
             env,
             _templates: templates,
+            local_offset,
         })
     }
 }
@@ -225,8 +229,8 @@ struct BasicContext {
 }
 
 impl BasicContext {
-    pub fn new(locale: String) -> Self {
-        let time = time::OffsetDateTime::now_utc()
+    pub fn new(locale: String, local_offset: UtcOffset) -> Self {
+        let time = system_datetime(local_offset)
             .format(&DEEP_TIME_FORMAT)
             .unwrap();
         BasicContext {
@@ -246,6 +250,10 @@ const DEEP_TIME_FORMAT: &[BorrowedFormatItem<'static>] =
 const CONTEXT_TIME_FORMAT: &[BorrowedFormatItem<'static>] =
     format_description!("[weekday], [hour]:[minute], [day] [month repr:long] [year]");
 
+fn system_datetime(local_offset: UtcOffset) -> OffsetDateTime {
+    OffsetDateTime::now_utc().to_offset(local_offset)
+}
+
 impl Prompt {
     pub fn render(
         &self,
@@ -257,7 +265,9 @@ impl Prompt {
         let chat_title = ctx.chat.title.try_as_ref();
         let chat_title = chat_title.and_then(|x| x.as_deref());
 
-        let time = UtcDateTime::now().format(&TIME_FORMAT).unwrap();
+        let time = system_datetime(self.local_offset)
+            .format(&TIME_FORMAT)
+            .unwrap();
 
         let model_id = ctx
             .get_model_config()
@@ -294,7 +304,9 @@ impl Prompt {
         let chat_title = ctx.chat.title.try_as_ref();
         let chat_title = chat_title.and_then(|x| x.as_deref());
 
-        let time = UtcDateTime::now().format(&CONTEXT_TIME_FORMAT).unwrap();
+        let time = system_datetime(self.local_offset)
+            .format(&CONTEXT_TIME_FORMAT)
+            .unwrap();
 
         let user_prompt = ctx.latest_user_message().unwrap_or("");
         let llumen_related = user_prompt.to_lowercase().contains("llumen")
@@ -314,7 +326,7 @@ impl Prompt {
     }
 
     pub fn render_prompt_enhancer(&self, locale: &str) -> Result<String> {
-        let ctx = BasicContext::new(locale.to_string());
+        let ctx = BasicContext::new(locale.to_string(), self.local_offset);
         let template = self
             .env
             .get_template(DeepPromptKind::PromptEnhancer.as_str())?;
@@ -323,35 +335,35 @@ impl Prompt {
     }
 
     pub fn render_planner(&self, locale: &str) -> Result<String> {
-        let ctx = BasicContext::new(locale.to_string());
+        let ctx = BasicContext::new(locale.to_string(), self.local_offset);
         let template = self.env.get_template(DeepPromptKind::Planner.as_str())?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
     pub fn render_researcher(&self, locale: &str) -> Result<String> {
-        let ctx = BasicContext::new(locale.to_string());
+        let ctx = BasicContext::new(locale.to_string(), self.local_offset);
         let template = self.env.get_template(DeepPromptKind::Researcher.as_str())?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
     pub fn render_coder(&self, locale: &str) -> Result<String> {
-        let ctx = BasicContext::new(locale.to_string());
+        let ctx = BasicContext::new(locale.to_string(), self.local_offset);
         let template = self.env.get_template(DeepPromptKind::Coder.as_str())?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
     pub fn render_reporter(&self, locale: &str) -> Result<String> {
-        let ctx = BasicContext::new(locale.to_string());
+        let ctx = BasicContext::new(locale.to_string(), self.local_offset);
         let template = self.env.get_template(DeepPromptKind::Reporter.as_str())?;
         let rendered = template.render(&ctx)?;
         Ok(rendered)
     }
 
     pub fn render_step_system_message(&self, locale: &str) -> Result<String> {
-        let ctx = BasicContext::new(locale.to_string());
+        let ctx = BasicContext::new(locale.to_string(), self.local_offset);
         let template = self
             .env
             .get_template(DeepPromptKind::StepSystemMessage.as_str())?;
