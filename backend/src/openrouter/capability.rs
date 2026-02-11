@@ -44,6 +44,9 @@ impl<'a> CapabilityResolver<'a> {
             .get(model_id)
             .await
             .map(|cache| cache.into())
-            .unwrap_or_default()
+            .unwrap_or_else(|| Capability {
+                text_output: true,
+                ..Default::default()
+            })
     }
 }
