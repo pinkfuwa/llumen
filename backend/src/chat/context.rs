@@ -349,8 +349,7 @@ impl CompletionContext {
         let model = self.get_model_config()?;
 
         let option = openrouter::CompletionOption::builder()
-            .reasoning_effort(ReasoningEffort::Low)
-            .max_tokens(512)
+            .max_reasoning_tokens(512)
             .temperature(0.2)
             .build();
 

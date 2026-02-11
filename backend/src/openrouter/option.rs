@@ -30,6 +30,7 @@ pub struct CompletionOption {
     pub reasoning_effort: ReasoningEffort,
     pub tools: Vec<Tool>,
     pub temperature: Option<f32>,
+    pub reasoning_max_tokens: Option<i32>,
 }
 
 impl CompletionOption {
@@ -53,6 +54,7 @@ pub struct OptionBuilder {
     reasoning_effort: ReasoningEffort,
     tools: Vec<Tool>,
     temperature: Option<f32>,
+    reasoning_max_tokens: Option<i32>,
 }
 
 impl OptionBuilder {
@@ -68,6 +70,11 @@ impl OptionBuilder {
 
     pub fn max_tokens(mut self, max_tokens: i32) -> Self {
         self.max_tokens = Some(max_tokens);
+        self
+    }
+
+    pub fn max_reasoning_tokens(mut self, max_tokens: i32) -> Self {
+        self.reasoning_max_tokens = Some(max_tokens);
         self
     }
 
@@ -101,6 +108,7 @@ impl OptionBuilder {
             reasoning_effort: self.reasoning_effort,
             tools: self.tools,
             temperature: self.temperature,
+            reasoning_max_tokens: self.reasoning_max_tokens,
         }
     }
 }

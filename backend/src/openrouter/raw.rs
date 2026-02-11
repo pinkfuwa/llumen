@@ -88,11 +88,21 @@ pub struct Reasoning {
     pub effort: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i32>,
 }
 
 impl Reasoning {
     pub fn is_empty(&self) -> bool {
         self.effort.is_none() && self.enabled.is_none()
+    }
+
+    /// Set reasoning field to compatible mode
+    ///
+    /// Only effort is part of baseline -> we assume every provide support `effort`.
+    pub fn set_compatible(&mut self) {
+        self.enabled = None;
+        self.max_tokens = None;
     }
 }
 
@@ -101,32 +111,6 @@ pub struct ResponseFormat {
     pub r#type: String,
     pub json_schema: serde_json::Value,
 }
-// "response_format": {
-//   "type": "json_schema",
-//   "json_schema": {
-//     "name": "weather",
-//     "strict": true,
-//     "schema": {
-//       "type": "object",
-//       "properties": {
-//         "location": {
-//           "type": "string",
-//           "description": "City or location name"
-//         },
-//         "temperature": {
-//           "type": "number",
-//           "description": "Temperature in Celsius"
-//         },
-//         "conditions": {
-//           "type": "string",
-//           "description": "Weather conditions description"
-//         }
-//       },
-//       "required": ["location", "temperature", "conditions"],
-//       "additionalProperties": false
-//     }
-//   }
-// }
 
 impl CompletionReq {
     pub fn log(&self) {

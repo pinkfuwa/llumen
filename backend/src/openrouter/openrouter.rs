@@ -68,21 +68,15 @@ impl Openrouter {
             Some(raw::UsageReq { include: true })
         };
 
-        let reasoning = match (self.compatibility_mode, capability.reasoning) {
-            (true, true) => raw::Reasoning {
-                enabled: None,
-                effort: option.reasoning_effort.to_value(),
-            },
-            (true, false) => raw::Reasoning::default(),
-            (false, true) => raw::Reasoning {
-                enabled: Some(true),
-                effort: option.reasoning_effort.to_value(),
-            },
-            (false, false) => raw::Reasoning {
-                effort: None,
-                enabled: Some(false),
-            },
+        let mut reasoning = raw::Reasoning {
+            effort: option.reasoning_effort.to_value(),
+            enabled: Some(capability.reasoning),
+            max_tokens: option.reasoning_max_tokens,
         };
+
+        if self.compatibility_mode {
+            reasoning.set_compatible();
+        }
 
         let tools: Vec<raw::Tool> = option.tools.into_iter().map(|t| t.into()).collect();
 
