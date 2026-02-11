@@ -100,6 +100,7 @@ pub enum SseResp {
     DeepStepToolCall(SseRespToolCall),
     DeepReport(String),
     Image(i32),
+    UrlCitation(Vec<protocol::UrlCitation>),
 }
 
 #[derive(Debug, Serialize)]
@@ -230,6 +231,7 @@ pub async fn route(
             }
             Token::DeepReport(content) => SseResp::DeepReport(content),
             Token::Image(file_id) => SseResp::Image(file_id),
+            Token::UrlCitation(citations) => SseResp::UrlCitation(citations),
         };
 
         Some(Ok(Event::default().json_data(event).unwrap()))

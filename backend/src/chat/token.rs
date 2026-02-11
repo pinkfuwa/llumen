@@ -39,6 +39,7 @@ pub enum Token {
     DeepReport(String),
     Error(String),
     Image(i32),
+    UrlCitation(Vec<protocol::UrlCitation>),
     Complete {
         message_id: i32,
         cost: f32,
@@ -106,7 +107,8 @@ impl Mergeable for Token {
             | Token::Start { .. }
             | Token::ToolCall { .. }
             | Token::DeepStepToolCall { .. }
-            | Token::Image(_) => 1,
+            | Token::Image(_)
+            | Token::UrlCitation(_) => 1,
         }
     }
 

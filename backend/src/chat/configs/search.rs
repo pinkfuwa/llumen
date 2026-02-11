@@ -14,12 +14,8 @@ pub fn search_configuration() -> Configuration {
             .build(),
         tool_handler: Arc::new(|state, toolcalls| {
             Box::pin(async move {
-                let assistant_text = state
-                    .completion_ctx
-                    .message
-                    .inner
-                    .as_assistant()
-                    .unwrap()
+                let assistant_chunks = state.completion_ctx.message.inner.as_assistant().unwrap();
+                let assistant_text = assistant_chunks
                     .iter()
                     .filter_map(|chunk| {
                         if let protocol::AssistantChunk::Text(text) = chunk {
@@ -30,11 +26,18 @@ pub fn search_configuration() -> Configuration {
                     })
                     .collect::<Vec<_>>()
                     .join("");
+                let annotations = assistant_chunks.iter().rev().find_map(|chunk| {
+                    if let protocol::AssistantChunk::Annotation(value) = chunk {
+                        Some(value.clone())
+                    } else {
+                        None
+                    }
+                });
 
                 if !assistant_text.is_empty() {
                     state.messages.push(openrouter::Message::Assistant {
                         content: assistant_text,
-                        annotations: None,
+                        annotations,
                         reasoning_details: None,
                         images: Vec::new(),
                     });

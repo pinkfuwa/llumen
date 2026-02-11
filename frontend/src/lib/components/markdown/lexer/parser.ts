@@ -20,7 +20,6 @@ import type {
 	InlineCodeToken,
 	LinkToken,
 	ImageToken,
-	CitationToken,
 	LineBreakToken,
 	ParseResult,
 	RegionBoundary
@@ -107,9 +106,6 @@ export class MarkdownParser {
 
 		const horizontalRule = this.tryParseHorizontalRule();
 		if (horizontalRule) return horizontalRule;
-
-		const citation = this.tryParseCitationBlock();
-		if (citation) return citation;
 
 		const table = this.tryParseTable();
 		if (table) {
@@ -302,73 +298,6 @@ export class MarkdownParser {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Try to parse a citation block (<citation>...</citation>)
-	 */
-	private tryParseCitationBlock(): CitationToken | null {
-		const start = this.position;
-		const remaining = this.source.substring(this.position);
-
-		// Check if this starts with <citation>
-		if (!remaining.startsWith('<citation>')) {
-			return null;
-		}
-
-		// Find the closing </citation> tag
-		const endTagPos = remaining.indexOf('</citation>');
-		if (endTagPos === -1) {
-			return null;
-		}
-
-		const citationContent = remaining.substring(10, endTagPos); // Skip '<citation>'
-		this.position += endTagPos + 11; // Move past '</citation>'
-		this.skipNewlines();
-
-		// Parse the citation fields
-		let title: string | undefined;
-		let url: string | undefined;
-		let favicon: string | undefined;
-		let authoritative = false;
-
-		// Extract title
-		const titleMatch = citationContent.match(/<title>(.*?)<\/title>/s);
-		if (titleMatch) {
-			title = titleMatch[1].trim();
-		}
-
-		// Extract url
-		const urlMatch = citationContent.match(/<url>(.*?)<\/url>/s);
-		if (urlMatch) {
-			url = urlMatch[1].trim();
-		}
-
-		// Extract favicon
-		const faviconMatch = citationContent.match(/<favicon>(.*?)<\/favicon>/s);
-		if (faviconMatch) {
-			favicon = faviconMatch[1].trim();
-		}
-
-		// Check for authoritative (self-closing or paired tag)
-		if (
-			citationContent.includes('<authoritative/>') ||
-			citationContent.includes('<authoritative />') ||
-			citationContent.includes('<authoritative></authoritative>')
-		) {
-			authoritative = true;
-		}
-
-		return {
-			type: TokenType.Citation,
-			id: url || title || 'unknown',
-			title,
-			url,
-			favicon,
-			authoritative,
-			start,
-			end: this.position
-		};
 	}
 
 	/**
@@ -708,13 +637,6 @@ export class MarkdownParser {
 				continue;
 			}
 
-			const citation = this.tryParseCitation(text, position, baseOffset);
-			if (citation) {
-				foundTokens.push(citation);
-				position = citation.end - baseOffset;
-				continue;
-			}
-
 			const inlineCode = this.tryParseInlineCode(text, position, baseOffset);
 			if (inlineCode) {
 				foundTokens.push(inlineCode);
@@ -998,33 +920,6 @@ export class MarkdownParser {
 			children: inlineTokens,
 			start: baseOffset + position,
 			end: baseOffset + position + match[0].length
-		};
-	}
-
-	/**
-	 * Try to parse a citation (custom: [@cite])
-	 */
-	private tryParseCitation(
-		text: string,
-		position: number,
-		baseOffset: number
-	): CitationToken | null {
-		const remaining = text.substring(position);
-		const match = remaining.match(/^\[@([^\]]+)\]/);
-
-		if (!match) {
-			return null;
-		}
-
-		return {
-			type: TokenType.Citation,
-			id: match[1],
-			start: baseOffset + position,
-			end: baseOffset + position + match[0].length,
-			title: undefined,
-			url: undefined,
-			favicon: undefined,
-			authoritative: false
 		};
 	}
 

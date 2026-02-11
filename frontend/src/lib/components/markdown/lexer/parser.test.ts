@@ -16,7 +16,6 @@ import type {
 	StrikethroughToken,
 	LinkToken,
 	ImageToken,
-	CitationToken,
 	TextToken
 } from './tokens';
 
@@ -212,18 +211,6 @@ describe('MarkdownParser - Incremental Parsing: Individual Token Types', () => {
 		expect(imageTokens.length).toBe(2);
 	});
 
-	test('incremental: citation token', () => {
-		const initial = '[@cite1]';
-		const appended = ' and [@cite2]';
-		const combined = initial + appended;
-
-		const result = parse(combined);
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		const citationTokens = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citationTokens.length).toBe(2);
-	});
-
 	test('incremental: line break token', () => {
 		const initial = 'Line one  \n';
 		const appended = 'Line two  \nLine three';
@@ -266,9 +253,9 @@ describe('MarkdownParser - Incremental Parsing: Mixed Tokens', () => {
 		expect(result.tokens[2].type).toBe(TokenType.Blockquote);
 	});
 
-	test('mixed: paragraph with inline formatting + latex + citations', () => {
+	test('mixed: paragraph with inline formatting + latex', () => {
 		const initial = 'Text with **bold** and *italic*.';
-		const appended = ' Also $x^2$ and [@cite1] reference.';
+		const appended = ' Also $x^2$ reference.';
 		const combined = initial + appended;
 
 		const result = parse(combined);
@@ -277,7 +264,6 @@ describe('MarkdownParser - Incremental Parsing: Mixed Tokens', () => {
 		expect(para.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 		expect(para.children?.some((t) => t.type === TokenType.Italic)).toBe(true);
 		expect(para.children?.some((t) => t.type === TokenType.LatexInline)).toBe(true);
-		expect(para.children?.some((t) => t.type === TokenType.Citation)).toBe(true);
 	});
 });
 
@@ -326,138 +312,6 @@ describe('MarkdownParser - Table with Tabs/Spaces', () => {
 	});
 });
 
-// ============================================================================
-// MULTIPLE CITATION TOKENS TESTS
-// ============================================================================
-
-describe('MarkdownParser - Multiple Citation Tokens', () => {
-	test('multiple citations in single paragraph', () => {
-		const markdown = 'See [@cite1] and [@cite2] for details.';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(2);
-		expect((citations[0] as CitationToken).id).toBe('cite1');
-		expect((citations[1] as CitationToken).id).toBe('cite2');
-	});
-
-	test('multiple citations adjacent to each other', () => {
-		const markdown = 'References: [@cite1][@cite2][@cite3]';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(3);
-	});
-
-	test('multiple citations with text between', () => {
-		const markdown = 'First [@cite1] then some text [@cite2] and finally [@cite3].';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(3);
-	});
-
-	test('multiple citations in different paragraphs', () => {
-		const markdown = 'First para [@cite1].\n\nSecond para [@cite2].\n\nThird para [@cite3].';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(3);
-		const allCitations = result.tokens
-			.flatMap((t) => (t as ParagraphToken).children || [])
-			.filter((t) => t.type === TokenType.Citation);
-		expect(allCitations.length).toBe(3);
-	});
-
-	test('citations with special characters in id', () => {
-		const markdown = '[@cite-1] and [@cite_2] and [@cite.3]';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(3);
-	});
-});
-
-// ============================================================================
-// CITATION WITH RANDOM INSERTED SPACES TESTS
-// ============================================================================
-
-describe('MarkdownParser - Citation with Random Spaces', () => {
-	test('citation with space before opening bracket', () => {
-		const markdown = 'Text [ @cite1] reference';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		// Space before @ breaks the citation pattern
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(0);
-	});
-
-	test('citation with space after opening bracket', () => {
-		const markdown = 'Text [@ cite1] reference';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		// The parser currently accepts this - it matches [@...] pattern with spaces
-		// This test documents current behavior
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(1);
-	});
-
-	test('citation with space before closing bracket', () => {
-		const markdown = 'Text [@cite1 ] reference';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		// The parser currently accepts this - it matches [@...] pattern with spaces
-		// This test documents current behavior
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(1);
-	});
-
-	test('citation without spaces (valid)', () => {
-		const markdown = 'Text [@cite1] reference';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(1);
-		expect((citations[0] as CitationToken).id).toBe('cite1');
-	});
-
-	test('citation with spaces everywhere (invalid)', () => {
-		const markdown = 'Text [ @ cite1 ] reference';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citations.length).toBe(0);
-	});
-
-	test('multiple citations with varying space patterns', () => {
-		const markdown = '[@valid1] [ @invalid] [@ invalid2] [@valid2 ] [@valid3]';
-		const result = parse(markdown);
-
-		expect(result.tokens.length).toBe(1);
-		const para = result.tokens[0] as ParagraphToken;
-		const citations = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		// The parser currently accepts patterns with spaces inside brackets
-		// [@valid1], [@ invalid2], [@valid2 ], and [@valid3] are all matched
-		expect(citations.length).toBe(4);
-	});
-});
 
 // ============================================================================
 // ORIGINAL COMPREHENSIVE TESTS (from previous implementation)
@@ -891,26 +745,6 @@ describe('MarkdownParser - Images', () => {
 		const para = result.tokens[0] as ParagraphToken;
 		const imageToken = para.children?.find((t) => t.type === TokenType.Image) as ImageToken;
 		expect(imageToken).toBeDefined();
-	});
-});
-
-describe('MarkdownParser - Citations (Custom)', () => {
-	test('parses citation', () => {
-		const markdown = 'Text [@cite123] here';
-		const result = parse(markdown);
-		const para = result.tokens[0] as ParagraphToken;
-		const citationToken = para.children?.find(
-			(t) => t.type === TokenType.Citation
-		) as CitationToken;
-		expect(citationToken?.id).toBe('cite123');
-	});
-
-	test('parses multiple citations', () => {
-		const markdown = '[@cite1] and [@cite2]';
-		const result = parse(markdown);
-		const para = result.tokens[0] as ParagraphToken;
-		const citationTokens = para.children?.filter((t) => t.type === TokenType.Citation) || [];
-		expect(citationTokens.length).toBe(2);
 	});
 });
 

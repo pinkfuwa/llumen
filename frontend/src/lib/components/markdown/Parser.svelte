@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type {
 		Token,
-		CitationToken,
 		TextToken,
 		ImageToken,
 		LinkToken,
@@ -15,7 +14,6 @@
 
 	import Blockquote from './Blockquote.svelte';
 	import Br from './Br.svelte';
-	import Citation from './Citation.svelte';
 	import Code from './Code.svelte';
 	import Codespan from './Codespan.svelte';
 	import Del from './Del.svelte';
@@ -100,15 +98,6 @@
 		</Link>
 	{:else if token.type === TokenType.Image}
 		<Image token={token as ImageToken} />
-	{:else if token.type === TokenType.Citation}
-		{@const citToken = token as CitationToken}
-		<Citation
-			raw={citToken.title || `[@${citToken.id}]`}
-			title={citToken.title || `Citation ${citToken.id}`}
-			url={citToken.url || ''}
-			favicon={citToken.favicon || ''}
-			authoritative={citToken.authoritative || false}
-		/>
 	{:else if token.type === TokenType.LineBreak}
 		<Br />
 	{:else if token.type === TokenType.Text}

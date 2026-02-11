@@ -138,6 +138,10 @@ impl Openrouter {
         }
     }
 
+    pub fn is_compatibility_mode(&self) -> bool {
+        self.compatibility_mode
+    }
+
     /// Get a list of available model IDs
     pub async fn get_model_ids(&self) -> Vec<String> {
         self.model_cache.get_model_ids().await

@@ -20,7 +20,8 @@ import type {
 	FileMetadata,
 	Deep,
 	AssistantChunk,
-	SseCursor
+	SseCursor,
+	UrlCitation
 } from './types';
 import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
@@ -338,6 +339,17 @@ const Handlers: {
 		firstMsg.inner.c.push({
 			t: 'image',
 			c: fileId as number
+		});
+		cursor!.index++;
+		cursor!.offset = 0;
+	},
+
+	url_citation(citations) {
+		const firstMsg = messages[0] as AssistantMessage;
+
+		firstMsg.inner.c.push({
+			t: 'url_citation',
+			c: citations as UrlCitation[]
 		});
 		cursor!.index++;
 		cursor!.offset = 0;

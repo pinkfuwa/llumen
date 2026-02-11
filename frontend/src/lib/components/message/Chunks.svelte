@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { AssistantChunk } from '$lib/api/types';
 	import Assistant from './Assistant.svelte';
+	import Citations from './Citations.svelte';
 	import Reasoning from './Reasoning.svelte';
 	import ResponseError from './ResponseError.svelte';
 	import Result from './Result.svelte';
@@ -26,6 +27,8 @@
 		<Assistant content={chunk.c} {streaming} />
 	{:else if kind == 'annotation'}
 		<!-- annotation was pruned on server-->
+	{:else if kind == 'url_citation'}
+		<Citations citations={chunk.c} />
 	{:else if kind == 'tool_call'}
 		{@const toolCall = chunk.c}
 		{@const nextChunk = chunks[chunks.indexOf(chunk) + 1]}

@@ -1,4 +1,5 @@
 mod capability;
+mod annotation;
 mod error;
 mod message;
 mod model;
@@ -15,6 +16,7 @@ static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
 static X_TITLE: &str = "llumen";
 
 pub use error::Error;
+pub use annotation::extract_url_citations;
 pub use message::{File, Image, Message, MessageToolCall, MessageToolResult};
 pub use model::{Capability, MaybeCapability, Model, ModelBuilder};
 pub use openrouter::Openrouter;

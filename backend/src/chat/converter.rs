@@ -95,6 +95,9 @@ pub async fn db_message_to_openrouter(
                         #[cfg(debug_assertions)]
                         panic!("Annotation should be captured by Text chunk");
                     }
+                    AssistantChunk::UrlCitation(_) => {
+                        // Citations are for display only and not sent back to the model.
+                    }
                     AssistantChunk::Text(x) => {
                         let mut reasoning_details = None;
                         let mut annotations = None;

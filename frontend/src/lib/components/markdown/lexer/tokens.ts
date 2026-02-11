@@ -26,7 +26,6 @@ export enum TokenType {
 	Link = 'Link',
 	Image = 'Image',
 	LatexInline = 'LatexInline',
-	Citation = 'Citation',
 	LineBreak = 'LineBreak'
 }
 
@@ -180,19 +179,6 @@ export interface ImageToken extends Token {
 	url: string;
 	alt: string;
 	title?: string;
-}
-
-/**
- * Citation token (custom)
- * Supports both inline format [@cite:id] and block format <citation>...</citation>
- */
-export interface CitationToken extends Token {
-	type: TokenType.Citation;
-	id: string;
-	title?: string;
-	url?: string;
-	favicon?: string;
-	authoritative?: boolean;
 }
 
 /**

@@ -161,20 +161,6 @@ describe('Markdown End-to-End Tests', () => {
 		expect(result.tokens[0].children![0].type).toBe(TokenType.TableRow);
 	});
 
-	test('parses citation', () => {
-		const source = '[@citation123]';
-		const result = parse(source);
-
-		expect(result.tokens).toHaveLength(1);
-		expect(result.tokens[0].type).toBe(TokenType.Paragraph);
-
-		const children = result.tokens[0].children || [];
-		const citation = children.find((t) => t.type === TokenType.Citation);
-
-		expect(citation).toBeDefined();
-		expect((citation as any).id).toBe('citation123');
-	});
-
 	test('parses mixed content document', () => {
 		const source = `# Title
 

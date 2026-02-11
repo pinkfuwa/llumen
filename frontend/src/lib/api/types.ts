@@ -94,6 +94,7 @@ export enum StepKind {
 
 export type AssistantChunk =
 	| { t: 'annotation'; c: Value }
+	| { t: 'url_citation'; c: UrlCitation[] }
 	| { t: 'text'; c: string }
 	| { t: 'reasoning'; c: string }
 	| { t: 'reasoning_detail'; c: Value }
@@ -444,6 +445,15 @@ export interface SseStart {
 	version: number;
 }
 
+export interface UrlCitation {
+	url: string;
+	title?: string;
+	content?: string;
+	start_index?: number;
+	end_index?: number;
+	favicon?: string;
+}
+
 export interface UserCreateReq {
 	username: string;
 	password: string;
@@ -563,4 +573,5 @@ export type SseResp =
 	| { t: 'deep_step_tool_result'; c: SseRespToolResult }
 	| { t: 'deep_step_tool_call'; c: SseRespToolCall }
 	| { t: 'deep_report'; c: string }
-	| { t: 'image'; c: number };
+	| { t: 'image'; c: number }
+	| { t: 'url_citation'; c: UrlCitation[] };

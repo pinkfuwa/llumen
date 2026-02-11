@@ -4,7 +4,7 @@
  * Features:
  * - Batch parsing with fake incremental support via region boundaries
  * - LaTeX support with relaxed spacing rules
- * - Non-standard features (tables with tabs, custom citations)
+ * - Non-standard features (tables with tabs)
  * - Simple, clear token structure
  */
 
@@ -36,7 +36,6 @@ export {
 	type InlineCodeToken,
 	type LinkToken,
 	type ImageToken,
-	type CitationToken,
 	type LineBreakToken,
 	type ParseResult,
 	type RegionBoundary

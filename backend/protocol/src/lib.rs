@@ -32,9 +32,26 @@ pub struct Step {
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[typeshare]
+pub struct UrlCitation {
+    pub url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start_index: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end_index: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub favicon: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[typeshare]
 #[serde(tag = "t", content = "c", rename_all = "snake_case")]
 pub enum AssistantChunk {
     Annotation(serde_json::Value),
+    UrlCitation(Vec<UrlCitation>),
     Text(String),
     Reasoning(String),
     ReasoningDetail(serde_json::Value),
@@ -135,6 +152,14 @@ impl MessageInner {
             MessageInner::User { .. } => {}
             MessageInner::Assistant(assistant_chunks) => {
                 assistant_chunks.push(AssistantChunk::Annotation(json))
+            }
+        }
+    }
+    pub fn add_url_citation(&mut self, citations: Vec<UrlCitation>) {
+        match self {
+            MessageInner::User { .. } => {}
+            MessageInner::Assistant(assistant_chunks) => {
+                assistant_chunks.push(AssistantChunk::UrlCitation(citations))
             }
         }
     }

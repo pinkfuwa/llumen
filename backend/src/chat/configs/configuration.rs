@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use anyhow::Result;
 use futures_util::future::BoxFuture;
@@ -42,10 +42,19 @@ impl Configuration {
     ) -> BoxFuture<'static, Result<()>> {
         let inject_context = self.inject_context;
         let prompt = self.prompt;
-        let completion_option = self.completion_option.clone();
+        let mut completion_option = self.completion_option.clone();
         let tool_handler = self.tool_handler.clone();
 
         Box::pin(async move {
+            if matches!(prompt, prompt::PromptKind::Search) {
+                let use_web_search_tool = ctx.openrouter.is_compatibility_mode();
+                if !use_web_search_tool {
+                    completion_option
+                        .tools
+                        .retain(|tool| tool.name != "web_search_tool");
+                }
+            }
+
             let model = <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
                 .expect("Failed to get model config");
             let model = model.into();
@@ -167,6 +176,25 @@ impl Configuration {
             }
         }
 
+        if let Some(annotations) = result.annotations {
+            let citations = openrouter::extract_url_citations(&annotations);
+            state
+                .completion_ctx
+                .message
+                .inner
+                .add_annotation(annotations);
+            if !citations.is_empty() {
+                state
+                    .completion_ctx
+                    .message
+                    .inner
+                    .add_url_citation(citations.clone());
+                state
+                    .completion_ctx
+                    .add_token(Token::UrlCitation(citations));
+            }
+        }
+
         let halt = halt_with_error?;
         if matches!(halt, StreamEndReason::Halt) {
             log::debug!("The stream was halted");
@@ -185,13 +213,6 @@ impl Configuration {
                 }
 
                 finalized = tool_handler(state, result.toolcalls).await?;
-                if let Some(annotations) = result.annotations {
-                    state
-                        .completion_ctx
-                        .message
-                        .inner
-                        .add_annotation(annotations);
-                }
             }
         };
 
