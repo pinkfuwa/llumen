@@ -11,15 +11,20 @@ async fn test_text_output_capability() {
     // Give initial model fetch time to start (though it won't complete with fake key)
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-    // Test 1: Future model (not in listing) - should default to text support
+    // Test 1: Future model (not in listing) - should default to image-only
+    // This prevents first-request bugs where context is incorrectly injected
     let future_model = Model {
         id: "openai/gpt-5-turbo".to_string(),
         ..Default::default()
     };
     let capability3 = openrouter.get_capability(&future_model).await;
     assert_eq!(
-        capability3.text_output, true,
-        "Future model should default to supporting text output"
+        capability3.text_output, false,
+        "Unknown models should default to image-only to avoid context injection bugs"
+    );
+    assert_eq!(
+        capability3.image_output, true,
+        "Unknown models should default to image-only"
     );
 
     // Test 2: User override - can override capabilities

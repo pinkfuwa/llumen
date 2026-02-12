@@ -143,6 +143,11 @@ impl Openrouter {
 
     /// Get capability of a model (considers user overrides)
     pub async fn get_capability(&self, model: &Model) -> super::Capability {
+        // Ensure model is in cache before resolving capability (except in compatibility mode)
+        if !self.compatibility_mode {
+            let _ = self.model_cache.ensure_model(&model.id).await;
+        }
+        
         let resolver = CapabilityResolver::new(&self.model_cache);
         resolver.get_capability(model).await
     }
