@@ -3,8 +3,6 @@ use std::sync::Arc;
 use anyhow::Result;
 use tokio_stream::StreamExt;
 
-use super::message_builder::MessageBuilder;
-use super::model_strategy;
 use super::Pipeline;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
@@ -32,7 +30,7 @@ pub struct RunState {
 ///
 /// This is the shared orchestration that ALL modes use:
 /// 1. Resolve model + capabilities
-/// 2. Build the message list (system prompt + history + context)
+/// 2. Prepare execution (build messages, tools, options)
 /// 3. Stream tokens from the LLM
 /// 4. Handle tool calls, images, annotations
 /// 5. Save to database
@@ -49,44 +47,22 @@ pub async fn run(
     let model: openrouter::Model = model_config.into();
     let capability = ctx.get_capability(&model).await;
 
-    // 2. Build completion options (tools, temperature, etc.)
-    let completion_option = pipeline.completion_option(&ctx, &capability);
+    // 2. Prepare execution (pipeline builds messages + options)
+    let execution = pipeline.prepare(&ctx, &session, &capability).await?;
 
-    // 3. Render system prompt
-    let system_prompt = ctx.prompt.render(pipeline.prompt_kind(), &session)?;
-
-    // 4. Convert chat history from DB format to OpenRouter format
-    let mut history = Vec::new();
-    for m in &session.messages {
-        history.extend(db_message_to_openrouter(&ctx, &m.inner).await?);
-    }
-
-    // 5. Build message list (MessageBuilder handles context injection via strategy)
-    let strategy = model_strategy::get_model_strategy(&capability);
-    let context_prompt = ctx.prompt.render_context(&session)?;
-
-    let messages = if pipeline.inject_context() {
-        MessageBuilder::new(system_prompt)
-            .history(history)
-            .context(strategy.as_ref(), context_prompt)
-            .build()
-    } else {
-        MessageBuilder::new(system_prompt).history(history).build()
-    };
-
-    // 6. Enter the streaming loop
+    // 3. Enter the streaming loop
     let mut state = RunState {
         ctx,
         session,
         model,
-        messages,
+        messages: execution.messages,
     };
 
-    if let Err(err) = process_loop(&mut state, completion_option, pipeline).await {
+    if let Err(err) = process_loop(&mut state, execution.options, pipeline).await {
         state.session.add_error(err.to_string());
     }
 
-    // 7. Save everything to database
+    // 4. Save everything to database
     state.session.save().await?;
 
     Ok(())

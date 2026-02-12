@@ -34,12 +34,14 @@ use crate::chat::{CompletionSession, Context};
 use crate::openrouter::{self, Capability, ToolCall};
 
 pub mod deep;
+mod execution;
 pub mod message_builder;
 pub(crate) mod model_strategy;
 mod normal;
 mod runner;
 mod search;
 
+pub use execution::Execution;
 pub use runner::RunState;
 
 /// A Pipeline defines the mode-specific behavior for a chat completion.
@@ -48,6 +50,7 @@ pub use runner::RunState;
 /// - `prompt_kind()`: what template to use for the system message
 /// - `completion_option()`: what tools and settings to send to the LLM
 /// - `inject_context()`: whether to add the context message
+/// - `prepare()`: builds the complete Execution (messages + options)
 /// - `handle_tool_calls()`: what to do when the LLM calls a tool
 ///
 /// The shared runner (`runner::run`) handles everything else:
@@ -76,6 +79,57 @@ pub trait Pipeline: Send + Sync {
     /// skip context for image-only models (handled by ModelStrategy).
     fn inject_context(&self) -> bool {
         true
+    }
+
+    /// Prepares the Execution for the LLM call.
+    ///
+    /// This is a convenience method that:
+    /// 1. Renders the system prompt
+    /// 2. Converts chat history to OpenRouter format
+    /// 3. Builds messages (with or without context)
+    /// 4. Gets completion options (tools, temperature, etc)
+    /// 5. Returns an Execution ready to send
+    ///
+    /// **Default implementation**: Uses the other trait methods.
+    /// Override if you need custom logic (e.g., Deep research).
+    fn prepare<'a>(
+        &'a self,
+        ctx: &'a Context,
+        session: &'a CompletionSession,
+        capability: &'a Capability,
+    ) -> BoxFuture<'a, Result<Execution>> {
+        use crate::chat::converter::db_message_to_openrouter;
+        use crate::chat::pipeline::message_builder::MessageBuilder;
+        use crate::chat::pipeline::model_strategy;
+
+        Box::pin(async move {
+            // 1. Render system prompt
+            let system_prompt = ctx.prompt.render(self.prompt_kind(), session)?;
+
+            // 2. Convert chat history from DB format to OpenRouter format
+            let mut history = Vec::new();
+            for m in &session.messages {
+                history.extend(db_message_to_openrouter(ctx, &m.inner).await?);
+            }
+
+            // 3. Build message list
+            let strategy = model_strategy::get_model_strategy(capability);
+            let context_prompt = ctx.prompt.render_context(session)?;
+
+            let messages = if self.inject_context() {
+                MessageBuilder::new(system_prompt)
+                    .history(history)
+                    .context(strategy.as_ref(), context_prompt)
+                    .build()
+            } else {
+                MessageBuilder::new(system_prompt).history(history).build()
+            };
+
+            // 4. Get completion options
+            let options = self.completion_option(ctx, capability);
+
+            Ok(Execution::new(messages, options))
+        })
     }
 
     /// Handle tool calls from the LLM response.
