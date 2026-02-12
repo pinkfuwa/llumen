@@ -5,16 +5,16 @@ use futures_util::future::BoxFuture;
 use serde::Deserialize;
 
 use super::model_strategy;
-use super::{Pipeline, RunState};
+use super::{ExecutionStrategy, RunState};
 use crate::chat::prompt;
 use crate::chat::tools::{get_crawl_tool_def, get_web_search_tool_def};
 use crate::chat::Context;
 use crate::openrouter::{self, Capability, ToolCall};
 
 /// Search mode: web search + crawl tools, with OpenRouter plugin support.
-pub struct SearchPipeline;
+pub struct SearchStrategy;
 
-impl Pipeline for SearchPipeline {
+impl ExecutionStrategy for SearchStrategy {
     fn prompt_kind(&self) -> prompt::PromptKind {
         prompt::PromptKind::Search
     }

@@ -1,15 +1,15 @@
 use anyhow::Result;
 use futures_util::future::BoxFuture;
 
-use super::{Pipeline, RunState};
+use super::{ExecutionStrategy, RunState};
 use crate::chat::prompt;
 use crate::openrouter::{self, Capability, ToolCall};
 use crate::chat::Context;
 
 /// Normal chat: no tools, supports image generation.
-pub struct NormalPipeline;
+pub struct NormalStrategy;
 
-impl Pipeline for NormalPipeline {
+impl ExecutionStrategy for NormalStrategy {
     fn prompt_kind(&self) -> prompt::PromptKind {
         prompt::PromptKind::Normal
     }

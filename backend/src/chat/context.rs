@@ -12,7 +12,7 @@ use super::{
     prompt::Prompt,
     token::Token,
 };
-use crate::chat::Pipelines;
+use crate::chat::Strategies;
 use crate::utils::model::ModelChecker;
 use crate::{
     chat::prompt::PromptKind,
@@ -38,7 +38,7 @@ pub struct Context {
     pub(crate) web_search_tool: Arc<WebSearchTool>,
     pub(crate) crawl_tool: Arc<CrawlTool>,
     pub(crate) lua_repl_tool: Arc<LuaReplTool>,
-    pub pipelines: Pipelines,
+    pub strategies: Strategies,
 }
 
 impl Context {
@@ -57,7 +57,7 @@ impl Context {
             web_search_tool: Arc::new(WebSearchTool::new()),
             crawl_tool: Arc::new(CrawlTool::new()),
             lua_repl_tool: Arc::new(LuaReplTool::new()),
-            pipelines: Pipelines::new(),
+            strategies: Strategies::new(),
         })
     }
 
@@ -97,12 +97,12 @@ impl Context {
         self.openrouter.get_capability(model).await
     }
 
-    /// Delegates completion processing to the configured pipeline.
+    /// Delegates completion processing to the configured strategy.
     pub fn process(
         self: Arc<Self>,
         session: CompletionSession,
     ) -> futures_util::future::BoxFuture<'static, anyhow::Result<()>> {
-        self.pipelines.process(self.clone(), session)
+        self.strategies.process(self.clone(), session)
     }
 }
 

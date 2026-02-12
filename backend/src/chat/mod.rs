@@ -9,6 +9,6 @@ mod token;
 mod tools;
 
 pub use context::{CompletionSession, Context};
-pub use pipeline::Pipelines;
+pub use pipeline::Strategies;
 pub use stream_writer::StreamWriter;
 pub use token::Token;

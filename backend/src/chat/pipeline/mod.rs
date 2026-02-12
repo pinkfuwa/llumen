@@ -44,7 +44,7 @@ mod search;
 pub use execution::Execution;
 pub use runner::RunState;
 
-/// A Pipeline defines the mode-specific behavior for a chat completion.
+/// An ExecutionStrategy defines the mode-specific behavior for a chat completion.
 ///
 /// Think of it like a recipe:
 /// - `prompt_kind()`: what template to use for the system message
@@ -55,7 +55,7 @@ pub use runner::RunState;
 ///
 /// The shared runner (`runner::run`) handles everything else:
 /// streaming, images, annotations, database saves.
-pub trait Pipeline: Send + Sync {
+pub trait ExecutionStrategy: Send + Sync {
     /// Which prompt template this mode uses (Normal, Search, Coordinator, etc.)
     fn prompt_kind(&self) -> prompt::PromptKind;
 
@@ -144,18 +144,18 @@ pub trait Pipeline: Send + Sync {
 }
 
 /// Routes incoming completions to the right pipeline based on mode.
-pub struct Pipelines {
-    normal: Arc<dyn Pipeline>,
-    search: Arc<dyn Pipeline>,
-    deep: Arc<dyn Pipeline>,
+pub struct Strategies {
+    normal: Arc<dyn ExecutionStrategy>,
+    search: Arc<dyn ExecutionStrategy>,
+    deep: Arc<dyn ExecutionStrategy>,
 }
 
-impl Pipelines {
+impl Strategies {
     pub fn new() -> Self {
         Self {
-            normal: Arc::new(normal::NormalPipeline),
-            search: Arc::new(search::SearchPipeline),
-            deep: Arc::new(deep::DeepPipeline),
+            normal: Arc::new(normal::NormalStrategy),
+            search: Arc::new(search::SearchStrategy),
+            deep: Arc::new(deep::DeepStrategy),
         }
     }
 
@@ -176,7 +176,7 @@ impl Pipelines {
     }
 }
 
-impl Default for Pipelines {
+impl Default for Strategies {
     fn default() -> Self {
         Self::new()
     }

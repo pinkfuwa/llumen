@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use tokio_stream::StreamExt;
 
-use super::Pipeline;
+use super::ExecutionStrategy;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::chat::token::Token;
@@ -26,7 +26,7 @@ pub struct RunState {
     pub messages: Vec<openrouter::Message>,
 }
 
-/// Runs a pipeline from start to finish.
+/// Runs a strategy from start to finish.
 ///
 /// This is the shared orchestration that ALL modes use:
 /// 1. Resolve model + capabilities
@@ -35,10 +35,10 @@ pub struct RunState {
 /// 4. Handle tool calls, images, annotations
 /// 5. Save to database
 ///
-/// The `pipeline` argument controls what's different per mode:
+/// The `strategy` argument controls what's different per mode:
 /// which prompt template, which tools, how tool calls are handled.
 pub async fn run(
-    pipeline: &dyn Pipeline,
+    strategy: &dyn ExecutionStrategy,
     ctx: Arc<Context>,
     session: CompletionSession,
 ) -> Result<()> {
@@ -47,8 +47,8 @@ pub async fn run(
     let model: openrouter::Model = model_config.into();
     let capability = ctx.get_capability(&model).await;
 
-    // 2. Prepare execution (pipeline builds messages + options)
-    let execution = pipeline.prepare(&ctx, &session, &capability).await?;
+    // 2. Prepare execution (strategy builds messages + options)
+    let execution = strategy.prepare(&ctx, &session, &capability).await?;
 
     // 3. Enter the streaming loop
     let mut state = RunState {
@@ -58,7 +58,7 @@ pub async fn run(
         messages: execution.messages,
     };
 
-    if let Err(err) = process_loop(&mut state, execution.options, pipeline).await {
+    if let Err(err) = process_loop(&mut state, execution.options, strategy).await {
         state.session.add_error(err.to_string());
     }
 
@@ -73,7 +73,7 @@ pub async fn run(
 async fn process_loop(
     state: &mut RunState,
     completion_option: openrouter::CompletionOption,
-    pipeline: &dyn Pipeline,
+    strategy: &dyn ExecutionStrategy,
 ) -> Result<()> {
     let messages = state.messages.clone();
 
@@ -183,12 +183,12 @@ async fn process_loop(
                 ));
             }
 
-            // Delegate tool execution to the mode-specific pipeline
-            let finalized = pipeline.handle_tool_calls(state, result.toolcalls).await?;
+            // Delegate tool execution to the mode-specific strategy
+            let finalized = strategy.handle_tool_calls(state, result.toolcalls).await?;
 
             if !finalized {
                 // LLM wants to continue after tool results — loop
-                return Box::pin(process_loop(state, completion_option, pipeline)).await;
+                return Box::pin(process_loop(state, completion_option, strategy)).await;
             }
         }
     };
