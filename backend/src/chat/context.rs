@@ -471,3 +471,26 @@ impl CompletionSession {
             .last()
     }
 }
+
+/// TokenSink implementation for CompletionSession.
+///
+/// Delegates to existing methods (add_token, put_stream, update_usage).
+/// This allows DeepAgent to stream tokens without tight coupling.
+impl crate::chat::TokenSink for CompletionSession {
+    fn add_token(&mut self, token: Token) {
+        CompletionSession::add_token(self, token)
+    }
+
+    async fn put_stream<E: std::error::Error + Send + 'static>(
+        &mut self,
+        stream: impl Stream<Item = std::result::Result<Token, E>> + Unpin + Send,
+    ) -> anyhow::Result<StreamEndReason> {
+        CompletionSession::put_stream(self, stream)
+            .await
+            .map_err(|e| anyhow::anyhow!("Stream error: {}", e))
+    }
+
+    fn update_usage(&mut self, cost: f32, tokens: i32) {
+        CompletionSession::update_usage(self, cost, tokens)
+    }
+}

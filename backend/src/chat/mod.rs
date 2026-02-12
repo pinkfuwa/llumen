@@ -6,9 +6,11 @@ pub(crate) mod pipeline;
 mod prompt;
 mod stream_writer;
 mod token;
+mod token_sink;
 mod tools;
 
 pub use context::{CompletionSession, Context};
 pub use pipeline::Strategies;
 pub use stream_writer::StreamWriter;
 pub use token::Token;
+pub use token_sink::TokenSink;

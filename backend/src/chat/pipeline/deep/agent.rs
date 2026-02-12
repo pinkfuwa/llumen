@@ -10,19 +10,25 @@ use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::chat::prompt::{CompletedStep, ReportInputContext, StepInputContext};
 use crate::chat::tools::get_lua_repl_def;
-use crate::chat::{CompletionSession, Context, Token};
+use crate::chat::{CompletionSession, Context, Token, TokenSink};
 use crate::openrouter::{self, ReasoningEffort};
 
+/// Input context for DeepAgent, extracted from CompletionSession.
+pub struct DeepAgentInput {
+    pub user_message: String,
+    pub locale: String,
+    pub model: openrouter::Model,
+}
+
 /// Deep research agent that orchestrates multiple agents for comprehensive research
-pub struct DeepAgent<'a> {
+pub struct DeepAgent {
     ctx: Arc<Context>,
-    completion_ctx: &'a mut CompletionSession,
-    model: openrouter::Model,
+    input: DeepAgentInput,
     state: Option<Deep>,
     enhanced_prompt: String,
 }
 
-impl<'a> DeepAgent<'a> {
+impl DeepAgent {
     pub async fn handoff_tool_static(
         ctx: &Arc<Context>,
         completion_ctx: &mut CompletionSession,
@@ -35,41 +41,54 @@ impl<'a> DeepAgent<'a> {
             .context("Failed to get model config")?;
         let model: openrouter::Model = model.into();
 
+        let input = DeepAgentInput {
+            user_message: completion_ctx.latest_user_message().unwrap_or("").to_string(),
+            locale: completion_ctx
+                .user
+                .preference
+                .locale
+                .as_ref()
+                .map(|x| x.as_str())
+                .unwrap_or("en-US")
+                .to_string(),
+            model,
+        };
+
         let mut agent = DeepAgent {
             ctx: ctx.clone(),
-            completion_ctx,
-            model,
+            input,
             state: None,
             enhanced_prompt: String::new(),
         };
 
-        macro_rules! handle {
-            ($e:ident) => {
-                if let Err(err) = agent.$e().await {
-                    agent.completion_ctx.add_error(err.to_string());
-                    return Ok(());
-                }
-            };
+        if let Err(err) = agent.run(completion_ctx).await {
+            completion_ctx.add_error(err.to_string());
         }
-        handle!(enhance);
-        handle!(plan);
-        handle!(execute_steps);
+
         Ok(())
     }
 
-    // Remove the separate run_agent method
-    fn get_locale<'b>(&'b self) -> &'b str {
-        self.completion_ctx
-            .user
-            .preference
-            .locale
-            .as_ref()
-            .map(|x| x.as_str())
-            .unwrap_or_else(|| "en-US")
+    /// Run the full deep research pipeline: enhance → plan → execute steps → report.
+    async fn run(&mut self, session: &mut CompletionSession) -> Result<()> {
+        self.enhance(session).await?;
+        self.plan(session).await?;
+        
+        let (deep_state, final_text) = self.execute_steps_and_report(session).await?;
+        
+        // Store final chunks
+        let chunks = session.message.inner.as_assistant().unwrap();
+        chunks.push(AssistantChunk::DeepAgent(deep_state));
+        chunks.push(AssistantChunk::Text(final_text));
+        
+        Ok(())
     }
 
-    async fn enhance(&mut self) -> Result<()> {
-        let original_prompt = self.completion_ctx.latest_user_message().unwrap_or("");
+    fn get_locale(&self) -> &str {
+        &self.input.locale
+    }
+
+    async fn enhance(&mut self, sink: &mut impl TokenSink) -> Result<()> {
+        let original_prompt = &self.input.user_message;
 
         let system_prompt = self.ctx.prompt.render_prompt_enhancer(self.get_locale())?;
 
@@ -79,7 +98,7 @@ impl<'a> DeepAgent<'a> {
         ];
 
         let enhanced_text = {
-            let model = openrouter::ModelBuilder::from_model(&self.model).build();
+            let model = openrouter::ModelBuilder::from_model(&self.input.model).build();
 
             let mut stream: openrouter::StreamCompletion = self
                 .ctx
@@ -114,7 +133,7 @@ impl<'a> DeepAgent<'a> {
 
         Ok(())
     }
-    async fn plan(&mut self) -> Result<()> {
+    async fn plan(&mut self, sink: &mut impl TokenSink) -> Result<()> {
         let system_prompt = self.ctx.prompt.render_planner(self.get_locale())?;
 
         let messages = vec![
@@ -122,7 +141,7 @@ impl<'a> DeepAgent<'a> {
             openrouter::Message::User(self.enhanced_prompt.clone()),
         ];
 
-        let model = openrouter::ModelBuilder::from_model(&self.model).build();
+        let model = openrouter::ModelBuilder::from_model(&self.input.model).build();
 
         let result = self
             .ctx
@@ -131,36 +150,32 @@ impl<'a> DeepAgent<'a> {
             .await?;
 
         // TODO: since we decide to remove streaming plan, we should also remove support in frontend
-        self.completion_ctx.add_token(Token::DeepPlan(
+        sink.add_token(Token::DeepPlan(
             serde_json::to_string(&result.response).unwrap(),
         ));
 
-        self.completion_ctx
-            .update_usage(result.price as f32, result.token as i32);
+        sink.update_usage(result.price as f32, result.token as i32);
 
         self.state = Some(result.response.into());
 
         Ok(())
     }
-    async fn execute_steps(&mut self) -> Result<()> {
+    async fn execute_steps_and_report(&mut self, sink: &mut impl TokenSink) -> Result<(Deep, String)> {
         let plan = self.state.as_mut().unwrap();
         // If already has enough context, generate report directly
         if plan.has_enough_context {
-            self.generate_report().await?;
-            return Ok(());
+            return self.generate_report(sink).await;
         }
 
         // Execute each step
         for i in 0..plan.steps.len() {
-            self.execute_step(i).await?;
+            self.execute_step(i, sink).await?;
         }
 
         // Generate final report
-        self.generate_report().await?;
-
-        Ok(())
+        self.generate_report(sink).await
     }
-    async fn execute_step(&mut self, step_idx: usize) -> Result<()> {
+    async fn execute_step(&mut self, step_idx: usize, sink: &mut impl TokenSink) -> Result<()> {
         let locale = self.get_locale();
         let plan = self.state.as_ref().unwrap();
         let step = plan.steps.get(step_idx).unwrap();
@@ -211,11 +226,10 @@ impl<'a> DeepAgent<'a> {
             openrouter::Message::User(step_input),
         ];
 
-        self.completion_ctx
-            .add_token(Token::DeepStepStart(step_idx as i32));
+        sink.add_token(Token::DeepStepStart(step_idx as i32));
 
         loop {
-            let model = openrouter::ModelBuilder::from_model(&self.model).build();
+            let model = openrouter::ModelBuilder::from_model(&self.input.model).build();
             let option = openrouter::CompletionOption::tools(&tools);
             let mut stream: openrouter::StreamCompletion = self
                 .ctx
@@ -223,8 +237,7 @@ impl<'a> DeepAgent<'a> {
                 .stream(model, messages.clone(), option)
                 .await?;
 
-            let halt = self
-                .completion_ctx
+            let halt = sink
                 .put_stream(
                     (&mut stream).map(|resp| resp.map(openrouter_to_buffer_token_deep_step)),
                 )
@@ -235,8 +248,7 @@ impl<'a> DeepAgent<'a> {
             }
 
             let mut result = stream.get_result();
-            self.completion_ctx
-                .update_usage(result.usage.cost as f32, result.usage.token as i32);
+            sink.update_usage(result.usage.cost as f32, result.usage.token as i32);
 
             let tool_calls = std::mem::take(&mut result.toolcalls);
 
@@ -261,7 +273,7 @@ impl<'a> DeepAgent<'a> {
                     arguments: tool_call.args.clone(),
                 }));
 
-                self.completion_ctx.add_token(Token::DeepStepToolCall {
+                sink.add_token(Token::DeepStepToolCall {
                     name: tool_call.name.clone(),
                     arg: tool_call.args.clone(),
                 });
@@ -275,8 +287,7 @@ impl<'a> DeepAgent<'a> {
                     },
                 ));
 
-                self.completion_ctx
-                    .add_token(Token::DeepStepToolResult(result))
+                sink.add_token(Token::DeepStepToolResult(result))
             }
         }
 
@@ -285,7 +296,7 @@ impl<'a> DeepAgent<'a> {
         Ok(())
     }
 
-    async fn generate_report(&mut self) -> Result<()> {
+    async fn generate_report(&mut self, sink: &mut impl TokenSink) -> Result<(Deep, String)> {
         let plan = self.state.as_ref().unwrap();
 
         let completed_steps = plan
@@ -317,15 +328,14 @@ impl<'a> DeepAgent<'a> {
             openrouter::Message::User(report_input),
         ];
 
-        let model = openrouter::ModelBuilder::from_model(&self.model).build();
+        let model = openrouter::ModelBuilder::from_model(&self.input.model).build();
         let option = openrouter::CompletionOption::builder()
             .reasoning_effort(ReasoningEffort::Auto)
             .build();
         let mut stream: openrouter::StreamCompletion =
             self.ctx.openrouter.stream(model, messages, option).await?;
 
-        let halt = self
-            .completion_ctx
+        let halt = sink
             .put_stream((&mut stream).map(|resp| resp.map(openrouter_to_buffer_token_deep_report)))
             .await?;
 
@@ -334,15 +344,10 @@ impl<'a> DeepAgent<'a> {
         }
 
         let result = stream.get_result();
-        self.completion_ctx
-            .update_usage(result.usage.cost as f32, result.usage.token as i32);
+        sink.update_usage(result.usage.cost as f32, result.usage.token as i32);
         let text = result.get_text();
 
-        let chunks = self.completion_ctx.message.inner.as_assistant().unwrap();
-        chunks.push(AssistantChunk::DeepAgent(self.state.take().unwrap()));
-        chunks.push(AssistantChunk::Text(text));
-
-        Ok(())
+        Ok((self.state.take().unwrap(), text))
     }
     async fn execute_tool(&self, tool_name: &str, args: &str) -> Result<String> {
         log::debug!("Running tool({}), arg: {}", tool_name, args);
