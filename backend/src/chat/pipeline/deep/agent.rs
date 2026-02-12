@@ -10,13 +10,13 @@ use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::chat::prompt::{CompletedStep, ReportInputContext, StepInputContext};
 use crate::chat::tools::{get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def};
-use crate::chat::{CompletionContext, Context, Token};
+use crate::chat::{CompletionSession, Context, Token};
 use crate::openrouter::{self, ReasoningEffort};
 
 /// Deep research agent that orchestrates multiple agents for comprehensive research
 pub struct DeepAgent<'a> {
     ctx: Arc<Context>,
-    completion_ctx: &'a mut CompletionContext,
+    completion_ctx: &'a mut CompletionSession,
     model: openrouter::Model,
     state: Option<Deep>,
     enhanced_prompt: String,
@@ -25,7 +25,7 @@ pub struct DeepAgent<'a> {
 impl<'a> DeepAgent<'a> {
     pub async fn handoff_tool_static(
         ctx: &Arc<Context>,
-        completion_ctx: &mut CompletionContext,
+        completion_ctx: &mut CompletionSession,
         _toolcall: Vec<openrouter::ToolCall>,
     ) -> Result<()> {
         use crate::utils::model::ModelChecker;

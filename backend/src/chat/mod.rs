@@ -7,6 +7,6 @@ mod prompt;
 mod token;
 mod tools;
 
-pub use context::{CompletionContext, Context};
+pub use context::{CompletionSession, Context};
 pub use pipeline::Pipelines;
 pub use token::Token;

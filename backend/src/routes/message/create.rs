@@ -83,18 +83,18 @@ pub async fn route(
     .await
     .raw_kind(ErrorKind::Internal)?;
 
-    let mut completion_ctx = app
+    let mut session = app
         .processor
-        .get_completion_context(user_id, req.chat_id, req.model_id)
+        .get_completion_session(user_id, req.chat_id, req.model_id)
         .await
         .kind(ErrorKind::ResourceNotFound)?;
 
-    let id = completion_ctx.get_message_id();
+    let id = session.get_message_id();
 
     let closure = async move {
-        completion_ctx.set_mode(req.mode.into());
+        session.set_mode(req.mode.into());
 
-        app.processor.clone().process(completion_ctx).await?;
+        app.processor.clone().process(session).await?;
 
         Ok::<(), anyhow::Error>(())
     };

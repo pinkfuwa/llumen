@@ -30,7 +30,7 @@ use futures_util::future::BoxFuture;
 use protocol::ModeKind;
 
 use crate::chat::prompt;
-use crate::chat::{CompletionContext, Context};
+use crate::chat::{CompletionSession, Context};
 use crate::openrouter::{self, Capability, ToolCall};
 
 pub mod deep;
@@ -109,7 +109,7 @@ impl Pipelines {
     pub fn process(
         &self,
         ctx: Arc<Context>,
-        completion_ctx: CompletionContext,
+        completion_ctx: CompletionSession,
     ) -> BoxFuture<'static, Result<()>> {
         let mode = completion_ctx.get_mode();
         let pipeline = match mode {

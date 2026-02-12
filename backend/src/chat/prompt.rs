@@ -9,7 +9,7 @@ use time::{OffsetDateTime, UtcOffset};
 
 use crate::utils::model::ModelChecker;
 
-use super::context::CompletionContext;
+use super::context::CompletionSession;
 
 #[derive(RustEmbed)]
 #[folder = "../agent/prompt"]
@@ -258,7 +258,7 @@ impl Prompt {
     pub fn render(
         &self,
         kind: PromptKind,
-        ctx: &CompletionContext,
+        ctx: &CompletionSession,
     ) -> Result<String, minijinja::Error> {
         let config = <ModelConfig as ModelChecker>::from_toml(&ctx.model.config).unwrap();
 
@@ -300,7 +300,7 @@ impl Prompt {
         template.render(rendering_ctx)
     }
 
-    pub fn render_context(&self, ctx: &CompletionContext) -> Result<String, minijinja::Error> {
+    pub fn render_context(&self, ctx: &CompletionSession) -> Result<String, minijinja::Error> {
         let chat_title = ctx.chat.title.try_as_ref();
         let chat_title = chat_title.and_then(|x| x.as_deref());
 

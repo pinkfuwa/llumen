@@ -61,14 +61,14 @@ impl Context {
         })
     }
 
-    /// Prepares a completion context for the specified user/chat/model tuple.
-    pub fn get_completion_context(
+    /// Prepares a completion session for the specified user/chat/model tuple.
+    pub fn get_completion_session(
         self: &Arc<Self>,
         user_id: i32,
         chat_id: i32,
         model_id: i32,
-    ) -> impl std::future::Future<Output = Result<CompletionContext, anyhow::Error>> + '_ {
-        CompletionContext::new(self.clone(), user_id, chat_id, model_id)
+    ) -> impl std::future::Future<Output = Result<CompletionSession, anyhow::Error>> + '_ {
+        CompletionSession::new(self.clone(), user_id, chat_id, model_id)
     }
     /// Halts the streaming completion for the chat, notifying any subscribers.
     pub async fn halt_completion(&self, chat_id: i32) {
@@ -100,16 +100,19 @@ impl Context {
     /// Delegates completion processing to the configured pipeline.
     pub fn process(
         self: Arc<Self>,
-        completion_ctx: CompletionContext,
+        session: CompletionSession,
     ) -> futures_util::future::BoxFuture<'static, anyhow::Result<()>> {
-        self.pipelines.process(self.clone(), completion_ctx)
+        self.pipelines.process(self.clone(), session)
     }
 }
 
-/// The context for a single completion request.
+/// Per-request session for a completion.
 ///
-/// It holds the state for the completion, including the model, chat, message, chunks, tokens, and user.
-pub struct CompletionContext {
+/// Represents one HTTP request to create an assistant message.
+/// Holds DB entities, SSE publisher, and reference to global services.
+///
+/// Lifetime: Created at request start, dropped after DB save.
+pub struct CompletionSession {
     /// The model used for the completion.
     pub(crate) model: model::Model,
     /// The chat the completion belongs to.
@@ -126,9 +129,8 @@ pub struct CompletionContext {
     ctx: Arc<Context>,
 }
 
-impl CompletionContext {
-    /// Creates a new completion context.
-    /// Loads user, chat, model, and drafting message records from the database for initialization.
+impl CompletionSession {
+    /// Creates a new completion session.
     /// Loads user, chat, model, and drafting message records from the database for initialization.
     async fn load_entities(
         ctx: &Context,

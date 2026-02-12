@@ -9,7 +9,7 @@ use super::Pipeline;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::chat::token::Token;
-use crate::chat::{CompletionContext, Context};
+use crate::chat::{CompletionSession, Context};
 use crate::openrouter;
 use entity::file;
 use sea_orm::ActiveValue;
@@ -23,7 +23,7 @@ use sea_orm::ActiveValue;
 /// - `messages`  = the growing message list sent to the LLM
 pub struct RunState {
     pub ctx: Arc<Context>,
-    pub session: CompletionContext,
+    pub session: CompletionSession,
     pub model: openrouter::Model,
     pub messages: Vec<openrouter::Message>,
 }
@@ -42,7 +42,7 @@ pub struct RunState {
 pub async fn run(
     pipeline: &dyn Pipeline,
     ctx: Arc<Context>,
-    session: CompletionContext,
+    session: CompletionSession,
 ) -> Result<()> {
     // 1. Resolve model from stored config
     let model_config = session.get_model_config()?;
