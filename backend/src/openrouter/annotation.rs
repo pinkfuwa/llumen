@@ -17,7 +17,10 @@ pub fn extract_url_citations(annotations: &serde_json::Value) -> Vec<UrlCitation
             continue;
         };
         if let Some(citation) = parse_url_citation(payload) {
-            if citations.iter().any(|existing| existing.url == citation.url) {
+            if citations
+                .iter()
+                .any(|existing| existing.url == citation.url)
+            {
                 continue;
             }
             citations.push(citation);

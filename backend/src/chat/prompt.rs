@@ -3,9 +3,9 @@ use minijinja::Environment;
 use protocol::ModelConfig;
 use rust_embed_for_web::{EmbedableFile, RustEmbed};
 use serde::Serialize;
-use time::{OffsetDateTime, UtcOffset};
 use time::format_description::BorrowedFormatItem;
 use time::macros::format_description;
+use time::{OffsetDateTime, UtcOffset};
 
 use crate::utils::model::ModelChecker;
 

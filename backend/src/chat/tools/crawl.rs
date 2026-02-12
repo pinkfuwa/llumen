@@ -1,5 +1,6 @@
 use crate::runner;
 use anyhow::{Context, Result};
+use tokio::time;
 
 /// Crawl tool for fetching and converting web pages to markdown
 pub struct CrawlTool {
@@ -27,26 +28,27 @@ impl CrawlTool {
             .context("Invalid URL")?;
 
         // Fetch the page
-        let response = self
-            .client
-            .get(url)
-            .send()
-            .await
-            .context("Failed to fetch URL")?;
+        let response = loop {
+            let response = self
+                .client
+                .get(url)
+                .send()
+                .await
+                .context("Failed to fetch URL")?;
 
-        // Check for rate limiting
-        if let Some(retry_after) = response.headers().get("Retry-After") {
-            let retry_seconds = retry_after
-                .to_str()
-                .ok()
-                .and_then(|s| s.parse::<u64>().ok())
-                .unwrap_or(60);
-
-            anyhow::bail!(
-                "Rate limited. Please retry after {} seconds.",
-                retry_seconds
-            );
-        }
+            // Check for rate limiting
+            match response.headers().get("Retry-After") {
+                Some(retry_after) => {
+                    let retry_seconds = retry_after
+                        .to_str()
+                        .ok()
+                        .and_then(|s| s.parse::<u64>().ok())
+                        .unwrap_or(1);
+                    time::sleep(time::Duration::from_secs(retry_seconds)).await;
+                }
+                None => break response,
+            };
+        };
 
         let status = response.status();
         if !status.is_success() {
@@ -54,75 +56,25 @@ impl CrawlTool {
         }
 
         // Get response bytes
-        let bytes = response.bytes().await.context("Failed to read response")?;
+        let blob = response.bytes().await.context("Failed to read response")?;
 
-        // Limit content to 120,000 characters
-        const MAX_CHARS: usize = 120_000;
-        let content_bytes = if bytes.len() > MAX_CHARS {
-            &bytes[..MAX_CHARS]
-        } else {
-            &bytes
-        };
-
-        // Use infer to detect actual content type from magic bytes
-        if let Some(kind) = infer::get(content_bytes) {
-            let mime_type = kind.mime_type();
-
-            // Reject image content types
-            if mime_type.starts_with("image/") {
-                anyhow::bail!(
-                    "This URL returns an Image content type. Image parsing is not supported."
-                );
-            }
-
-            // Reject PDF content types
-            if mime_type.contains("pdf") {
-                anyhow::bail!("This URL returns a PDF content type. PDF parsing is not supported.");
-            }
-
-            // Reject other document types
-            if mime_type.contains("application/msword")
-                || mime_type.contains("application/vnd.openxmlformats-officedocument")
-                || mime_type.contains("application/vnd.ms-excel")
-                || mime_type.contains("application/vnd.ms-powerpoint")
-                || mime_type.contains("application/zip")
-                || mime_type.contains("application/x-tar")
-                || mime_type.contains("application/x-rar")
-            {
-                anyhow::bail!(
-                    "This URL returns a Document content type. Document parsing is not supported."
-                );
-            }
-
-            // Reject other binary formats
-            if mime_type.starts_with("video/") || mime_type.starts_with("audio/") {
-                anyhow::bail!(
-                    "This URL returns a media file content type. Media file parsing is not supported."
-                );
-            }
+        if infer::is_image(&blob)
+            || infer::is_audio(&blob)
+            || infer::archive::is_pdf(&blob)
+            || infer::is_document(&blob)
+            || infer::is_book(&blob)
+        {
+            anyhow::bail!("This URL returns an unsupported content type.");
         }
 
-        // Convert bytes to string
-        let content_str = String::from_utf8_lossy(content_bytes);
-
-        // Check if content looks like HTML
-        let trimmed = content_str.trim();
-        let is_html = trimmed.starts_with("<!DOCTYPE html")
-            || trimmed.starts_with("<!doctype html")
-            || trimmed.starts_with("<html")
-            || trimmed.starts_with("<HTML")
-            || trimmed.contains("<body")
-            || trimmed.contains("<div");
-
-        if is_html {
-            // Convert HTML to markdown using html2text
-            let markdown = html2text::from_read(content_str.as_bytes(), 80)
-                .map_err(|e| anyhow::anyhow!("Failed to convert HTML to markdown: {}", e))?;
-            Ok(markdown)
-        } else {
-            // Return plain text as-is
-            Ok(content_str.to_string())
+        if blob.len() > 1_000_000 {
+            anyhow::bail!("This URL returns a content that is too large.");
         }
+
+        let str_content = str::from_utf8(&blob).context("Failed to convert bytes to string")?;
+        let parsed_text = html2text::from_read(str_content.as_bytes(), 1000)
+            .unwrap_or_else(|_| str_content.to_string());
+        Ok(parsed_text)
     }
 }
 

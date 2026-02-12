@@ -24,7 +24,6 @@ pub struct Configuration {
             + Sync,
     >,
     pub prompt: prompt::PromptKind,
-    pub inject_context: bool,
 }
 
 pub struct ProcessState {
@@ -40,7 +39,6 @@ impl Configuration {
         ctx: Arc<Context>,
         completion_ctx: CompletionContext,
     ) -> BoxFuture<'static, Result<()>> {
-        let inject_context = self.inject_context;
         let prompt = self.prompt;
         let mut completion_option = self.completion_option.clone();
         let tool_handler = self.tool_handler.clone();
@@ -50,10 +48,8 @@ impl Configuration {
                 .expect("Failed to get model config");
             let model = model.into();
             let capability = ctx.get_capability(&model).await;
-            
-            // Use model strategy to determine behavior
-            let strategy = crate::chat::model_strategy::get_model_strategy(&capability);
-            
+            // TODO: don't inject context for image gen model
+
             // Filter tools for openrouter compatibility when in Search mode
             if matches!(prompt, prompt::PromptKind::Search) {
                 let use_web_search_tool = ctx.openrouter.is_compatibility_mode();
@@ -63,10 +59,7 @@ impl Configuration {
                         .retain(|tool| tool.name != "web_search_tool" && tool.name != "crawl_tool");
                 }
             }
-            
-            // Apply model strategy tool filtering
-            completion_option.tools = strategy.filter_tools(completion_option.tools);
-            
+
             let system_prompt = ctx.prompt.render(prompt, &completion_ctx)?;
 
             let mut messages = vec![openrouter::Message::System(system_prompt)];
@@ -75,12 +68,8 @@ impl Configuration {
                 messages.extend(db_message_to_openrouter(&ctx, &m.inner).await?);
             }
 
-            // Use strategy to determine if context should be injected
-            // Deep research explicitly disables context, so respect that
-            if inject_context && strategy.should_inject_context() {
-                let context_message = ctx.prompt.render_context(&completion_ctx)?;
-                messages.push(openrouter::Message::User(context_message));
-            }
+            let context_message = ctx.prompt.render_context(&completion_ctx)?;
+            messages.push(openrouter::Message::User(context_message));
 
             let mut state = ProcessState {
                 ctx,

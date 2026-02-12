@@ -7,10 +7,7 @@ use super::configuration::{Configuration, ProcessState};
 use crate::chat::prompt;
 use crate::openrouter::{self, ReasoningEffort, Tool, ToolCall};
 
-type ToolHandlerFn = dyn for<'a> Fn(
-        &'a mut ProcessState,
-        Vec<ToolCall>,
-    ) -> BoxFuture<'a, Result<bool, anyhow::Error>>
+type ToolHandlerFn = dyn for<'a> Fn(&'a mut ProcessState, Vec<ToolCall>) -> BoxFuture<'a, Result<bool, anyhow::Error>>
     + Send
     + Sync;
 
@@ -57,11 +54,7 @@ impl ConfigurationBuilder {
     }
 
     /// Apply a custom filter to tools if condition is true
-    pub fn filter_tools_if<F>(
-        mut self,
-        condition: bool,
-        filter: F,
-    ) -> Self
+    pub fn filter_tools_if<F>(mut self, condition: bool, filter: F) -> Self
     where
         F: Fn(Vec<Tool>) -> Vec<Tool> + Send + Sync + 'static,
     {
@@ -74,10 +67,7 @@ impl ConfigurationBuilder {
     /// Remove a specific tool by name if condition is true
     pub fn remove_tool_if(self, condition: bool, tool_name: &'static str) -> Self {
         self.filter_tools_if(condition, move |tools| {
-            tools
-                .into_iter()
-                .filter(|t| t.name != tool_name)
-                .collect()
+            tools.into_iter().filter(|t| t.name != tool_name).collect()
         })
     }
 
@@ -132,9 +122,9 @@ impl ConfigurationBuilder {
         }
 
         // Default no-op handler if none provided
-        let tool_handler = self.tool_handler.unwrap_or_else(|| {
-            Arc::new(|_, _| Box::pin(async { Ok(false) }))
-        });
+        let tool_handler = self
+            .tool_handler
+            .unwrap_or_else(|| Arc::new(|_, _| Box::pin(async { Ok(false) })));
 
         Configuration {
             completion_option: openrouter::CompletionOption {
@@ -148,7 +138,6 @@ impl ConfigurationBuilder {
             },
             tool_handler,
             prompt: self.prompt,
-            inject_context: true, // Will be removed in Phase 2, kept for compatibility
         }
     }
 }
@@ -276,7 +265,10 @@ mod tests {
                 schema: Default::default(),
             })
             .filter_tools_if(true, |tools| {
-                tools.into_iter().filter(|t| t.name.starts_with("tool1")).collect()
+                tools
+                    .into_iter()
+                    .filter(|t| t.name.starts_with("tool1"))
+                    .collect()
             })
             .build();
 
