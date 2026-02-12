@@ -12,11 +12,11 @@ use super::{
     prompt::Prompt,
     token::Token,
 };
-use crate::chat::Configurations;
+use crate::chat::Pipelines;
 use crate::utils::model::ModelChecker;
 use crate::{
     chat::prompt::PromptKind,
-    openrouter::{self, ReasoningEffort},
+    openrouter::{self},
     utils::blob::BlobDB,
 };
 use protocol::*;
@@ -30,19 +30,18 @@ pub enum StreamEndReason {
 /// The global context for the chat system.
 /// It holds the database connection, the OpenRouter client, and the channel context.
 pub struct Context {
-    pub(super) db: DatabaseConnection,
-    pub(super) openrouter: openrouter::Openrouter,
-    pub(super) channel: Arc<channel::Context<Token>>,
-    pub(super) prompt: Arc<Prompt>,
-    pub(super) blob: Arc<BlobDB>,
-    pub(super) web_search_tool: Arc<WebSearchTool>,
-    pub(super) crawl_tool: Arc<CrawlTool>,
-    pub(super) lua_repl_tool: Arc<LuaReplTool>,
-    pub configurations: Configurations,
+    pub(crate) db: DatabaseConnection,
+    pub(crate) openrouter: openrouter::Openrouter,
+    pub(crate) channel: Arc<channel::Context<Token>>,
+    pub(crate) prompt: Arc<Prompt>,
+    pub(crate) blob: Arc<BlobDB>,
+    pub(crate) web_search_tool: Arc<WebSearchTool>,
+    pub(crate) crawl_tool: Arc<CrawlTool>,
+    pub(crate) lua_repl_tool: Arc<LuaReplTool>,
+    pub pipelines: Pipelines,
 }
 
 impl Context {
-    // TODO: put API Key in main
     /// Creates a chat subsystem context that prepares routing, prompt, and tool dependencies.
     pub fn new(
         db: DatabaseConnection,
@@ -58,7 +57,7 @@ impl Context {
             web_search_tool: Arc::new(WebSearchTool::new()),
             crawl_tool: Arc::new(CrawlTool::new()),
             lua_repl_tool: Arc::new(LuaReplTool::new()),
-            configurations: Configurations::new(),
+            pipelines: Pipelines::new(),
         })
     }
 
@@ -98,12 +97,12 @@ impl Context {
         self.openrouter.get_capability(model).await
     }
 
-    /// Delegates completion processing to the configured chat workflow.
+    /// Delegates completion processing to the configured pipeline.
     pub fn process(
         self: Arc<Self>,
         completion_ctx: CompletionContext,
     ) -> futures_util::future::BoxFuture<'static, anyhow::Result<()>> {
-        self.configurations.process(self.clone(), completion_ctx)
+        self.pipelines.process(self.clone(), completion_ctx)
     }
 }
 
@@ -112,15 +111,15 @@ impl Context {
 /// It holds the state for the completion, including the model, chat, message, chunks, tokens, and user.
 pub struct CompletionContext {
     /// The model used for the completion.
-    pub(super) model: model::Model,
+    pub(crate) model: model::Model,
     /// The chat the completion belongs to.
-    pub(super) chat: chat::ActiveModel,
+    pub(crate) chat: chat::ActiveModel,
     /// The message the completion belongs to.
-    pub(super) message: message::Model,
+    pub(crate) message: message::Model,
     /// The previous chunks in the chat.
-    pub(super) messages: Vec<message::Model>,
+    pub(crate) messages: Vec<message::Model>,
     /// The user who initiated the completion.
-    pub(super) user: user::Model,
+    pub(crate) user: user::Model,
     /// The publisher for the completion's tokens.
     publisher: Publisher<Token>,
     /// The global context.
@@ -262,7 +261,7 @@ impl CompletionContext {
     }
 
     /// Adds a token to the completion context and publishes it to the channel.
-    pub(super) fn add_token(&mut self, token: Token) {
+    pub(crate) fn add_token(&mut self, token: Token) {
         self.publisher.publish(token)
     }
 

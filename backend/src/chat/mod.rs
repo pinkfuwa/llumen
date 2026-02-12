@@ -1,12 +1,12 @@
 mod channel;
 pub use channel::Cursor;
-mod configs;
 mod context;
 pub mod converter;
+pub(crate) mod pipeline;
 mod prompt;
 mod token;
 mod tools;
 
-pub use configs::Configurations;
 pub use context::{CompletionContext, Context};
+pub use pipeline::Pipelines;
 pub use token::Token;
