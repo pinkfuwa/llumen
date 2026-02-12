@@ -262,6 +262,14 @@ impl CompletionSession {
         self.message.id
     }
 
+    /// Creates a StreamWriter for this session.
+    ///
+    /// The StreamWriter provides a cleaner interface for writing tokens
+    /// compared to directly using the publisher.
+    pub(crate) fn create_stream_writer(&mut self) -> crate::chat::StreamWriter {
+        crate::chat::StreamWriter::new(&mut self.publisher)
+    }
+
     /// Adds a token to the completion context and publishes it to the channel.
     pub(crate) fn add_token(&mut self, token: Token) {
         self.publisher.publish(token)
