@@ -8,7 +8,7 @@ display_name="GPT-OSS 20B"
 # don't put "online" suffix.
 model_id="openai/gpt-oss-20b"
 
-# For more settings, see https://llumen-docs.easonabc.eu.org/user-guide/model-config
+# For more settings, see https://pinkfuwa.github.io/llumen/user/config/model
 "#;
 
 use pasetors::keys::Generate;

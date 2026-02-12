@@ -107,9 +107,7 @@ fn load_api_key() -> String {
             println!(
                 "- configuration: https://github.com/pinkfuwa/llumen/blob/main/docs/user/configuration.md"
             );
-            println!(
-                "- documentation: https://llumen-docs.easonabc.eu.org/user-guide/model-config"
-            );
+            println!("- documentation: https://pinkfuwa.github.io/llumen/user/config/model");
 
             #[cfg(windows)]
             {
