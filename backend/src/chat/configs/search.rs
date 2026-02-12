@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use super::builder::ConfigurationBuilder;
 use super::configuration::Configuration;
 use super::executor::execute_search_tool;
 use crate::{chat::*, openrouter};
@@ -7,12 +8,10 @@ use crate::{chat::*, openrouter};
 pub fn search_configuration() -> Configuration {
     use crate::chat::tools::{get_crawl_tool_def, get_web_search_tool_def};
 
-    Configuration {
-        completion_option: openrouter::CompletionOption::builder()
-            .web_search(true)
-            .tools(&[get_web_search_tool_def(), get_crawl_tool_def()])
-            .build(),
-        tool_handler: Arc::new(|state, toolcalls| {
+    ConfigurationBuilder::new(prompt::PromptKind::Search)
+        .with_web_search_context(true)
+        .with_tools(vec![get_web_search_tool_def(), get_crawl_tool_def()])
+        .with_handler(Arc::new(|state, toolcalls| {
             Box::pin(async move {
                 let assistant_chunks = state.completion_ctx.message.inner.as_assistant().unwrap();
                 let assistant_text = assistant_chunks
@@ -99,8 +98,6 @@ pub fn search_configuration() -> Configuration {
 
                 Ok(false)
             })
-        }),
-        prompt: prompt::PromptKind::Search,
-        inject_context: true,
-    }
+        }))
+        .build()
 }

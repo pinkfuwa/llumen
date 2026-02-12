@@ -46,18 +46,27 @@ impl Configuration {
         let tool_handler = self.tool_handler.clone();
 
         Box::pin(async move {
+            let model = <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
+                .expect("Failed to get model config");
+            let model = model.into();
+            let capability = ctx.get_capability(&model).await;
+            
+            // Use model strategy to determine behavior
+            let strategy = crate::chat::model_strategy::get_model_strategy(&capability);
+            
+            // Filter tools for openrouter compatibility when in Search mode
             if matches!(prompt, prompt::PromptKind::Search) {
                 let use_web_search_tool = ctx.openrouter.is_compatibility_mode();
                 if !use_web_search_tool {
                     completion_option
                         .tools
-                        .retain(|tool| tool.name != "web_search_tool");
+                        .retain(|tool| tool.name != "web_search_tool" && tool.name != "crawl_tool");
                 }
             }
-
-            let model = <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
-                .expect("Failed to get model config");
-            let model = model.into();
+            
+            // Apply model strategy tool filtering
+            completion_option.tools = strategy.filter_tools(completion_option.tools);
+            
             let system_prompt = ctx.prompt.render(prompt, &completion_ctx)?;
 
             let mut messages = vec![openrouter::Message::System(system_prompt)];
@@ -66,12 +75,11 @@ impl Configuration {
                 messages.extend(db_message_to_openrouter(&ctx, &m.inner).await?);
             }
 
-            if inject_context {
-                let capability = ctx.get_capability(&model).await;
-                if capability.text_output {
-                    let context_message = ctx.prompt.render_context(&completion_ctx)?;
-                    messages.push(openrouter::Message::User(context_message));
-                }
+            // Use strategy to determine if context should be injected
+            // Deep research explicitly disables context, so respect that
+            if inject_context && strategy.should_inject_context() {
+                let context_message = ctx.prompt.render_context(&completion_ctx)?;
+                messages.push(openrouter::Message::User(context_message));
             }
 
             let mut state = ProcessState {

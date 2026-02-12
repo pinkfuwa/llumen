@@ -3,6 +3,7 @@ mod helper;
 
 use std::sync::Arc;
 
+use super::builder::ConfigurationBuilder;
 use super::configuration::Configuration;
 use crate::{chat::*, openrouter};
 
@@ -26,11 +27,9 @@ pub fn deep_configuration() -> Configuration {
         }),
     };
 
-    Configuration {
-        completion_option: openrouter::CompletionOption::builder()
-            .tools(&[handoff_tool])
-            .build(),
-        tool_handler: Arc::new(|state, toolcalls| {
+    ConfigurationBuilder::new(prompt::PromptKind::Coordinator)
+        .with_tool(handoff_tool)
+        .with_handler(Arc::new(|state, toolcalls| {
             Box::pin(async move {
                 agent::DeepAgent::handoff_tool_static(
                     &state.ctx,
@@ -40,8 +39,6 @@ pub fn deep_configuration() -> Configuration {
                 .await?;
                 Ok(true)
             })
-        }),
-        prompt: prompt::PromptKind::Coordinator,
-        inject_context: false,
-    }
+        }))
+        .build()
 }

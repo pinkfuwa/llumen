@@ -14,6 +14,7 @@ use protocol::ModeKind;
 
 use crate::chat::{CompletionContext, Context};
 
+pub mod builder;
 mod configuration;
 pub mod deep;
 mod executor;

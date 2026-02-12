@@ -3,6 +3,7 @@ pub use channel::Cursor;
 mod configs;
 mod context;
 pub mod converter;
+mod model_strategy;
 mod prompt;
 mod token;
 mod tools;
