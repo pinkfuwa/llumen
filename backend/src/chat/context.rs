@@ -6,7 +6,7 @@ use sea_orm::*;
 use tokio::join;
 use tokio_stream::{Stream, StreamExt};
 
-use super::tools::{CrawlTool, LuaReplTool, WebSearchTool};
+use super::tools::Tools;
 use super::{
     channel::{self, Publisher},
     prompt::Prompt,
@@ -35,9 +35,7 @@ pub struct Context {
     pub(crate) channel: Arc<channel::Context<Token>>,
     pub(crate) prompt: Arc<Prompt>,
     pub(crate) blob: Arc<BlobDB>,
-    pub(crate) web_search_tool: Arc<WebSearchTool>,
-    pub(crate) crawl_tool: Arc<CrawlTool>,
-    pub(crate) lua_repl_tool: Arc<LuaReplTool>,
+    pub(crate) tools: Tools,
     pub strategies: Strategies,
 }
 
@@ -54,9 +52,7 @@ impl Context {
             channel: Arc::new(channel::Context::new()),
             prompt: Arc::new(Prompt::new()?),
             blob,
-            web_search_tool: Arc::new(WebSearchTool::new()),
-            crawl_tool: Arc::new(CrawlTool::new()),
-            lua_repl_tool: Arc::new(LuaReplTool::new()),
+            tools: Tools::new(),
             strategies: Strategies::new(),
         })
     }

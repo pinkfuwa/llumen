@@ -9,7 +9,7 @@ use super::helper::*;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::chat::prompt::{CompletedStep, ReportInputContext, StepInputContext};
-use crate::chat::tools::{get_crawl_tool_def, get_lua_repl_def, get_web_search_tool_def};
+use crate::chat::tools::get_lua_repl_def;
 use crate::chat::{CompletionSession, Context, Token};
 use crate::openrouter::{self, ReasoningEffort};
 
@@ -170,10 +170,7 @@ impl<'a> DeepAgent<'a> {
             let system_prompt = self.ctx.prompt.render_coder(locale)?;
             (system_prompt, tools)
         } else {
-            let mut tools = vec![get_crawl_tool_def()];
-            if step.need_search {
-                tools.push(get_web_search_tool_def());
-            }
+            let tools = self.ctx.tools.for_deep_mode(step.need_search);
             let system_prompt = self.ctx.prompt.render_researcher(locale)?;
             (system_prompt, tools)
         };
@@ -360,7 +357,7 @@ impl<'a> DeepAgent<'a> {
                     return Ok("Invalid arguments for web_search_tool".to_string());
                 }
                 let args = args.unwrap();
-                match self.ctx.web_search_tool.search(&args.query).await {
+                match self.ctx.tools.web_search.search(&args.query).await {
                     Ok(results) => {
                         let mut output = String::new();
                         for (i, result) in results.iter().enumerate().take(10) {
@@ -396,7 +393,7 @@ impl<'a> DeepAgent<'a> {
                     return Ok("Invaild arguments".to_string());
                 }
                 let args = args.unwrap();
-                match self.ctx.crawl_tool.crawl(&args.url).await {
+                match self.ctx.tools.crawl.crawl(&args.url).await {
                     Ok(content) => Ok(content),
                     Err(e) => {
                         // Return error as string so agent can see it and potentially recover
@@ -415,7 +412,7 @@ impl<'a> DeepAgent<'a> {
                     return Ok("Invaild arguments".to_string());
                 }
                 let args = args.unwrap();
-                match self.ctx.lua_repl_tool.execute(&args.code).await {
+                match self.ctx.tools.lua_repl.execute(&args.code).await {
                     Ok(result) => Ok(result),
                     Err(e) => {
                         // Return error as string so agent can see it and potentially recover

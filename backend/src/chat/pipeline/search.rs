@@ -7,7 +7,6 @@ use serde::Deserialize;
 use super::model_strategy;
 use super::{ExecutionStrategy, RunState};
 use crate::chat::prompt;
-use crate::chat::tools::{get_crawl_tool_def, get_web_search_tool_def};
 use crate::chat::Context;
 use crate::openrouter::{self, Capability, ToolCall};
 
@@ -26,7 +25,7 @@ impl ExecutionStrategy for SearchStrategy {
     ) -> openrouter::CompletionOption {
         let is_openrouter = !ctx.openrouter.is_compatibility_mode();
 
-        let mut tools = vec![get_web_search_tool_def(), get_crawl_tool_def()];
+        let mut tools = ctx.tools.for_search_mode();
 
         // On native OpenRouter, the platform handles web search via plugins,
         // so we don't need the tool-call versions.
@@ -150,7 +149,7 @@ async fn execute_search_tool(ctx: &Arc<Context>, tool_name: &str, args: &str) ->
                 return "Invalid arguments for web_search_tool".to_string();
             }
             let args = args.unwrap();
-            match ctx.web_search_tool.search(&args.query).await {
+            match ctx.tools.web_search.search(&args.query).await {
                 Ok(results) => {
                     let mut output = String::new();
                     for (i, result) in results.iter().enumerate().take(10) {
@@ -185,7 +184,7 @@ async fn execute_search_tool(ctx: &Arc<Context>, tool_name: &str, args: &str) ->
                 return "Invalid arguments for crawl_tool".to_string();
             }
             let args = args.unwrap();
-            match ctx.crawl_tool.crawl(&args.url).await {
+            match ctx.tools.crawl.crawl(&args.url).await {
                 Ok(content) => content,
                 Err(e) => {
                     log::warn!("Crawl error for URL '{}': {}", args.url, e);
