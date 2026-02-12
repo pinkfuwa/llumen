@@ -38,6 +38,7 @@ mod execution;
 pub mod message_builder;
 pub(crate) mod model_strategy;
 mod normal;
+mod processor;
 mod runner;
 mod search;
 

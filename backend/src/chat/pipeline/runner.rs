@@ -3,14 +3,12 @@ use std::sync::Arc;
 use anyhow::Result;
 use tokio_stream::StreamExt;
 
+use super::processor::StreamProcessor;
 use super::ExecutionStrategy;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
-use crate::chat::token::Token;
 use crate::chat::{CompletionSession, Context};
 use crate::openrouter;
-use entity::file;
-use sea_orm::ActiveValue;
 
 /// Mutable state carried across the streaming loop.
 ///
@@ -93,78 +91,8 @@ async fn process_loop(
 
     let result = res.get_result();
 
-    // Track cost and token usage
-    state
-        .session
-        .update_usage(result.usage.cost as f32, result.usage.token as i32);
-
-    // Store assistant text chunks on the message entity
-    state
-        .session
-        .message
-        .inner
-        .as_assistant()
-        .unwrap()
-        .extend(openrouter_stream_to_assitant_chunk(&result.responses));
-
-    // Store reasoning details if present
-    if let Some(reasoning_details) = result.reasoning_details {
-        state
-            .session
-            .message
-            .inner
-            .add_reasoning_detail(reasoning_details);
-    }
-
-    // Handle generated images: save to blob storage + DB
-    if !result.image.is_empty() {
-        for image in &result.image {
-            let chat_id = state.session.get_chat_id();
-            let mime_type = image.mime_type.clone();
-            let owner_id = state.session.user.id;
-            let data = image.data.clone();
-            let blob = state.ctx.blob.clone();
-            let db = &state.ctx.db;
-
-            use sea_orm::ActiveModelTrait;
-            let result = file::ActiveModel {
-                chat_id: ActiveValue::Set(Some(chat_id)),
-                owner_id: ActiveValue::Set(Some(owner_id)),
-                mime_type: ActiveValue::Set(Some(mime_type)),
-                ..Default::default()
-            }
-            .insert(db)
-            .await?;
-
-            let file_id = result.id;
-
-            let size = data.len();
-            if let Err(e) = blob
-                .insert(file_id, size, tokio_stream::once(bytes::Bytes::from(data)))
-                .await
-            {
-                log::error!("Failed to store image in blob: {}", e);
-                continue;
-            }
-
-            state.session.message.inner.add_image(file_id);
-            state.session.add_token(Token::Image(file_id));
-        }
-    }
-
-    // Handle URL citations from annotations
-    if let Some(annotations) = result.annotations {
-        let citations = openrouter::extract_url_citations(&annotations);
-        state.session.message.inner.add_annotation(annotations);
-        if !citations.is_empty() {
-            state
-                .session
-                .message
-                .inner
-                .add_url_citation(citations.clone());
-            state.session.add_token(Token::UrlCitation(citations));
-        }
-    }
+    // Post-process: update usage, store chunks, handle images/annotations
+    StreamProcessor::process_result(state, &result).await?;
 
     let halt = halt_with_error?;
     if matches!(halt, StreamEndReason::Halt) {

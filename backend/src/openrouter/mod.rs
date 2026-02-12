@@ -22,4 +22,4 @@ pub use model::{Capability, MaybeCapability, Model, ModelBuilder};
 pub use openrouter::Openrouter;
 pub use option::{CompletionOption, ReasoningEffort, Tool};
 pub use raw::FinishReason;
-pub use stream::{StreamCompletion, StreamCompletionResp, ToolCall};
+pub use stream::{StreamCompletion, StreamCompletionResp, StreamResult, ToolCall};
