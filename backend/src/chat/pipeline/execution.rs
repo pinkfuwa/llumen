@@ -2,20 +2,7 @@ use crate::openrouter;
 
 /// Execution represents what to send to the LLM for one completion call.
 ///
-/// **Purpose**: Immutable snapshot of execution input.
-///
-/// **Lifetime**: Created before each LLM call, consumed by that call.
-/// In tool call loops, a new Execution is built for each iteration.
-///
-/// **Why separate from CompletionSession?**
-/// - Session = per-request state (DB entities, publisher, usage tracking)
-/// - Execution = per-LLM-call data (messages, tools, model config)
-/// - Same session can create multiple Executions (tool call loop)
-///
-/// **Benefits**:
-/// - Easy to test: construct Execution, inspect it
-/// - Easy to log: see exactly what's being sent to LLM
-/// - Clear separation: WHAT (data) vs HOW (strategy)
+/// Immutable snapshot of execution input.
 pub struct Execution {
     /// The messages to send to the LLM (system prompt + history + context)
     pub messages: Vec<openrouter::Message>,

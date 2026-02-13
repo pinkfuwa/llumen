@@ -11,12 +11,6 @@ use crate::chat::{CompletionSession, Context};
 use crate::openrouter;
 
 /// Mutable state carried across the streaming loop.
-///
-/// If you're reading this to understand the architecture:
-/// - `ctx`      = shared services (DB, openrouter, blob storage, tools)
-/// - `session`  = per-request state (publisher, message being built, usage)
-/// - `model`    = resolved model config for this request
-/// - `messages`  = the growing message list sent to the LLM
 pub struct RunState {
     pub ctx: Arc<Context>,
     pub session: CompletionSession,
@@ -83,7 +77,7 @@ async fn process_loop(
         .stream(model, messages, completion_option.clone())
         .await?;
 
-    // Pipe LLM tokens → publisher → SSE → browser
+    // Pipe LLM tokens -> publisher -> SSE -> browser
     let halt_with_error = state
         .session
         .put_stream((&mut res).map(|resp| resp.map(openrouter_to_buffer_token)))

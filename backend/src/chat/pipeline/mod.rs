@@ -48,13 +48,6 @@ pub use runner::RunState;
 /// An ExecutionStrategy defines the mode-specific behavior for a chat
 /// completion.
 ///
-/// Think of it like a recipe:
-/// - `prompt_kind()`: what template to use for the system message
-/// - `completion_option()`: what tools and settings to send to the LLM
-/// - `inject_context()`: whether to add the context message
-/// - `prepare()`: builds the complete Execution (messages + options)
-/// - `handle_tool_calls()`: what to do when the LLM calls a tool
-///
 /// The shared runner (`runner::run`) handles everything else:
 /// streaming, images, annotations, database saves.
 pub trait ExecutionStrategy: Send + Sync {
@@ -63,9 +56,9 @@ pub trait ExecutionStrategy: Send + Sync {
 
     /// Build the CompletionOption for this request.
     ///
-    /// This is where each mode configures its tools, temperature, etc.
-    /// The `ctx` is provided so you can check things like compatibility mode.
-    /// The `capability` is provided so you can filter tools for the model.
+    /// - This is where each mode configures its tools, temperature, etc.
+    /// - The `ctx` is provided so you can check things like compatibility mode.
+    /// - The `capability` is provided so you can filter tools for the model.
     fn completion_option(
         &self,
         ctx: &Context,
@@ -74,11 +67,11 @@ pub trait ExecutionStrategy: Send + Sync {
 
     /// Whether to inject the context message after chat history.
     ///
-    /// Most modes return `true`. Deep research returns `false` because
-    /// it uses its own specialized prompts.
+    /// Most modes return `true`. Deep research returns `false` because it uses
+    /// its own specialized prompts.
     ///
-    /// Note: even when this returns `true`, the MessageBuilder will still
-    /// skip context for image-only models (handled by ModelStrategy).
+    /// Note: even when this returns `true`, the MessageBuilder will still skip
+    /// context for image-only models (handled by ModelStrategy).
     fn inject_context(&self) -> bool {
         true
     }

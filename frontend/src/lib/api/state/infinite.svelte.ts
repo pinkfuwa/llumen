@@ -262,7 +262,7 @@ export function createInfiniteQueryEffect<D extends { id: number }>(
 	// The target HTMLElement reference remains stable after initialization.
 	// While the page object reference changes (due to immutable updates), the target
 	// itself doesn't change. Creating such an effect would cause an infinite loop:
-	// pages change → effect runs → observers recreated → fetch triggered → pages change → loop
+	// pages change -> effect runs -> observers recreated -> fetch triggered -> pages change -> loop
 	// Observers are created once in activatePage() and that's sufficient.
 }
 

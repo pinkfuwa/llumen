@@ -72,7 +72,7 @@ impl DeepAgent {
         Ok(())
     }
 
-    /// Run the full deep research pipeline: enhance → plan → execute steps →
+    /// Run the full deep research pipeline: enhance -> plan -> execute steps ->
     /// report.
     async fn run(&mut self, session: &mut CompletionSession) -> Result<()> {
         self.enhance(session).await?;

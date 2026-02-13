@@ -5,9 +5,9 @@ use crate::openrouter::{Capability, Tool};
 /// Strategy pattern for model-specific behavior.
 ///
 /// Different model types need different treatment:
-/// - Text-only models (GPT-4, Claude): get context, keep tools
-/// - Image-only models (FLUX2): skip context, skip tools
-/// - Mixed models (gemini-image-gen-3-pro): get context, keep tools
+/// - Text-only models (claude-sonnet-4.5): get context, keep tools
+/// - Image-only models (flux.2-klein-4b): skip context, skip tools
+/// - Mixed models (gemini-3-pro-image-preview): get context, keep tools
 pub trait ModelStrategy: Send + Sync {
     fn should_inject_context(&self) -> bool;
     fn filter_tools(&self, tools: Vec<Tool>) -> Vec<Tool>;
