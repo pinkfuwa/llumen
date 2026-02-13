@@ -83,24 +83,18 @@ pub async fn route(
     .await
     .raw_kind(ErrorKind::Internal)?;
 
-    let mut session = app
-        .processor
-        .get_completion_session(user_id, req.chat_id, req.model_id)
+    let session = app
+        .chat
+        .get_session(user_id, req.chat_id, req.model_id)
         .await
         .kind(ErrorKind::ResourceNotFound)?;
 
-    let id = session.get_message_id();
+    let id = session.message.id;
+    let strategy = req.mode.into();
 
-    let closure = async move {
-        session.set_mode(req.mode.into());
-
-        app.processor.clone().process(session).await?;
-
-        Ok::<(), anyhow::Error>(())
-    };
-
+    let processor = app.chat.clone();
     tokio::spawn(async move {
-        if let Err(e) = closure.await {
+        if let Err(e) = processor.process(strategy, session).await {
             log::error!("Failed to process message: {:?}", e);
         }
     });

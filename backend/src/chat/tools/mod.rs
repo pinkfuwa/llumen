@@ -1,13 +1,4 @@
-//! A collection of tools
-//!
-//! Tool contain tool prompt, a async method for solving tool output
-//!
-//! If the method return Err, step current completion with error message
-//! displayed to user
-//!
-//! If the error is expected to be seen by llumen(LLM), return Ok(string)
-//!
-//! Tool cannot manipulate and direct output, but subagent can
+//! A collection of built-in tools
 
 use std::sync::Arc;
 
@@ -72,6 +63,21 @@ impl Tools {
             tools.push(get_web_search_tool_def());
         }
         tools
+    }
+
+    /// Returns the handoff tool for the coordinator to trigger deep research.
+    pub fn get_deep_research_def(&self) -> crate::openrouter::Tool {
+        crate::openrouter::Tool {
+            name: "handoff_to_planner".to_string(),
+            description: "Hand off complex research tasks to a specialized planning agent. \
+                         Use this for any question requiring research, factual lookup, or analysis."
+                .to_string(),
+            schema: serde_json::json!({
+                "type": "object",
+                "properties": {},
+                "required": [],
+            }),
+        }
     }
 }
 

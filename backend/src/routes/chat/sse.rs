@@ -17,7 +17,7 @@ use typeshare::typeshare;
 
 use crate::{
     AppState,
-    chat::{Cursor, Token},
+    chat::{Cursor, converter::token_to_sse},
     errors::*,
     middlewares::auth::UserId,
 };
@@ -158,7 +158,7 @@ pub async fn route(
         );
     }
 
-    let pipeline = app.processor.clone();
+    let pipeline = app.chat.clone();
     let res = Chat::find_by_id(req.id)
         .one(&app.conn)
         .await
@@ -206,44 +206,7 @@ pub async fn route(
     let stream = pipeline.clone().subscribe(req.id, cursor);
 
     let st = stream::iter(initial_event).chain(stream.filter_map(|token| {
-        let event = match token {
-            Token::Assistant(content) => SseResp::Token(content),
-            Token::Reasoning(content) => SseResp::Reasoning(content),
-            Token::ToolCall { name, arg } => SseResp::ToolCall(SseRespToolCall { name, args: arg }),
-            Token::Complete {
-                message_id,
-                token,
-                cost,
-            } => SseResp::Complete(SseRespMessageComplete {
-                id: message_id,
-                token_count: token,
-                cost,
-                version: message_id,
-            }),
-            Token::ToolResult(content) => SseResp::ToolResult(SseRespToolResult { content }),
-            Token::Error(content) => SseResp::Error(content),
-            Token::Title(title) => SseResp::Title(title),
-            Token::Start { id, user_msg_id } => SseResp::Start(SseStart {
-                id,
-                user_msg_id,
-                version: user_msg_id,
-            }),
-            Token::Empty => return None,
-            Token::DeepPlan(content) => SseResp::DeepPlan(content),
-            Token::DeepStepStart(content) => SseResp::DeepStepStart(content),
-            Token::DeepStepReasoning(content) => SseResp::DeepStepReasoning(content),
-            Token::DeepStepToolCall { name, arg } => {
-                SseResp::DeepStepToolCall(SseRespToolCall { name, args: arg })
-            }
-            Token::DeepStepToken(content) => SseResp::DeepStepToken(content),
-            Token::DeepStepToolResult(content) => {
-                SseResp::DeepStepToolResult(SseRespToolResult { content })
-            }
-            Token::DeepReport(content) => SseResp::DeepReport(content),
-            Token::Image(file_id) => SseResp::Image(file_id),
-            Token::UrlCitation(citations) => SseResp::UrlCitation(citations),
-        };
-
+        let event = token_to_sse(token)?;
         Some(Ok(Event::default().json_data(event).unwrap()))
     }));
 
