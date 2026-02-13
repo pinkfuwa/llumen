@@ -332,9 +332,59 @@ fn test_stream_result_images() {
         annotations: None,
         reasoning_details: None,
         image: vec![image],
+        citations: vec![],
     };
 
     assert_eq!(result.image.len(), 1, "Should have one image");
     assert_eq!(result.image[0].mime_type, "image/png");
     assert!(!result.image[0].data.is_empty());
+}
+
+#[test]
+fn test_citation_extraction() {
+    use crate::openrouter::annotation::extract_url_citations;
+    use serde_json::json;
+
+    // Test extracting citations from annotations
+    let annotations = json!([
+        {
+            "type": "url_citation",
+            "url_citation": {
+                "url": "https://example.com",
+                "title": "Example Site",
+                "content": "Sample content",
+                "start_index": 10,
+                "end_index": 50,
+                "favicon": "https://example.com/favicon.ico"
+            }
+        },
+        {
+            "type": "url_citation",
+            "url_citation": {
+                "url": "https://test.com",
+                "title": "Test Site"
+            }
+        },
+        {
+            "type": "other_annotation",
+            "data": "should be ignored"
+        }
+    ]);
+
+    let citations = extract_url_citations(&annotations);
+
+    assert_eq!(citations.len(), 2, "Should extract 2 citations");
+    assert_eq!(citations[0].url, "https://example.com");
+    assert_eq!(citations[0].title, Some("Example Site".to_string()));
+    assert_eq!(citations[0].content, Some("Sample content".to_string()));
+    assert_eq!(citations[0].start_index, Some(10));
+    assert_eq!(citations[0].end_index, Some(50));
+    assert_eq!(
+        citations[0].favicon,
+        Some("https://example.com/favicon.ico".to_string())
+    );
+
+    assert_eq!(citations[1].url, "https://test.com");
+    assert_eq!(citations[1].title, Some("Test Site".to_string()));
+    assert_eq!(citations[1].content, None);
 }

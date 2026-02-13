@@ -9,7 +9,7 @@ use super::Image;
 
 use super::{HTTP_REFERER, X_TITLE, error::Error, raw};
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct ToolCall {
     pub id: String,
     pub name: String,
@@ -32,6 +32,7 @@ pub struct StreamCompletion {
     reasoning_details: Option<Vec<serde_json::Value>>,
     model_id: String,
     images: Vec<Image>,
+    citations: Vec<protocol::UrlCitation>,
 }
 
 pub struct StreamResult {
@@ -42,6 +43,7 @@ pub struct StreamResult {
     pub annotations: Option<serde_json::Value>,
     pub reasoning_details: Option<serde_json::Value>,
     pub image: Vec<Image>,
+    pub citations: Vec<protocol::UrlCitation>,
 }
 
 impl StreamResult {
@@ -90,6 +92,7 @@ impl StreamCompletion {
                 reasoning_details: None,
                 model_id,
                 images: Vec::new(),
+                citations: Vec::new(),
             }),
             Err(e) => {
                 log::error!("Failed to create event source: {}", e);
@@ -117,6 +120,17 @@ impl StreamCompletion {
             self.reasoning_details
                 .get_or_insert_with(|| Vec::with_capacity(1))
                 .extend(reasoning_details);
+        }
+
+        // Extract citations from annotations
+        if let Some(ref ann_array) = self.annotations {
+            let ann_value = serde_json::Value::Array(ann_array.clone());
+            let new_citations = super::annotation::extract_url_citations(&ann_value);
+            for citation in new_citations {
+                if !self.citations.iter().any(|c| c.url == citation.url) {
+                    self.citations.push(citation);
+                }
+            }
         }
 
         // Handle images
@@ -331,6 +345,7 @@ impl StreamCompletion {
             annotations: self.annotations.take().map(serde_json::Value::Array),
             reasoning_details,
             image: std::mem::take(&mut self.images),
+            citations: std::mem::take(&mut self.citations),
         }
     }
 }

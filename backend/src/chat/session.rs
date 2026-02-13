@@ -235,13 +235,20 @@ impl CompletionSession {
     }
 
     /// Applies metadata from a finished stream result (annotations, images,
-    /// reasoning details).
+    /// reasoning details, citations).
     pub async fn apply_stream_result(&mut self, result: &openrouter::StreamResult) {
         if let Some(ref ann) = result.annotations {
             self.message.inner.add_annotation(ann.clone());
         }
         if let Some(ref rd) = result.reasoning_details {
             self.message.inner.add_reasoning_detail(rd.clone());
+        }
+        if !result.citations.is_empty() {
+            self.message
+                .inner
+                .add_url_citation(result.citations.clone());
+            self.publisher
+                .publish(Token::UrlCitation(result.citations.clone()));
         }
         for img in &result.image {
             if let Some(id) = self.store_image(img).await {
