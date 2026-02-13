@@ -3,12 +3,14 @@ use std::env;
 
 #[tokio::test]
 async fn test_text_output_capability() {
-    // Test that text_output capability is correctly detected for different model types
+    // Test that text_output capability is correctly detected for different model
+    // types
 
     // Test with a fake API key and base URL (won't make actual requests)
     let openrouter = Openrouter::new("test_key", "https://openrouter.ai/api");
 
-    // Give initial model fetch time to start (though it won't complete with fake key)
+    // Give initial model fetch time to start (though it won't complete with fake
+    // key)
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
     // Test 1: Future model (not in listing) - should default to image-only

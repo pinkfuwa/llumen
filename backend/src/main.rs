@@ -1,33 +1,39 @@
 //! Llumen Backend - LLM Chat Application Server
 //!
-//! This is the main entry point for the Llumen backend service. The backend is built with:
+//! This is the main entry point for the Llumen backend service. The backend is
+//! built with:
 //! - Axum: web framework for handling HTTP requests
 //! - SeaORM: database ORM for SQLite
 //! - Tokio: async runtime
 //! - OpenRouter: LLM API integration
 //!
-//! The server exposes REST APIs for chat management, user authentication, message handling,
-//! and model discovery. It also serves the compiled frontend as static files.
+//! The server exposes REST APIs for chat management, user authentication,
+//! message handling, and model discovery. It also serves the compiled frontend
+//! as static files.
 //!
 //! # Architecture Overview
 //!
 //! ## Core Components
 //!
-//! 1. **AppState**: Global application state containing database connection, encryption keys,
-//!    and the main chat processing pipeline (Context).
+//! 1. **AppState**: Global application state containing database connection,
+//!    encryption keys, and the main chat processing pipeline (Context).
 //!
-//! 2. **Chat Pipeline (chat/context.rs)**: Manages LLM completion requests, handles streaming
-//!    responses, and coordinates between multiple chat modes (normal, search, deep research).
+//! 2. **Chat Pipeline (chat/context.rs)**: Manages LLM completion requests,
+//!    handles streaming responses, and coordinates between multiple chat modes
+//!    (normal, search, deep research).
 //!
-//! 3. **API Routes**: Organized into modules for chat, user, message, model, file, and auth
-//!    operations. Each route validates requests and interacts with the database and LLM API.
+//! 3. **API Routes**: Organized into modules for chat, user, message, model,
+//!    file, and auth operations. Each route validates requests and interacts
+//!    with the database and LLM API.
 //!
-//! 4. **Middlewares**: Handles authentication (PASETO tokens), compression (Zstd), and logging.
+//! 4. **Middlewares**: Handles authentication (PASETO tokens), compression
+//!    (Zstd), and logging.
 //!
-//! 5. **OpenRouter Client**: Abstracts interactions with OpenRouter's LLM API, including
-//!    streaming completions and tool calling.
+//! 5. **OpenRouter Client**: Abstracts interactions with OpenRouter's LLM API,
+//!    including streaming completions and tool calling.
 //!
-//! The MiMalloc allocator is used for better performance on memory-constrained systems.
+//! The MiMalloc allocator is used for better performance on memory-constrained
+//! systems.
 
 #![deny(unsafe_code)]
 
@@ -68,17 +74,21 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 
 /// AppState contains all shared server state accessible to request handlers.
 ///
-/// It's wrapped in Arc<AppState> and passed through Axum middleware to all route handlers.
-/// This enables stateful operations across async request handling.
+/// It's wrapped in Arc<AppState> and passed through Axum middleware to all
+/// route handlers. This enables stateful operations across async request
+/// handling.
 ///
 /// # Fields
 ///
 /// * `conn`: Database connection pool for all database operations via SeaORM
-/// * `key`: Encryption key for PASETO token generation/validation used in authentication
+/// * `key`: Encryption key for PASETO token generation/validation used in
+///   authentication
 /// * `hasher`: Password hasher for user authentication and security
-/// * `processor`: Main chat processing pipeline context managing LLM completions
+/// * `processor`: Main chat processing pipeline context managing LLM
+///   completions
 /// * `blob`: Blob database for storing binary data and file uploads
-/// * `user_header`: Optional HTTP header name for header-based authentication (SSO/proxy integration)
+/// * `user_header`: Optional HTTP header name for header-based authentication
+///   (SSO/proxy integration)
 pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
@@ -90,8 +100,9 @@ pub struct AppState {
 
 /// Attempts to load the OpenRouter API key from environment variables.
 ///
-/// The API key is required to make requests to the OpenRouter API for LLM completions.
-/// If not found, prints instructions for obtaining a key and exits gracefully.
+/// The API key is required to make requests to the OpenRouter API for LLM
+/// completions. If not found, prints instructions for obtaining a key and exits
+/// gracefully.
 fn load_api_key() -> String {
     match (var("API_KEY"), var("OPENA_API_KEY")) {
         (Ok(key), _) => key,
@@ -119,8 +130,9 @@ fn load_api_key() -> String {
 
 /// Handles graceful shutdown signals.
 ///
-/// Listens for either Ctrl+C (SIGINT) on all platforms or SIGTERM on Unix systems.
-/// This allows the server to clean up resources and finish in-flight requests before stopping.
+/// Listens for either Ctrl+C (SIGINT) on all platforms or SIGTERM on Unix
+/// systems. This allows the server to clean up resources and finish in-flight
+/// requests before stopping.
 async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()

@@ -23,7 +23,8 @@ pub enum Token {
         arg: String,
     },
     // result json of tool, tools are called sequentially
-    // For example, ToolCall(1)->ToolCall(2)->ToolCall(3), then first ToolResult are for first call
+    // For example, ToolCall(1)->ToolCall(2)->ToolCall(3), then first ToolResult are for first
+    // call
     ToolResult(String),
     Reasoning(String),
     Empty,

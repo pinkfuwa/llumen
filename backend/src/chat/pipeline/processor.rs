@@ -2,7 +2,6 @@ use anyhow::Result;
 use bytes::Bytes;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue;
-use tokio_stream::StreamExt;
 
 use super::runner::RunState;
 use crate::chat::converter::openrouter_stream_to_assitant_chunk;
@@ -112,7 +111,11 @@ impl StreamProcessor {
     fn store_annotations(state: &mut RunState, result: &openrouter::StreamResult) {
         if let Some(ref annotations) = result.annotations {
             let citations = openrouter::extract_url_citations(annotations);
-            state.session.message.inner.add_annotation(annotations.clone());
+            state
+                .session
+                .message
+                .inner
+                .add_annotation(annotations.clone());
 
             if !citations.is_empty() {
                 state

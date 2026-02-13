@@ -7,9 +7,7 @@ use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{
-    AppState, errors::*, middlewares::auth::UserId, openrouter, utils::model::ModelChecker,
-};
+use crate::{AppState, errors::*, middlewares::auth::UserId, openrouter, utils::model::ModelChecker};
 
 #[derive(Debug, Serialize)]
 #[typeshare]

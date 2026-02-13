@@ -45,7 +45,8 @@ mod search;
 pub use execution::Execution;
 pub use runner::RunState;
 
-/// An ExecutionStrategy defines the mode-specific behavior for a chat completion.
+/// An ExecutionStrategy defines the mode-specific behavior for a chat
+/// completion.
 ///
 /// Think of it like a recipe:
 /// - `prompt_kind()`: what template to use for the system message
@@ -136,7 +137,8 @@ pub trait ExecutionStrategy: Send + Sync {
     /// Handle tool calls from the LLM response.
     ///
     /// Returns `true` if the completion is done (no more streaming needed).
-    /// Returns `false` if the LLM should continue (tool results added to messages).
+    /// Returns `false` if the LLM should continue (tool results added to
+    /// messages).
     fn handle_tool_calls<'a>(
         &'a self,
         state: &'a mut RunState,

@@ -79,7 +79,8 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         let mut map = self.map.lock().unwrap();
         map.retain(|_, v| v.strong_count() > 0);
     }
-    /// Ensures there is an `Inner` for the channel, creating one when necessary.
+    /// Ensures there is an `Inner` for the channel, creating one when
+    /// necessary.
     fn get_inner(&self, id: i32) -> Arc<Inner<S>> {
         let mut map = self.map.lock().unwrap();
         match map.get(&id).map(|w| w.upgrade()).flatten() {
@@ -103,7 +104,8 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         }
     }
 
-    /// Starts streaming tokens for a subscriber, optionally resuming from a cursor.
+    /// Starts streaming tokens for a subscriber, optionally resuming from a
+    /// cursor.
     pub fn subscribe(self: Arc<Self>, id: i32, cursor: Option<Cursor>) -> impl Stream<Item = S> {
         let mut subscriber = self.get_subscriber(id);
         if let Some(cursor) = cursor {
@@ -181,7 +183,8 @@ pub struct Publisher<S: Mergeable> {
 }
 
 impl<S: Mergeable + Clone + Send + 'static> Publisher<S> {
-    /// Appends a token for subscribers, merging with the previous chunk when possible.
+    /// Appends a token for subscribers, merging with the previous chunk when
+    /// possible.
     pub fn publish(&mut self, item: S) {
         let mut buffer = self.inner.buffer.lock().unwrap();
         if let Some(last) = buffer.last_mut() {

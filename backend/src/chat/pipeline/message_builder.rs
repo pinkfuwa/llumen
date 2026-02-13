@@ -32,14 +32,31 @@ impl MessageBuilder {
         self
     }
 
-    /// Append context prompt ONLY if the model strategy allows it.
+    /// Insert context prompt BEFORE the last user message if the model strategy
+    /// allows it.
     ///
-    /// Image-only models (like FLUX2) return `should_inject_context() == false`,
-    /// so context is automatically skipped for them. Mixed models (like
-    /// gemini-image-gen-3-pro) still receive context because they can process text.
+    /// Image-only models (like `black-forest-labs/flux.2-klein-4b`) return
+    /// `should_inject_context() == false`, so context is automatically skipped
+    /// for them. Mixed models (like `google/gemini-3-pro-image-preview`) still
+    /// receive context because they can process text.
+    ///
+    /// The context is inserted before the last user message to ensure proper
+    /// ordering: [system, ...previous_messages, context, last_user_message]
     pub fn context(mut self, strategy: &dyn ModelStrategy, context_prompt: String) -> Self {
         if strategy.should_inject_context() {
-            self.messages.push(Message::User(context_prompt));
+            // Find the last user message position
+            let last_user_pos = self
+                .messages
+                .iter()
+                .rposition(|msg| matches!(msg, Message::User(_) | Message::MultipartUser { .. }));
+
+            if let Some(pos) = last_user_pos {
+                // Insert context BEFORE the last user message
+                self.messages.insert(pos, Message::User(context_prompt));
+            } else {
+                // No user message found, append context at the end (fallback)
+                self.messages.push(Message::User(context_prompt));
+            }
         }
         self
     }
@@ -49,7 +66,8 @@ impl MessageBuilder {
     }
 }
 
-/// Convenience: resolve the right strategy from a capability and build messages.
+/// Convenience: resolve the right strategy from a capability and build
+/// messages.
 pub fn build_messages(
     system_prompt: String,
     history: Vec<Message>,
@@ -75,8 +93,12 @@ mod tests {
             .context(&TextOnlyStrategy, "ctx".into())
             .build();
 
-        // system + user + context = 3
+        // system + context + user = 3
         assert_eq!(msgs.len(), 3);
+        // Verify order: context should be before the last user message
+        assert!(matches!(msgs[0], Message::System(_)));
+        assert!(matches!(msgs[1], Message::User(_))); // context
+        assert!(matches!(msgs[2], Message::User(_))); // original user message
     }
 
     #[test]
@@ -97,8 +119,12 @@ mod tests {
             .context(&MixedStrategy, "ctx".into())
             .build();
 
-        // system + user + context = 3
+        // system + context + user = 3
         assert_eq!(msgs.len(), 3);
+        // Verify order: context should be before the last user message
+        assert!(matches!(msgs[0], Message::System(_)));
+        assert!(matches!(msgs[1], Message::User(_))); // context
+        assert!(matches!(msgs[2], Message::User(_))); // original user message
     }
 
     #[test]
@@ -108,8 +134,10 @@ mod tests {
             .context(&TextOnlyStrategy, "ctx".into())
             .build();
 
-        // system + context = 2
+        // system + context = 2 (no user message, so context appended at end)
         assert_eq!(msgs.len(), 2);
+        assert!(matches!(msgs[0], Message::System(_)));
+        assert!(matches!(msgs[1], Message::User(_))); // context
     }
 
     #[test]
@@ -128,11 +156,12 @@ mod tests {
             .context(&TextOnlyStrategy, "ctx".into())
             .build();
 
-        assert_eq!(msgs.len(), 5); // system + 3 history + context
+        // system + user + assistant + context + user = 5
+        assert_eq!(msgs.len(), 5);
         assert!(matches!(msgs[0], Message::System(_)));
-        assert!(matches!(msgs[1], Message::User(_)));
+        assert!(matches!(msgs[1], Message::User(_))); // first user message
         assert!(matches!(msgs[2], Message::Assistant { .. }));
-        assert!(matches!(msgs[3], Message::User(_)));
-        assert!(matches!(msgs[4], Message::User(_))); // context
+        assert!(matches!(msgs[3], Message::User(_))); // context (before last user)
+        assert!(matches!(msgs[4], Message::User(_))); // second user message
     }
 }

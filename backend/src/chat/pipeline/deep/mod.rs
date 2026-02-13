@@ -5,8 +5,8 @@ use anyhow::Result;
 use futures_util::future::BoxFuture;
 
 use super::{ExecutionStrategy, RunState};
-use crate::chat::prompt;
 use crate::chat::Context;
+use crate::chat::prompt;
 use crate::openrouter::{self, Capability, ToolCall};
 
 /// Deep research mode: coordinator hands off to multi-step research agent.
@@ -46,7 +46,8 @@ impl ExecutionStrategy for DeepStrategy {
             .build()
     }
 
-    /// Deep research doesn't inject context — it builds its own specialized prompts.
+    /// Deep research doesn't inject context — it builds its own specialized
+    /// prompts.
     fn inject_context(&self) -> bool {
         false
     }
@@ -57,12 +58,8 @@ impl ExecutionStrategy for DeepStrategy {
         toolcalls: Vec<ToolCall>,
     ) -> BoxFuture<'a, Result<bool>> {
         Box::pin(async move {
-            agent::DeepAgent::handoff_tool_static(
-                &state.ctx,
-                &mut state.session,
-                toolcalls,
-            )
-            .await?;
+            agent::DeepAgent::handoff_tool_static(&state.ctx, &mut state.session, toolcalls)
+                .await?;
             Ok(true) // Finalized — deep agent handles everything
         })
     }

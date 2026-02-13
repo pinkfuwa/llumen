@@ -3,8 +3,8 @@ use std::sync::Arc;
 use anyhow::Result;
 use tokio_stream::StreamExt;
 
-use super::processor::StreamProcessor;
 use super::ExecutionStrategy;
+use super::processor::StreamProcessor;
 use crate::chat::context::StreamEndReason;
 use crate::chat::converter::*;
 use crate::chat::{CompletionSession, Context};

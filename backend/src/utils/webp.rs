@@ -1,6 +1,7 @@
 use image::{DynamicImage, GenericImageView, imageops::FilterType};
 
-/// Convert an image to WebP format, resize to a target width, and compress to a target file size.
+/// Convert an image to WebP format, resize to a target width, and compress to a
+/// target file size.
 ///
 /// Maintains aspect ratio during resizing (Triangle filter).
 /// Quality is automatically adjusted to hit the target DPI(450).
@@ -57,9 +58,11 @@ fn encode_webp(img: &DynamicImage, quality: f32) -> anyhow::Result<Vec<u8>> {
     Ok(encoded.to_vec())
 }
 
-/// Guess the quality based on original size, resolution, target resolution, and format.
+/// Guess the quality based on original size, resolution, target resolution, and
+/// format.
 ///
-/// The algorithm estimates an appropriate quality level to maintain visual fidelity
+/// The algorithm estimates an appropriate quality level to maintain visual
+/// fidelity
 fn quality_converter(
     original_size: usize,
     resolution: (u32, u32),

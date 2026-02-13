@@ -1,4 +1,5 @@
-//! Tools and utilities for Lua code execution including SQLite, HTTP, and CSV support.
+//! Tools and utilities for Lua code execution including SQLite, HTTP, and CSV
+//! support.
 
 use anyhow::Result;
 use mlua::{Lua, Value};

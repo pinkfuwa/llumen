@@ -46,9 +46,9 @@ pub struct Error {
 
 /// Enumeration of all possible error types in the Llumen API.
 ///
-/// Each variant represents a category of error that can occur during request processing.
-/// The frontend uses these to implement error-specific handling (e.g., redirecting to
-/// login on Unauthorized).
+/// Each variant represents a category of error that can occur during request
+/// processing. The frontend uses these to implement error-specific handling
+/// (e.g., redirecting to login on Unauthorized).
 ///
 /// When adding new error types:
 /// 1. Consider if an existing variant applies first
@@ -163,7 +163,8 @@ where
 /// Union type for representing responses that can be either Ok or Err.
 ///
 /// This is useful for endpoints that sometimes need to return partial successes
-/// or want to include error information in the response body alongside other data.
+/// or want to include error information in the response body alongside other
+/// data.
 ///
 /// Field name error is forbidden for other response type(`#[typeshare]`)
 ///

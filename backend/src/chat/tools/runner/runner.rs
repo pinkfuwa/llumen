@@ -26,7 +26,8 @@ pub struct LuaRunner {
 }
 
 impl LuaRunner {
-    /// Creates a new Lua runner with the given configuration and optional custom registrar.
+    /// Creates a new Lua runner with the given configuration and optional
+    /// custom registrar.
     pub fn new(
         config: LuaRunnerConfig,
         registrar: Option<Box<dyn Fn(&Lua) -> Result<()> + Send + Sync + 'static>>,
@@ -59,7 +60,8 @@ impl LuaRunner {
     ///
     /// # Returns
     ///
-    /// The execution result including output, captured stdout/stderr, and metadata.
+    /// The execution result including output, captured stdout/stderr, and
+    /// metadata.
     pub async fn execute(&self, path: &[&str]) -> Result<ExecutionResult> {
         if path.is_empty() {
             return Err(LuaRunnerError::InvalidPath(
@@ -324,7 +326,8 @@ impl LuaRunner {
         Ok(())
     }
 
-    /// Gets the current length of the command stack (number of cached commands).
+    /// Gets the current length of the command stack (number of cached
+    /// commands).
     pub async fn cache_size(&self) -> Result<usize> {
         let state = self.runner_state.lock().await;
         Ok(state.command_stack.len())

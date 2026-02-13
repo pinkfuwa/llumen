@@ -28,7 +28,8 @@ pub enum StreamEndReason {
 }
 
 /// The global context for the chat system.
-/// It holds the database connection, the OpenRouter client, and the channel context.
+/// It holds the database connection, the OpenRouter client, and the channel
+/// context.
 pub struct Context {
     pub(crate) db: DatabaseConnection,
     pub(crate) openrouter: openrouter::Openrouter,
@@ -40,7 +41,8 @@ pub struct Context {
 }
 
 impl Context {
-    /// Creates a chat subsystem context that prepares routing, prompt, and tool dependencies.
+    /// Creates a chat subsystem context that prepares routing, prompt, and tool
+    /// dependencies.
     pub fn new(
         db: DatabaseConnection,
         openrouter: openrouter::Openrouter,
@@ -83,7 +85,8 @@ impl Context {
         !self.channel.publishable(chat_id)
     }
 
-    /// Retrieves the list of model identifiers exposed by the OpenRouter client.
+    /// Retrieves the list of model identifiers exposed by the OpenRouter
+    /// client.
     pub async fn get_model_ids(&self) -> Vec<String> {
         self.openrouter.get_model_ids().await
     }
@@ -127,7 +130,8 @@ pub struct CompletionSession {
 
 impl CompletionSession {
     /// Creates a new completion session.
-    /// Loads user, chat, model, and drafting message records from the database for initialization.
+    /// Loads user, chat, model, and drafting message records from the database
+    /// for initialization.
     async fn load_entities(
         ctx: &Context,
         user_id: i32,
@@ -169,7 +173,8 @@ impl CompletionSession {
         Ok((user, chat_with_msgs, model, msg))
     }
 
-    /// Converts a persistent chat record into the mutable active model used during completion.
+    /// Converts a persistent chat record into the mutable active model used
+    /// during completion.
     fn make_chat_active_model(chat: chat::Model, model_id: i32) -> chat::ActiveModel {
         let mut chat = chat.into_active_model();
         chat.model_id = ActiveValue::Set(Some(model_id));
@@ -187,7 +192,8 @@ impl CompletionSession {
             .context("only one publisher is allow at same time")
     }
 
-    /// Emits the initial start token that links the completion to the preceding user message.
+    /// Emits the initial start token that links the completion to the preceding
+    /// user message.
     fn init_publisher_tokens(
         mut publisher: Publisher<Token>,
         msgs: &[message::Model],
@@ -271,7 +277,8 @@ impl CompletionSession {
         self.publisher.publish(token)
     }
 
-    /// Streams tokens from the provided source into the publisher, respecting halt signals.
+    /// Streams tokens from the provided source into the publisher, respecting
+    /// halt signals.
     pub async fn put_stream<E>(
         &mut self,
         mut stream: impl Stream<Item = Result<Token, E>> + Unpin,
@@ -411,7 +418,8 @@ impl CompletionSession {
         Ok(())
     }
 
-    /// Records a completion error, stores it on the message, and emits an error token.
+    /// Records a completion error, stores it on the message, and emits an error
+    /// token.
     pub fn add_error(&mut self, msg: String) {
         self.message.inner.add_error(msg.clone());
         self.add_token(Token::Error(msg));

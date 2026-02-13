@@ -2,9 +2,9 @@ use anyhow::Result;
 use futures_util::future::BoxFuture;
 
 use super::{ExecutionStrategy, RunState};
+use crate::chat::Context;
 use crate::chat::prompt;
 use crate::openrouter::{self, Capability, ToolCall};
-use crate::chat::Context;
 
 /// Normal chat: no tools, supports image generation.
 pub struct NormalStrategy;

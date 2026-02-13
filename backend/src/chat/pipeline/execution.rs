@@ -19,20 +19,17 @@ use crate::openrouter;
 pub struct Execution {
     /// The messages to send to the LLM (system prompt + history + context)
     pub messages: Vec<openrouter::Message>,
-    
+
     /// The tools available for this execution
     pub tools: Vec<openrouter::Tool>,
-    
+
     /// The model configuration (temperature, max_tokens, etc)
     pub options: openrouter::CompletionOption,
 }
 
 impl Execution {
     /// Creates a new execution with the given messages and options.
-    pub fn new(
-        messages: Vec<openrouter::Message>,
-        options: openrouter::CompletionOption,
-    ) -> Self {
+    pub fn new(messages: Vec<openrouter::Message>, options: openrouter::CompletionOption) -> Self {
         Self {
             messages,
             tools: Vec::new(),

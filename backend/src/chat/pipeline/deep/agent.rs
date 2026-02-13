@@ -20,7 +20,8 @@ pub struct DeepAgentInput {
     pub model: openrouter::Model,
 }
 
-/// Deep research agent that orchestrates multiple agents for comprehensive research
+/// Deep research agent that orchestrates multiple agents for comprehensive
+/// research
 pub struct DeepAgent {
     ctx: Arc<Context>,
     input: DeepAgentInput,
@@ -42,7 +43,10 @@ impl DeepAgent {
         let model: openrouter::Model = model.into();
 
         let input = DeepAgentInput {
-            user_message: completion_ctx.latest_user_message().unwrap_or("").to_string(),
+            user_message: completion_ctx
+                .latest_user_message()
+                .unwrap_or("")
+                .to_string(),
             locale: completion_ctx
                 .user
                 .preference
@@ -68,18 +72,19 @@ impl DeepAgent {
         Ok(())
     }
 
-    /// Run the full deep research pipeline: enhance → plan → execute steps → report.
+    /// Run the full deep research pipeline: enhance → plan → execute steps →
+    /// report.
     async fn run(&mut self, session: &mut CompletionSession) -> Result<()> {
         self.enhance(session).await?;
         self.plan(session).await?;
-        
+
         let (deep_state, final_text) = self.execute_steps_and_report(session).await?;
-        
+
         // Store final chunks
         let chunks = session.message.inner.as_assistant().unwrap();
         chunks.push(AssistantChunk::DeepAgent(deep_state));
         chunks.push(AssistantChunk::Text(final_text));
-        
+
         Ok(())
     }
 
@@ -149,7 +154,8 @@ impl DeepAgent {
             .structured::<PlannerResponse>(messages, model, openrouter::CompletionOption::default())
             .await?;
 
-        // TODO: since we decide to remove streaming plan, we should also remove support in frontend
+        // TODO: since we decide to remove streaming plan, we should also remove support
+        // in frontend
         sink.add_token(Token::DeepPlan(
             serde_json::to_string(&result.response).unwrap(),
         ));
@@ -160,7 +166,10 @@ impl DeepAgent {
 
         Ok(())
     }
-    async fn execute_steps_and_report(&mut self, sink: &mut impl TokenSink) -> Result<(Deep, String)> {
+    async fn execute_steps_and_report(
+        &mut self,
+        sink: &mut impl TokenSink,
+    ) -> Result<(Deep, String)> {
         let plan = self.state.as_mut().unwrap();
         // If already has enough context, generate report directly
         if plan.has_enough_context {

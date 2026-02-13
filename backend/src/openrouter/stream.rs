@@ -339,7 +339,8 @@ impl StreamCompletion {
 
 // For compatibility reason, we don't treat null and empty string differently
 //
-// And in openrouter's extension, they send null on special delta(annotation, tool call start, etc)
+// And in openrouter's extension, they send null on special delta(annotation,
+// tool call start, etc)
 impl Stream for StreamCompletion {
     type Item = Result<StreamCompletionResp, Error>;
 

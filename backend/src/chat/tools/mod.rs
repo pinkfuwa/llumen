@@ -2,7 +2,8 @@
 //!
 //! Tool contain tool prompt, a async method for solving tool output
 //!
-//! If the method return Err, step current completion with error message displayed to user
+//! If the method return Err, step current completion with error message
+//! displayed to user
 //!
 //! If the error is expected to be seen by llumen(LLM), return Ok(string)
 //!
@@ -10,7 +11,8 @@
 
 use std::sync::Arc;
 
-// TODO: make duckduckgo(web_search) tool stateful(reuse same reqwest client with flyweight)
+// TODO: make duckduckgo(web_search) tool stateful(reuse same reqwest client
+// with flyweight)
 pub(crate) mod crawl;
 pub(crate) mod lua;
 #[allow(unused)]
@@ -62,7 +64,8 @@ impl Tools {
 
     /// Returns tool definitions for deep research mode.
     ///
-    /// Always includes crawl, optionally includes web_search if need_search is true.
+    /// Always includes crawl, optionally includes web_search if need_search is
+    /// true.
     pub fn for_deep_mode(&self, need_search: bool) -> Vec<crate::openrouter::Tool> {
         let mut tools = vec![get_crawl_tool_def()];
         if need_search {

@@ -1,8 +1,8 @@
 use anyhow::Result;
 use futures_util::Stream;
 
-use super::context::StreamEndReason;
 use super::Token;
+use super::context::StreamEndReason;
 
 /// Abstraction for where tokens are sent during completion.
 ///

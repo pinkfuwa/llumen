@@ -61,7 +61,7 @@ Please never change git config by running `git config --global user.name` or `gi
 
 ## Always check before commit
 
-* If backend changed, run `cargo check` and `cargo test`.
+* If backend changed, run `cargo check`, `cargo test` and `cargo +nightly fmt`.
 * If frontend changed, run `pnpm check` and `pnpm test`.
 * If very complex logic changed, check `.github/workflows/check.yml` and try pass all CI tests.
 * If dependency changed, regenerate third-party licenses by `pnpm run generate-licenses` in frontend and `cargo bundle-licenses --format toml` in backend.

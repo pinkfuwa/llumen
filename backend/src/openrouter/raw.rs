@@ -99,7 +99,8 @@ impl Reasoning {
 
     /// Set reasoning field to compatible mode
     ///
-    /// Only effort is part of baseline -> we assume every provide support `effort`.
+    /// Only effort is part of baseline -> we assume every provide support
+    /// `effort`.
     pub fn set_compatible(&mut self) {
         self.enabled = None;
         self.max_tokens = None;
@@ -440,12 +441,15 @@ pub struct Delta {
     pub content: Option<String>,
     /// reasoning or summary of reasoning that should be display to user
     pub reasoning: Option<String>,
-    /// alternative reasoning or summary of reasoning that should be display to user
+    /// alternative reasoning or summary of reasoning that should be display to
+    /// user
     pub reasoning_content: Option<String>,
-    /// reasoning or encrypted reasoning detail, useful for preserving-reasoning-blocks
-    /// if multiple reasoning_details presented, concat them
+    /// reasoning or encrypted reasoning detail, useful for
+    /// preserving-reasoning-blocks if multiple reasoning_details presented,
+    /// concat them
     ///
-    /// Reasoning are model-specific, meaning that when changing model, don't send them
+    /// Reasoning are model-specific, meaning that when changing model, don't
+    /// send them
     ///
     /// https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#preserving-reasoning-blocks
     pub reasoning_details: Option<Vec<serde_json::Value>>,

@@ -6,8 +6,8 @@ use serde::Deserialize;
 
 use super::model_strategy;
 use super::{ExecutionStrategy, RunState};
-use crate::chat::prompt;
 use crate::chat::Context;
+use crate::chat::prompt;
 use crate::openrouter::{self, Capability, ToolCall};
 
 /// Search mode: web search + crawl tools, with OpenRouter plugin support.
@@ -79,20 +79,15 @@ impl ExecutionStrategy for SearchStrategy {
             }
 
             for toolcall in toolcalls {
-                let result =
-                    execute_search_tool(&state.ctx, &toolcall.name, &toolcall.args).await;
+                let result = execute_search_tool(&state.ctx, &toolcall.name, &toolcall.args).await;
 
-                state
-                    .session
-                    .message
-                    .inner
-                    .as_assistant()
-                    .unwrap()
-                    .push(protocol::AssistantChunk::ToolCall {
+                state.session.message.inner.as_assistant().unwrap().push(
+                    protocol::AssistantChunk::ToolCall {
                         id: toolcall.id.clone(),
                         name: toolcall.name.clone(),
                         arg: toolcall.args.clone(),
-                    });
+                    },
+                );
 
                 state
                     .session
@@ -101,24 +96,20 @@ impl ExecutionStrategy for SearchStrategy {
                         arg: toolcall.args.clone(),
                     });
 
-                state.messages.push(openrouter::Message::ToolCall(
-                    openrouter::MessageToolCall {
+                state
+                    .messages
+                    .push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
                         id: toolcall.id.clone(),
                         name: toolcall.name.clone(),
                         arguments: toolcall.args.clone(),
-                    },
-                ));
+                    }));
 
-                state
-                    .session
-                    .message
-                    .inner
-                    .as_assistant()
-                    .unwrap()
-                    .push(protocol::AssistantChunk::ToolResult {
+                state.session.message.inner.as_assistant().unwrap().push(
+                    protocol::AssistantChunk::ToolResult {
                         id: toolcall.id.clone(),
                         response: result.clone(),
-                    });
+                    },
+                );
 
                 state
                     .session

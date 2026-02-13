@@ -79,32 +79,46 @@ mod tests {
     fn image_only_model_skips_context_and_tools() {
         let strategy = get_model_strategy(&make_capability(false, true));
         assert!(!strategy.should_inject_context());
-        assert!(strategy.filter_tools(vec![Tool {
-            name: "test".into(),
-            description: "test".into(),
-            schema: Default::default(),
-        }]).is_empty());
+        assert!(
+            strategy
+                .filter_tools(vec![Tool {
+                    name: "test".into(),
+                    description: "test".into(),
+                    schema: Default::default(),
+                }])
+                .is_empty()
+        );
     }
 
     #[test]
     fn text_only_model_gets_context_and_tools() {
         let strategy = get_model_strategy(&make_capability(true, false));
         assert!(strategy.should_inject_context());
-        assert_eq!(strategy.filter_tools(vec![Tool {
-            name: "test".into(),
-            description: "test".into(),
-            schema: Default::default(),
-        }]).len(), 1);
+        assert_eq!(
+            strategy
+                .filter_tools(vec![Tool {
+                    name: "test".into(),
+                    description: "test".into(),
+                    schema: Default::default(),
+                }])
+                .len(),
+            1
+        );
     }
 
     #[test]
     fn mixed_model_gets_context_and_tools() {
         let strategy = get_model_strategy(&make_capability(true, true));
         assert!(strategy.should_inject_context());
-        assert_eq!(strategy.filter_tools(vec![Tool {
-            name: "test".into(),
-            description: "test".into(),
-            schema: Default::default(),
-        }]).len(), 1);
+        assert_eq!(
+            strategy
+                .filter_tools(vec![Tool {
+                    name: "test".into(),
+                    description: "test".into(),
+                    schema: Default::default(),
+                }])
+                .len(),
+            1
+        );
     }
 }
