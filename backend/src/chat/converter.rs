@@ -120,8 +120,6 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
     let mut images: Vec<openrouter::Image> = Vec::new();
 
     let flush = |text_parts: &mut Vec<String>,
-                 annotations: &mut Option<serde_json::Value>,
-                 reasoning_details: &mut Option<serde_json::Value>,
                  images: &mut Vec<openrouter::Image>,
                  out: &mut Vec<openrouter::Message>| {
         if text_parts.is_empty() && images.is_empty() {
@@ -129,8 +127,8 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
         }
         out.push(openrouter::Message::Assistant {
             content: text_parts.join(""),
-            annotations: annotations.take(),
-            reasoning_details: reasoning_details.take(),
+            annotations: None,
+            reasoning_details: None,
             images: std::mem::take(images),
         });
         text_parts.clear();
@@ -147,13 +145,7 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
                 annotations = Some(a.clone());
             }
             AssistantChunk::ToolCall { id, name, arg } => {
-                flush(
-                    &mut text_parts,
-                    &mut annotations,
-                    &mut reasoning_details,
-                    &mut images,
-                    out,
-                );
+                flush(&mut text_parts, &mut images, out);
                 out.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
                     id: id.clone(),
                     name: name.clone(),
@@ -177,13 +169,15 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
         }
     }
 
-    flush(
-        &mut text_parts,
-        &mut annotations,
-        &mut reasoning_details,
-        &mut images,
-        out,
-    );
+    // Final flush with annotations and reasoning_details
+    if !text_parts.is_empty() || !images.is_empty() {
+        out.push(openrouter::Message::Assistant {
+            content: text_parts.join(""),
+            annotations,
+            reasoning_details,
+            images,
+        });
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -334,5 +328,137 @@ mod tests {
             matches!(&chunks[1], AssistantChunk::Reasoning(s) if s == "<think>thinking</think>")
         );
         assert!(matches!(&chunks[2], AssistantChunk::Text(s) if s == "After"));
+    }
+
+    #[test]
+    fn chunks_to_openrouter_preserves_annotations_and_reasoning() {
+        use serde_json::json;
+
+        // Test that annotations and reasoning_details are attached to the final message
+        let annotation = json!({"type": "ocr", "data": "cached_result"});
+        let reasoning = json!({"model_id": "gpt-4", "data": "thinking"});
+
+        let chunks = vec![
+            AssistantChunk::Text("Hello".into()),
+            AssistantChunk::Annotation(annotation.clone()),
+            AssistantChunk::ReasoningDetail(reasoning.clone()),
+            AssistantChunk::Text(" world".into()),
+        ];
+
+        let mut messages = Vec::new();
+        chunks_to_openrouter(&chunks, &mut messages);
+
+        assert_eq!(messages.len(), 1);
+        if let openrouter::Message::Assistant {
+            content,
+            annotations,
+            reasoning_details,
+            ..
+        } = &messages[0]
+        {
+            assert_eq!(content, "Hello world");
+            assert_eq!(annotations, &Some(annotation));
+            assert_eq!(reasoning_details, &Some(reasoning));
+        } else {
+            panic!("Expected Assistant message");
+        }
+    }
+
+    #[test]
+    fn chunks_to_openrouter_preserves_metadata_with_tool_calls() {
+        use serde_json::json;
+
+        // Test that annotations/reasoning persist through tool calls
+        let annotation = json!({"type": "ocr"});
+        let reasoning = json!({"model_id": "gpt-4", "data": "thinking"});
+
+        let chunks = vec![
+            AssistantChunk::Text("First".into()),
+            AssistantChunk::Annotation(annotation.clone()),
+            AssistantChunk::ReasoningDetail(reasoning.clone()),
+            AssistantChunk::ToolCall {
+                id: "call_1".into(),
+                name: "search".into(),
+                arg: "{}".into(),
+            },
+            AssistantChunk::ToolResult {
+                id: "call_1".into(),
+                response: "result".into(),
+            },
+            AssistantChunk::Text("Second".into()),
+        ];
+
+        let mut messages = Vec::new();
+        chunks_to_openrouter(&chunks, &mut messages);
+
+        // Should have: Assistant(First) -> ToolCall -> ToolResult -> Assistant(Second
+        // with metadata)
+        assert_eq!(messages.len(), 4);
+
+        // First assistant message should NOT have metadata (flushed before tool call)
+        if let openrouter::Message::Assistant {
+            annotations,
+            reasoning_details,
+            ..
+        } = &messages[0]
+        {
+            assert_eq!(annotations, &None);
+            assert_eq!(reasoning_details, &None);
+        }
+
+        // Last assistant message should have metadata
+        if let openrouter::Message::Assistant {
+            content,
+            annotations,
+            reasoning_details,
+            ..
+        } = &messages[3]
+        {
+            assert_eq!(content, "Second");
+            assert_eq!(annotations, &Some(annotation));
+            assert_eq!(reasoning_details, &Some(reasoning));
+        } else {
+            panic!("Expected Assistant message at end");
+        }
+    }
+
+    #[test]
+    fn chunks_roundtrip_preserves_metadata() {
+        use serde_json::json;
+
+        // Test full roundtrip: chunks -> messages -> (would save to DB) -> load chunks
+        // -> messages
+        let annotation = json!({"type": "ocr", "cached": true});
+        let reasoning =
+            json!({"model_id": "gpt-4", "data": [{"type": "reasoning", "content": "thinking"}]});
+
+        // Simulate what gets stored in DB after a completion
+        let stored_chunks = vec![
+            AssistantChunk::Text("Answer: ".into()),
+            AssistantChunk::Reasoning("Let me think...".into()),
+            AssistantChunk::Text("42".into()),
+            AssistantChunk::Annotation(annotation.clone()),
+            AssistantChunk::ReasoningDetail(reasoning.clone()),
+        ];
+
+        // Convert to messages (what gets sent to OpenRouter)
+        let mut messages = Vec::new();
+        chunks_to_openrouter(&stored_chunks, &mut messages);
+
+        // Verify metadata is preserved
+        assert_eq!(messages.len(), 1);
+        if let openrouter::Message::Assistant {
+            content,
+            annotations: msg_ann,
+            reasoning_details: msg_rd,
+            ..
+        } = &messages[0]
+        {
+            assert_eq!(content, "Answer: 42");
+            assert_eq!(msg_ann, &Some(annotation));
+            assert_eq!(msg_rd, &Some(reasoning));
+        } else {
+            panic!("Expected Assistant message");
+        }
     }
 }

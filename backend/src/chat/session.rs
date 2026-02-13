@@ -400,7 +400,7 @@ impl CompletionSession {
 
         let model = self.openrouter_model();
         let option = openrouter::CompletionOption::builder()
-            .max_tokens(50)
+            .max_reasoning_tokens(512)
             .build();
 
         let result = self
