@@ -262,7 +262,7 @@ impl CompletionSession {
     ///
     /// The StreamWriter provides a cleaner interface for writing tokens
     /// compared to directly using the publisher.
-    pub(crate) fn create_stream_writer(&mut self) -> crate::chat::StreamWriter {
+    pub(crate) fn create_stream_writer(&mut self) -> crate::chat::StreamWriter<'_> {
         crate::chat::StreamWriter::new(&mut self.publisher)
     }
 

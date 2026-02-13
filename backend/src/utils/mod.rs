@@ -4,4 +4,5 @@ pub mod file_cleanup;
 pub mod logger;
 pub mod model;
 pub mod password_hash;
+pub mod url_validation;
 pub mod webp;

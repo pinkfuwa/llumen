@@ -1,4 +1,4 @@
-use crate::runner;
+use crate::utils::url_validation;
 use anyhow::{Context, Result};
 use tokio::time;
 
@@ -23,7 +23,7 @@ impl CrawlTool {
     /// Crawls a URL and converts the content to markdown
     pub async fn crawl(&self, url: &str) -> Result<String> {
         // Validate URL
-        runner::tools::validate_url(url)
+        url_validation::validate_url(url)
             .await
             .context("Invalid URL")?;
 

@@ -13,11 +13,13 @@ use std::sync::Arc;
 // TODO: make duckduckgo(web_search) tool stateful(reuse same reqwest client with flyweight)
 pub(crate) mod crawl;
 pub(crate) mod lua;
+#[allow(unused)]
+pub(crate) mod runner;
 pub(crate) mod web_search;
 
-pub(crate) use crawl::{get_crawl_tool_def, CrawlTool};
-pub(crate) use lua::{get_lua_repl_def, LuaReplTool};
-pub(crate) use web_search::{get_web_search_tool_def, WebSearchTool};
+pub(crate) use crawl::{CrawlTool, get_crawl_tool_def};
+pub(crate) use lua::{LuaReplTool, get_lua_repl_def};
+pub(crate) use web_search::{WebSearchTool, get_web_search_tool_def};
 
 /// Collection of all available tools in llumen.
 ///
@@ -75,4 +77,3 @@ impl Default for Tools {
         Self::new()
     }
 }
-
