@@ -31,7 +31,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
     session.extend_chunks(chunks);
 
     // Persist annotations / reasoning details / images
-    session.apply_stream_result(&result);
+    session.apply_stream_result(&result).await;
 
     if matches!(halt, StreamEndReason::Halt) {
         return Ok(());

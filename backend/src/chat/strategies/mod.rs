@@ -5,6 +5,7 @@
 //! session.  The strategy module re-exports the [`Strategy`] enum used by
 //! callers to select which mode to run.
 
+mod deep_research;
 mod normal;
 mod search;
 
@@ -40,8 +41,6 @@ pub async fn dispatch(
     match strategy {
         Strategy::Normal => normal::execute(&ctx, session).await,
         Strategy::Search => search::execute(&ctx, session).await,
-        Strategy::DeepResearch => {
-            super::deep_research::DeepAgent::handoff_tool_static(&ctx, session, Vec::new()).await
-        }
+        Strategy::DeepResearch => deep_research::execute(ctx, session).await,
     }
 }

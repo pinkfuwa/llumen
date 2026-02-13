@@ -15,6 +15,7 @@ mod tools;
 mod deep_research;
 
 pub(crate) use context::Context;
-pub(crate) use session::{CompletionSession, TokenSink};
+pub(crate) use session::CompletionSession;
+pub(crate) use session::TokenSink;
 pub(crate) use token::Token;
 pub(crate) use channel::Cursor;

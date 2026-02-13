@@ -13,7 +13,10 @@ use crate::openrouter;
 
 pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<()> {
     let tools = ctx.tools.for_search_mode();
-    let option = openrouter::CompletionOption::tools(&tools);
+    let option = openrouter::CompletionOption::builder()
+        .web_search(true)
+        .tools(&tools)
+        .build();
     let mut messages = session.assemble_messages(ctx, option.clone())?;
 
     loop {
@@ -34,7 +37,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
         let mut result = stream.get_result();
         session.update_usage(result.usage.cost as f32, result.usage.token as i32);
 
-        session.apply_stream_result(&result);
+        session.apply_stream_result(&result).await;
 
         let tool_calls = std::mem::take(&mut result.toolcalls);
         let assistant_text = result.get_text();

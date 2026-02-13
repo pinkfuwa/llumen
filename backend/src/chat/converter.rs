@@ -226,27 +226,40 @@ pub fn openrouter_to_buffer_token_deep_report(resp: StreamCompletionResp) -> Tok
 // ---------------------------------------------------------------------------
 
 /// Converts accumulated stream response items into storable assistant chunks.
+/// Merges consecutive reasoning tokens into a single chunk (like Token::merge).
 pub fn openrouter_stream_to_assitant_chunk(
     responses: &[StreamCompletionResp],
 ) -> Vec<AssistantChunk> {
     let mut chunks = Vec::new();
     let mut text = String::new();
+    let mut reasoning = String::new();
 
     for resp in responses {
         match resp {
-            StreamCompletionResp::ResponseToken(delta) => text.push_str(delta),
+            StreamCompletionResp::ResponseToken(delta) => {
+                // Flush reasoning if we're switching to text
+                if !reasoning.is_empty() {
+                    chunks.push(AssistantChunk::Reasoning(std::mem::take(&mut reasoning)));
+                }
+                text.push_str(delta);
+            }
             StreamCompletionResp::ReasoningToken(delta) => {
+                // Flush text if we're switching to reasoning
                 if !text.is_empty() {
                     chunks.push(AssistantChunk::Text(std::mem::take(&mut text)));
                 }
-                chunks.push(AssistantChunk::Reasoning(delta.clone()));
+                reasoning.push_str(delta);
             }
             StreamCompletionResp::ToolToken { .. } | StreamCompletionResp::Usage { .. } => {}
         }
     }
 
+    // Flush remaining
     if !text.is_empty() {
         chunks.push(AssistantChunk::Text(text));
+    }
+    if !reasoning.is_empty() {
+        chunks.push(AssistantChunk::Reasoning(reasoning));
     }
 
     chunks
@@ -279,5 +292,47 @@ mod tests {
         let token =
             openrouter_to_buffer_token(StreamCompletionResp::ReasoningToken("think".into()));
         assert!(matches!(token, Token::Reasoning(s) if s == "think"));
+    }
+
+    #[test]
+    fn openrouter_stream_merges_reasoning_chunks() {
+        // Test that consecutive reasoning tokens are merged into a single chunk
+        let responses = vec![
+            StreamCompletionResp::ReasoningToken("<thinking>".into()),
+            StreamCompletionResp::ReasoningToken("The user".into()),
+            StreamCompletionResp::ReasoningToken(" wants".into()),
+            StreamCompletionResp::ReasoningToken("</thinking>".into()),
+            StreamCompletionResp::ResponseToken("Hello".into()),
+            StreamCompletionResp::ResponseToken(" world".into()),
+        ];
+
+        let chunks = openrouter_stream_to_assitant_chunk(&responses);
+
+        assert_eq!(chunks.len(), 2);
+        assert!(
+            matches!(&chunks[0], AssistantChunk::Reasoning(s) if s == "<thinking>The user wants</thinking>")
+        );
+        assert!(matches!(&chunks[1], AssistantChunk::Text(s) if s == "Hello world"));
+    }
+
+    #[test]
+    fn openrouter_stream_interleaves_text_and_reasoning() {
+        // Test text -> reasoning -> text transitions
+        let responses = vec![
+            StreamCompletionResp::ResponseToken("Before".into()),
+            StreamCompletionResp::ReasoningToken("<think>".into()),
+            StreamCompletionResp::ReasoningToken("thinking".into()),
+            StreamCompletionResp::ReasoningToken("</think>".into()),
+            StreamCompletionResp::ResponseToken("After".into()),
+        ];
+
+        let chunks = openrouter_stream_to_assitant_chunk(&responses);
+
+        assert_eq!(chunks.len(), 3);
+        assert!(matches!(&chunks[0], AssistantChunk::Text(s) if s == "Before"));
+        assert!(
+            matches!(&chunks[1], AssistantChunk::Reasoning(s) if s == "<think>thinking</think>")
+        );
+        assert!(matches!(&chunks[2], AssistantChunk::Text(s) if s == "After"));
     }
 }

@@ -96,6 +96,11 @@ impl Context {
             session.add_error(format!("{e}"));
         }
 
+        // Generate title if this is a new chat
+        if let Err(e) = session.try_generate_title().await {
+            log::error!("title generation error: {e:#}");
+        }
+
         // Persist
         session.save().await?;
 

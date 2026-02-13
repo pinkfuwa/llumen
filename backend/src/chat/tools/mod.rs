@@ -64,6 +64,21 @@ impl Tools {
         }
         tools
     }
+
+    /// Returns the handoff tool for the coordinator to trigger deep research.
+    pub fn get_deep_research_def(&self) -> crate::openrouter::Tool {
+        crate::openrouter::Tool {
+            name: "handoff_to_planner".to_string(),
+            description: "Hand off complex research tasks to a specialized planning agent. \
+                         Use this for any question requiring research, factual lookup, or analysis."
+                .to_string(),
+            schema: serde_json::json!({
+                "type": "object",
+                "properties": {},
+                "required": [],
+            }),
+        }
+    }
 }
 
 impl Default for Tools {

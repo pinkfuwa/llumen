@@ -236,7 +236,7 @@ impl CompletionSession {
 
     /// Applies metadata from a finished stream result (annotations, images,
     /// reasoning details).
-    pub fn apply_stream_result(&mut self, result: &openrouter::StreamResult) {
+    pub async fn apply_stream_result(&mut self, result: &openrouter::StreamResult) {
         if let Some(ref ann) = result.annotations {
             self.message.inner.add_annotation(ann.clone());
         }
@@ -244,17 +244,43 @@ impl CompletionSession {
             self.message.inner.add_reasoning_detail(rd.clone());
         }
         for img in &result.image {
-            let file_id = self.store_image(img);
-            if let Some(id) = file_id {
+            if let Some(id) = self.store_image(img).await {
                 self.message.inner.add_image(id);
                 self.publisher.publish(Token::Image(id));
             }
         }
     }
 
-    fn store_image(&self, _img: &openrouter::Image) -> Option<i32> {
-        // TODO: store image to blob DB and return file id
-        None
+    async fn store_image(&self, img: &openrouter::Image) -> Option<i32> {
+        // Image already has decoded data and mime_type
+        let size = img.data.len();
+
+        // Insert file record
+        use ::entity::file;
+        let file_record = file::ActiveModel {
+            chat_id: Set(Some(self.chat.id)),
+            owner_id: Set(None), // Generated images have no owner
+            mime_type: Set(Some(img.mime_type.clone())),
+            valid_until: Set(None), // Permanent
+            ..Default::default()
+        };
+
+        let file_id = file::Entity::insert(file_record)
+            .exec(&self.ctx.db)
+            .await
+            .ok()?
+            .last_insert_id;
+
+        // Store in BlobDB
+        let byte_stream = tokio_stream::iter(vec![bytes::Bytes::from(img.data.clone())]);
+        self.ctx
+            .blob
+            .insert(file_id, size, byte_stream)
+            .await
+            .ok()?;
+
+        log::info!("store_image: stored image as file_id={}", file_id);
+        Some(file_id)
     }
 
     /// Appends assistant chunks to the message being built.
@@ -291,20 +317,35 @@ impl CompletionSession {
             token: self.token_count,
         });
 
-        // Generate title if missing
-        if self.chat.title.is_none() {
-            log::info!("save: chat title is None, attempting to generate");
-            if let Some(title) = self.generate_title().await {
-                log::info!("save: generated title: '{}'", title);
-                self.publisher.publish(Token::Title(title.clone()));
-                let mut chat_active: chat::ActiveModel = self.chat.clone().into();
-                chat_active.title = Set(Some(title));
-                chat::Entity::update(chat_active).exec(db).await?;
-            } else {
-                log::warn!("save: title generation returned None");
-            }
+        Ok(())
+    }
+
+    /// Generates and persists a chat title if one doesn't exist.
+    /// Should be called after the completion finishes but before save().
+    pub async fn try_generate_title(&mut self) -> Result<()> {
+        if self.chat.title.is_some() {
+            log::debug!("try_generate_title: chat already has title, skipping");
+            return Ok(());
+        }
+
+        log::info!("try_generate_title: attempting to generate title");
+
+        if let Some(title) = self.generate_title().await {
+            log::info!("try_generate_title: generated title: '{}'", title);
+            self.publisher.publish(Token::Title(title.clone()));
+
+            // Create a partial ActiveModel with only id and title set
+            let chat_active = chat::ActiveModel {
+                id: Set(self.chat.id),
+                title: Set(Some(title.clone())),
+                ..Default::default()
+            };
+            chat::Entity::update(chat_active).exec(&self.ctx.db).await?;
+
+            // Update the local copy so we don't try again
+            self.chat.title = Some(title);
         } else {
-            log::debug!("save: chat already has title: {:?}", self.chat.title);
+            log::warn!("try_generate_title: generation returned None");
         }
 
         Ok(())
@@ -325,9 +366,36 @@ impl CompletionSession {
             }
         };
 
+        // Extract text from assistant message chunks
+        let assistant_text = if let protocol::MessageInner::Assistant(chunks) = &self.message.inner
+        {
+            chunks
+                .iter()
+                .filter_map(|chunk| match chunk {
+                    protocol::AssistantChunk::Text(text) => Some(text.as_str()),
+                    protocol::AssistantChunk::Reasoning(text) => Some(text.as_str()),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
+        } else {
+            String::new()
+        };
+
+        let assistant_truncated = assistant_text.chars().take(300).collect::<String>();
+
         let messages = vec![
             openrouter::Message::System(system),
             openrouter::Message::User(user_msg),
+            openrouter::Message::Assistant {
+                content: assistant_truncated,
+                annotations: None,
+                reasoning_details: None,
+                images: Vec::new(),
+            },
+            openrouter::Message::User(
+                "Please generate a concise title, starting with a emoji".to_string(),
+            ),
         ];
 
         let model = self.openrouter_model();
