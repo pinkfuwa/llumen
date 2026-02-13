@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use futures_util::future::BoxFuture;
-use serde::Deserialize;
 
 use super::model_strategy;
 use super::{ExecutionStrategy, RunState};
@@ -20,27 +19,57 @@ impl ExecutionStrategy for SearchStrategy {
 
     fn completion_option(
         &self,
-        ctx: &Context,
-        capability: &Capability,
+        _ctx: &Context,
+        _capability: &Capability,
     ) -> openrouter::CompletionOption {
-        let is_openrouter = !ctx.openrouter.is_compatibility_mode();
+        // Synchronous path returns empty tools — async prepare() fills them
+        openrouter::CompletionOption::default()
+    }
 
-        let mut tools = ctx.tools.for_search_mode();
+    fn prepare<'a>(
+        &'a self,
+        ctx: &'a Context,
+        session: &'a crate::chat::CompletionSession,
+        capability: &'a Capability,
+    ) -> BoxFuture<'a, Result<super::Execution>> {
+        use crate::chat::converter::db_message_to_openrouter;
+        use crate::chat::pipeline::message_builder::MessageBuilder;
+        use crate::chat::pipeline::model_strategy;
 
-        // On native OpenRouter, the platform handles web search via plugins,
-        // so we don't need the tool-call versions.
-        if is_openrouter {
-            tools.retain(|t| t.name != "web_search_tool" && t.name != "crawl_tool");
-        }
+        Box::pin(async move {
+            let system_prompt = ctx.prompt.render(self.prompt_kind(), session)?;
 
-        // Let model strategy filter tools (image-only models get no tools)
-        let strategy = model_strategy::get_model_strategy(capability);
-        tools = strategy.filter_tools(tools);
+            let mut history = Vec::new();
+            for m in &session.messages {
+                history.extend(db_message_to_openrouter(ctx, &m.inner).await?);
+            }
 
-        openrouter::CompletionOption::builder()
-            .web_search(true)
-            .tools(&tools)
-            .build()
+            let strategy = model_strategy::get_model_strategy(capability);
+            let context_prompt = ctx.prompt.render_context(session)?;
+
+            let messages = MessageBuilder::new(system_prompt)
+                .history(history)
+                .context(strategy.as_ref(), context_prompt)
+                .build();
+
+            // Get tools (async for MCP)
+            let is_openrouter = !ctx.openrouter.is_compatibility_mode();
+            let mut tools = ctx.tools.for_search_mode().await;
+
+            if is_openrouter {
+                tools.retain(|t| t.name != "web_search_tool" && t.name != "crawl_tool");
+            }
+
+            let strategy = model_strategy::get_model_strategy(capability);
+            tools = strategy.filter_tools(tools);
+
+            let options = openrouter::CompletionOption::builder()
+                .web_search(true)
+                .tools(&tools)
+                .build();
+
+            Ok(super::Execution::new(messages, options))
+        })
     }
 
     fn handle_tool_calls<'a>(
@@ -79,7 +108,11 @@ impl ExecutionStrategy for SearchStrategy {
             }
 
             for toolcall in toolcalls {
-                let result = execute_search_tool(&state.ctx, &toolcall.name, &toolcall.args).await;
+                let output = state
+                    .ctx
+                    .tools
+                    .execute_tool(&toolcall.name, &toolcall.args)
+                    .await;
 
                 state.session.message.inner.as_assistant().unwrap().push(
                     protocol::AssistantChunk::ToolCall {
@@ -104,85 +137,66 @@ impl ExecutionStrategy for SearchStrategy {
                         arguments: toolcall.args.clone(),
                     }));
 
+                // Emit rich content tokens to frontend (images, resources)
+                for rich in &output.rich {
+                    match rich {
+                        crate::chat::tools::McpRichContent::Image { data, mime_type } => {
+                            state.session.message.inner.as_assistant().unwrap().push(
+                                protocol::AssistantChunk::McpImage {
+                                    data: data.clone(),
+                                    mime_type: mime_type.clone(),
+                                },
+                            );
+                            state
+                                .session
+                                .add_token(crate::chat::token::Token::McpImage {
+                                    data: data.clone(),
+                                    mime_type: mime_type.clone(),
+                                });
+                        }
+                        crate::chat::tools::McpRichContent::Resource {
+                            uri,
+                            mime_type,
+                            text,
+                        } => {
+                            state.session.message.inner.as_assistant().unwrap().push(
+                                protocol::AssistantChunk::McpResource {
+                                    uri: uri.clone(),
+                                    mime_type: mime_type.clone(),
+                                    text: text.clone(),
+                                },
+                            );
+                            state
+                                .session
+                                .add_token(crate::chat::token::Token::McpResource {
+                                    uri: uri.clone(),
+                                    mime_type: mime_type.clone(),
+                                    text: text.clone(),
+                                });
+                        }
+                    }
+                }
+
                 state.session.message.inner.as_assistant().unwrap().push(
                     protocol::AssistantChunk::ToolResult {
                         id: toolcall.id.clone(),
-                        response: result.clone(),
+                        response: output.text.clone(),
                     },
                 );
 
                 state
                     .session
-                    .add_token(crate::chat::token::Token::ToolResult(result.clone()));
+                    .add_token(crate::chat::token::Token::ToolResult(output.text.clone()));
 
                 state.messages.push(openrouter::Message::ToolResult(
                     openrouter::MessageToolResult {
                         id: toolcall.id.clone(),
-                        content: result,
+                        content: output.text,
                     },
                 ));
             }
 
-            Ok(false) // Not finalized — runner will loop for more LLM output
+            Ok(false)
         })
-    }
-}
-
-async fn execute_search_tool(ctx: &Arc<Context>, tool_name: &str, args: &str) -> String {
-    match tool_name {
-        "web_search_tool" => {
-            #[derive(Deserialize)]
-            struct WebSearchArgs {
-                query: String,
-            }
-            let args: Option<WebSearchArgs> = serde_json::from_str(args).ok();
-            if args.is_none() {
-                return "Invalid arguments for web_search_tool".to_string();
-            }
-            let args = args.unwrap();
-            match ctx.tools.web_search.search(&args.query).await {
-                Ok(results) => {
-                    let mut output = String::new();
-                    for (i, result) in results.iter().enumerate().take(10) {
-                        output.push_str(&format!(
-                            "{}. [{}]({})\n   {}\n\n",
-                            i + 1,
-                            result.title,
-                            result.url,
-                            result.description
-                        ));
-                    }
-
-                    if output.is_empty() {
-                        output = "No search results found.".to_string();
-                    }
-
-                    output
-                }
-                Err(e) => {
-                    log::warn!("Web search error: {}", e);
-                    format!("Error: {}", e)
-                }
-            }
-        }
-        "crawl_tool" => {
-            #[derive(Deserialize)]
-            struct CrawlArgs {
-                url: String,
-            }
-            let args: Option<CrawlArgs> = serde_json::from_str(args).ok();
-            if args.is_none() {
-                return "Invalid arguments for crawl_tool".to_string();
-            }
-            let args = args.unwrap();
-            match ctx.tools.crawl.crawl(&args.url).await {
-                Ok(content) => content,
-                Err(e) => {
-                    log::warn!("Crawl error for URL '{}': {}", args.url, e);
-                    format!("Error: {}", e)
-                }
-            }
-        }
-        _ => format!("Unknown tool: {}", tool_name),
     }
 }

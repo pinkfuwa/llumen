@@ -111,6 +111,8 @@ pub enum SseResp {
     DeepReport(String),
     Image(i32),
     UrlCitation(Vec<protocol::UrlCitation>),
+    McpImage(SseRespMcpImage),
+    McpResource(SseRespMcpResource),
 }
 
 #[derive(Debug, Serialize)]
@@ -124,6 +126,23 @@ pub struct SseRespToolCall {
 #[typeshare]
 pub struct SseRespToolResult {
     pub content: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespMcpImage {
+    pub data: String,
+    pub mime_type: String,
+}
+
+#[derive(Debug, Serialize)]
+#[typeshare]
+pub struct SseRespMcpResource {
+    pub uri: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mime_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -242,6 +261,18 @@ pub async fn route(
             Token::DeepReport(content) => SseResp::DeepReport(content),
             Token::Image(file_id) => SseResp::Image(file_id),
             Token::UrlCitation(citations) => SseResp::UrlCitation(citations),
+            Token::McpImage { data, mime_type } => {
+                SseResp::McpImage(SseRespMcpImage { data, mime_type })
+            }
+            Token::McpResource {
+                uri,
+                mime_type,
+                text,
+            } => SseResp::McpResource(SseRespMcpResource {
+                uri,
+                mime_type,
+                text,
+            }),
         };
 
         Some(Ok(Event::default().json_data(event).unwrap()))

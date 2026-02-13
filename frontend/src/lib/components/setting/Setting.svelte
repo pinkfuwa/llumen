@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import { Star, X } from '@lucide/svelte';
-	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
+	import { CircleUser, EthernetPort, LogOut, ShieldUser, Puzzle } from '@lucide/svelte';
 	import { token } from '$lib/store';
 	import { Dialog, Tabs } from 'bits-ui';
 	import SettingBtn from './SettingBtn.svelte';
@@ -10,6 +10,9 @@
 	import Openrouter from './tabs/Openrouter.svelte';
 	import OpenrouterNew from './tabs/openrouter/OpenrouterNew.svelte';
 	import OpenrouterEdit from './tabs/openrouter/OpenrouterEdit.svelte';
+	import Mcp from './tabs/Mcp.svelte';
+	import McpNew from './tabs/mcp/McpNew.svelte';
+	import McpEdit from './tabs/mcp/McpEdit.svelte';
 
 	let { open = $bindable() } = $props();
 	let value = $state('account');
@@ -66,6 +69,14 @@
 						>
 							<EthernetPort class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block"> Openrouter </span>
+						</Tabs.Trigger>
+						<Tabs.Trigger
+							value="mcp"
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover
+						data-[state=active]:bg-primary data-[state=active]:text-text-hover"
+						>
+							<Puzzle class="inline-block h-5 w-5 md:mr-2" />
+							<span class="hidden md:inline-block"> MCP </span>
 						</Tabs.Trigger>
 					</div>
 					<div class="flex flex-col space-y-2">
@@ -125,6 +136,30 @@
 
 						{#if id != undefined}
 							<OpenrouterEdit {id} bind:value />
+						{/if}
+					</Tabs.Content>
+					<Tabs.Content value="mcp" class="flex h-full flex-col">
+						<Dialog.Title class="pb-6 text-center text-xl">MCP</Dialog.Title>
+						<Mcp bind:id bind:value />
+					</Tabs.Content>
+					<Tabs.Content
+						value="mcp_new"
+						class="flex w-full flex-col justify-between overflow-auto"
+					>
+						<Dialog.Title class="pb-6 text-center text-xl">
+							{$_('setting.add_mcp_server')}
+						</Dialog.Title>
+						<McpNew bind:value />
+					</Tabs.Content>
+					<Tabs.Content
+						value="mcp_edit"
+						class="flex w-full flex-col justify-between overflow-auto"
+					>
+						<Dialog.Title class="pb-6 text-center text-xl">
+							{$_('setting.edit_mcp_server')}
+						</Dialog.Title>
+						{#if id != undefined}
+							<McpEdit {id} bind:value />
 						{/if}
 					</Tabs.Content>
 				</div>

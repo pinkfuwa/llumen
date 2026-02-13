@@ -2,6 +2,7 @@
 
 pub use super::chat::Entity as Chat;
 pub use super::config::Entity as Config;
+pub use super::mcp_server::Entity as McpServer;
 pub use super::message::Entity as Message;
 pub use super::model::Entity as Model;
 pub use super::tool::Entity as Tool;

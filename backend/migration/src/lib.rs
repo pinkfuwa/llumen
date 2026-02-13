@@ -3,6 +3,7 @@ use sea_orm_migration::sea_orm::Database;
 
 mod m20250908_082005_create_table;
 mod m20251227_085232_add_valid_until_to_file;
+mod m20260213_create_mcp_server;
 
 pub struct Migrator;
 
@@ -12,6 +13,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20250908_082005_create_table::Migration),
             Box::new(m20251227_085232_add_valid_until_to_file::Migration),
+            Box::new(m20260213_create_mcp_server::Migration),
             // Box::new(m20251219_060552_add_embedding::Migration),
         ]
     }

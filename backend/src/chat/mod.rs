@@ -8,6 +8,7 @@ mod stream_writer;
 mod token;
 mod token_sink;
 mod tools;
+pub(crate) use tools::{McpRichContent, ToolOutput};
 
 pub use context::{CompletionSession, Context};
 pub use pipeline::Strategies;

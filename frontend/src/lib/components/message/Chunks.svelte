@@ -46,5 +46,18 @@
 		<DeepResearch plan={chunk.c} {streaming} />
 	{:else if kind == 'image'}
 		<Image id={chunk.c} />
+	{:else if kind == 'mcp_image'}
+		<img
+			src="data:{chunk.c.mime_type};base64,{chunk.c.data}"
+			alt="MCP content"
+			class="my-2 max-w-full rounded"
+		/>
+	{:else if kind == 'mcp_resource'}
+		<div class="my-2 rounded border border-outline p-2 text-sm">
+			<span class="font-mono text-text-secondary">{chunk.c.uri}</span>
+			{#if chunk.c.text}
+				<pre class="mt-1 overflow-auto whitespace-pre-wrap">{chunk.c.text}</pre>
+			{/if}
+		</div>
 	{/if}
 {/each}

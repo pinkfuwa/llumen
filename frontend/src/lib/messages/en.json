@@ -36,6 +36,9 @@
 		"old_password": "Old Password",
 		"add_model": "Add New Model",
 		"edit_model": "Edit Model",
+		"add_mcp_server": "Add MCP Server",
+		"edit_mcp_server": "Edit MCP Server",
+		"no_mcp_servers": "No MCP servers configured",
 		"pattern": "Show pattern"
 	},
 	"login": {

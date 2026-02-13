@@ -36,6 +36,9 @@
 		"old_password": "舊密碼",
 		"add_model": "新增模型",
 		"edit_model": "編輯模型",
+		"add_mcp_server": "新增 MCP 伺服器",
+		"edit_mcp_server": "編輯 MCP 伺服器",
+		"no_mcp_servers": "尚未設定 MCP 伺服器",
 		"pattern": "顯示圖案背景"
 	},
 	"login": {

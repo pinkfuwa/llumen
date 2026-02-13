@@ -67,6 +67,17 @@ pub enum AssistantChunk {
     Error(String),
     DeepAgent(Deep),
     Image(i32),
+    McpImage {
+        data: String,
+        mime_type: String,
+    },
+    McpResource {
+        uri: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        mime_type: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]

@@ -5,6 +5,7 @@ pub mod prelude;
 pub mod chat;
 pub mod config;
 pub mod file;
+pub mod mcp_server;
 pub mod message;
 pub mod model;
 pub mod tool;

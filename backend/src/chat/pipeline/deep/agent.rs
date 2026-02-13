@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use anyhow::{Context as _, Result, bail};
 use protocol::*;
-use serde::Deserialize;
 use tokio_stream::StreamExt;
 
 use super::helper::*;
@@ -194,7 +193,7 @@ impl DeepAgent {
             let system_prompt = self.ctx.prompt.render_coder(locale)?;
             (system_prompt, tools)
         } else {
-            let tools = self.ctx.tools.for_deep_mode(step.need_search);
+            let tools = self.ctx.tools.for_deep_mode(step.need_search).await;
             let system_prompt = self.ctx.prompt.render_researcher(locale)?;
             (system_prompt, tools)
         };
@@ -287,16 +286,20 @@ impl DeepAgent {
                     arg: tool_call.args.clone(),
                 });
 
-                let result = self.execute_tool(&tool_call.name, &tool_call.args).await?;
+                let output = self
+                    .ctx
+                    .tools
+                    .execute_tool(&tool_call.name, &tool_call.args)
+                    .await;
 
                 messages.push(openrouter::Message::ToolResult(
                     openrouter::MessageToolResult {
                         id: tool_call.id,
-                        content: result.clone(),
+                        content: output.text.clone(),
                     },
                 ));
 
-                sink.add_token(Token::DeepStepToolResult(result))
+                sink.add_token(Token::DeepStepToolResult(output.text))
             }
         }
 
@@ -357,85 +360,5 @@ impl DeepAgent {
         let text = result.get_text();
 
         Ok((self.state.take().unwrap(), text))
-    }
-    async fn execute_tool(&self, tool_name: &str, args: &str) -> Result<String> {
-        log::debug!("Running tool({}), arg: {}", tool_name, args);
-        match tool_name {
-            "web_search_tool" => {
-                #[derive(Deserialize)]
-                struct WebSearchArgs {
-                    query: String,
-                }
-                let args: Option<WebSearchArgs> = serde_json::from_str(args).ok();
-                if args.is_none() {
-                    return Ok("Invalid arguments for web_search_tool".to_string());
-                }
-                let args = args.unwrap();
-                match self.ctx.tools.web_search.search(&args.query).await {
-                    Ok(results) => {
-                        let mut output = String::new();
-                        for (i, result) in results.iter().enumerate().take(10) {
-                            output.push_str(&format!(
-                                "{}. [{}]({})\n   {}\n\n",
-                                i + 1,
-                                result.title,
-                                result.url,
-                                result.description
-                            ));
-                        }
-
-                        if output.is_empty() {
-                            output = "No search results found.".to_string();
-                        }
-
-                        Ok(output)
-                    }
-                    Err(e) => {
-                        // Return error as string so agent can see it and potentially recover
-                        log::warn!("Web search error: {}", e);
-                        Ok(format!("Error: {}", e))
-                    }
-                }
-            }
-            "crawl_tool" => {
-                #[derive(Deserialize)]
-                struct CrawlArgs {
-                    url: String,
-                }
-                let args: Option<CrawlArgs> = serde_json::from_str(args).ok();
-                if args.is_none() {
-                    return Ok("Invaild arguments".to_string());
-                }
-                let args = args.unwrap();
-                match self.ctx.tools.crawl.crawl(&args.url).await {
-                    Ok(content) => Ok(content),
-                    Err(e) => {
-                        // Return error as string so agent can see it and potentially recover
-                        log::warn!("Crawl error for URL '{}': {}", args.url, e);
-                        Ok(format!("Error: {}", e))
-                    }
-                }
-            }
-            "lua_repl" => {
-                #[derive(Deserialize)]
-                struct LuaArgs {
-                    code: String,
-                }
-                let args: Option<LuaArgs> = serde_json::from_str(args).ok();
-                if args.is_none() {
-                    return Ok("Invaild arguments".to_string());
-                }
-                let args = args.unwrap();
-                match self.ctx.tools.lua_repl.execute(&args.code).await {
-                    Ok(result) => Ok(result),
-                    Err(e) => {
-                        // Return error as string so agent can see it and potentially recover
-                        log::warn!("Lua execution error: {}", e);
-                        Ok(format!("Error: {}", e))
-                    }
-                }
-            }
-            _ => anyhow::bail!("Unknown tool: {}", tool_name),
-        }
     }
 }

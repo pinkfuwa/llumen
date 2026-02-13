@@ -50,6 +50,7 @@ csv = "1.4.0"
 infer = "0.19.0"
 webp = "0.3.1"
 getrandom = "0.3.4"
+rmcp = { version = "0.15", features = ["client", "transport-child-process", "transport-streamable-http-client-reqwest"] }
 
 [dependencies.rust-embed-for-web]
 version = "11.3.0"

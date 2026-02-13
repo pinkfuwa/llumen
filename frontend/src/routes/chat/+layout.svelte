@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { useModelsQueryEffect, getModels } from '$lib/api/model.svelte.js';
 	import { useUserQueryEffect, getCurrentUser } from '$lib/api/user.svelte.js';
+	import { useMcpServersQueryEffect } from '$lib/api/mcp.svelte.js';
 	let { children, params } = $props();
 	import { Sidebar } from '$lib/components';
 	import OpenBtn from '$lib/components/sidebar/OpenBtn.svelte';
@@ -36,6 +37,7 @@
 
 	useUserQueryEffect();
 	useModelsQueryEffect();
+	useMcpServersQueryEffect();
 
 	$effect(() => {
 		if (!contentElement) {

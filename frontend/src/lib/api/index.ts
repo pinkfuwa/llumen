@@ -56,6 +56,18 @@ export {
 	type Capabilty
 } from './model.svelte';
 
+// MCP
+export {
+	useMcpServersQueryEffect,
+	getMcpServers,
+	createMcpServer,
+	deleteMcpServer,
+	updateMcpServer,
+	readMcpServerConfig,
+	checkMcpConfig,
+	defaultMcpConfig
+} from './mcp.svelte';
+
 // User
 export {
 	useUsersQueryEffect,

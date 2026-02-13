@@ -152,6 +152,28 @@ const Handlers: {
 		cursor!.offset = 0;
 	},
 
+	mcp_image(data) {
+		const firstMsg = messages[0] as AssistantMessage;
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+		firstMsg.inner.c.push({
+			t: 'mcp_image',
+			c: { data: data.data, mime_type: data.mime_type }
+		});
+		cursor!.index++;
+		cursor!.offset = 0;
+	},
+
+	mcp_resource(data) {
+		const firstMsg = messages[0] as AssistantMessage;
+		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
+		firstMsg.inner.c.push({
+			t: 'mcp_resource',
+			c: { uri: data.uri, mime_type: data.mime_type, text: data.text }
+		});
+		cursor!.index++;
+		cursor!.offset = 0;
+	},
+
 	complete(data) {
 		const firstMsg = messages[0] as AssistantMessage;
 		firstMsg.stream = false;

@@ -40,6 +40,7 @@
 mod chat;
 mod config;
 mod errors;
+mod mcp;
 mod middlewares;
 mod openrouter;
 mod routes;
@@ -96,6 +97,7 @@ pub struct AppState {
     pub processor: Arc<Context>,
     pub blob: Arc<BlobDB>,
     pub auth_header: Option<String>,
+    pub mcp: Arc<mcp::manager::McpClientManager>,
 }
 
 /// Attempts to load the OpenRouter API key from environment variables.
@@ -223,8 +225,10 @@ async fn main() {
             .expect("Cannot open blob db"),
     );
 
+    let mcp = Arc::new(mcp::manager::McpClientManager::new(conn.clone()));
+
     let processor = Arc::new(
-        Context::new(conn.clone(), openrouter, blob.clone())
+        Context::new(conn.clone(), openrouter, blob.clone(), mcp.clone())
             .expect("Failed to create pipeline context"),
     );
 
@@ -239,6 +243,7 @@ async fn main() {
         processor,
         blob,
         auth_header,
+        mcp,
     });
 
     #[cfg(feature = "tracing")]
@@ -253,6 +258,7 @@ async fn main() {
                 .nest("/user", routes::user::routes())
                 .nest("/message", routes::message::routes())
                 .nest("/model", routes::model::routes())
+                .nest("/mcp", routes::mcp::routes())
                 .layer(middlewares::compression::ZstdCompressionLayer)
                 // only compress plain text content
                 .nest("/file", routes::file::routes())

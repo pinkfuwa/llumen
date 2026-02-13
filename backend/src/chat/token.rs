@@ -41,6 +41,15 @@ pub enum Token {
     Error(String),
     Image(i32),
     UrlCitation(Vec<protocol::UrlCitation>),
+    McpImage {
+        data: String,
+        mime_type: String,
+    },
+    McpResource {
+        uri: String,
+        mime_type: Option<String>,
+        text: Option<String>,
+    },
     Complete {
         message_id: i32,
         cost: f32,
@@ -109,7 +118,9 @@ impl Mergeable for Token {
             | Token::ToolCall { .. }
             | Token::DeepStepToolCall { .. }
             | Token::Image(_)
-            | Token::UrlCitation(_) => 1,
+            | Token::UrlCitation(_)
+            | Token::McpImage { .. }
+            | Token::McpResource { .. } => 1,
         }
     }
 

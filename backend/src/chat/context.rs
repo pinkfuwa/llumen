@@ -47,6 +47,7 @@ impl Context {
         db: DatabaseConnection,
         openrouter: openrouter::Openrouter,
         blob: Arc<BlobDB>,
+        mcp: Arc<crate::mcp::manager::McpClientManager>,
     ) -> Result<Self, anyhow::Error> {
         Ok(Self {
             db,
@@ -54,12 +55,12 @@ impl Context {
             channel: Arc::new(channel::Context::new()),
             prompt: Arc::new(Prompt::new()?),
             blob,
-            tools: Tools::new(),
+            tools: Tools::new(mcp),
             strategies: Strategies::new(),
         })
     }
 
-    /// Prepares a completion session for the specified user/chat/model tuple.
+    /// Prepares a completion session for the specified `user` and `chat`.
     pub fn get_completion_session(
         self: &Arc<Self>,
         user_id: i32,
