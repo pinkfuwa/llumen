@@ -48,7 +48,7 @@ pub async fn route(
 
         let model: openrouter::Model = config.clone().into();
 
-        let caps = app.processor.get_capability(&model).await;
+        let caps = app.openrouter.get_capability(&model).await;
 
         list.push(ModelList {
             id: m.id,

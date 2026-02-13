@@ -3,7 +3,7 @@ mod delete;
 mod halt;
 mod paginate;
 mod read;
-mod sse;
+pub(crate) mod sse;
 mod write;
 
 use std::sync::Arc;

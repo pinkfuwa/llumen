@@ -35,12 +35,7 @@ impl DeepAgent {
         completion_ctx: &mut CompletionSession,
         _toolcall: Vec<openrouter::ToolCall>,
     ) -> Result<()> {
-        use crate::utils::model::ModelChecker;
-        use protocol::ModelConfig;
-
-        let model = <ModelConfig as ModelChecker>::from_toml(&completion_ctx.model.config)
-            .context("Failed to get model config")?;
-        let model: openrouter::Model = model.into();
+        let model = completion_ctx.openrouter_model();
 
         let input = DeepAgentInput {
             user_message: completion_ctx

@@ -1,13 +1,4 @@
-//! A collection of tools
-//!
-//! Tool contain tool prompt, a async method for solving tool output
-//!
-//! If the method return Err, step current completion with error message
-//! displayed to user
-//!
-//! If the error is expected to be seen by llumen(LLM), return Ok(string)
-//!
-//! Tool cannot manipulate and direct output, but subagent can
+//! A collection of built-in tools
 
 use std::sync::Arc;
 

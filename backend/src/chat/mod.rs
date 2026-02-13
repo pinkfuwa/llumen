@@ -1,16 +1,20 @@
-mod channel;
-pub use channel::Cursor;
+pub(crate) mod channel {
+    pub use super::stream_buffer::*;
+}
+
 mod context;
-pub mod converter;
-pub(crate) mod pipeline;
+pub(crate) mod converter;
+mod helper;
 mod prompt;
-mod stream_writer;
+mod session;
+mod strategies;
+mod stream_buffer;
 mod token;
-mod token_sink;
 mod tools;
 
-pub use context::{CompletionSession, Context};
-pub use pipeline::Strategies;
-pub use stream_writer::StreamWriter;
-pub use token::Token;
-pub use token_sink::TokenSink;
+mod deep_research;
+
+pub(crate) use context::Context;
+pub(crate) use session::{CompletionSession, TokenSink};
+pub(crate) use token::Token;
+pub(crate) use channel::Cursor;

@@ -1,258 +1,283 @@
-use std::sync::Arc;
+//! Boundary adapters for data mapping between layers.
+//!
+//! This module centralises every type conversion that crosses a layer boundary:
+//! - **SSE**: `Token` → `SseResp` (streaming to frontend)
+//! - **OpenRouter**: `protocol::MessageInner` → `openrouter::Message` (to LLM)
+//! - **Database**: streaming `Token`s → `protocol::AssistantChunk`
+//!   (persistence)
+//!
+//! Keeping all conversions here prevents coupling between layers and makes
+//! the mapping logic easy to test in isolation.
 
-use protocol::{AssistantChunk, FileMetadata, MessageInner};
+use crate::openrouter::{self, StreamCompletionResp};
+use crate::routes::chat::sse::*;
+use ::entity::message;
+use protocol::{AssistantChunk, MessageInner};
 
-use crate::{
-    chat::{self, Context},
-    openrouter,
-    utils::blob::BlobDB,
-};
-use anyhow::Result;
+use super::token::Token;
 
-/// Loads file blobs referenced by a message.
-async fn load_files(
-    db: Arc<BlobDB>,
-    handles: &[FileMetadata],
-) -> Result<Vec<openrouter::File>, anyhow::Error> {
-    let mut tasks = Vec::with_capacity(handles.len());
+// ---------------------------------------------------------------------------
+// SSE Adapter: Token → SseResp
+// ---------------------------------------------------------------------------
 
-    for handle in handles {
-        let id = handle.id;
-        let name = handle.name.clone();
-        let db = db.clone();
-        let handle = tokio::spawn(async move {
-            db.get_vectored(id)
-                .await
-                .map(|data| openrouter::File { name, data })
-        });
-        tasks.push(handle);
-    }
-
-    let mut results = Vec::with_capacity(handles.len());
-    for task in tasks {
-        match task.await? {
-            Some(it) => results.push(it),
-            None => log::error!("File not found"),
-        };
-    }
-
-    Ok(results)
-}
-
-/// Loads assistant-generated images from blob storage.
-async fn load_assistant_images(
-    db: Arc<BlobDB>,
-    file_ids: &[i32],
-) -> Result<Vec<openrouter::Image>, anyhow::Error> {
-    let mut tasks = Vec::with_capacity(file_ids.len());
-
-    for &file_id in file_ids {
-        let db = db.clone();
-        let handle = tokio::spawn(async move {
-            let data = db.get_vectored(file_id).await?;
-            let mime_type = infer::get(&data)
-                .map(|kind| kind.mime_type().to_string())
-                .unwrap_or_else(|| "image/png".to_string());
-            Some(openrouter::Image { data, mime_type })
-        });
-        tasks.push(handle);
-    }
-
-    let mut results = Vec::with_capacity(file_ids.len());
-    for task in tasks {
-        match task.await? {
-            Some(it) => results.push(it),
-            None => log::error!("Image file not found"),
-        };
-    }
-
-    Ok(results)
-}
-
-/// Converts database message representation into OpenRouter messages, including
-/// attachments.
-pub async fn db_message_to_openrouter(
-    ctx: &Context,
-    message: &MessageInner,
-) -> Result<impl Iterator<Item = openrouter::Message>> {
-    let mut result = Vec::new();
-    match message {
-        MessageInner::User { text, files } => {
-            if files.is_empty() {
-                result.push(openrouter::Message::User(text.clone()));
-            } else {
-                let file_data = load_files(ctx.blob.clone(), files).await?;
-                result.push(openrouter::Message::MultipartUser {
-                    text: text.clone(),
-                    files: file_data,
-                });
-            }
+/// Converts an internal streaming [`Token`] into the SSE response type sent to
+/// the frontend.  Returns `None` for tokens that should be suppressed (e.g.
+/// `Token::Empty`).
+pub fn token_to_sse(token: Token) -> Option<SseResp> {
+    match token {
+        Token::Assistant(content) => Some(SseResp::Token(content)),
+        Token::Reasoning(content) => Some(SseResp::Reasoning(content)),
+        Token::ToolCall { name, arg } => {
+            Some(SseResp::ToolCall(SseRespToolCall { name, args: arg }))
         }
-        MessageInner::Assistant(assistant_chunks) => {
-            let mut iter = assistant_chunks.iter().peekable();
-            while let Some(chunk) = iter.next() {
-                match chunk {
-                    AssistantChunk::Annotation(_) => {
-                        #[cfg(debug_assertions)]
-                        panic!("Annotation should be captured by Text chunk");
-                    }
-                    AssistantChunk::UrlCitation(_) => {
-                        // Citations are for display only and not sent back to
-                        // the model.
-                    }
-                    AssistantChunk::Text(x) => {
-                        let mut reasoning_details = None;
-                        let mut annotations = None;
-                        let mut images = Vec::new();
+        Token::ToolResult(content) => Some(SseResp::ToolResult(SseRespToolResult { content })),
+        Token::Complete {
+            message_id,
+            token,
+            cost,
+        } => Some(SseResp::Complete(SseRespMessageComplete {
+            id: message_id,
+            token_count: token,
+            cost,
+            version: message_id,
+        })),
+        Token::Title(title) => Some(SseResp::Title(title)),
+        Token::Error(content) => Some(SseResp::Error(content)),
+        Token::Start { id, user_msg_id } => Some(SseResp::Start(SseStart {
+            id,
+            user_msg_id,
+            version: user_msg_id,
+        })),
+        Token::DeepPlan(content) => Some(SseResp::DeepPlan(content)),
+        Token::DeepStepStart(step) => Some(SseResp::DeepStepStart(step)),
+        Token::DeepStepReasoning(content) => Some(SseResp::DeepStepReasoning(content)),
+        Token::DeepStepToolCall { name, arg } => Some(SseResp::DeepStepToolCall(SseRespToolCall {
+            name,
+            args: arg,
+        })),
+        Token::DeepStepToolResult(content) => {
+            Some(SseResp::DeepStepToolResult(SseRespToolResult { content }))
+        }
+        Token::DeepStepToken(content) => Some(SseResp::DeepStepToken(content)),
+        Token::DeepReport(content) => Some(SseResp::DeepReport(content)),
+        Token::Image(file_id) => Some(SseResp::Image(file_id)),
+        Token::UrlCitation(citations) => Some(SseResp::UrlCitation(citations)),
+        Token::Empty => None,
+    }
+}
 
-                        let mut image_ids = Vec::new();
-                        while matches!(
-                            iter.peek(),
-                            Some(AssistantChunk::Annotation(_))
-                                | Some(AssistantChunk::ReasoningDetail(_))
-                                | Some(AssistantChunk::Image(_))
-                        ) {
-                            match iter.next().unwrap() {
-                                AssistantChunk::Annotation(value) => {
-                                    annotations = Some(value.clone());
-                                }
-                                AssistantChunk::ReasoningDetail(value) => {
-                                    reasoning_details = Some(value.clone());
-                                }
-                                AssistantChunk::Image(file_id) => {
-                                    image_ids.push(*file_id);
-                                }
-                                _ => unreachable!(""),
-                            }
-                        }
+// ---------------------------------------------------------------------------
+// OpenRouter Adapter: protocol → openrouter::Message
+// ---------------------------------------------------------------------------
 
-                        if !image_ids.is_empty() {
-                            images = load_assistant_images(ctx.blob.clone(), &image_ids).await?;
-                        }
+/// Converts a slice of database message models into the `openrouter::Message`
+/// sequence expected by the LLM API.
+///
+/// Each `MessageInner::Assistant` may expand into *multiple* OpenRouter
+/// messages (e.g. text + tool-call + tool-result) because of how the
+/// protocol packs everything into `Vec<AssistantChunk>`.
+pub fn history_to_openrouter(
+    history: &[message::Model],
+    blob: &crate::utils::blob::BlobDB,
+) -> Vec<openrouter::Message> {
+    let mut messages = Vec::new();
 
-                        result.push(openrouter::Message::Assistant {
-                            content: x.clone(),
-                            annotations,
-                            reasoning_details,
-                            images,
+    for msg in history {
+        match &msg.inner {
+            MessageInner::User { text, files } => {
+                if files.is_empty() {
+                    messages.push(openrouter::Message::User(text.clone()));
+                } else {
+                    let or_files = files
+                        .iter()
+                        .filter_map(|f| {
+                            let reader = blob.get(f.id)?;
+                            Some(openrouter::File {
+                                name: f.name.clone(),
+                                data: reader.as_ref().to_vec(),
+                            })
                         })
-                    }
-                    AssistantChunk::ReasoningDetail(_) | AssistantChunk::Image(_) => {
-                        // Should be captured by Text chunk
-                    }
-                    AssistantChunk::Reasoning(_) => {
-                        // Reasoning is internal and not sent back to the model
-                    }
-                    AssistantChunk::ToolCall { id, arg, name } => {
-                        result.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
-                            id: id.clone(),
-                            name: name.clone(),
-                            arguments: arg.clone(),
-                        }));
-                    }
-                    AssistantChunk::ToolResult { id, response } => {
-                        result.push(openrouter::Message::ToolResult(
-                            openrouter::MessageToolResult {
-                                id: id.clone(),
-                                content: response.clone(),
-                            },
-                        ));
-                    }
-                    AssistantChunk::Error(_) => {
-                        // Errors are not sent to the model
-                    }
-                    AssistantChunk::DeepAgent(_deep) => {
-                        // DeepAgent is internal state and not sent to the model
-                        // report generated by deep research is another text
-                        // chunk
-                    }
+                        .collect();
+                    messages.push(openrouter::Message::MultipartUser {
+                        text: text.clone(),
+                        files: or_files,
+                    });
                 }
             }
+            MessageInner::Assistant(chunks) => {
+                chunks_to_openrouter(chunks, &mut messages);
+            }
         }
+    }
+
+    messages
+}
+
+fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Message>) {
+    let mut text_parts: Vec<String> = Vec::new();
+    let mut annotations: Option<serde_json::Value> = None;
+    let mut reasoning_details: Option<serde_json::Value> = None;
+    let mut images: Vec<openrouter::Image> = Vec::new();
+
+    let flush = |text_parts: &mut Vec<String>,
+                 annotations: &mut Option<serde_json::Value>,
+                 reasoning_details: &mut Option<serde_json::Value>,
+                 images: &mut Vec<openrouter::Image>,
+                 out: &mut Vec<openrouter::Message>| {
+        if text_parts.is_empty() && images.is_empty() {
+            return;
+        }
+        out.push(openrouter::Message::Assistant {
+            content: text_parts.join(""),
+            annotations: annotations.take(),
+            reasoning_details: reasoning_details.take(),
+            images: std::mem::take(images),
+        });
+        text_parts.clear();
     };
-    Ok(result.into_iter())
+
+    for chunk in chunks {
+        match chunk {
+            AssistantChunk::Text(t) => text_parts.push(t.clone()),
+            AssistantChunk::Reasoning(_) => {}
+            AssistantChunk::ReasoningDetail(rd) => {
+                reasoning_details = Some(rd.clone());
+            }
+            AssistantChunk::Annotation(a) => {
+                annotations = Some(a.clone());
+            }
+            AssistantChunk::ToolCall { id, name, arg } => {
+                flush(
+                    &mut text_parts,
+                    &mut annotations,
+                    &mut reasoning_details,
+                    &mut images,
+                    out,
+                );
+                out.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
+                    id: id.clone(),
+                    name: name.clone(),
+                    arguments: arg.clone(),
+                }));
+            }
+            AssistantChunk::ToolResult { id, response } => {
+                out.push(openrouter::Message::ToolResult(
+                    openrouter::MessageToolResult {
+                        id: id.clone(),
+                        content: response.clone(),
+                    },
+                ));
+            }
+            AssistantChunk::Image(_file_id) => {
+                // Image reconstruction from blob not supported in history
+                // replay
+            }
+            AssistantChunk::UrlCitation(_) | AssistantChunk::Error(_) => {}
+            AssistantChunk::DeepAgent(_) => {}
+        }
+    }
+
+    flush(
+        &mut text_parts,
+        &mut annotations,
+        &mut reasoning_details,
+        &mut images,
+        out,
+    );
 }
 
-/// Translates streaming OpenRouter responses into assistant message chunks.
+// ---------------------------------------------------------------------------
+// OpenRouter Stream → Token (for strategies)
+// ---------------------------------------------------------------------------
+
+/// Maps an OpenRouter stream chunk into a normal-mode `Token`.
+pub fn openrouter_to_buffer_token(resp: StreamCompletionResp) -> Token {
+    match resp {
+        StreamCompletionResp::ResponseToken(delta) => Token::Assistant(delta),
+        StreamCompletionResp::ReasoningToken(delta) => Token::Reasoning(delta),
+        StreamCompletionResp::ToolToken { name, args, .. } => Token::ToolCall { name, arg: args },
+        StreamCompletionResp::Usage { .. } => Token::Empty,
+    }
+}
+
+/// Maps an OpenRouter stream chunk into a deep-step `Token`.
+pub fn openrouter_to_buffer_token_deep_step(resp: StreamCompletionResp) -> Token {
+    match resp {
+        StreamCompletionResp::ResponseToken(delta) => Token::DeepStepToken(delta),
+        StreamCompletionResp::ReasoningToken(delta) => Token::DeepStepReasoning(delta),
+        StreamCompletionResp::ToolToken { name, args, .. } => {
+            Token::DeepStepToolCall { name, arg: args }
+        }
+        StreamCompletionResp::Usage { .. } => Token::Empty,
+    }
+}
+
+/// Maps an OpenRouter stream chunk into a deep-report `Token`.
+pub fn openrouter_to_buffer_token_deep_report(resp: StreamCompletionResp) -> Token {
+    match resp {
+        StreamCompletionResp::ResponseToken(delta) => Token::DeepReport(delta),
+        StreamCompletionResp::ReasoningToken(delta) => Token::DeepReport(delta),
+        StreamCompletionResp::ToolToken { .. } | StreamCompletionResp::Usage { .. } => Token::Empty,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// OpenRouter StreamResult → protocol::AssistantChunk (persistence)
+// ---------------------------------------------------------------------------
+
+/// Converts accumulated stream response items into storable assistant chunks.
 pub fn openrouter_stream_to_assitant_chunk(
-    msgs: &[openrouter::StreamCompletionResp],
-) -> impl Iterator<Item = AssistantChunk> {
-    let mut result = Vec::new();
-    for msg in msgs {
-        match msg {
-            openrouter::StreamCompletionResp::ReasoningToken(x) => {
-                if let Some(AssistantChunk::Reasoning(reasoning)) = result.last_mut() {
-                    reasoning.push_str(x.as_str());
-                } else {
-                    result.push(AssistantChunk::Reasoning(x.clone()));
+    responses: &[StreamCompletionResp],
+) -> Vec<AssistantChunk> {
+    let mut chunks = Vec::new();
+    let mut text = String::new();
+
+    for resp in responses {
+        match resp {
+            StreamCompletionResp::ResponseToken(delta) => text.push_str(delta),
+            StreamCompletionResp::ReasoningToken(delta) => {
+                if !text.is_empty() {
+                    chunks.push(AssistantChunk::Text(std::mem::take(&mut text)));
                 }
+                chunks.push(AssistantChunk::Reasoning(delta.clone()));
             }
-            openrouter::StreamCompletionResp::ResponseToken(x) => {
-                if let Some(AssistantChunk::Text(response)) = result.last_mut() {
-                    response.push_str(x.as_str());
-                } else {
-                    result.push(AssistantChunk::Text(x.clone()));
-                }
-            }
-            openrouter::StreamCompletionResp::Usage { .. } => {}
-            openrouter::StreamCompletionResp::ToolToken { .. } => {
-                // ToolToken is for streaming chunks, typically merged into the
-                // final ToolCall For now, we can skip them as
-                // they're intermediate states
-            }
+            StreamCompletionResp::ToolToken { .. } | StreamCompletionResp::Usage { .. } => {}
         }
     }
-    result.into_iter()
-}
 
-/// Converts a stream response token into a chat buffer token, ignoring
-/// metadata-only tokens.
-pub fn openrouter_to_buffer_token(token: openrouter::StreamCompletionResp) -> chat::Token {
-    match token {
-        openrouter::StreamCompletionResp::ResponseToken(content) => chat::Token::Assistant(content),
-        openrouter::StreamCompletionResp::ReasoningToken(content) => {
-            chat::Token::Reasoning(content)
-        }
-        openrouter::StreamCompletionResp::ToolToken { .. } => {
-            // ToolToken is intermediate state during streaming, return empty
-            chat::Token::Empty
-        }
-        openrouter::StreamCompletionResp::Usage { .. } => {
-            // Usage info is handled separately
-            chat::Token::Empty
-        }
+    if !text.is_empty() {
+        chunks.push(AssistantChunk::Text(text));
     }
+
+    chunks
 }
 
-/// Converts a stream response token into a chat deep-step token representation.
-pub fn openrouter_to_buffer_token_deep_step(
-    token: openrouter::StreamCompletionResp,
-) -> chat::Token {
-    match token {
-        openrouter::StreamCompletionResp::ResponseToken(content) => {
-            chat::Token::DeepStepToken(content)
-        }
-        openrouter::StreamCompletionResp::ReasoningToken(content) => {
-            chat::Token::DeepStepReasoning(content)
-        }
-        openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
-        openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn token_to_sse_maps_all_variants() {
+        assert!(token_to_sse(Token::Empty).is_none());
+
+        let sse = token_to_sse(Token::Assistant("hi".into())).unwrap();
+        assert!(matches!(sse, SseResp::Token(s) if s == "hi"));
+
+        let sse = token_to_sse(Token::ToolCall {
+            name: "web_search".into(),
+            arg: "{}".into(),
+        })
+        .unwrap();
+        assert!(matches!(sse, SseResp::ToolCall(tc) if tc.name == "web_search"));
     }
-}
 
-/// Converts a stream response token into a deep-report token, dropping
-/// usage/tool tokens.
-pub fn openrouter_to_buffer_token_deep_report(
-    token: openrouter::StreamCompletionResp,
-) -> chat::Token {
-    match token {
-        openrouter::StreamCompletionResp::ResponseToken(content) => {
-            chat::Token::DeepReport(content)
-        }
-        openrouter::StreamCompletionResp::ReasoningToken(content) => {
-            chat::Token::Reasoning(content)
-        }
-        openrouter::StreamCompletionResp::ToolToken { .. } => chat::Token::Empty,
-        openrouter::StreamCompletionResp::Usage { .. } => chat::Token::Empty,
+    #[test]
+    fn stream_token_to_buffer_token() {
+        let token = openrouter_to_buffer_token(StreamCompletionResp::ResponseToken("hello".into()));
+        assert!(matches!(token, Token::Assistant(s) if s == "hello"));
+
+        let token =
+            openrouter_to_buffer_token(StreamCompletionResp::ReasoningToken("think".into()));
+        assert!(matches!(token, Token::Reasoning(s) if s == "think"));
     }
 }

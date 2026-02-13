@@ -84,8 +84,7 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 /// * `key`: Encryption key for PASETO token generation/validation used in
 ///   authentication
 /// * `hasher`: Password hasher for user authentication and security
-/// * `processor`: Main chat processing pipeline context managing LLM
-///   completions
+/// * `chat`: Main chat processing pipeline context managing LLM completions
 /// * `blob`: Blob database for storing binary data and file uploads
 /// * `user_header`: Optional HTTP header name for header-based authentication
 ///   (SSO/proxy integration)
@@ -93,7 +92,8 @@ pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
     pub hasher: Hasher,
-    pub processor: Arc<Context>,
+    pub chat: Arc<Context>,
+    pub openrouter: Arc<crate::openrouter::Openrouter>,
     pub blob: Arc<BlobDB>,
     pub auth_header: Option<String>,
 }
@@ -215,7 +215,7 @@ async fn main() {
     )
     .expect("Cannot parse paseto key");
 
-    let openrouter = openrouter::Openrouter::new(api_key, api_base);
+    let openrouter = Arc::new(openrouter::Openrouter::new(api_key, api_base));
 
     let blob = Arc::new(
         BlobDB::new_from_path(blob_path)
@@ -223,8 +223,8 @@ async fn main() {
             .expect("Cannot open blob db"),
     );
 
-    let processor = Arc::new(
-        Context::new(conn.clone(), openrouter, blob.clone())
+    let chat = Arc::new(
+        Context::new(conn.clone(), openrouter.clone(), blob.clone())
             .expect("Failed to create pipeline context"),
     );
 
@@ -236,7 +236,8 @@ async fn main() {
         conn,
         key,
         hasher: Hasher::default(),
-        processor,
+        chat,
+        openrouter,
         blob,
         auth_header,
     });
