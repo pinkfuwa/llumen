@@ -16,8 +16,8 @@ pub async fn route(
     Extension(UserId(user_id)): Extension<UserId>,
     Path(id): Path<i32>,
 ) -> Result<Response, AppError> {
+    // Allow access if: user owns the file OR file belongs to user's chat
     let file = File::find_by_id(id)
-        .filter(file::Column::OwnerId.eq(user_id))
         .one(&app.conn)
         .await
         .kind(ErrorKind::Internal)?
@@ -25,6 +25,30 @@ pub async fn route(
             error: ErrorKind::ResourceNotFound,
             reason: "".to_owned(),
         }))?;
+
+    // Check access: owner_id matches OR (owner_id is None and chat belongs to user)
+    let has_access = if let Some(owner) = file.owner_id {
+        owner == user_id
+    } else if let Some(chat_id) = file.chat_id {
+        // Generated image - verify chat belongs to user
+        use entity::chat::{self, Entity as Chat};
+        Chat::find_by_id(chat_id)
+            .filter(chat::Column::OwnerId.eq(user_id))
+            .one(&app.conn)
+            .await
+            .kind(ErrorKind::Internal)?
+            .is_some()
+    } else {
+        false
+    };
+
+    if !has_access {
+        return Err(Json(Error {
+            error: ErrorKind::ResourceNotFound,
+            reason: "".to_owned(),
+        })
+        .into());
+    }
 
     let reader = app.blob.get(id).ok_or(Json(Error {
         error: ErrorKind::ResourceNotFound,

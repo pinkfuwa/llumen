@@ -2,6 +2,25 @@ use sea_orm_migration::{prelude::*, schema::*};
 
 use super::entity::*;
 
+// IMPORTANT NOTE (2026-02-13):
+// Generated images (from image generation models) have owner_id = NULL and
+// chat_id set. File access control has been updated to allow:
+// 1. Files with owner_id matching the requesting user
+// 2. Files with owner_id = NULL but chat_id belonging to the requesting user
+//
+// This prevents orphaned images in redb while allowing proper access to
+// generated images. See: backend/src/routes/file/download.rs and
+// backend/src/routes/file/image.rs
+//
+// Garbage collection (backend/src/utils/file_cleanup.rs) only removes files
+// with:
+// - chat_id IS NULL (temporary/orphaned files)
+// - valid_until expired
+// Therefore, generated images with chat_id set are protected from cleanup.
+//
+// NOTE: SQLite does NOT support DROP COLUMN, so owner_id column remains in
+// schema even though it's nullable for generated images.
+
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 

@@ -154,7 +154,11 @@ impl CompletionSession {
         let history_msgs = converter::history_to_openrouter(&self.history, &ctx.blob);
         messages.extend(history_msgs);
 
-        // 3. Context injection
+        // 3. Context injection as USER message BEFORE the last user query
+        // This placement ensures:
+        // - Image-only models get context (they take last message)
+        // - Gemini compatibility (single system prompt preserved)
+        // - Prompt caching is not ruined (system prompt stays clean)
         let is_llumen_related = self
             .latest_user_message()
             .map(|m| m.to_lowercase().contains("llumen"))
@@ -165,8 +169,24 @@ impl CompletionSession {
         let context_prompt =
             ctx.prompt
                 .render_context(is_llumen_related, &time_str, self.chat.title.as_deref())?;
+
         if !context_prompt.trim().is_empty() {
-            messages.push(openrouter::Message::System(context_prompt));
+            // Find the position of the last user message and insert context before it
+            let last_user_pos = messages.iter().enumerate().rev().find_map(|(i, msg)| {
+                matches!(
+                    msg,
+                    openrouter::Message::User(_) | openrouter::Message::MultipartUser { .. }
+                )
+                .then_some(i)
+            });
+
+            if let Some(pos) = last_user_pos {
+                // Insert context before the last user message
+                messages.insert(pos, openrouter::Message::User(context_prompt));
+            } else {
+                // No user message found, append context at the end
+                messages.push(openrouter::Message::User(context_prompt));
+            }
         }
 
         Ok(messages)
@@ -335,25 +355,35 @@ impl CompletionSession {
             return Ok(());
         }
 
-        log::info!("try_generate_title: attempting to generate title");
+        log::trace!("try_generate_title: attempting to generate title");
 
-        if let Some(title) = self.generate_title().await {
-            log::info!("try_generate_title: generated title: '{}'", title);
-            self.publisher.publish(Token::Title(title.clone()));
-
-            // Create a partial ActiveModel with only id and title set
-            let chat_active = chat::ActiveModel {
-                id: Set(self.chat.id),
-                title: Set(Some(title.clone())),
-                ..Default::default()
-            };
-            chat::Entity::update(chat_active).exec(&self.ctx.db).await?;
-
-            // Update the local copy so we don't try again
-            self.chat.title = Some(title);
+        let title = if let Some(generated_title) = self.generate_title().await {
+            generated_title
         } else {
-            log::warn!("try_generate_title: generation returned None");
-        }
+            // Fallback for image-only models: use trimmed user query (max 40 chars)
+            log::trace!("try_generate_title: generation failed, using fallback");
+            let user_msg = self.latest_user_message().unwrap_or("New Chat");
+            let trimmed: String = user_msg.trim().chars().take(40).collect();
+            if trimmed.is_empty() {
+                "New Chat".to_string()
+            } else {
+                trimmed
+            }
+        };
+
+        log::trace!("try_generate_title: using title: '{}'", title);
+        self.publisher.publish(Token::Title(title.clone()));
+
+        // Create a partial ActiveModel with only id and title set
+        let chat_active = chat::ActiveModel {
+            id: Set(self.chat.id),
+            title: Set(Some(title.clone())),
+            ..Default::default()
+        };
+        chat::Entity::update(chat_active).exec(&self.ctx.db).await?;
+
+        // Update the local copy so we don't try again
+        self.chat.title = Some(title);
 
         Ok(())
     }
