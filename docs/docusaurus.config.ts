@@ -21,6 +21,16 @@ const config: Config = {
     locales: ["en"],
   },
 
+  plugins: [
+    [
+      "docusaurus-plugin-llms",
+      {
+        logLevel: "normal",
+        docsDir: "user",
+      },
+    ],
+  ],
+
   presets: [
     [
       "classic",
