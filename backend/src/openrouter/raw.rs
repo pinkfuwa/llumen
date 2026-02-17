@@ -72,6 +72,8 @@ pub struct CompletionReq {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub plugins: Vec<Plugin>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub web_search_options: Option<WebSearchOptions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub usage: Option<UsageReq>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
@@ -183,6 +185,12 @@ impl Plugin {
             pdf: None,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct WebSearchOptions {
+    #[serde(rename = "search_context_size")]
+    pub search_context_size: String,
 }
 
 #[derive(Debug, Clone, Serialize)]

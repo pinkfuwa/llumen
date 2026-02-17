@@ -7,7 +7,7 @@ async fn test_text_output_capability() {
     // types
 
     // Test with a fake API key and base URL (won't make actual requests)
-    let openrouter = Openrouter::new("test_key", "https://openrouter.ai/api");
+    let openrouter = Openrouter::new("test_key", "https://openrouter.ai/api", false);
 
     // Give initial model fetch time to start (though it won't complete with fake
     // key)
@@ -97,7 +97,7 @@ async fn tool_calls() {
 
     let api_base = env::var("API_BASE").unwrap_or_else(|_| "https://openrouter.ai/api".to_string());
 
-    let openrouter = Openrouter::new(&api_key, &api_base);
+    let openrouter = Openrouter::new(&api_key, &api_base, false);
 
     // Create a simple tool definition
     let tool = Tool {
@@ -182,7 +182,7 @@ async fn parallel_tool_calls() {
 
     let api_base = env::var("API_BASE").unwrap_or_else(|_| "https://openrouter.ai/api".to_string());
 
-    let openrouter = Openrouter::new(&api_key, &api_base);
+    let openrouter = Openrouter::new(&api_key, &api_base, false);
 
     // Create multiple tool definitions
     let weather_tool = Tool {

@@ -36,6 +36,14 @@ impl Openrouter {
         let mut plugins = Vec::new();
         let mut modalities = Vec::new();
 
+        let web_search_options = if option.insert_web_search_context && !self.compatibility_mode {
+            Some(raw::WebSearchOptions {
+                search_context_size: "medium".to_string(),
+            })
+        } else {
+            None
+        };
+
         if !self.compatibility_mode {
             match capability.ocr {
                 OcrEngine::Native => plugins.push(raw::Plugin::pdf_native()),
@@ -94,6 +102,7 @@ impl Openrouter {
             max_tokens: option.max_tokens,
             tools,
             plugins,
+            web_search_options,
             usage,
             reasoning,
             modalities,
@@ -101,7 +110,11 @@ impl Openrouter {
         }
     }
 
-    pub fn new(api_key: impl AsRef<str>, api_base: impl AsRef<str>) -> Self {
+    pub fn new(
+        api_key: impl AsRef<str>,
+        api_base: impl AsRef<str>,
+        force_openrouter: bool,
+    ) -> Self {
         let api_base = api_base.as_ref();
         let api_key = api_key.as_ref().to_string();
 
@@ -115,7 +128,11 @@ impl Openrouter {
             &chat_completion_endpoint
         );
 
-        let compatibility_mode = !api_base.contains("openrouter");
+        let compatibility_mode = if force_openrouter {
+            false
+        } else {
+            !api_base.contains("openrouter")
+        };
         if compatibility_mode {
             log::warn!("Custom API_BASE detected, disabling plugin support");
         }

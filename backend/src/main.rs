@@ -170,6 +170,9 @@ async fn main() {
     let api_base = var("API_BASE").unwrap_or_else(|_| {
         var("OPENAI_API_BASE").unwrap_or("https://openrouter.ai/api".to_string())
     });
+    let force_openrouter = var("FORCE_OPENROUTER_MODE")
+        .map(|v| v.to_lowercase() == "true" || v == "1")
+        .unwrap_or(false);
     let data_path = PathBuf::from(var("DATA_PATH").unwrap_or(".".to_owned()));
     let mut database_path = data_path.clone();
     database_path.push("db.sqlite");
@@ -215,7 +218,11 @@ async fn main() {
     )
     .expect("Cannot parse paseto key");
 
-    let openrouter = Arc::new(openrouter::Openrouter::new(api_key, api_base));
+    let openrouter = Arc::new(openrouter::Openrouter::new(
+        api_key,
+        api_base,
+        force_openrouter,
+    ));
 
     let blob = Arc::new(
         BlobDB::new_from_path(blob_path)
