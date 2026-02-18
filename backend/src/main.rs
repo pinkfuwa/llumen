@@ -104,7 +104,7 @@ pub struct AppState {
 /// completions. If not found, prints instructions for obtaining a key and exits
 /// gracefully.
 fn load_api_key() -> String {
-    match (var("API_KEY"), var("OPENA_API_KEY")) {
+    match (var("API_KEY"), var("OPENAI_API_KEY")) {
         (Ok(key), _) => key,
         (_, Ok(key)) => key,
         _ => {
