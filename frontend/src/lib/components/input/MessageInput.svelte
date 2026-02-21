@@ -181,8 +181,8 @@
 			<ModeSelector bind:value={mode} limited={!selectModelCap?.tool} />
 			<ActionMenu bind:files bind:content {disabled} onFilesAdded={handleNewFiles} />
 		</div>
-	{#if content.length != 0}
-		<MarkdownBtn bind:isEditing />
-	{/if}
-</div>
+		{#if content.length != 0}
+			<MarkdownBtn bind:isEditing />
+		{/if}
+	</div>
 </div>

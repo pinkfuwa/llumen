@@ -312,7 +312,6 @@ describe('MarkdownParser - Table with Tabs/Spaces', () => {
 	});
 });
 
-
 // ============================================================================
 // ORIGINAL COMPREHENSIVE TESTS (from previous implementation)
 // ============================================================================

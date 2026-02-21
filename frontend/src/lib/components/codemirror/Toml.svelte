@@ -36,11 +36,11 @@
 		if (callback != undefined) callback();
 	});
 
-$effect(() => {
-	if (!onchange) return;
-	const unsubscriber = valWritable.subscribe((val) => onchange?.(val));
-	return unsubscriber;
-});
+	$effect(() => {
+		if (!onchange) return;
+		const unsubscriber = valWritable.subscribe((val) => onchange?.(val));
+		return unsubscriber;
+	});
 
 	let themeStyle = $isLightTheme
 		? 'background-color:#fff;color:#24292e'

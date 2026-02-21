@@ -518,7 +518,10 @@ describe('Table Incremental Parsing - Expected Behavior: Last Line as Paragraph 
 		state = r2.state;
 
 		// Complete table
-		const r3 = await parseIncremental('Text\n\n- List item\n\n| A | B |\n|---|---|\n| 1 | 2 |', state);
+		const r3 = await parseIncremental(
+			'Text\n\n- List item\n\n| A | B |\n|---|---|\n| 1 | 2 |',
+			state
+		);
 
 		expect(r3.result.tokens.length).toBe(3);
 		expect(r3.result.tokens[0].type).toBe(TokenType.Paragraph);

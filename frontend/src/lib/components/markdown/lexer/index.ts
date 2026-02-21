@@ -189,7 +189,7 @@ export async function parseIncremental(
 /**
  * Check if new content might change the interpretation of previous content
  * This handles cases where adding new lines should trigger re-parsing from earlier
- * 
+ *
  * Examples:
  * - Adding a table separator line after a line with pipes
  * - Adding a list marker after a potential list item
@@ -249,7 +249,9 @@ function shouldReparseFromEarlier(
 
 				if (
 					lastPrevLine &&
-					(lastPrevLine.includes('|') || lastPrevLine.includes('\t') || /^[\|\s]*:?-+:?/.test(lastPrevLine))
+					(lastPrevLine.includes('|') ||
+						lastPrevLine.includes('\t') ||
+						/^[\|\s]*:?-+:?/.test(lastPrevLine))
 				) {
 					return true;
 				}

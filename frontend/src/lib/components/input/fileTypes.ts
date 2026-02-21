@@ -79,7 +79,10 @@ export function isFileSupported(fileName: string, extensions: string[]): boolean
 	});
 }
 
-export function separateFiles(files: File[], extensions: string[]): {
+export function separateFiles(
+	files: File[],
+	extensions: string[]
+): {
 	supported: File[];
 	unsupported: File[];
 } {
