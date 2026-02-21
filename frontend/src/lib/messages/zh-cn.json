@@ -127,5 +127,11 @@
 		"back_to_home": "返回首页",
 		"select_model_first": "请先选择一个模型",
 		"fail_to_delete": "删除失败"
+	},
+	"pwa": {
+		"offline_ready": "应用程序已准备好离线使用",
+		"update_available": "有新的内容可用，点击重新加载按钮来更新。",
+		"reload": "重新加载",
+		"close": "关闭"
 	}
 }

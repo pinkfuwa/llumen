@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/ui/Button.svelte';
 	import { useRegisterSW } from 'virtual:pwa-register/svelte';
+	import { _ } from 'svelte-i18n';
 	const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
 		onRegisteredSW(swUrl, r) {
 			r &&
@@ -32,20 +33,20 @@
 	const toast = $derived($offlineReady || $needRefresh);
 </script>
 
-{#if toast}
+	{#if toast}
 	<div
 		class="fixed right-0 bottom-0 m-4 rounded border border-outline bg-input p-3 shadow-login-bg"
 	>
 		<div class="pb-2 text-text">
 			{#if $offlineReady}
-				<span> App ready to work offline </span>
+				<span> {$_('pwa.offline_ready')} </span>
 			{:else}
-				<span> New content available, click on reload button to update. </span>
+				<span> {$_('pwa.update_available')} </span>
 			{/if}
 		</div>
 		{#if $needRefresh}
-			<Button onclick={() => updateServiceWorker(true)}>Reload</Button>
+			<Button onclick={() => updateServiceWorker(true)}>{$_('pwa.reload')}</Button>
 		{/if}
-		<Button onclick={close}>Close</Button>
+		<Button onclick={close}>{$_('pwa.close')}</Button>
 	</div>
 {/if}
