@@ -16,6 +16,10 @@
 	initPreference();
 </script>
 
+{#await import('$lib/components/PwaPrompt.svelte') then { default: ReloadPrompt }}
+	<ReloadPrompt />
+{/await}
+
 {#if !$isLoading}
 	<div class="h-full w-full bg-white text-text">
 		{@render children()}
