@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tokio_stream::StreamExt;
 
 use crate::chat::context::StreamEndReason;
-use crate::chat::converter::openrouter_to_buffer_token;
+use crate::chat::converter::openrouter_to_buffer_token_filtered;
 use crate::chat::session::CompletionSession;
 use crate::chat::Context;
 use crate::openrouter;
@@ -25,7 +25,10 @@ pub async fn execute(ctx: Arc<Context>, session: &mut CompletionSession) -> Resu
         ctx.openrouter.stream(model, messages, option).await?;
 
     let halt = session
-        .put_stream((&mut stream).map(|resp| resp.map(openrouter_to_buffer_token)))
+        .put_stream(
+            (&mut stream)
+                .filter_map(|resp| resp.map(openrouter_to_buffer_token_filtered).transpose()),
+        )
         .await?;
 
     if matches!(halt, StreamEndReason::Halt) {

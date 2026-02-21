@@ -242,9 +242,10 @@ impl DeepAgent {
                 .await?;
 
             let halt = sink
-                .put_stream(
-                    (&mut stream).map(|resp| resp.map(openrouter_to_buffer_token_deep_step)),
-                )
+                .put_stream((&mut stream).filter_map(|resp| {
+                    resp.map(openrouter_to_buffer_token_deep_step_filtered)
+                        .transpose()
+                }))
                 .await?;
 
             if matches!(halt, StreamEndReason::Halt) {
@@ -340,7 +341,10 @@ impl DeepAgent {
             self.ctx.openrouter.stream(model, messages, option).await?;
 
         let halt = sink
-            .put_stream((&mut stream).map(|resp| resp.map(openrouter_to_buffer_token_deep_report)))
+            .put_stream((&mut stream).filter_map(|resp| {
+                resp.map(openrouter_to_buffer_token_deep_report_filtered)
+                    .transpose()
+            }))
             .await?;
 
         if matches!(halt, StreamEndReason::Halt) {

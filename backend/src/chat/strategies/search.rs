@@ -5,7 +5,7 @@ use protocol::AssistantChunk;
 use tokio_stream::StreamExt;
 
 use crate::chat::context::StreamEndReason;
-use crate::chat::converter::{openrouter_stream_to_assitant_chunk, openrouter_to_buffer_token};
+use crate::chat::converter::{openrouter_stream_to_assitant_chunk, openrouter_to_buffer_token_filtered};
 use crate::chat::session::CompletionSession;
 use crate::chat::token::Token;
 use crate::chat::Context;
@@ -27,7 +27,10 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
             .await?;
 
         let halt = session
-            .put_stream((&mut stream).map(|resp| resp.map(openrouter_to_buffer_token)))
+            .put_stream(
+                (&mut stream)
+                    .filter_map(|resp| resp.map(openrouter_to_buffer_token_filtered).transpose()),
+            )
             .await?;
 
         if matches!(halt, StreamEndReason::Halt) {
@@ -48,6 +51,16 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
 
         if tool_calls.is_empty() {
             break;
+        }
+
+        // Emit complete tool calls to SSE before executing them
+        // This ensures frontend receives complete tool calls rather than fragmented
+        // chunks
+        for tc in &tool_calls {
+            session.add_token(Token::ToolCall {
+                name: tc.name.clone(),
+                arg: tc.args.clone(),
+            });
         }
 
         // Re-add assistant turn so the model sees its own tool calls
