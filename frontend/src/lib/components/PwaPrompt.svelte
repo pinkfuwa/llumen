@@ -1,9 +1,10 @@
 <script lang="ts">
 	import Button from '$lib/ui/Button.svelte';
+	// @ts-expect-error - virtual module has no type declarations
 	import { useRegisterSW } from 'virtual:pwa-register/svelte';
 	import { _ } from 'svelte-i18n';
 	const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
-		onRegisteredSW(swUrl, r) {
+		onRegisteredSW(swUrl: string, r: ServiceWorkerRegistration | undefined) {
 			r &&
 				setInterval(async () => {
 					if (r.installing || !navigator) return;
@@ -21,7 +22,7 @@
 					if (resp?.status === 200) await r.update();
 				}, 20000 /* 20s for testing purposes */);
 		},
-		onRegisterError(error) {
+		onRegisterError(error: Error) {
 			console.log('SW registration error', error);
 		}
 	});

@@ -5,7 +5,7 @@ import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 
 export default defineConfig({
 	plugins: [
-		tailwindcss(),
+		/** @type {any} */ (tailwindcss()),
 		sveltekit(),
 		SvelteKitPWA({
 			// mode: "development",
