@@ -215,42 +215,6 @@ pub fn openrouter_to_buffer_token_deep_report(resp: StreamCompletionResp) -> Tok
     }
 }
 
-/// Like `openrouter_to_buffer_token` but returns None for tool tokens.
-/// Tool calls will be emitted separately after the stream ends (when complete).
-pub fn openrouter_to_buffer_token_filtered(resp: StreamCompletionResp) -> Option<Token> {
-    match resp {
-        StreamCompletionResp::ResponseToken(delta) => Some(Token::Assistant(delta)),
-        StreamCompletionResp::ReasoningToken(delta) => Some(Token::Reasoning(delta)),
-        StreamCompletionResp::ToolToken { .. } => None,
-        StreamCompletionResp::Usage { .. } => Some(Token::Empty),
-    }
-}
-
-/// Like `openrouter_to_buffer_token_deep_step` but returns None for tool
-/// tokens.
-pub fn openrouter_to_buffer_token_deep_step_filtered(resp: StreamCompletionResp) -> Option<Token> {
-    match resp {
-        StreamCompletionResp::ResponseToken(delta) => Some(Token::DeepStepToken(delta)),
-        StreamCompletionResp::ReasoningToken(delta) => Some(Token::DeepStepReasoning(delta)),
-        StreamCompletionResp::ToolToken { .. } => None,
-        StreamCompletionResp::Usage { .. } => Some(Token::Empty),
-    }
-}
-
-/// Like `openrouter_to_buffer_token_deep_report` but returns None for tool
-/// tokens.
-pub fn openrouter_to_buffer_token_deep_report_filtered(
-    resp: StreamCompletionResp,
-) -> Option<Token> {
-    match resp {
-        StreamCompletionResp::ResponseToken(delta) => Some(Token::DeepReport(delta)),
-        StreamCompletionResp::ReasoningToken(delta) => Some(Token::DeepReport(delta)),
-        StreamCompletionResp::ToolToken { .. } | StreamCompletionResp::Usage { .. } => {
-            Some(Token::Empty)
-        }
-    }
-}
-
 // ---------------------------------------------------------------------------
 // OpenRouter StreamResult → protocol::AssistantChunk (persistence)
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-use std::{pin::Pin, task};
+use std::{collections::VecDeque, pin::Pin, task};
 
 use futures_util::FutureExt;
 use reqwest::Client;
@@ -33,6 +33,7 @@ pub struct StreamCompletion {
     model_id: String,
     images: Vec<Image>,
     citations: Vec<protocol::UrlCitation>,
+    buffered: VecDeque<StreamCompletionResp>,
 }
 
 pub struct StreamResult {
@@ -93,6 +94,7 @@ impl StreamCompletion {
                 model_id,
                 images: Vec::new(),
                 citations: Vec::new(),
+                buffered: VecDeque::new(),
             }),
             Err(e) => {
                 log::error!("Failed to create event source: {}", e);
@@ -105,7 +107,7 @@ impl StreamCompletion {
         self.source.close();
     }
 
-    fn handle_choice(&mut self, choice: raw::Choice) -> StreamCompletionResp {
+    fn handle_choice(&mut self, choice: raw::Choice) -> Vec<StreamCompletionResp> {
         let delta = choice.delta;
 
         let content = delta.content.unwrap_or("".to_string());
@@ -147,15 +149,22 @@ impl StreamCompletion {
             }
         }
 
-        if let Some(reasoning) = delta.reasoning {
+        // Check for reasoning - emit reasoning BEFORE content when both exist
+        let reasoning_token = if let Some(reasoning) = delta.reasoning {
             if !reasoning.is_empty() {
-                return StreamCompletionResp::ReasoningToken(reasoning);
+                Some(StreamCompletionResp::ReasoningToken(reasoning))
+            } else {
+                None
             }
         } else if let Some(reasoning) = delta.reasoning_content {
             if !reasoning.is_empty() {
-                return StreamCompletionResp::ReasoningToken(reasoning);
+                Some(StreamCompletionResp::ReasoningToken(reasoning))
+            } else {
+                None
             }
-        }
+        } else {
+            None
+        };
 
         // Handle tool calls - support parallel tool calls
         if let Some(tool_calls) = delta.tool_calls {
@@ -196,28 +205,43 @@ impl StreamCompletion {
             }
 
             if let Some((idx, name, args)) = last_tool_token {
-                return StreamCompletionResp::ToolToken { idx, name, args };
+                // If we have both reasoning and tool call, emit reasoning first
+                let mut result = Vec::new();
+                if let Some(reasoning) = reasoning_token {
+                    result.push(reasoning);
+                }
+                result.push(StreamCompletionResp::ToolToken { idx, name, args });
+                return result;
             }
         }
 
-        if let Some(reason) = choice.finish_reason {
+        // No tool calls, emit reasoning + content if present
+        if let Some(reasoning) = reasoning_token {
+            if content.is_empty() {
+                vec![reasoning]
+            } else {
+                vec![reasoning, StreamCompletionResp::ResponseToken(content)]
+            }
+        } else if let Some(reason) = choice.finish_reason {
             self.stop_reason = Some(reason.clone());
-            return match reason {
+            match reason {
                 raw::FinishReason::Stop | raw::FinishReason::Length | raw::FinishReason::Error => {
-                    StreamCompletionResp::ResponseToken(content)
+                    vec![StreamCompletionResp::ResponseToken(content)]
                 }
                 raw::FinishReason::ToolCalls => {
                     // Return first tool call when finish_reason is ToolCalls
                     // The full list is available in get_result()
-
-                    StreamCompletionResp::ResponseToken(content)
+                    vec![StreamCompletionResp::ResponseToken(content)]
                 }
-            };
+            }
+        } else if !content.is_empty() {
+            vec![StreamCompletionResp::ResponseToken(content)]
+        } else {
+            vec![]
         }
-        StreamCompletionResp::ResponseToken(content)
     }
 
-    fn handle_data(&mut self, data: &str) -> Result<StreamCompletionResp, Error> {
+    fn handle_data(&mut self, data: &str) -> Result<Vec<StreamCompletionResp>, Error> {
         // this approach made it compatible with both openrouter and openai
         if let Ok(resp) = serde_json::from_str::<raw::CompletionInfoResp>(data) {
             let cost = resp
@@ -229,11 +253,11 @@ impl StreamCompletion {
 
             self.usage.cost += cost;
             self.usage.token += resp.usage.total_tokens.unwrap_or(0);
-            return Ok(StreamCompletionResp::Usage {
+            return Ok(vec![StreamCompletionResp::Usage {
                 price: cost,
                 // cloak model may return null for total_tokens
                 token: resp.usage.total_tokens.map(|x| x as usize).unwrap_or(0),
-            });
+            }]);
         }
 
         let resp = serde_json::from_str::<raw::StreamCompletionResponse>(data)?;
@@ -260,9 +284,11 @@ impl StreamCompletion {
             .next()
             .ok_or(Error::Incompatible("No returned choices in completion"))?;
 
-        let resp = self.handle_choice(choice);
-        self.responses.push(resp.clone());
-        Ok(resp)
+        let responses = self.handle_choice(choice);
+        for resp in &responses {
+            self.responses.push(resp.clone());
+        }
+        Ok(responses)
     }
 
     async fn handle_error(&self, err: reqwest_eventsource::Error) -> Error {
@@ -285,15 +311,30 @@ impl StreamCompletion {
 
     pub async fn next(&mut self) -> Option<Result<StreamCompletionResp, Error>> {
         loop {
+            // Return buffered items first
+            if let Some(item) = self.buffered.pop_front() {
+                return Some(Ok(item));
+            }
+
             match self.source.next().await? {
                 Ok(Event::Message(e)) if &e.data != "[DONE]" => {
-                    return match self.handle_data(&e.data) {
-                        Ok(x) => Some(Ok(x)),
+                    match self.handle_data(&e.data) {
+                        Ok(items) => {
+                            // Buffer all items except the first one
+                            if items.is_empty() {
+                                continue;
+                            }
+                            let first = items.first().cloned().unwrap();
+                            for remaining in items.into_iter().skip(1) {
+                                self.buffered.push_back(remaining);
+                            }
+                            return Some(Ok(first));
+                        }
                         Err(Error::Incompatible(msg)) => {
                             log::warn!("Malbehave upstream: {}", msg);
                             continue;
                         }
-                        Err(err) => Some(Err(err)),
+                        Err(err) => return Some(Err(err)),
                     };
                 }
                 Err(e) => {
@@ -404,6 +445,63 @@ impl StreamCompletionResp {
             StreamCompletionResp::ReasoningToken(s) => s.is_empty(),
             StreamCompletionResp::ResponseToken(s) => s.is_empty(),
             _ => false,
+        }
+    }
+}
+
+/// A wrapper that filters out tool tokens during streaming.
+/// Tool calls are accumulated in the underlying StreamCompletion and available
+/// via get_result() after streaming ends.
+pub struct StreamWithOrderedTokens<S> {
+    inner: S,
+    stream_ended: bool,
+}
+
+impl<S> StreamWithOrderedTokens<S> {
+    pub fn new(inner: S) -> Self {
+        Self {
+            inner,
+            stream_ended: false,
+        }
+    }
+
+    /// Consumes the wrapper and returns the inner stream.
+    /// Should be called after streaming is complete.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
+}
+
+impl<S: Stream<Item = Result<StreamCompletionResp, Error>> + Unpin> Stream
+    for StreamWithOrderedTokens<S>
+{
+    type Item = Result<StreamCompletionResp, Error>;
+
+    fn poll_next(
+        mut self: Pin<&mut Self>,
+        cx: &mut task::Context<'_>,
+    ) -> task::Poll<Option<Self::Item>> {
+        if self.stream_ended {
+            return task::Poll::Ready(None);
+        }
+
+        match Pin::new(&mut self.inner).poll_next(cx) {
+            task::Poll::Ready(Some(Ok(resp))) => {
+                match resp {
+                    StreamCompletionResp::ToolToken { .. } => {
+                        // Skip tool tokens during streaming
+                        // They are accumulated in StreamCompletion and available via get_result()
+                        self.poll_next(cx)
+                    }
+                    other => task::Poll::Ready(Some(Ok(other))),
+                }
+            }
+            task::Poll::Ready(Some(Err(e))) => task::Poll::Ready(Some(Err(e))),
+            task::Poll::Ready(None) => {
+                self.stream_ended = true;
+                task::Poll::Ready(None)
+            }
+            task::Poll::Pending => task::Poll::Pending,
         }
     }
 }

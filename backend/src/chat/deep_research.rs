@@ -11,7 +11,7 @@ use crate::chat::converter::*;
 use crate::chat::prompt::{CompletedStep, ReportInputContext, StepInputContext};
 use crate::chat::tools::get_lua_repl_def;
 use crate::chat::{CompletionSession, Context, Token, TokenSink};
-use crate::openrouter::{self, ReasoningEffort};
+use crate::openrouter::{self, ReasoningEffort, StreamWithOrderedTokens};
 
 /// Input context for DeepAgent, extracted from CompletionSession.
 pub struct DeepAgentInput {
@@ -235,23 +235,26 @@ impl DeepAgent {
         loop {
             let model = openrouter::ModelBuilder::from_model(&self.input.model).build();
             let option = openrouter::CompletionOption::tools(&tools);
-            let mut stream: openrouter::StreamCompletion = self
+            let stream: openrouter::StreamCompletion = self
                 .ctx
                 .openrouter
                 .stream(model, messages.clone(), option)
                 .await?;
 
+            let mut ordered_stream = StreamWithOrderedTokens::new(stream);
+
             let halt = sink
-                .put_stream((&mut stream).filter_map(|resp| {
-                    resp.map(openrouter_to_buffer_token_deep_step_filtered)
-                        .transpose()
-                }))
+                .put_stream(
+                    (&mut ordered_stream)
+                        .map(|resp| resp.map(openrouter_to_buffer_token_deep_step)),
+                )
                 .await?;
 
             if matches!(halt, StreamEndReason::Halt) {
                 bail!("step interrupted");
             }
 
+            let stream = ordered_stream.into_inner();
             let mut result = stream.get_result();
             sink.update_usage(result.usage.cost as f32, result.usage.token as i32);
 
@@ -337,20 +340,22 @@ impl DeepAgent {
         let option = openrouter::CompletionOption::builder()
             .reasoning_effort(ReasoningEffort::Auto)
             .build();
-        let mut stream: openrouter::StreamCompletion =
+        let stream: openrouter::StreamCompletion =
             self.ctx.openrouter.stream(model, messages, option).await?;
 
+        let mut ordered_stream = StreamWithOrderedTokens::new(stream);
+
         let halt = sink
-            .put_stream((&mut stream).filter_map(|resp| {
-                resp.map(openrouter_to_buffer_token_deep_report_filtered)
-                    .transpose()
-            }))
+            .put_stream(
+                (&mut ordered_stream).map(|resp| resp.map(openrouter_to_buffer_token_deep_report)),
+            )
             .await?;
 
         if matches!(halt, StreamEndReason::Halt) {
             bail!("reporter interrupted");
         }
 
+        let stream = ordered_stream.into_inner();
         let result = stream.get_result();
         sink.update_usage(result.usage.cost as f32, result.usage.token as i32);
         let text = result.get_text();

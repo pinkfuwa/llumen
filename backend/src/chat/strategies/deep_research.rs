@@ -5,10 +5,10 @@ use std::sync::Arc;
 use tokio_stream::StreamExt;
 
 use crate::chat::context::StreamEndReason;
-use crate::chat::converter::openrouter_to_buffer_token_filtered;
+use crate::chat::converter::openrouter_to_buffer_token;
 use crate::chat::session::CompletionSession;
 use crate::chat::Context;
-use crate::openrouter;
+use crate::openrouter::{self, StreamWithOrderedTokens};
 
 pub async fn execute(ctx: Arc<Context>, session: &mut CompletionSession) -> Result<()> {
     // Assemble messages with coordinator prompt
@@ -21,20 +21,22 @@ pub async fn execute(ctx: Arc<Context>, session: &mut CompletionSession) -> Resu
     let option = openrouter::CompletionOption::tools(&[deep_tool]);
 
     // Stream the coordinator's response
-    let mut stream: openrouter::StreamCompletion =
+    let stream: openrouter::StreamCompletion =
         ctx.openrouter.stream(model, messages, option).await?;
 
+    // Wrap with ordered tokens wrapper to filter out tool tokens during streaming
+    let mut ordered_stream = StreamWithOrderedTokens::new(stream);
+
     let halt = session
-        .put_stream(
-            (&mut stream)
-                .filter_map(|resp| resp.map(openrouter_to_buffer_token_filtered).transpose()),
-        )
+        .put_stream((&mut ordered_stream).map(|resp| resp.map(openrouter_to_buffer_token)))
         .await?;
 
     if matches!(halt, StreamEndReason::Halt) {
         return Ok(());
     }
 
+    // Get the inner stream back to access the result
+    let stream = ordered_stream.into_inner();
     let result = stream.get_result();
     session.update_usage(result.usage.cost as f32, result.usage.token as i32);
 
