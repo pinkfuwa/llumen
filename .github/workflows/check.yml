@@ -129,3 +129,24 @@ jobs:
         continue-on-error: true
         working-directory: ./frontend
         run: pnpm exec vitest --run
+
+  check-results:
+    needs: [backend-tests, frontend-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.backend-tests.outputs.cargo_test_outcome }}" == "failure" ]; then
+            echo "❌ Backend tests failed!"
+            exit 1
+          fi
+          if [ "${{ needs.frontend-tests.outputs.svelte_check_outcome }}" == "failure" ]; then
+            echo "❌ Svelte check failed!"
+            exit 1
+          fi
+          if [ "${{ needs.frontend-tests.outputs.vitest_outcome }}" == "failure" ]; then
+            echo "❌ Frontend tests failed!"
+            exit 1
+          fi
+          echo "✅ All checks passed"

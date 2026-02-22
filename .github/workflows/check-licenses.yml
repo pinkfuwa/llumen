@@ -35,12 +35,13 @@ jobs:
       - name: Check if licenses are up-to-date
         working-directory: ./backend
         run: |
-          if ! diff -q THIRDPARTY.toml THIRDPARTY.toml.new; then
+          if diff -q THIRDPARTY.toml THIRDPARTY.toml.new > /dev/null; then
+            echo "✅ Backend THIRDPARTY.toml is up to date"
+          else
             echo "❌ Backend THIRDPARTY.toml is out of date!"
             echo "Please run 'cd backend && cargo bundle-licenses --format toml --output THIRDPARTY.toml' and commit the changes."
             exit 1
           fi
-          echo "✅ Backend THIRDPARTY.toml is up to date"
 
   check-frontend-licenses:
     name: Check frontend THIRDPARTY.txt
