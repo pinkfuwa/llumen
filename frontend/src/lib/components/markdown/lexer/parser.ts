@@ -1059,7 +1059,7 @@ export class MarkdownParser {
 	}
 
 	/**
-	 * Try to parse a line break (two spaces followed by newline or <br> tag)
+	 * Try to parse a line break (<br> tag, two spaces followed by newline, or single newline)
 	 */
 	private tryParseLineBreak(
 		text: string,
@@ -1085,6 +1085,16 @@ export class MarkdownParser {
 				type: TokenType.LineBreak,
 				start: baseOffset + position,
 				end: baseOffset + position + match[0].length
+			};
+		}
+
+		// Check for single newline (without requiring trailing spaces)
+		const singleNewlineMatch = remaining.match(/^\r?\n/);
+		if (singleNewlineMatch) {
+			return {
+				type: TokenType.LineBreak,
+				start: baseOffset + position,
+				end: baseOffset + position + singleNewlineMatch[0].length
 			};
 		}
 

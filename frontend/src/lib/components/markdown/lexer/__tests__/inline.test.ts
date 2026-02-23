@@ -373,6 +373,38 @@ describe('MarkdownParser - Inline Tokens', () => {
 			expect(lineBreakTokens.length).toBe(1);
 		});
 
+		test('parses single newline as line break', () => {
+			const markdown = 'Line one\nLine two';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(1);
+		});
+
+		test('parses single \\r\\n (Windows) newline as line break', () => {
+			const markdown = 'Line one\r\nLine two';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(1);
+		});
+
+		test('parses multiple single newlines', () => {
+			const markdown = 'Line one\nLine two\nLine three';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(2);
+		});
+
+		test('two spaces + newline takes priority over single newline', () => {
+			const markdown = 'Line one  \nLine two';
+			const result = parse(markdown);
+			const para = result.tokens[0] as ParagraphToken;
+			const lineBreakTokens = para.children?.filter((t) => t.type === TokenType.LineBreak) || [];
+			expect(lineBreakTokens.length).toBe(1);
+		});
+
 		test('parses <br> with surrounding text', () => {
 			const markdown = 'Text before<br>text after with **bold**';
 			const result = parse(markdown);
