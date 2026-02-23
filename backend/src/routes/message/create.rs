@@ -85,7 +85,7 @@ pub async fn route(
 
     let session = app
         .chat
-        .get_session(user_id, req.chat_id, req.model_id)
+        .get_session(user_id, req.chat_id, req.model_id, req.mode.into())
         .await
         .kind(ErrorKind::ResourceNotFound)?;
 

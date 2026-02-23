@@ -47,14 +47,15 @@ impl Context {
         })
     }
 
-    /// Prepares a chat session for the specified user/chat/model tuple.
+    /// Prepares a chat session for the specified user/chat/model/mode tuple.
     pub fn get_session(
         self: &Arc<Self>,
         user_id: i32,
         chat_id: i32,
         model_id: i32,
+        mode: protocol::ModeKind,
     ) -> impl std::future::Future<Output = Result<CompletionSession, anyhow::Error>> + '_ {
-        CompletionSession::new(self.clone(), user_id, chat_id, model_id)
+        CompletionSession::new(self.clone(), user_id, chat_id, model_id, mode)
     }
 
     /// Halts the active session immediately, notifying any subscribers.

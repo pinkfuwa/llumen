@@ -42,11 +42,18 @@ pub struct CompletionSession {
     cost: f32,
     token_count: i32,
     publisher: super::channel::Publisher<Token>,
+    mode: protocol::ModeKind,
 }
 
 impl CompletionSession {
     /// Loads user, chat, model, and history from the database.
-    pub async fn new(ctx: Arc<Context>, user_id: i32, chat_id: i32, model_id: i32) -> Result<Self> {
+    pub async fn new(
+        ctx: Arc<Context>,
+        user_id: i32,
+        chat_id: i32,
+        model_id: i32,
+        mode: protocol::ModeKind,
+    ) -> Result<Self> {
         let db = &ctx.db;
 
         let (user, chat, model_entity) = tokio::try_join!(
@@ -119,6 +126,7 @@ impl CompletionSession {
             cost: 0.0,
             token_count: 0,
             publisher,
+            mode,
         })
     }
 
@@ -349,15 +357,24 @@ impl CompletionSession {
 
     /// Syncs the session's model and mode to the chat record.
     pub async fn sync_chat_model(&mut self) -> Result<()> {
-        if self.chat.model_id == Some(self.model.id) {
+        let model_changed = self.chat.model_id != Some(self.model.id);
+        let mode_changed = self.chat.mode != self.mode;
+
+        if !model_changed && !mode_changed {
             return Ok(());
         }
 
         let mut chat_active: chat::ActiveModel = self.chat.clone().into();
-        chat_active.model_id = Set(Some(self.model.id));
+        if model_changed {
+            chat_active.model_id = Set(Some(self.model.id));
+            self.chat.model_id = Some(self.model.id);
+        }
+        if mode_changed {
+            chat_active.mode = Set(self.mode);
+            self.chat.mode = self.mode;
+        }
         chat::Entity::update(chat_active).exec(&self.ctx.db).await?;
 
-        self.chat.model_id = Some(self.model.id);
         Ok(())
     }
 
