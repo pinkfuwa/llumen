@@ -347,6 +347,20 @@ impl CompletionSession {
         Ok(())
     }
 
+    /// Syncs the session's model and mode to the chat record.
+    pub async fn sync_chat_model(&mut self) -> Result<()> {
+        if self.chat.model_id == Some(self.model.id) {
+            return Ok(());
+        }
+
+        let mut chat_active: chat::ActiveModel = self.chat.clone().into();
+        chat_active.model_id = Set(Some(self.model.id));
+        chat::Entity::update(chat_active).exec(&self.ctx.db).await?;
+
+        self.chat.model_id = Some(self.model.id);
+        Ok(())
+    }
+
     /// Generates and persists a chat title if one doesn't exist.
     /// Should be called after the completion finishes but before save().
     pub async fn try_generate_title(&mut self) -> Result<()> {

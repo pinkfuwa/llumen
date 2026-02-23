@@ -96,6 +96,11 @@ impl Context {
             session.add_error(format!("{e}"));
         }
 
+        // Sync model/mode to chat
+        if let Err(e) = session.sync_chat_model().await {
+            log::error!("model sync error: {e:#}");
+        }
+
         // Generate title if this is a new chat
         if let Err(e) = session.try_generate_title().await {
             log::error!("title generation error: {e:#}");
