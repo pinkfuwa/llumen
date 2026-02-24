@@ -7,6 +7,8 @@
 	const content = $derived(token.content);
 </script>
 
-<span class="inline-block break-all">
-	<LatexComponent text={content} />
+<span class="inline-block">
+	<span class="inline-block max-w-full overflow-x-auto">
+		<LatexComponent text={content} />
+	</span>
 </span>

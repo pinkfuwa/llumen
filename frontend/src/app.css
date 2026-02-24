@@ -129,6 +129,17 @@ html {
 	font-weight: 700 !important;
 }
 
+/* MathML overflow handling */
+math {
+	max-width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+mrow {
+	max-width: 100%;
+}
+
 @layer utilities {
 	.h-screen {
 		height: 100vh;

@@ -8,7 +8,7 @@
 </script>
 
 <div class="my-4 flex justify-center">
-	<div class="overflow-x-auto">
+	<div class="max-w-full overflow-x-auto">
 		<LatexComponent text={content} displayMode />
 	</div>
 </div>
