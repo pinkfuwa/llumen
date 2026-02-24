@@ -112,6 +112,10 @@ jobs:
         working-directory: ./frontend
         run: pnpm install
 
+      - name: Generate svelte-kit types
+        working-directory: ./frontend
+        run: pnpm exec svelte-kit sync
+
       - name: Run svelte-check
         id: svelte_check
         working-directory: ./frontend
