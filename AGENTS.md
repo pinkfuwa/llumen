@@ -1,6 +1,6 @@
-# llumen AGENTS
+## Project Overview
 
-llumen is a LLM chat web-application featuring three modes: normal chat, search and deep research.
+Privacy-focused LLM chat web-application optimized for minimal hardware (Raspberry Pi, old laptops).
 
 ## Architecture
 
@@ -61,3 +61,4 @@ Please never change git config by running `git config --global user.name` or `gi
 - If very complex logic changed, check `.github/workflows/check.yml` and try pass all CI tests.
 - If dependency changed, regenerate third-party licenses by `pnpm run generate-licenses` in frontend and `cargo xtask gen-license` in backend.
 - `pnpm build`, `cargo build` and `cargo test --release` is usually unnecessary.
+- DO NOT run `pnpm dev` or `cargo xtask run`, those are intended for user to run!
