@@ -235,9 +235,17 @@ export class MarkdownParser {
 	 * Try to parse a LaTeX block (\[ ... \] or $$ ... $$)
 	 */
 	private tryParseLatexBlock(): LatexBlockToken | null {
-		const start = this.position;
+		const originalPosition = this.position;
+		const originalStart = this.position;
 		let delimiter: string;
 		let endDelimiter: string;
+
+		while (
+			this.position < this.source.length &&
+			(this.source[this.position] === ' ' || this.source[this.position] === '\t')
+		) {
+			this.position++;
+		}
 
 		if (this.peek(2) === '\\[') {
 			delimiter = '\\[';
@@ -246,11 +254,13 @@ export class MarkdownParser {
 			delimiter = '$$';
 			endDelimiter = '$$';
 		} else {
+			this.position = originalPosition;
 			return null;
 		}
 
 		const afterDelimiter = this.peek(delimiter.length + 1);
 		if (delimiter === '$$' && afterDelimiter[delimiter.length] !== '\n') {
+			this.position = originalPosition;
 			return null;
 		}
 
@@ -263,7 +273,7 @@ export class MarkdownParser {
 		const endPos = this.source.indexOf(endDelimiter, this.position);
 
 		if (endPos === -1) {
-			this.position = start;
+			this.position = originalPosition;
 			return null;
 		}
 
@@ -274,7 +284,7 @@ export class MarkdownParser {
 		return {
 			type: TokenType.LatexBlock,
 			content: content.trim(),
-			start,
+			start: originalStart,
 			end: this.position
 		};
 	}

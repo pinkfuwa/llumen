@@ -12,6 +12,48 @@ describe('MarkdownParser - LaTeX Block Delimiters', () => {
 		expect(latex.content).toBe('x^2 + y^2');
 	});
 
+	test('parses \\[ \\] with leading space', () => {
+		const markdown = '  \\[\nx^2 + y^2\n\\]';
+		const result = parse(markdown);
+		const latex = result.tokens[0] as LatexBlockToken;
+		expect(latex.type).toBe(TokenType.LatexBlock);
+		expect(latex.content).toBe('x^2 + y^2');
+	});
+
+	test('parses \\[ \\] with leading tab', () => {
+		const markdown = '\t\\[\nx^2 + y^2\n\\]';
+		const result = parse(markdown);
+		const latex = result.tokens[0] as LatexBlockToken;
+		expect(latex.type).toBe(TokenType.LatexBlock);
+		expect(latex.content).toBe('x^2 + y^2');
+	});
+
+	test('parses \\[ \\] after numbered list item with indentation', () => {
+		const markdown =
+			'2. 由 Lemma 1：\n   \\[\n   \\text{葉節點數} \\leq 2^h\n   \\]';
+		const result = parse(markdown);
+		const latex = result.tokens[1] as LatexBlockToken;
+		expect(latex.type).toBe(TokenType.LatexBlock);
+		expect(latex.content).toBe('\\text{葉節點數} \\leq 2^h');
+	});
+
+	test('parses \\[ \\] after unordered list item with indentation', () => {
+		const markdown =
+			'- item\n  \\[\n  x^2\n  \\]';
+		const result = parse(markdown);
+		const latex = result.tokens[1] as LatexBlockToken;
+		expect(latex.type).toBe(TokenType.LatexBlock);
+		expect(latex.content).toBe('x^2');
+	});
+
+	test('parses $$ $$ with leading space', () => {
+		const markdown = '  $$\ny^2 + x^2\n$$';
+		const result = parse(markdown);
+		const latex = result.tokens[0] as LatexBlockToken;
+		expect(latex.type).toBe(TokenType.LatexBlock);
+		expect(latex.content).toBe('y^2 + x^2');
+	});
+
 	test('parses \\[ \\] on same line (no newline required)', () => {
 		const markdown = '\\[x^2\\]';
 		const result = parse(markdown);
