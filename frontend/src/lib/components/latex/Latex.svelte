@@ -11,8 +11,6 @@
 	});
 </script>
 
-<span>
-	{#if html != null}
-		{@html html}
-	{/if}
-</span>
+{#if html != null}
+	{@html html}
+{/if}
