@@ -48,7 +48,7 @@ Email: marijn@haverbeke.berlin
 URL: http://marijnhaverbeke.nl
 License File: /project/eason/llumen/llumen/frontend/node_modules/@codemirror/state/LICENSE
 --------------------------------------------------------------------------------
-@codemirror/view@6.39.13
+@codemirror/view@6.39.15
 
 License: MIT
 Repository: https://github.com/codemirror/view
@@ -71,7 +71,7 @@ License: MIT
 Repository: https://github.com/sveltejs/kit
 License File: /project/eason/llumen/llumen/frontend/node_modules/@sveltejs/adapter-static/LICENSE
 --------------------------------------------------------------------------------
-bits-ui@2.15.5
+bits-ui@2.16.2
 
 License: MIT
 Repository: https://github.com/huntabyte/bits-ui

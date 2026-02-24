@@ -31,3 +31,6 @@ gen-entity:
     open "entity/src/entities/user.rs" | str replace "preference: String" "preference: crate::UserPreference" | save "entity/src/entities/user.rs" -f
     open "entity/src/entities/message.rs" | str replace "kind: i32" "kind: crate::MessageKind" | save "entity/src/entities/message.rs" -f
     open "entity/src/entities/chunk.rs" | str replace "kind: i32" "kind: crate::ChunkKind" | save "entity/src/entities/chunk.rs" -f
+
+gen-license:
+    cargo bundle-licenses --format toml --output THIRDPARTY.toml
