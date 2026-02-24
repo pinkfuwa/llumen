@@ -6,4 +6,6 @@
 	const content = $derived(token.content || '');
 </script>
 
-{content}
+<span>
+	{content}
+</span>
