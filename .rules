@@ -32,7 +32,7 @@ Our project emphasizes performance and binary-size. We choose minimal dependency
 ## Use correct tools
 
 * Always use pnpm instead of npm
-* Always use just for scripting system(called by developer)
+* Always use cargo xtask for scripting system(called by developer)
 * Always use plain bash script in `packages` for build script
 
 ## Conventional Commits

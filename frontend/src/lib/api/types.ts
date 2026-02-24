@@ -136,9 +136,9 @@ export interface Deep {
 /**
  * Enumeration of all possible error types in the Llumen API.
  *
- * Each variant represents a category of error that can occur during request processing.
- * The frontend uses these to implement error-specific handling (e.g., redirecting to
- * login on Unauthorized).
+ * Each variant represents a category of error that can occur during request
+ * processing. The frontend uses these to implement error-specific handling
+ * (e.g., redirecting to login on Unauthorized).
  *
  * When adding new error types:
  * 1. Consider if an existing variant applies first
@@ -519,42 +519,52 @@ export type MessagePaginateReq =
 	| { t: 'range'; c: MessagePaginateReqRange };
 
 /**
- * Represents a message sent over the SSE (Server-Sent Events) stream in the chat API.
+ * Represents a message sent over the SSE (Server-Sent Events) stream in the
+ * chat API.
  *
- * Each enum variant corresponds to a specific event or data payload that can be emitted to the
- * client during a chat session. The enum is serialized in a tagged form with fields
- * `{ "t": "<variant>", "c": <content> }` (snake_case variant names).
+ * Each enum variant corresponds to a specific event or data payload that can
+ * be emitted to the client during a chat session. The enum is serialized in a
+ * tagged form with fields `{ "t": "<variant>", "c": <content> }` (snake_case
+ * variant names).
  *
  * Concatenation semantics for assembling a complete assistant message:
- * - Assistant-generated text is streamed as a sequence of `Token(String)` events.
- * - The assistant's internal reasoning is streamed as `Reasoning(String)` events.
- * - In "deep" research mode, higher-level plans and final reports are streamed as
- * `DeepPlan(String)` and `DeepReport(String)` respectively, and individual deep-step
- * outputs use `DeepStep*` variants.
+ * - Assistant-generated text is streamed as a sequence of `Token(String)`
+ * events.
+ * - The assistant's internal reasoning is streamed as `Reasoning(String)`
+ * events.
+ * - In "deep" research mode, higher-level plans and final reports are streamed
+ * as `DeepPlan(String)` and `DeepReport(String)` respectively, and
+ * individual deep-step outputs use `DeepStep*` variants.
  *
- * To reconstruct a full, human-facing message the client SHOULD concatenate the textual
- * chunks in the order they are received:
- * - For normal assistant responses: append `Token` chunks (and optionally interleave
- * `Reasoning` chunks if the client wants to surface reasoning). When a `Complete` event
- * arrives it indicates the assistant finished producing the message and provides final
- * metadata (message id, token count, cost, version).
- * - For deep-research messages: concatenate `DeepPlan` (if any), `DeepStepToken` and
- * `DeepStepReasoning` chunks as they arrive, and finally include `DeepReport` when it is
- * emitted. `Complete` is still used to indicate the message is finalized and carries
- * the canonical metadata for the completed message.
+ * To reconstruct a full, human-facing message the client SHOULD concatenate
+ * the textual chunks in the order they are received:
+ * - For normal assistant responses: append `Token` chunks (and optionally
+ * interleave `Reasoning` chunks if the client wants to surface reasoning).
+ * When a `Complete` event arrives it indicates the assistant finished
+ * producing the message and provides final metadata (message id, token
+ * count, cost, version).
+ * - For deep-research messages: concatenate `DeepPlan` (if any),
+ * `DeepStepToken` and `DeepStepReasoning` chunks as they arrive, and finally
+ * include `DeepReport` when it is emitted. `Complete` is still used to
+ * indicate the message is finalized and carries the canonical metadata for
+ * the completed message.
  *
  * Other variants represent discrete non-textual events:
- * - `Version(i32)`: an initial signal of the latest message/version id for the chat.
+ * - `Version(i32)`: an initial signal of the latest message/version id for the
+ * chat.
  * - `ToolCall(SseRespToolCall)`: a tool invocation with name and args.
- * - `ToolResult(SseRespToolResult)` / `DeepStepToolResult(SseRespToolResult)`: tool outputs.
- * - `Start(SseStart)`: indicates the beginning of processing for a new assistant message.
+ * - `ToolResult(SseRespToolResult)` / `DeepStepToolResult(SseRespToolResult)`:
+ * tool outputs.
+ * - `Start(SseStart)`: indicates the beginning of processing for a new
+ * assistant message.
  * - `Title(String)`: an updated or generated title for the chat.
  * - `Error(String)`: an error message to surface to the client.
  *
- * Important: the client should treat text-bearing variants (`Token`, `Reasoning`,
- * `DeepPlan`, `DeepStepToken`, `DeepStepReasoning`, `DeepReport`) as streamable fragments
- * that together form the final content; `Complete` is the canonical signal that final
- * assembly is complete and includes definitive metadata.
+ * Important: the client should treat text-bearing variants (`Token`,
+ * `Reasoning`, `DeepPlan`, `DeepStepToken`, `DeepStepReasoning`, `DeepReport`)
+ * as streamable fragments that together form the final content; `Complete` is
+ * the canonical signal that final assembly is complete and includes definitive
+ * metadata.
  */
 export type SseResp =
 	| { t: 'version'; c: number }

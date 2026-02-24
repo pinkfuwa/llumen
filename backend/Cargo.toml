@@ -16,7 +16,7 @@ panic = "abort"
 incremental = false
 
 [workspace]
-members = [".", "entity", "migration", "protocol"]
+members = [".", "entity", "migration", "protocol", "xtask"]
 
 [dependencies]
 dotenv = "0.15.0"

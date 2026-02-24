@@ -68,7 +68,7 @@ jobs:
       - name: Run cargo test
         id: cargo_test
         working-directory: ./backend
-        run: cargo test --workspace
+        run: cargo test --workspace --exclude xtask
 
   frontend-tests:
     name: Frontend tests
