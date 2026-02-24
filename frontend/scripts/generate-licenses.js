@@ -54,10 +54,6 @@ Generated from package.json and pnpm-lock.yaml.
 				output += `URL: ${info.url}\n`;
 			}
 
-			if (info.licenseFile) {
-				output += `License File: ${info.licenseFile}\n`;
-			}
-
 			if (info.licenseText) {
 				output += 'License Text:\n```\n';
 				output += info.licenseText.trim();
