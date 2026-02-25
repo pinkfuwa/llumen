@@ -66,6 +66,10 @@ See [./docs/sample](./docs/sample) for docker-compose examples.
 
 Download from [Releases](https://github.com/pinkfuwa/llumen/releases) for Windows/Linux, including arm build.
 
+## Building from Source
+
+See [BUILD.md](./BUILD.md) for detailed build instructions.
+
 ## Configuration (Optional)
 
 | Variable | Description | Default |

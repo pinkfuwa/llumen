@@ -66,6 +66,10 @@ docker run -it --rm \
 
 从 [Releases](https://github.com/pinkfuwa/llumen/releases) 下载 Windows/Linux 版本（包含 arm 架构）。
 
+## 从源代码编译
+
+请参阅 [BUILD.md](./BUILD.md) 获取详细编译说明。
+
 ## 配置 (可选)
 
 | 变量 | 描述 | 默认值 |
