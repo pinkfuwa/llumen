@@ -13,4 +13,6 @@
 
 {#if html != null}
 	{@html html}
+{:else}
+	{text}
 {/if}

@@ -151,7 +151,15 @@ export function parseLatexBlock(ctx: ParseContext): BlockParseResult {
 		delimiter = '$$';
 		endDelimiter = '$$';
 	} else {
-		return { token: null, newPosition: ctx.position, regions: [] };
+		const line = peekLine(ctx.source, ctx.position);
+		const bracketPos = line.indexOf('\\[');
+		if (bracketPos !== -1) {
+			pos = ctx.position + bracketPos;
+			delimiter = '\\[';
+			endDelimiter = '\\]';
+		} else {
+			return { token: null, newPosition: ctx.position, regions: [] };
+		}
 	}
 
 	const afterDelimiter = peek(ctx.source, pos, delimiter.length + 1);
@@ -490,7 +498,7 @@ export function looksLikeBlockStart(line: string): boolean {
 		line.startsWith('>') ||
 		line.match(/^\d+\.\s/) !== null ||
 		line.match(/^[-*+]\s/) !== null ||
-		line.match(/^\\\[/) !== null ||
+		line.match(/^\s*\\\[/) !== null ||
 		line.match(/^\$\$/) !== null ||
 		isTableRow(line)
 	);

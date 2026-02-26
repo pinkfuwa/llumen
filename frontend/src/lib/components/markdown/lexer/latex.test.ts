@@ -62,6 +62,22 @@ describe('MarkdownParser - LaTeX Block Delimiters', () => {
 		expect(latex.content).toBe('x^2');
 	});
 
+	test('parses \\[ \\] with text before on same line', () => {
+		const markdown = 'Some text \\[ H_3 \\] more text';
+		const result = parse(markdown);
+		const latex = result.tokens[0] as LatexBlockToken;
+		expect(latex.type).toBe(TokenType.LatexBlock);
+		expect(latex.content).toBe('H_3');
+	});
+
+	test('parses \\[ \\] with complex math in middle of line', () => {
+		const markdown = '\\[ H_4 = \\\\langle 1 \\\\rangle = \\\\{0, 1, 2, 3, 4, 5\\\\} = \\\\mathbb{Z}_6 \\]';
+		const result = parse(markdown);
+		const latex = result.tokens[0] as LatexBlockToken;
+		expect(latex.type).toBe(TokenType.LatexBlock);
+		expect(latex.content).toBe('H_4 = \\\\langle 1 \\\\rangle = \\\\{0, 1, 2, 3, 4, 5\\\\} = \\\\mathbb{Z}_6');
+	});
+
 	test('parses $$ $$ block delimiter with newline', () => {
 		const markdown = '$$\ny^2 + x^2\n$$';
 		const result = parse(markdown);
