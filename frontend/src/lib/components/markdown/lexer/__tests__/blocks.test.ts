@@ -193,6 +193,76 @@ describe('MarkdownParser - Block-Level Tokens', () => {
 			expect((result.tokens[0] as UnorderedListToken).children.length).toBe(2);
 			expect((result.tokens[1] as UnorderedListToken).children.length).toBe(1);
 		});
+
+		test('parses nested list with inline formatting', () => {
+			const markdown = `- \`_start\` is **not** in the C library (\`libc.so\`)
+- It's in the **C runtime startup object files**:
+- \`crt1.o\` — for dynamically linked executables`;
+			const result = parse(markdown);
+			expect(result.tokens.length).toBe(1);
+			const list = result.tokens[0] as UnorderedListToken;
+			expect(list.children.length).toBe(3);
+			const firstItem = list.children[0];
+			expect(firstItem.children?.some(t => t.type === TokenType.InlineCode)).toBe(true);
+			expect(firstItem.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			const secondItem = list.children[1];
+			expect(secondItem.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+		});
+
+		test('parses simple nested list', () => {
+			const markdown = `- Item 1
+- Item 2
+- Nested item`;
+			const result = parse(markdown);
+			const list = result.tokens[0] as UnorderedListToken;
+			expect(list.children.length).toBe(3);
+		});
+
+		test('handles indented list items (separate lists)', () => {
+			const markdown = `- Item 1
+- Item 2
+  - Nested item`;
+			const result = parse(markdown);
+			expect(result.tokens.length).toBe(2);
+			const firstList = result.tokens[0] as UnorderedListToken;
+			expect(firstList.children.length).toBe(2);
+			const secondList = result.tokens[1] as UnorderedListToken;
+			expect(secondList.children.length).toBe(1);
+		});
+
+		test('handles tab-indented list items', () => {
+			const markdown = `- Item 1
+- Item 2
+\t- Tab nested item`;
+			const result = parse(markdown);
+			expect(result.tokens.length).toBe(2);
+			const secondList = result.tokens[1] as UnorderedListToken;
+			expect(secondList.children.length).toBe(1);
+		});
+
+		test('handles mixed whitespace indentation', () => {
+			const markdown = `- Item 1
+   - Deep indent item`;
+			const result = parse(markdown);
+			expect(result.tokens.length).toBe(2);
+			const secondList = result.tokens[1] as UnorderedListToken;
+			expect(secondList.children.length).toBe(1);
+		});
+
+		test('parses nested list with inline formatting', () => {
+			const markdown = `- \`_start\` is **not** in the C library (\`libc.so\`)
+- It's in the **C runtime startup object files**:
+- \`crt1.o\` — for dynamically linked executables`;
+			const result = parse(markdown);
+			expect(result.tokens.length).toBe(1);
+			const list = result.tokens[0] as UnorderedListToken;
+			expect(list.children.length).toBe(3);
+			const firstItem = list.children[0];
+			expect(firstItem.children?.some(t => t.type === TokenType.InlineCode)).toBe(true);
+			expect(firstItem.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			const secondItem = list.children[1];
+			expect(secondItem.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+		});
 	});
 
 	describe('Tables', () => {

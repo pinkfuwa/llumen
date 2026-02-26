@@ -419,6 +419,69 @@ export function parseList(ctx: ParseContext): BlockParseResult {
 	}
 }
 
+export function parseIndentedList(ctx: ParseContext): BlockParseResult {
+	const start = ctx.position;
+	const line = peekLine(ctx.source, ctx.position);
+
+	const indentedMatch = line.match(/^\s+[-*+]\s+/);
+	if (!indentedMatch) {
+		return { token: null, newPosition: ctx.position, regions: [] };
+	}
+
+	const items: Token[] = [];
+	let pos = ctx.position;
+
+	while (pos < ctx.source.length) {
+		const currentLine = peekLine(ctx.source, pos);
+		const itemMatch = currentLine.match(/^\s+([-*+])\s+(.*)$/);
+
+		if (!itemMatch) {
+			const emptyLineMatch = currentLine.match(/^(\s*)$/);
+			if (emptyLineMatch) {
+				pos += currentLine.length;
+				break;
+			}
+			break;
+		}
+
+		const itemStart = pos;
+		const itemContent = itemMatch[2];
+
+		pos += currentLine.length;
+		const skip = skipNewlines(ctx.source, pos);
+		pos = skip.newPosition;
+
+		const inlineTokens = parseInline(
+			itemContent,
+			itemStart + (currentLine.length - itemContent.length)
+		);
+
+		items.push(
+			builders.createListItemToken(inlineTokens, itemStart, pos)
+		);
+
+		if (skip.hadBlankLine) {
+			break;
+		}
+	}
+
+	if (items.length === 0) {
+		return { token: null, newPosition: ctx.position, regions: [] };
+	}
+
+	return {
+		token: builders.createUnorderedListToken(items, start, pos),
+		newPosition: pos,
+		regions: [
+			{
+				type: 'list',
+				start,
+				end: pos
+			}
+		]
+	};
+}
+
 export function looksLikeBlockStart(line: string): boolean {
 	return (
 		line.match(/^#{1,6}\s/) !== null ||
@@ -517,6 +580,9 @@ export function parseBlock(ctx: ParseContext): BlockParseResult {
 
 	const list = parseList(ctx);
 	if (list.token) return list;
+
+	const indentedList = parseIndentedList(ctx);
+	if (indentedList.token) return indentedList;
 
 	const paragraph = parseParagraph(ctx);
 	if (paragraph.token) return paragraph;
