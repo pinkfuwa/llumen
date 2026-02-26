@@ -1,6 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { parse } from '../parser';
-import { parseIncremental, type IncrementalState } from '../index';
+import { parse, parseIncremental, type IncrementalState } from '../index';
 import { TokenType } from '../tokens';
 import type { TableToken, ParagraphToken, HeadingToken } from '../tokens';
 
