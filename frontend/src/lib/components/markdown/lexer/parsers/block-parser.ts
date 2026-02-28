@@ -33,7 +33,10 @@ export function skipWhitespace(source: string, position: number): number {
 	return pos;
 }
 
-export function skipNewlines(source: string, position: number): { newPosition: number; hadBlankLine: boolean } {
+export function skipNewlines(
+	source: string,
+	position: number
+): { newPosition: number; hadBlankLine: boolean } {
 	let newlineCount = 0;
 	let pos = position;
 	while (pos < source.length && (source[pos] === '\n' || source[pos] === '\r')) {
@@ -50,6 +53,12 @@ export function isTableRow(line: string): boolean {
 		return false;
 	}
 	const trimmed = line.trim();
+	if (!trimmed.startsWith('|')) {
+		const hasLatex = trimmed.includes('\\(') || trimmed.includes('\\)');
+		if (hasLatex) {
+			return false;
+		}
+	}
 	const pipeCount = (trimmed.match(/\|/g) || []).length;
 	return pipeCount >= 2 || trimmed.includes('\t');
 }
@@ -250,9 +259,7 @@ export function parseTable(ctx: ParseContext): BlockParseResult {
 		skip = skipNewlines(ctx.source, pos);
 		pos = skip.newPosition;
 
-		rows.push(
-			builders.createTableRowToken(lineNum === 0, cells, rowStart, pos)
-		);
+		rows.push(builders.createTableRowToken(lineNum === 0, cells, rowStart, pos));
 
 		lineNum++;
 
@@ -297,9 +304,7 @@ function parseTableRow(source: string, line: string, rowStart: number): Token[] 
 		const inlineTokens = parseInline(part, cellStart);
 		offset += part.length + 1;
 
-		cells.push(
-			builders.createTableCellToken(undefined, inlineTokens, cellStart, offset)
-		);
+		cells.push(builders.createTableCellToken(undefined, inlineTokens, cellStart, offset));
 	}
 
 	return cells;
@@ -387,9 +392,7 @@ export function parseList(ctx: ParseContext): BlockParseResult {
 			itemStart + (currentLine.length - itemContent.length)
 		);
 
-		items.push(
-			builders.createListItemToken(inlineTokens, itemStart, pos)
-		);
+		items.push(builders.createListItemToken(inlineTokens, itemStart, pos));
 
 		if (skip.hadBlankLine) {
 			break;
@@ -464,9 +467,7 @@ export function parseIndentedList(ctx: ParseContext): BlockParseResult {
 			itemStart + (currentLine.length - itemContent.length)
 		);
 
-		items.push(
-			builders.createListItemToken(inlineTokens, itemStart, pos)
-		);
+		items.push(builders.createListItemToken(inlineTokens, itemStart, pos));
 
 		if (skip.hadBlankLine) {
 			break;
@@ -598,7 +599,10 @@ export function parseBlock(ctx: ParseContext): BlockParseResult {
 	return { token: null, newPosition: ctx.position + 1, regions: [] };
 }
 
-export function parseBlocks(source: string, startPosition: number = 0): { tokens: Token[]; regions: RegionBoundary[] } {
+export function parseBlocks(
+	source: string,
+	startPosition: number = 0
+): { tokens: Token[]; regions: RegionBoundary[] } {
 	const tokens: Token[] = [];
 	const regions: RegionBoundary[] = [];
 

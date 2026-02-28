@@ -29,8 +29,7 @@ describe('MarkdownParser - LaTeX Block Delimiters', () => {
 	});
 
 	test('parses \\[ \\] after numbered list item with indentation', () => {
-		const markdown =
-			'2. 由 Lemma 1：\n   \\[\n   \\text{葉節點數} \\leq 2^h\n   \\]';
+		const markdown = '2. 由 Lemma 1：\n   \\[\n   \\text{葉節點數} \\leq 2^h\n   \\]';
 		const result = parse(markdown);
 		const latex = result.tokens[1] as LatexBlockToken;
 		expect(latex.type).toBe(TokenType.LatexBlock);
@@ -38,8 +37,7 @@ describe('MarkdownParser - LaTeX Block Delimiters', () => {
 	});
 
 	test('parses \\[ \\] after unordered list item with indentation', () => {
-		const markdown =
-			'- item\n  \\[\n  x^2\n  \\]';
+		const markdown = '- item\n  \\[\n  x^2\n  \\]';
 		const result = parse(markdown);
 		const latex = result.tokens[1] as LatexBlockToken;
 		expect(latex.type).toBe(TokenType.LatexBlock);
@@ -71,11 +69,14 @@ describe('MarkdownParser - LaTeX Block Delimiters', () => {
 	});
 
 	test('parses \\[ \\] with complex math in middle of line', () => {
-		const markdown = '\\[ H_4 = \\\\langle 1 \\\\rangle = \\\\{0, 1, 2, 3, 4, 5\\\\} = \\\\mathbb{Z}_6 \\]';
+		const markdown =
+			'\\[ H_4 = \\\\langle 1 \\\\rangle = \\\\{0, 1, 2, 3, 4, 5\\\\} = \\\\mathbb{Z}_6 \\]';
 		const result = parse(markdown);
 		const latex = result.tokens[0] as LatexBlockToken;
 		expect(latex.type).toBe(TokenType.LatexBlock);
-		expect(latex.content).toBe('H_4 = \\\\langle 1 \\\\rangle = \\\\{0, 1, 2, 3, 4, 5\\\\} = \\\\mathbb{Z}_6');
+		expect(latex.content).toBe(
+			'H_4 = \\\\langle 1 \\\\rangle = \\\\{0, 1, 2, 3, 4, 5\\\\} = \\\\mathbb{Z}_6'
+		);
 	});
 
 	test('parses $$ $$ block delimiter with newline', () => {
@@ -341,6 +342,112 @@ describe('MarkdownParser - LaTeX Multiple Delimiters', () => {
 		const para = result.tokens[0] as ParagraphToken;
 		const latexTokens = para.children?.filter((t) => t.type === TokenType.LatexInline);
 		expect(latexTokens?.length).toBe(2);
+	});
+
+	test('parses Chinese text with inline latex \\( \\)', () => {
+		const markdown = '換句話說：\\( |H| \\mid |G| \\)，且 \\( [G:H] = \\frac{|G|}{|H|} \\)';
+		const result = parse(markdown);
+		const para = result.tokens[0] as ParagraphToken;
+		const latexTokens = para.children?.filter(
+			(t) => t.type === TokenType.LatexInline
+		) as LatexInlineToken[];
+		expect(latexTokens?.length).toBe(2);
+		expect(latexTokens?.[0]?.content).toBe(' |H| \\mid |G| ');
+		expect(latexTokens?.[1]?.content).toBe(' [G:H] = \\frac{|G|}{|H|} ');
+	});
+
+	test('\\( with Chinese characters before', () => {
+		const markdown = '換句話說：\\(x\\) done';
+		const result = parse(markdown);
+		const para = result.tokens[0] as ParagraphToken;
+		const latexToken = para.children?.find((t) => t.type === TokenType.LatexInline) as
+			| LatexInlineToken
+			| undefined;
+		expect(latexToken).toBeDefined();
+		expect(latexToken?.content).toBe('x');
+	});
+
+	test('Chinese colon and comma do not affect latex parsing', () => {
+		const markdown = 'Test：\\(x\\)，more';
+		const result = parse(markdown);
+		const para = result.tokens[0] as ParagraphToken;
+		const latexToken = para.children?.find((t) => t.type === TokenType.LatexInline) as
+			| LatexInlineToken
+			| undefined;
+		expect(latexToken).toBeDefined();
+	});
+
+	test('\\( with Chinese comma after', () => {
+		const markdown = 'Text \\(x\\)，then';
+		const result = parse(markdown);
+		const para = result.tokens[0] as ParagraphToken;
+		const latexToken = para.children?.find((t) => t.type === TokenType.LatexInline) as
+			| LatexInlineToken
+			| undefined;
+		expect(latexToken).toBeDefined();
+		expect(latexToken?.content).toBe('x');
+	});
+
+	test('multiple \\( with Chinese text', () => {
+		const markdown = '\\(a\\)，且 \\(b\\)';
+		const result = parse(markdown);
+		const para = result.tokens[0] as ParagraphToken;
+		const latexTokens = para.children?.filter(
+			(t) => t.type === TokenType.LatexInline
+		) as LatexInlineToken[];
+		expect(latexTokens?.length).toBe(2);
+	});
+
+	test('\\( with spaces inside', () => {
+		const markdown = '\\( x \\)';
+		const result = parse(markdown);
+		const para = result.tokens[0] as ParagraphToken;
+		const latexToken = para.children?.find((t) => t.type === TokenType.LatexInline) as
+			| LatexInlineToken
+			| undefined;
+		expect(latexToken).toBeDefined();
+		expect(latexToken?.content).toBe(' x ');
+	});
+
+	test('\\( with bar character inside', () => {
+		const markdown = '\\( |H| \\mid |G| \\)';
+		const result = parse(markdown);
+		const para = result.tokens[0] as ParagraphToken;
+		const latexToken = para.children?.find((t) => t.type === TokenType.LatexInline) as
+			| LatexInlineToken
+			| undefined;
+		expect(latexToken).toBeDefined();
+		expect(latexToken?.content).toBe(' |H| \\mid |G| ');
+	});
+
+	test('Line with | characters is not table when containing LaTeX', () => {
+		const markdown = 'Text with \\( |H| \\mid |G| \\) inline';
+		const result = parse(markdown);
+		const para = result.tokens[0] as ParagraphToken;
+		const latexToken = para.children?.find((t) => t.type === TokenType.LatexInline) as
+			| LatexInlineToken
+			| undefined;
+		expect(latexToken).toBeDefined();
+	});
+});
+
+describe('MarkdownParser - Tables with LaTeX', () => {
+	test('table row with LaTeX inside cells', () => {
+		const markdown = '| $\\alpha$ | $\\beta$ |\n|---|---|\n| 1 | 2 |';
+		const result = parse(markdown);
+		expect(result.tokens[0].type).toBe(TokenType.Table);
+	});
+
+	test('table with LaTeX in header', () => {
+		const markdown = '| \\(x\\) | \\(y\\) |\n|---|---|\n| 1 | 2 |';
+		const result = parse(markdown);
+		expect(result.tokens[0].type).toBe(TokenType.Table);
+	});
+
+	test('table with bar character in LaTeX cells', () => {
+		const markdown = '| \\(|H|\\) | \\(|G|\\) |\n|---|---|\n| 1 | 2 |';
+		const result = parse(markdown);
+		expect(result.tokens[0].type).toBe(TokenType.Table);
 	});
 });
 
