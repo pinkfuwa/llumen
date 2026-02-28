@@ -15,7 +15,7 @@ pub struct Openrouter {
     pub(super) embedding_endpoint: String,
     model_cache: ModelCacheManager,
     http_client: reqwest::Client,
-    compatibility_mode: bool,
+    is_custom_api: bool,
 }
 
 impl Openrouter {
@@ -36,7 +36,7 @@ impl Openrouter {
         let mut plugins = Vec::new();
         let mut modalities = Vec::new();
 
-        let web_search_options = if option.insert_web_search_context && !self.compatibility_mode {
+        let web_search_options = if option.insert_web_search_context && !self.is_custom_api {
             Some(raw::WebSearchOptions {
                 search_context_size: "medium".to_string(),
             })
@@ -44,7 +44,7 @@ impl Openrouter {
             None
         };
 
-        if !self.compatibility_mode {
+        if !self.is_custom_api {
             match capability.ocr {
                 OcrEngine::Native => plugins.push(raw::Plugin::pdf_native()),
                 OcrEngine::Text => plugins.push(raw::Plugin::pdf_text()),
@@ -70,7 +70,7 @@ impl Openrouter {
             None => model.temperature,
         };
 
-        let usage = if self.compatibility_mode {
+        let usage = if self.is_custom_api {
             None
         } else {
             Some(raw::UsageReq { include: true })
@@ -82,7 +82,7 @@ impl Openrouter {
             max_tokens: option.reasoning_max_tokens,
         };
 
-        if self.compatibility_mode {
+        if self.is_custom_api {
             reasoning.set_compatible();
         }
 
@@ -128,12 +128,12 @@ impl Openrouter {
             &chat_completion_endpoint
         );
 
-        let compatibility_mode = if force_openrouter {
+        let is_custom_api = if force_openrouter {
             false
         } else {
             !api_base.contains("openrouter")
         };
-        if compatibility_mode {
+        if is_custom_api {
             log::warn!("Custom API_BASE detected, disabling plugin support");
         }
 
@@ -145,12 +145,12 @@ impl Openrouter {
             embedding_endpoint,
             model_cache,
             http_client: reqwest::Client::new(),
-            compatibility_mode,
+            is_custom_api,
         }
     }
 
-    pub fn is_compatibility_mode(&self) -> bool {
-        self.compatibility_mode
+    pub fn is_custom_api(&self) -> bool {
+        self.is_custom_api
     }
 
     /// Get a list of available model IDs
@@ -162,7 +162,7 @@ impl Openrouter {
     pub async fn get_capability(&self, model: &Model) -> super::Capability {
         // Ensure model is in cache before resolving capability (except in compatibility
         // mode)
-        if !self.compatibility_mode {
+        if !self.is_custom_api {
             let _ = self.model_cache.ensure_model(&model.id).await;
         }
 
@@ -179,7 +179,7 @@ impl Openrouter {
         #[cfg(debug_assertions)]
         check_message(&messages);
 
-        if !self.compatibility_mode {
+        if !self.is_custom_api {
             self.model_cache.ensure_model(&model.id).await?;
         }
 
@@ -262,11 +262,11 @@ impl Openrouter {
             "Image generation supported only on streaming"
         );
 
-        if !self.compatibility_mode {
+        if !self.is_custom_api {
             self.model_cache.ensure_model(&model.id).await?;
         }
 
-        if !self.compatibility_mode {
+        if !self.is_custom_api {
             let capability = self.get_capability(&model).await;
             if !capability.text_output {
                 return Err(Error::TextOutputNotSupported);
@@ -295,7 +295,7 @@ impl Openrouter {
             "Image generation supported only on streaming"
         );
 
-        if !self.compatibility_mode {
+        if !self.is_custom_api {
             self.model_cache.ensure_model(&model.id).await?;
         }
 

@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use axum::{Json, extract::State};
 use pasetors::{
@@ -11,7 +11,7 @@ use pasetors::{
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AppState, errors::*};
+use crate::{config::TOKEN_EXPIRATION_SECS, AppState, errors::*};
 
 #[derive(Debug, Clone, Deserialize)]
 #[typeshare]
@@ -44,7 +44,7 @@ pub async fn route(
         .ok_or("Cannot get user id")
         .kind(ErrorKind::MalformedRequest)?;
     let mut claim = Claims::new().kind(ErrorKind::Internal)?;
-    let expiration = Duration::from_secs(60 * 60 * 24 * 7);
+    let expiration = std::time::Duration::from_secs(TOKEN_EXPIRATION_SECS);
     claim
         .set_expires_in(&expiration)
         .kind(ErrorKind::Internal)?;

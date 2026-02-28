@@ -50,6 +50,7 @@ use std::{path::PathBuf, sync::Arc};
 use anyhow::Context as _;
 use axum::{Router, middleware};
 use chat::Context;
+use config::{DB_BUSY_TIMEOUT_MS, DEFAULT_BIND_ADDR};
 use dotenv::var;
 use entity::prelude::*;
 
@@ -182,7 +183,7 @@ async fn main() {
     );
     let mut blob_path = data_path.clone();
     blob_path.push("blobs.redb");
-    let bind_addr = var("BIND_ADDR").unwrap_or("0.0.0.0:8001".to_owned());
+    let bind_addr = var("BIND_ADDR").unwrap_or(DEFAULT_BIND_ADDR.to_owned());
 
     #[cfg(feature = "tracing")]
     let _db_span = info_span!("database_initialization").entered();
@@ -201,8 +202,10 @@ async fn main() {
 
     conn.execute(sea_orm::Statement::from_string(
         conn.get_database_backend(),
-        "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;PRAGMA busy_timeout=1000;"
-            .to_owned(),
+        &format!(
+            "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;PRAGMA busy_timeout={};",
+            DB_BUSY_TIMEOUT_MS
+        ),
     ))
     .await
     .expect("Failed to set pragmas");

@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use axum::extract::{Path, State};
+use axum::extract::{Extension, Json, Path, State};
 use axum::response::{IntoResponse, Response};
-use axum::{Extension, Json};
 use entity::file::{self, Entity as File};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
+use crate::config::IMAGE_CACHE_MAX_AGE_SECS;
 use crate::AppState;
 use crate::errors::{AppError, Error, ErrorKind, WithKind};
 use crate::middlewares::auth::UserId;
@@ -88,7 +88,11 @@ pub async fn route(
 
     headers.insert(
         axum::http::header::CACHE_CONTROL,
-        axum::http::HeaderValue::from_static("public, max-age=259200, immutable"),
+        axum::http::HeaderValue::from_str(&format!(
+            "public, max-age={}, immutable",
+            IMAGE_CACHE_MAX_AGE_SECS
+        ))
+        .unwrap(),
     );
 
     headers.insert(

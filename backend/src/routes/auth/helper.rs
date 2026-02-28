@@ -1,4 +1,5 @@
 use crate::{
+    config::TOKEN_EXPIRATION_SECS,
     AppState,
     errors::{AppError, ErrorKind, WithKind},
 };
@@ -12,7 +13,7 @@ pub struct Token {
 pub fn new_token(app: &AppState, user_id: i32) -> Result<Token, AppError> {
     let mut claim = Claims::new().kind(ErrorKind::Internal)?;
 
-    let expiration = Duration::from_secs(60 * 60 * 24 * 7);
+    let expiration = Duration::from_secs(TOKEN_EXPIRATION_SECS);
     claim
         .set_expires_in(&expiration)
         .kind(ErrorKind::Internal)?;
