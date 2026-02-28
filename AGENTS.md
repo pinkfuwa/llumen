@@ -17,7 +17,9 @@ llumen follows mono repo file structure:
 - mLua with luau sandboxing
 - typeshare (codegen)
 - Svelte 5 (SPA) / TailwindCSS / Vite / TypeScript
-- bit-ui / lezer (for markdown parsing)
+- bit-ui
+- shiki / lezer
+- Custom markdown parser
 
 ## General Coding Guidelines
 
