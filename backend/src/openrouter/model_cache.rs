@@ -5,10 +5,7 @@ use protocol::OcrEngine;
 
 use crate::openrouter::Capability;
 
-use super::{Error, raw};
-
-static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
-static X_TITLE: &str = "llumen";
+use super::{Error, raw, HTTP_REFERER, X_TITLE};
 
 /// Optimized model capability cache with efficient memory layout
 #[derive(Clone)]

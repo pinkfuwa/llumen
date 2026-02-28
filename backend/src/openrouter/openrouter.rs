@@ -6,8 +6,8 @@ use super::model_cache::ModelCacheManager;
 use super::{Model, error::Error, raw};
 use protocol::OcrEngine;
 
-static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
-static X_TITLE: &str = "llumen";
+use super::HTTP_REFERER;
+use super::X_TITLE;
 
 pub struct Openrouter {
     pub(super) api_key: String,

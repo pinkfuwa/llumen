@@ -12,8 +12,8 @@ mod stream;
 #[cfg(test)]
 mod test;
 
-static HTTP_REFERER: &str = "https://github.com/pinkfuwa/llumen";
-static X_TITLE: &str = "llumen";
+pub static HTTP_REFERER: &str = "https://pinkfuwa.github.io/llumen/";
+pub static X_TITLE: &str = "llumen";
 
 pub use annotation::extract_url_citations;
 pub use error::Error;
