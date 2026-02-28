@@ -203,10 +203,10 @@ describe('MarkdownParser - Block-Level Tokens', () => {
 			const list = result.tokens[0] as UnorderedListToken;
 			expect(list.children.length).toBe(3);
 			const firstItem = list.children[0];
-			expect(firstItem.children?.some(t => t.type === TokenType.InlineCode)).toBe(true);
-			expect(firstItem.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			expect(firstItem.children?.some((t) => t.type === TokenType.InlineCode)).toBe(true);
+			expect(firstItem.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 			const secondItem = list.children[1];
-			expect(secondItem.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			expect(secondItem.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 		});
 
 		test('parses simple nested list', () => {
@@ -258,10 +258,10 @@ describe('MarkdownParser - Block-Level Tokens', () => {
 			const list = result.tokens[0] as UnorderedListToken;
 			expect(list.children.length).toBe(3);
 			const firstItem = list.children[0];
-			expect(firstItem.children?.some(t => t.type === TokenType.InlineCode)).toBe(true);
-			expect(firstItem.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			expect(firstItem.children?.some((t) => t.type === TokenType.InlineCode)).toBe(true);
+			expect(firstItem.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 			const secondItem = list.children[1];
-			expect(secondItem.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			expect(secondItem.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 		});
 	});
 

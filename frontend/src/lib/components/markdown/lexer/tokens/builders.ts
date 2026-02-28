@@ -33,7 +33,12 @@ export function createTextToken(content: string, start: number, end: number): Te
 	};
 }
 
-export function createHeadingToken(level: number, children: Token[], start: number, end: number): HeadingToken {
+export function createHeadingToken(
+	level: number,
+	children: Token[],
+	start: number,
+	end: number
+): HeadingToken {
 	return {
 		type: TokenType.Heading,
 		level,
@@ -43,7 +48,11 @@ export function createHeadingToken(level: number, children: Token[], start: numb
 	};
 }
 
-export function createParagraphToken(children: Token[], start: number, end: number): ParagraphToken {
+export function createParagraphToken(
+	children: Token[],
+	start: number,
+	end: number
+): ParagraphToken {
 	return {
 		type: TokenType.Paragraph,
 		children,
@@ -69,7 +78,11 @@ export function createCodeBlockToken(
 	};
 }
 
-export function createBlockquoteToken(children: Token[], start: number, end: number): BlockquoteToken {
+export function createBlockquoteToken(
+	children: Token[],
+	start: number,
+	end: number
+): BlockquoteToken {
 	return {
 		type: TokenType.Blockquote,
 		children,
@@ -93,7 +106,11 @@ export function createOrderedListToken(
 	};
 }
 
-export function createUnorderedListToken(children: Token[], start: number, end: number): UnorderedListToken {
+export function createUnorderedListToken(
+	children: Token[],
+	start: number,
+	end: number
+): UnorderedListToken {
 	return {
 		type: TokenType.UnorderedList,
 		children: children as UnorderedListToken['children'],
@@ -120,7 +137,12 @@ export function createTableToken(children: Token[], start: number, end: number):
 	};
 }
 
-export function createTableRowToken(isHeader: boolean, children: Token[], start: number, end: number): TableRowToken {
+export function createTableRowToken(
+	isHeader: boolean,
+	children: Token[],
+	start: number,
+	end: number
+): TableRowToken {
 	return {
 		type: TokenType.TableRow,
 		isHeader,
@@ -153,7 +175,11 @@ export function createHorizontalRuleToken(start: number, end: number): Horizonta
 	};
 }
 
-export function createLatexBlockToken(content: string, start: number, end: number): LatexBlockToken {
+export function createLatexBlockToken(
+	content: string,
+	start: number,
+	end: number
+): LatexBlockToken {
 	return {
 		type: TokenType.LatexBlock,
 		content,
@@ -162,7 +188,11 @@ export function createLatexBlockToken(content: string, start: number, end: numbe
 	};
 }
 
-export function createLatexInlineToken(content: string, start: number, end: number): LatexInlineToken {
+export function createLatexInlineToken(
+	content: string,
+	start: number,
+	end: number
+): LatexInlineToken {
 	return {
 		type: TokenType.LatexInline,
 		content,
@@ -189,7 +219,11 @@ export function createItalicToken(children: Token[], start: number, end: number)
 	};
 }
 
-export function createStrikethroughToken(children: Token[], start: number, end: number): StrikethroughToken {
+export function createStrikethroughToken(
+	children: Token[],
+	start: number,
+	end: number
+): StrikethroughToken {
 	return {
 		type: TokenType.Strikethrough,
 		children,
@@ -198,7 +232,11 @@ export function createStrikethroughToken(children: Token[], start: number, end: 
 	};
 }
 
-export function createInlineCodeToken(content: string, start: number, end: number): InlineCodeToken {
+export function createInlineCodeToken(
+	content: string,
+	start: number,
+	end: number
+): InlineCodeToken {
 	return {
 		type: TokenType.InlineCode,
 		content,
@@ -207,7 +245,12 @@ export function createInlineCodeToken(content: string, start: number, end: numbe
 	};
 }
 
-export function createLinkToken(url: string, children: Token[], start: number, end: number): LinkToken {
+export function createLinkToken(
+	url: string,
+	children: Token[],
+	start: number,
+	end: number
+): LinkToken {
 	return {
 		type: TokenType.Link,
 		url,

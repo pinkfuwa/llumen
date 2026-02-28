@@ -10,7 +10,11 @@
 
 import { parseBlocks } from './parsers/block-parser';
 import { parseInline } from './parsers/inline-parser';
-import { parseIncremental, type IncrementalState, type IncrementalParseResult } from './parsers/incremental';
+import {
+	parseIncremental,
+	type IncrementalState,
+	type IncrementalParseResult
+} from './parsers/incremental';
 import { TokenType } from './tokens';
 import type {
 	Token,

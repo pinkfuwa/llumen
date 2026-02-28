@@ -1,7 +1,22 @@
 import { describe, test, expect } from 'vitest';
 import { parse } from '../parser';
 import { TokenType } from '../tokens';
-import type { ParagraphToken, HeadingToken, CodeBlockToken, BlockquoteToken, ListItemToken, TableRowToken, TextToken, BoldToken, ItalicToken, LinkToken, ImageToken, LatexInlineToken, InlineCodeToken, StrikethroughToken } from '../tokens';
+import type {
+	ParagraphToken,
+	HeadingToken,
+	CodeBlockToken,
+	BlockquoteToken,
+	ListItemToken,
+	TableRowToken,
+	TextToken,
+	BoldToken,
+	ItalicToken,
+	LinkToken,
+	ImageToken,
+	LatexInlineToken,
+	InlineCodeToken,
+	StrikethroughToken
+} from '../tokens';
 
 describe('Combinatorics - Mixed Block & Inline Tests', () => {
 	describe('Block Combination Tests', () => {
@@ -13,7 +28,7 @@ describe('Combinatorics - Mixed Block & Inline Tests', () => {
 			{ name: 'unordered list', input: '- Item', type: TokenType.UnorderedList },
 			{ name: 'ordered list', input: '1. Item', type: TokenType.OrderedList },
 			{ name: 'horizontal rule', input: '---', type: TokenType.HorizontalRule },
-			{ name: 'latex block', input: '\\[x^2\\]', type: TokenType.LatexBlock },
+			{ name: 'latex block', input: '\\[x^2\\]', type: TokenType.LatexBlock }
 		];
 
 		blockTypes.forEach((block1) => {
@@ -74,7 +89,7 @@ code block
 			{ name: 'inline code', input: '`code`', findToken: TokenType.InlineCode },
 			{ name: 'link', input: '[link](url)', findToken: TokenType.Link },
 			{ name: 'image', input: '![img](url)', findToken: TokenType.Image },
-			{ name: 'latex $', input: '$x^2$', findToken: TokenType.LatexInline },
+			{ name: 'latex $', input: '$x^2$', findToken: TokenType.LatexInline }
 		];
 
 		inlineElements.forEach((el1) => {
@@ -83,8 +98,9 @@ code block
 					const source = `${el1.input} and ${el2.input}`;
 					const result = parse(source);
 					const para = result.tokens[0] as ParagraphToken;
-					const found = para.children?.some(t => t.type === el1.findToken) && 
-								  para.children?.some(t => t.type === el2.findToken);
+					const found =
+						para.children?.some((t) => t.type === el1.findToken) &&
+						para.children?.some((t) => t.type === el2.findToken);
 					expect(found).toBe(true);
 				});
 			});
@@ -95,13 +111,13 @@ code block
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
 
-			expect(para.children?.some(t => t.type === TokenType.Bold)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Italic)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Strikethrough)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.InlineCode)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Link)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Image)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.LatexInline)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Italic)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Strikethrough)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.InlineCode)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Link)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Image)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.LatexInline)).toBe(true);
 		});
 	});
 
@@ -110,8 +126,8 @@ code block
 			const source = '**bold with *italic* inside**';
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			const bold = para.children?.find(t => t.type === TokenType.Bold) as BoldToken;
-			expect(bold.children?.some(t => t.type === TokenType.Italic)).toBe(true);
+			const bold = para.children?.find((t) => t.type === TokenType.Bold) as BoldToken;
+			expect(bold.children?.some((t) => t.type === TokenType.Italic)).toBe(true);
 		});
 
 		test('italic can contain bold', () => {
@@ -126,16 +142,16 @@ code block
 			const source = '[**bold link**](https://example.com)';
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			const link = para.children?.find(t => t.type === TokenType.Link) as LinkToken;
-			expect(link.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			const link = para.children?.find((t) => t.type === TokenType.Link) as LinkToken;
+			expect(link.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 		});
 
 		test('bold contains code', () => {
 			const source = '**code `inline` bold**';
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			const bold = para.children?.find(t => t.type === TokenType.Bold) as BoldToken;
-			expect(bold.children?.some(t => t.type === TokenType.InlineCode)).toBe(true);
+			const bold = para.children?.find((t) => t.type === TokenType.Bold) as BoldToken;
+			expect(bold.children?.some((t) => t.type === TokenType.InlineCode)).toBe(true);
 		});
 
 		test('italic contains link', () => {
@@ -150,7 +166,7 @@ code block
 			const source = '**bold *italic ~~strike~~ more italic* end bold**';
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			const bold = para.children?.find(t => t.type === TokenType.Bold) as BoldToken;
+			const bold = para.children?.find((t) => t.type === TokenType.Bold) as BoldToken;
 			// Check bold is parsed
 			expect(bold).toBeDefined();
 		});
@@ -161,7 +177,7 @@ code block
 			const source = '# **Bold** Heading';
 			const result = parse(source);
 			const heading = result.tokens[0] as HeadingToken;
-			expect(heading.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			expect(heading.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 		});
 
 		test('blockquote with inline formatting', () => {
@@ -176,7 +192,7 @@ code block
 			const result = parse(source);
 			const list = result.tokens[0];
 			const item = (list as any).children?.[0] as ListItemToken;
-			expect(item.children?.some(t => t.type === TokenType.Bold)).toBe(true);
+			expect(item.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
 		});
 
 		test('table cell with inline formatting', () => {
@@ -184,7 +200,9 @@ code block
 			const result = parse(source);
 			const table = result.tokens[0];
 			const row = (table as any).children?.[0] as TableRowToken;
-			expect(row.children?.some(t => (t as any).children?.some((c: any) => c.type === TokenType.Bold))).toBe(true);
+			expect(
+				row.children?.some((t) => (t as any).children?.some((c: any) => c.type === TokenType.Bold))
+			).toBe(true);
 		});
 	});
 
@@ -193,15 +211,15 @@ code block
 			const source = '**one** **two** **three**';
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			expect(para.children?.filter(t => t.type === TokenType.Bold).length).toBe(3);
+			expect(para.children?.filter((t) => t.type === TokenType.Bold).length).toBe(3);
 		});
 
 		test('adjacent different elements without spaces', () => {
 			const source = '**bold***italic*';
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			expect(para.children?.some(t => t.type === TokenType.Bold)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Italic)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Italic)).toBe(true);
 		});
 
 		test('code block followed by paragraph with code', () => {
@@ -210,7 +228,7 @@ code block
 			expect(result.tokens[0].type).toBe(TokenType.CodeBlock);
 			expect(result.tokens[1].type).toBe(TokenType.Paragraph);
 			const para = result.tokens[1] as ParagraphToken;
-			expect(para.children?.some(t => t.type === TokenType.InlineCode)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.InlineCode)).toBe(true);
 		});
 
 		test('list followed by code block', () => {
@@ -253,8 +271,8 @@ code block
 			const source = '中文**粗体**和*斜体*';
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			expect(para.children?.some(t => t.type === TokenType.Bold)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Italic)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Italic)).toBe(true);
 		});
 
 		test('emoji in text', () => {
@@ -267,7 +285,7 @@ code block
 			const source = 'Text with `*italic*` in code';
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			const code = para.children?.find(t => t.type === TokenType.InlineCode) as InlineCodeToken;
+			const code = para.children?.find((t) => t.type === TokenType.InlineCode) as InlineCodeToken;
 			expect(code.content).toContain('*italic*');
 		});
 
@@ -294,7 +312,7 @@ code block
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
 			const children = para.children || [];
-			
+
 			for (let i = 0; i < children.length - 1; i++) {
 				expect(children[i].end).toBeLessThanOrEqual(children[i + 1].start);
 			}
@@ -303,7 +321,7 @@ code block
 		test('region boundaries are valid', () => {
 			const source = '> Quote\n\n```code```\n\n- List\n- Items';
 			const result = parse(source);
-			
+
 			for (const region of result.regions) {
 				expect(region.start).toBeLessThan(region.end);
 				expect(region.start).toBeGreaterThanOrEqual(0);
@@ -399,12 +417,12 @@ That's all!`;
 
 			const result = parse(source);
 			expect(result.tokens.length).toBeGreaterThan(10);
-			
+
 			// Check regions
-			expect(result.regions.some(r => r.type === 'codeblock')).toBe(true);
-			expect(result.regions.some(r => r.type === 'table')).toBe(true);
-			expect(result.regions.some(r => r.type === 'list')).toBe(true);
-			expect(result.regions.some(r => r.type === 'blockquote')).toBe(true);
+			expect(result.regions.some((r) => r.type === 'codeblock')).toBe(true);
+			expect(result.regions.some((r) => r.type === 'table')).toBe(true);
+			expect(result.regions.some((r) => r.type === 'list')).toBe(true);
+			expect(result.regions.some((r) => r.type === 'blockquote')).toBe(true);
 		});
 
 		test('mixed content with all inline types', () => {
@@ -412,14 +430,14 @@ That's all!`;
 
 			const result = parse(source);
 			const para = result.tokens[0] as ParagraphToken;
-			
-			expect(para.children?.some(t => t.type === TokenType.Bold)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Italic)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Strikethrough)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.InlineCode)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Link)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.Image)).toBe(true);
-			expect(para.children?.some(t => t.type === TokenType.LatexInline)).toBe(true);
+
+			expect(para.children?.some((t) => t.type === TokenType.Bold)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Italic)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Strikethrough)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.InlineCode)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Link)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.Image)).toBe(true);
+			expect(para.children?.some((t) => t.type === TokenType.LatexInline)).toBe(true);
 		});
 	});
 });

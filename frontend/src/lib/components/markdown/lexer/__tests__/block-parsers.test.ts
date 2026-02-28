@@ -12,7 +12,17 @@ import {
 	parseBlocks,
 	type ParseContext
 } from '../parsers/block-parser';
-import type { HeadingToken, CodeBlockToken, LatexBlockToken, HorizontalRuleToken, TableToken, BlockquoteToken, OrderedListToken, UnorderedListToken, ParagraphToken } from '../tokens';
+import type {
+	HeadingToken,
+	CodeBlockToken,
+	LatexBlockToken,
+	HorizontalRuleToken,
+	TableToken,
+	BlockquoteToken,
+	OrderedListToken,
+	UnorderedListToken,
+	ParagraphToken
+} from '../tokens';
 
 describe('BlockParser - Block Parsers', () => {
 	const ctx = (source: string, pos: number): ParseContext => ({ source, position: pos });
@@ -90,7 +100,9 @@ describe('BlockParser - Block Parsers', () => {
 		test('parses multi-line code block', () => {
 			const source = '```python\ndef hello():\n    print("world")\n    return True\n```';
 			const result = parseCodeBlock(ctx(source, 0));
-			expect((result.token as CodeBlockToken).content).toBe('def hello():\n    print("world")\n    return True');
+			expect((result.token as CodeBlockToken).content).toBe(
+				'def hello():\n    print("world")\n    return True'
+			);
 		});
 
 		test('returns null when not at code block', () => {

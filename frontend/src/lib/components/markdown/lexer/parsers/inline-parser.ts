@@ -79,11 +79,7 @@ export function parseInlineLatex(
 	return { token: null, newPosition: position };
 }
 
-export function parseImage(
-	text: string,
-	position: number,
-	baseOffset: number
-): InlineParseResult {
+export function parseImage(text: string, position: number, baseOffset: number): InlineParseResult {
 	const remaining = text.substring(position);
 	const match = remaining.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
 
@@ -95,16 +91,17 @@ export function parseImage(
 	const url = match[2];
 
 	return {
-		token: builders.createImageToken(url, alt, baseOffset + position, baseOffset + position + match[0].length),
+		token: builders.createImageToken(
+			url,
+			alt,
+			baseOffset + position,
+			baseOffset + position + match[0].length
+		),
 		newPosition: position + match[0].length
 	};
 }
 
-export function parseLink(
-	text: string,
-	position: number,
-	baseOffset: number
-): InlineParseResult {
+export function parseLink(text: string, position: number, baseOffset: number): InlineParseResult {
 	const remaining = text.substring(position);
 
 	const angleBracketMatch = remaining.match(/^<(https?:\/\/[^>]+)>/);
@@ -178,11 +175,7 @@ export function parseInlineCode(
 	};
 }
 
-export function parseBold(
-	text: string,
-	position: number,
-	baseOffset: number
-): InlineParseResult {
+export function parseBold(text: string, position: number, baseOffset: number): InlineParseResult {
 	const remaining = text.substring(position);
 
 	if (remaining.startsWith('**')) {
@@ -222,11 +215,7 @@ export function parseBold(
 	return { token: null, newPosition: position };
 }
 
-export function parseItalic(
-	text: string,
-	position: number,
-	baseOffset: number
-): InlineParseResult {
+export function parseItalic(text: string, position: number, baseOffset: number): InlineParseResult {
 	const remaining = text.substring(position);
 
 	if (remaining.startsWith('*') && !remaining.startsWith('**')) {
@@ -343,7 +332,9 @@ function mergeTextTokens(tokens: Token[]): Token[] {
 	for (const token of tokens) {
 		if (token.type === TokenType.Text) {
 			if (currentText) {
-				(currentText as typeof currentText & { content: string }).content += (token as typeof token & { content: string }).content;
+				(currentText as typeof currentText & { content: string }).content += (
+					token as typeof token & { content: string }
+				).content;
 				currentText.end = token.end;
 			} else {
 				currentText = { ...token };
@@ -436,9 +427,7 @@ export function parseInline(text: string, baseOffset: number = 0): Token[] {
 
 		if (tokenStart > currentPos) {
 			const textContent = text.substring(currentPos, tokenStart);
-			tokens.push(
-				builders.createTextToken(textContent, baseOffset + currentPos, token.start)
-			);
+			tokens.push(builders.createTextToken(textContent, baseOffset + currentPos, token.start));
 		}
 
 		tokens.push(token);
@@ -453,9 +442,7 @@ export function parseInline(text: string, baseOffset: number = 0): Token[] {
 	}
 
 	if (tokens.length === 0) {
-		tokens.push(
-			builders.createTextToken(text, baseOffset, baseOffset + text.length)
-		);
+		tokens.push(builders.createTextToken(text, baseOffset, baseOffset + text.length));
 	}
 
 	return mergeTextTokens(tokens);

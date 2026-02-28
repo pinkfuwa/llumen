@@ -12,7 +12,17 @@ import {
 	parseInline,
 	type InlineParseResult
 } from '../parsers/inline-parser';
-import type { TextToken, LatexInlineToken, ImageToken, LinkToken, InlineCodeToken, BoldToken, ItalicToken, StrikethroughToken, LineBreakToken } from '../tokens';
+import type {
+	TextToken,
+	LatexInlineToken,
+	ImageToken,
+	LinkToken,
+	InlineCodeToken,
+	BoldToken,
+	ItalicToken,
+	StrikethroughToken,
+	LineBreakToken
+} from '../tokens';
 
 describe('InlineParser - Inline Parsers', () => {
 	describe('parseInlineLatex', () => {
@@ -132,7 +142,7 @@ describe('InlineParser - Inline Parsers', () => {
 			const result = parseLink('[**bold link**](https://example.com)', 0, 0);
 			expect(result.token).not.toBeNull();
 			const children = (result.token as LinkToken).children;
-			expect(children?.some(c => c.type === TokenType.Bold)).toBe(true);
+			expect(children?.some((c) => c.type === TokenType.Bold)).toBe(true);
 		});
 
 		test('handles link at offset', () => {
@@ -212,7 +222,7 @@ describe('InlineParser - Inline Parsers', () => {
 			const result = parseBold('**bold with *italic* inside**', 0, 0);
 			expect(result.token).not.toBeNull();
 			const children = (result.token as BoldToken).children;
-			expect(children?.some(c => c.type === TokenType.Italic)).toBe(true);
+			expect(children?.some((c) => c.type === TokenType.Italic)).toBe(true);
 		});
 
 		test('handles offset position', () => {
@@ -363,9 +373,9 @@ describe('InlineParser - Inline Parsers', () => {
 
 		test('contains all element types', () => {
 			const result = parseInline('**bold** *italic* ~~strike~~');
-			const hasBold = result.some(t => t.type === TokenType.Bold);
-			const hasItalic = result.some(t => t.type === TokenType.Italic);
-			const hasStrike = result.some(t => t.type === TokenType.Strikethrough);
+			const hasBold = result.some((t) => t.type === TokenType.Bold);
+			const hasItalic = result.some((t) => t.type === TokenType.Italic);
+			const hasStrike = result.some((t) => t.type === TokenType.Strikethrough);
 			expect(hasBold).toBe(true);
 			expect(hasItalic).toBe(true);
 			expect(hasStrike).toBe(true);
@@ -380,7 +390,7 @@ describe('InlineParser - Inline Parsers', () => {
 		test('merges consecutive text', () => {
 			const result = parseInline('a b c');
 			// Should merge into single text token
-			const textTokens = result.filter(t => t.type === TokenType.Text);
+			const textTokens = result.filter((t) => t.type === TokenType.Text);
 			expect(textTokens.length).toBe(1);
 		});
 
@@ -392,11 +402,11 @@ describe('InlineParser - Inline Parsers', () => {
 
 		test('handles complex mixed content', () => {
 			const result = parseInline('**Bold** with *italic* and `code` and [link](url) and $x^2$');
-			const hasBold = result.some(t => t.type === TokenType.Bold);
-			const hasItalic = result.some(t => t.type === TokenType.Italic);
-			const hasCode = result.some(t => t.type === TokenType.InlineCode);
-			const hasLink = result.some(t => t.type === TokenType.Link);
-			const hasLatex = result.some(t => t.type === TokenType.LatexInline);
+			const hasBold = result.some((t) => t.type === TokenType.Bold);
+			const hasItalic = result.some((t) => t.type === TokenType.Italic);
+			const hasCode = result.some((t) => t.type === TokenType.InlineCode);
+			const hasLink = result.some((t) => t.type === TokenType.Link);
+			const hasLatex = result.some((t) => t.type === TokenType.LatexInline);
 			expect(hasBold).toBe(true);
 			expect(hasItalic).toBe(true);
 			expect(hasCode).toBe(true);
@@ -411,8 +421,8 @@ describe('InlineParser - Inline Parsers', () => {
 
 		test('handles link and image', () => {
 			const result = parseInline('[link](url) ![img](img.png)');
-			const hasLink = result.some(t => t.type === TokenType.Link);
-			const hasImage = result.some(t => t.type === TokenType.Image);
+			const hasLink = result.some((t) => t.type === TokenType.Link);
+			const hasImage = result.some((t) => t.type === TokenType.Image);
 			expect(hasLink).toBe(true);
 			expect(hasImage).toBe(true);
 		});
@@ -420,21 +430,21 @@ describe('InlineParser - Inline Parsers', () => {
 		test('handles bold before italic (no conflict)', () => {
 			const result = parseInline('**bold****bold2**');
 			// Both should be parsed
-			expect(result.filter(t => t.type === TokenType.Bold).length).toBe(2);
+			expect(result.filter((t) => t.type === TokenType.Bold).length).toBe(2);
 		});
 	});
 
 	describe('Inline Parser Priority', () => {
 		test('latex $ is recognized in text', () => {
 			const result = parseInline('$x$');
-			const hasLatex = result.some(t => t.type === TokenType.LatexInline);
+			const hasLatex = result.some((t) => t.type === TokenType.LatexInline);
 			expect(hasLatex).toBe(true);
 		});
 
 		test('image and link are both recognized', () => {
 			const result = parseInline('![img](url) [link](url2)');
-			const hasImage = result.some(t => t.type === TokenType.Image);
-			const hasLink = result.some(t => t.type === TokenType.Link);
+			const hasImage = result.some((t) => t.type === TokenType.Image);
+			const hasLink = result.some((t) => t.type === TokenType.Link);
 			expect(hasImage).toBe(true);
 			expect(hasLink).toBe(true);
 		});
@@ -443,14 +453,14 @@ describe('InlineParser - Inline Parsers', () => {
 	describe('Inline Parser Priority', () => {
 		test('latex $ is recognized in text', () => {
 			const result = parseInline('$x$');
-			const hasLatex = result.some(t => t.type === TokenType.LatexInline);
+			const hasLatex = result.some((t) => t.type === TokenType.LatexInline);
 			expect(hasLatex).toBe(true);
 		});
 
 		test('image and link are both recognized', () => {
 			const result = parseInline('![img](url) [link](url2)');
-			const hasImage = result.some(t => t.type === TokenType.Image);
-			const hasLink = result.some(t => t.type === TokenType.Link);
+			const hasImage = result.some((t) => t.type === TokenType.Image);
+			const hasLink = result.some((t) => t.type === TokenType.Link);
 			expect(hasImage).toBe(true);
 			expect(hasLink).toBe(true);
 		});

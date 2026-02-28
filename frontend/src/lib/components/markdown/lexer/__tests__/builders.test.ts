@@ -305,13 +305,30 @@ describe('TokenBuilders', () => {
 			const lineBreak = builders.createLineBreakToken(start, end);
 
 			const tokens = [
-				text, heading, paragraph, codeBlock, blockquote,
-				orderedList, unorderedList, listItem, table, tableRow,
-				tableCell, hr, latexBlock, latexInline, bold, italic,
-				strike, inlineCode, link, image, lineBreak
+				text,
+				heading,
+				paragraph,
+				codeBlock,
+				blockquote,
+				orderedList,
+				unorderedList,
+				listItem,
+				table,
+				tableRow,
+				tableCell,
+				hr,
+				latexBlock,
+				latexInline,
+				bold,
+				italic,
+				strike,
+				inlineCode,
+				link,
+				image,
+				lineBreak
 			];
 
-			tokens.forEach(token => {
+			tokens.forEach((token) => {
 				expect(token.start).toBe(start);
 				expect(token.end).toBe(end);
 			});

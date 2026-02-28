@@ -24,6 +24,7 @@ Frontend is built with Svelte 5, TailwindCSS, Vite, and TypeScript.
 `frontend/src/lib/api/state/index.ts` emphasizes small bundle sizes by omitting advanced features like automatic deduplication in queries and signal-based inputs.
 
 Following are steps to connect new endpoint:
+
 1. Run codegen to generate typescript type from rust code.
 2. Create file for corresponding resource type in `frontend/src/lib/api/<resource>(.svelte).ts`
 3. Use custom query management library

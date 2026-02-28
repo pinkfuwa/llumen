@@ -34,7 +34,7 @@
 	const toast = $derived($offlineReady || $needRefresh);
 </script>
 
-	{#if toast}
+{#if toast}
 	<div
 		class="fixed right-0 bottom-0 m-4 rounded border border-outline bg-input p-3 shadow-login-bg"
 	>

@@ -63,9 +63,7 @@ export async function parseIncremental(
 	const newContentToParse = source.slice(stableBoundary);
 	const { tokens: newTokens, regions: newRegions } = parseBlocks(newContentToParse, 0);
 
-	const adjustedNewTokens = newTokens.map((token) =>
-		adjustTokenPosition(token, stableBoundary)
-	);
+	const adjustedNewTokens = newTokens.map((token) => adjustTokenPosition(token, stableBoundary));
 
 	const adjustedNewRegions = newRegions.map((region) => ({
 		...region,
@@ -153,8 +151,12 @@ function findLastStableBoundary(result: ParseResult, sourceLength: number): numb
 	return 0;
 }
 
-function checkForBlankLineAfterRegion(result: ParseResult, region: RegionBoundary, sourceLength: number): boolean {
-	const afterRegion = result.tokens.filter(t => t.start >= region.end && t.end <= sourceLength);
+function checkForBlankLineAfterRegion(
+	result: ParseResult,
+	region: RegionBoundary,
+	sourceLength: number
+): boolean {
+	const afterRegion = result.tokens.filter((t) => t.start >= region.end && t.end <= sourceLength);
 	if (afterRegion.length === 0) {
 		return false;
 	}
