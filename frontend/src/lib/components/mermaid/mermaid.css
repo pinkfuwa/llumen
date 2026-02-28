@@ -61,3 +61,7 @@ https://github.com/mermaid-js/mermaid/pull/6775
 	fill: var(--color-component-bg) !important;
 	stroke: var(--color-outline) !important;
 }
+
+.mermaid .edgeLabel p {
+	background-color: transparent !important;
+}
