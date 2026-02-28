@@ -1,0 +1,63 @@
+/*
+mermaid does not support usage of css variable, so here is the hacky one :D
+https://github.com/mermaid-js/mermaid/pull/6775
+*/
+
+.mermaid svg {
+	background-color: transparent !important;
+}
+
+.mermaid svg text,
+.mermaid svg .label,
+.mermaid svg .label text,
+.mermaid svg .nodeLabel,
+.mermaid svg .edgeLabel,
+.mermaid svg .edgeLabel span,
+.mermaid svg .cluster-label,
+.mermaid svg .cluster-label text {
+	color: var(--color-text) !important;
+	fill: var(--color-text) !important;
+}
+
+.mermaid svg .node rect,
+.mermaid svg .node polygon,
+.mermaid svg .node circle,
+.mermaid svg .node ellipse,
+.mermaid svg .node path,
+.mermaid svg .basic.label-container {
+	fill: var(--color-component-bg) !important;
+	stroke: var(--color-outline) !important;
+}
+
+.mermaid svg foreignObject div,
+.mermaid svg foreignObject div span {
+	color: var(--color-text) !important;
+}
+
+.mermaid svg .edgeLabel,
+.mermaid svg .edgeLabel div,
+.mermaid svg .edgeLabel rect,
+.mermaid svg .labelBkg {
+	background-color: var(--color-chat-bg) !important;
+	color: var(--color-text) !important;
+}
+
+.mermaid svg .edgePath .path,
+.mermaid svg .flowchart-link,
+.mermaid svg .edge-thickness-normal,
+.mermaid svg .relationshipLine {
+	stroke: var(--color-outline) !important;
+}
+
+.mermaid svg .marker,
+.mermaid svg .arrowheadPath,
+.mermaid svg .marker path,
+.mermaid svg .arrowMarkerPath {
+	stroke: var(--color-outline) !important;
+	fill: var(--color-outline) !important;
+}
+
+.mermaid svg .cluster rect {
+	fill: var(--color-component-bg) !important;
+	stroke: var(--color-outline) !important;
+}

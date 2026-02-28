@@ -20,7 +20,7 @@
 		rendering = true;
 		error = null;
 
-		render(text, isDark)
+		render(text)
 			.then((result) => {
 				svg = result;
 			})
@@ -50,8 +50,7 @@
 		<pre class="font-mono whitespace-pre-wrap">{text}</pre>
 	</div>
 {:else if svg}
-	<div
-		class="border-radius-md flex justify-center overflow-x-auto rounded-md border border-outline bg-white p-4 {isDark
+	<div class="mermaid border-radius-md flex justify-center overflow-x-auto rounded-md border border-outline bg-white p-4 {isDark
 			? 'dark:bg-neutral-900'
 			: ''}"
 	>
