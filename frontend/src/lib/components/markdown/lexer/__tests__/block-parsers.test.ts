@@ -104,6 +104,72 @@ describe('BlockParser - Block Parsers', () => {
 			expect(result.regions.length).toBe(1);
 			expect(result.regions[0].type).toBe('codeblock');
 		});
+
+		test('parses mermaid language', () => {
+			const source = '```mermaid\ngraph TD;\nA-->B;\n```';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('mermaid');
+			expect((result.token as CodeBlockToken).closed).toBe(true);
+		});
+
+		test('parses graph language as mermaid', () => {
+			const source = '```graph\nTD;\nA-->B;\n```';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('graph');
+			expect((result.token as CodeBlockToken).closed).toBe(true);
+		});
+
+		test('parses flowchart language as mermaid', () => {
+			const source = '```flowchart\nTD;\nA-->B;\n```';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('flowchart');
+		});
+
+		test('parses sequence language as mermaid', () => {
+			const source = '```sequence\nAlice->Bob: Hello\n```';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('sequence');
+		});
+
+		test('parses class language as mermaid', () => {
+			const source = '```class\nClass01 <|-- Avery\n```';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('class');
+		});
+
+		test('parses state language as mermaid', () => {
+			const source = '```state\n[*] --> Active\n```';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('state');
+		});
+
+		test('parses er language as mermaid', () => {
+			const source = '```er\nENTITY ||--|{ ENTITY : relates\n```';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('er');
+		});
+
+		test('parses gantt language as mermaid', () => {
+			const source = '```gantt\ntitle Example\nsection Section\nTask1: 2024-01-01, 1d\n```';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('gantt');
+		});
+
+		test('parses unclosed mermaid code block (streaming)', () => {
+			const source = '```graph\nTD;\nA-->';
+			const result = parseCodeBlock(ctx(source, 0));
+			expect(result.token).not.toBeNull();
+			expect((result.token as CodeBlockToken).language).toBe('graph');
+			expect((result.token as CodeBlockToken).closed).toBe(false);
+		});
 	});
 
 	describe('parseLatexBlock', () => {

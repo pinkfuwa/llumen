@@ -27,6 +27,7 @@
 		"bits-ui": "^2.16.2",
 		"codemirror": "^6.0.2",
 		"fetch-event-stream": "^0.1.6",
+		"mermaid": "^11.6.0",
 		"runed": "^0.37.1",
 		"svelte-i18n": "^4.0.1",
 		"temml": "^0.13.1"

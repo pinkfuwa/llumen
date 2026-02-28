@@ -86,6 +86,12 @@ Publisher: Luke Edwards
 Email: luke@lukeed.com
 URL: https://lukeed.com
 --------------------------------------------------------------------------------
+mermaid@11.12.3
+
+License: MIT
+Repository: https://github.com/mermaid-js/mermaid
+Publisher: Knut Sveidqvist
+--------------------------------------------------------------------------------
 runed@0.37.1
 
 License: MIT
