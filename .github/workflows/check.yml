@@ -121,6 +121,11 @@ jobs:
         working-directory: ./frontend
         run: pnpm exec svelte-check
 
+      - name: Run lint
+        id: lint
+        working-directory: ./frontend
+        run: pnpm lint
+
       - name: Run vitest
         id: vitest
         working-directory: ./frontend

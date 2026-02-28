@@ -43,3 +43,9 @@ Following are steps to connect new endpoint:
    }
    ```
 4. Call the function just created inside reactivity context (must be called during component initialization)
+
+## Commands to Run After Changes
+
+- `pnpm check` - Run svelte-check for TypeScript validation
+- `pnpm lint` - Check code formatting with prettier
+- `pnpm format` - Format code with prettier
