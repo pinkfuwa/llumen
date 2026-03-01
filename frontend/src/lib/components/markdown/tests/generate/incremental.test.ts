@@ -80,9 +80,7 @@ describe('incremental: basic scenarios', () => {
 		const src2 = src1 + 'Second paragraph.';
 		const result2 = parseIncremental(src2, result1.state);
 
-		const paragraphs = result2.result.nodes.filter(
-			(n) => n.type === AstNodeType.Paragraph
-		);
+		const paragraphs = result2.result.nodes.filter((n) => n.type === AstNodeType.Paragraph);
 		expect(paragraphs.length).toBeGreaterThanOrEqual(2);
 	});
 });

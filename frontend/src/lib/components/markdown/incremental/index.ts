@@ -56,9 +56,7 @@ export function parseIncremental(
 		};
 	}
 
-	const stableNodes = state.prevResult.nodes.filter(
-		(node: AstNode) => node.end <= stableBoundary
-	);
+	const stableNodes = state.prevResult.nodes.filter((node: AstNode) => node.end <= stableBoundary);
 
 	const newContentToParse = source.slice(stableBoundary);
 	const { nodes: newNodes, regions: newRegions } = parseSync(newContentToParse);
@@ -165,9 +163,7 @@ function adjustNodePosition(node: AstNode, offset: number): AstNode {
 	};
 
 	if (node.children) {
-		adjusted.children = node.children.map((child: AstNode) =>
-			adjustNodePosition(child, offset)
-		);
+		adjusted.children = node.children.map((child: AstNode) => adjustNodePosition(child, offset));
 	}
 
 	return adjusted;

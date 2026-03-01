@@ -155,12 +155,7 @@ export function buildInlineFromLexTokens(tokens: LexToken[]): AstNode[] {
 					// Re-lex link text for nested inline formatting
 					const linkTextContent = innerTokens.map((t) => t.value).join('');
 					const children =
-						innerTokens.length > 0
-							? buildInlineAst(
-									linkTextContent,
-									innerTokens[0].start
-								)
-							: [];
+						innerTokens.length > 0 ? buildInlineAst(linkTextContent, innerTokens[0].start) : [];
 					const url = tokens[closeIdx].value;
 					const node: LinkNode = {
 						type: AstNodeType.Link,

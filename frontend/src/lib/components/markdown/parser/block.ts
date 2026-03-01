@@ -40,10 +40,7 @@ export function buildBlockAst(tokens: LexToken[], source: string): ParseResult {
 
 	while (i < tokens.length) {
 		// Skip blank lines and lone newlines between blocks
-		if (
-			tokens[i].kind === LexTokenKind.BlankLine ||
-			tokens[i].kind === LexTokenKind.Newline
-		) {
+		if (tokens[i].kind === LexTokenKind.BlankLine || tokens[i].kind === LexTokenKind.Newline) {
 			i++;
 			continue;
 		}
@@ -416,9 +413,7 @@ function parseTable(tokens: LexToken[], i: number, source: string): BlockResult 
 			break;
 		}
 
-		const isTableContent =
-			t.kind === LexTokenKind.TablePipe ||
-			t.kind === LexTokenKind.Text;
+		const isTableContent = t.kind === LexTokenKind.TablePipe || t.kind === LexTokenKind.Text;
 		if (!isTableContent) break;
 
 		// Check if this line has pipes (is a table row)
@@ -512,7 +507,10 @@ function buildTableCells(lineTokens: LexToken[]): TableCellNode[] {
 		if (token.kind === LexTokenKind.TablePipe) {
 			// If we have content, build a cell
 			if (cellTokens.length > 0) {
-				const textContent = cellTokens.map((t) => t.value).join('').trim();
+				const textContent = cellTokens
+					.map((t) => t.value)
+					.join('')
+					.trim();
 				const cellEnd = token.start;
 				if (textContent.length > 0) {
 					const children = buildInlineAst(textContent, cellTokens[0].start);
@@ -533,7 +531,10 @@ function buildTableCells(lineTokens: LexToken[]): TableCellNode[] {
 
 	// Handle content after last pipe
 	if (cellTokens.length > 0) {
-		const textContent = cellTokens.map((t) => t.value).join('').trim();
+		const textContent = cellTokens
+			.map((t) => t.value)
+			.join('')
+			.trim();
 		if (textContent.length > 0) {
 			const cellEnd = cellTokens[cellTokens.length - 1].end;
 			const children = buildInlineAst(textContent, cellTokens[0].start);

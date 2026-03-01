@@ -3,12 +3,17 @@ import type { ParseResult } from '../parser/types';
 let worker: Worker | null = null;
 let requestId = 0;
 
-const pending = new Map<number, { resolve: (result: ParseResult) => void; reject: (err: Error) => void }>();
+const pending = new Map<
+	number,
+	{ resolve: (result: ParseResult) => void; reject: (err: Error) => void }
+>();
 
 function ensureWorker(): Worker {
 	if (!worker) {
 		worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
-		worker.onmessage = (event: MessageEvent<{ result?: ParseResult; error?: string; id: number }>) => {
+		worker.onmessage = (
+			event: MessageEvent<{ result?: ParseResult; error?: string; id: number }>
+		) => {
 			const { result, error, id } = event.data;
 			const cb = pending.get(id);
 			if (cb) {

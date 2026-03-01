@@ -3,15 +3,11 @@
 	import { AstNodeType } from '../parser/types';
 	import type { Snippet } from 'svelte';
 
-	let {
-		node,
-		children
-	}: { node: OrderedListNode | UnorderedListNode; children: Snippet } = $props();
+	let { node, children }: { node: OrderedListNode | UnorderedListNode; children: Snippet } =
+		$props();
 
 	const isOrdered = $derived(node.type === AstNodeType.OrderedList);
-	const startNumber = $derived(
-		isOrdered ? (node as OrderedListNode).startNumber || 1 : undefined
-	);
+	const startNumber = $derived(isOrdered ? (node as OrderedListNode).startNumber || 1 : undefined);
 
 	const numberWidthRem = $derived(((startNumber || 1) + 10).toString().length * 0.7);
 </script>

@@ -2,10 +2,7 @@
 	import { untrack } from 'svelte';
 	import Parser from './Parser.svelte';
 	import { parseMarkdown } from './worker/caller';
-	import {
-		parseIncremental,
-		type IncrementalState
-	} from './incremental';
+	import { parseIncremental, type IncrementalState } from './incremental';
 	import type { ParseResult } from './parser/types';
 
 	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
