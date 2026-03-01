@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Citation from '$lib/components/markdown/Citation.svelte';
+	import Citation from '$lib/components/markdown/component/Citation.svelte';
 	import type { UrlCitation } from '$lib/api/types';
 
 	let { citations }: { citations: UrlCitation[] } = $props();

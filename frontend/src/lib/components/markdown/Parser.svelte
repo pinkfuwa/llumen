@@ -1,108 +1,109 @@
 <script lang="ts">
-	import type {
-		Token,
-		TextToken,
-		ImageToken,
-		LinkToken,
-		TableCellToken,
-		LatexBlockToken,
-		LatexInlineToken,
-		InlineCodeToken,
-		CodeBlockToken
-	} from './lexer';
-	import { TokenType } from './lexer';
+	import {
+		AstNodeType,
+		type AstNode,
+		type HeadingNode,
+		type CodeBlockNode,
+		type OrderedListNode,
+		type UnorderedListNode,
+		type TableCellNode,
+		type LatexBlockNode,
+		type LatexInlineNode,
+		type InlineCodeNode,
+		type LinkNode,
+		type ImageNode,
+		type TextNode
+	} from './parser/types';
 
-	import Blockquote from './Blockquote.svelte';
-	import Br from './Br.svelte';
-	import Code from './Code.svelte';
-	import Codespan from './Codespan.svelte';
-	import Del from './Del.svelte';
-	import Heading from './Heading.svelte';
-	import Hr from './Hr.svelte';
-	import Image from './Image.svelte';
-	import Italic from './Italic.svelte';
-	import Latex from './Latex.svelte';
-	import LatexSpan from './LatexSpan.svelte';
-	import Link from './Link.svelte';
-	import List from './List.svelte';
-	import ListItem from './ListItem.svelte';
-	import Paragraph from './Paragraph.svelte';
-	import Strong from './Strong.svelte';
-	import Table from './Table.svelte';
-	import TableRow from './TableRow.svelte';
-	import TableCell from './TableCell.svelte';
-	import Text from './Text.svelte';
+	import Blockquote from './component/Blockquote.svelte';
+	import Br from './component/Br.svelte';
+	import Code from './component/Code.svelte';
+	import Codespan from './component/Codespan.svelte';
+	import Del from './component/Del.svelte';
+	import Heading from './component/Heading.svelte';
+	import Hr from './component/Hr.svelte';
+	import Image from './component/Image.svelte';
+	import Italic from './component/Italic.svelte';
+	import Latex from './component/Latex.svelte';
+	import LatexSpan from './component/LatexSpan.svelte';
+	import Link from './component/Link.svelte';
+	import List from './component/List.svelte';
+	import ListItem from './component/ListItem.svelte';
+	import Paragraph from './component/Paragraph.svelte';
+	import Strong from './component/Strong.svelte';
+	import Table from './component/Table.svelte';
+	import TableRow from './component/TableRow.svelte';
+	import TableCell from './component/TableCell.svelte';
+	import Text from './component/Text.svelte';
 	import Parser from './Parser.svelte';
 
-	let { tokens, source }: { tokens: Token[]; source: string } = $props();
+	let { nodes }: { nodes: AstNode[] } = $props();
 </script>
 
-{#each tokens as token}
-	{#if token.type === TokenType.Heading}
-		<Heading {token}>
-			<Parser tokens={token.children || []} {source} />
+{#each nodes as node}
+	{#if node.type === AstNodeType.Heading}
+		<Heading node={node as HeadingNode}>
+			<Parser nodes={node.children || []} />
 		</Heading>
-	{:else if token.type === TokenType.Paragraph}
+	{:else if node.type === AstNodeType.Paragraph}
 		<Paragraph>
-			<Parser tokens={token.children || []} {source} />
+			<Parser nodes={node.children || []} />
 		</Paragraph>
-	{:else if token.type === TokenType.CodeBlock}
-		<Code token={token as CodeBlockToken} />
-	{:else if token.type === TokenType.Blockquote}
+	{:else if node.type === AstNodeType.CodeBlock}
+		<Code node={node as CodeBlockNode} />
+	{:else if node.type === AstNodeType.Blockquote}
 		<Blockquote>
-			<Parser tokens={token.children || []} {source} />
+			<Parser nodes={node.children || []} />
 		</Blockquote>
-	{:else if token.type === TokenType.OrderedList || token.type === TokenType.UnorderedList}
-		<List {token} {source}>
-			<Parser tokens={token.children || []} {source} />
+	{:else if node.type === AstNodeType.OrderedList || node.type === AstNodeType.UnorderedList}
+		<List node={node as OrderedListNode | UnorderedListNode}>
+			<Parser nodes={node.children || []} />
 		</List>
-	{:else if token.type === TokenType.ListItem}
+	{:else if node.type === AstNodeType.ListItem}
 		<ListItem>
-			<Parser tokens={token.children || []} {source} />
+			<Parser nodes={node.children || []} />
 		</ListItem>
-	{:else if token.type === TokenType.Table}
+	{:else if node.type === AstNodeType.Table}
 		<Table>
-			<Parser tokens={token.children || []} {source} />
+			<Parser nodes={node.children || []} />
 		</Table>
-	{:else if token.type === TokenType.TableRow}
+	{:else if node.type === AstNodeType.TableRow}
 		<TableRow>
-			<Parser tokens={token.children || []} {source} />
+			<Parser nodes={node.children || []} />
 		</TableRow>
-	{:else if token.type === TokenType.TableCell || token.type === TokenType.TableHeader}
-		<TableCell token={token as TableCellToken}>
-			<Parser tokens={token.children || []} {source} />
+	{:else if node.type === AstNodeType.TableCell}
+		<TableCell node={node as TableCellNode}>
+			<Parser nodes={node.children || []} />
 		</TableCell>
-	{:else if token.type === TokenType.HorizontalRule}
+	{:else if node.type === AstNodeType.HorizontalRule}
 		<Hr />
-	{:else if token.type === TokenType.LatexBlock}
-		<Latex token={token as LatexBlockToken} />
-	{:else if token.type === TokenType.LatexInline}
-		<LatexSpan token={token as LatexInlineToken} />
-	{:else if token.type === TokenType.Bold}
+	{:else if node.type === AstNodeType.LatexBlock}
+		<Latex node={node as LatexBlockNode} />
+	{:else if node.type === AstNodeType.LatexInline}
+		<LatexSpan node={node as LatexInlineNode} />
+	{:else if node.type === AstNodeType.Bold}
 		<Strong>
-			<Parser tokens={token.children || []} {source} />
+			<Parser nodes={node.children || []} />
 		</Strong>
-	{:else if token.type === TokenType.Italic}
+	{:else if node.type === AstNodeType.Italic}
 		<Italic>
-			<Parser tokens={token.children || []} {source} />
+			<Parser nodes={node.children || []} />
 		</Italic>
-	{:else if token.type === TokenType.Strikethrough}
-		<Del {token} {source}>
-			<Parser tokens={token.children || []} {source} />
+	{:else if node.type === AstNodeType.Strikethrough}
+		<Del>
+			<Parser nodes={node.children || []} />
 		</Del>
-	{:else if token.type === TokenType.InlineCode}
-		<Codespan token={token as InlineCodeToken} />
-	{:else if token.type === TokenType.Link}
-		<Link token={token as LinkToken}>
-			<Parser tokens={token.children || []} {source} />
+	{:else if node.type === AstNodeType.InlineCode}
+		<Codespan node={node as InlineCodeNode} />
+	{:else if node.type === AstNodeType.Link}
+		<Link node={node as LinkNode}>
+			<Parser nodes={node.children || []} />
 		</Link>
-	{:else if token.type === TokenType.Image}
-		<Image token={token as ImageToken} />
-	{:else if token.type === TokenType.LineBreak}
+	{:else if node.type === AstNodeType.Image}
+		<Image node={node as ImageNode} />
+	{:else if node.type === AstNodeType.LineBreak}
 		<Br />
-	{:else if token.type === TokenType.Text}
-		<Text token={token as TextToken} />
-	{:else}
-		<span>Unknown token type: {token.type}</span>
+	{:else if node.type === AstNodeType.Text}
+		<Text node={node as TextNode} />
 	{/if}
 {/each}

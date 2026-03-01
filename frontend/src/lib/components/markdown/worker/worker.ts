@@ -1,12 +1,11 @@
-import { parse } from '../lexer';
+import { parseSync } from '../parser/block';
 
-self.onmessage = async (event) => {
+self.onmessage = (event: MessageEvent<{ source: string; id: number }>) => {
 	const { source, id } = event.data;
 	try {
-		const result = parse(source);
+		const result = parseSync(source);
 		self.postMessage({ result, id });
 	} catch (error) {
-		console.error(error);
 		let message: string;
 		if (
 			typeof error === 'object' &&

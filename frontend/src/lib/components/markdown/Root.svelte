@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Parser from './Parser.svelte';
-	import { parseMarkdown } from './worker';
-	import { parseIncremental, type IncrementalState } from './lexer';
-	import type { ParseResult } from './lexer';
+	import { parseMarkdown } from './worker/caller';
+	import {
+		parseIncremental,
+		type IncrementalState
+	} from './incremental';
+	import type { ParseResult } from './parser/types';
 
 	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
 
@@ -15,33 +18,34 @@
 
 	let pendingSource: string | null = null;
 
-	async function doIncrementalParse(currentSource: string) {
+	function doIncrementalParse(currentSource: string) {
 		const currentState = untrack(() => incrementalState);
 
 		try {
-			const parseResult = await parseIncremental(currentSource, currentState);
+			const parseResult = parseIncremental(currentSource, currentState);
 			result = parseResult.result;
 			incrementalState = parseResult.state;
 		} catch (error) {
 			console.error('Incremental parse error:', error);
-			// Fallback to full parse
-			result = await parseMarkdown(currentSource);
-			incrementalState = {
-				prevSource: currentSource,
-				prevResult: result,
-				newContentStart: currentSource.length
-			};
+			parseMarkdown(currentSource)
+				.then((r) => {
+					result = r;
+					incrementalState = {
+						prevSource: currentSource,
+						prevResult: r,
+						newContentStart: currentSource.length
+					};
+				})
+				.catch((e) => console.error('Fallback parse error:', e));
 		}
 	}
 
 	async function doFullParse(currentSource: string) {
 		try {
 			result = await parseMarkdown(currentSource);
-			// Reset incremental state
 			incrementalState = null;
 		} catch (error) {
 			console.error('Parse error:', error);
-			// Show raw text on error
 			result = null;
 		}
 	}
@@ -50,19 +54,17 @@
 		pendingSource = source;
 
 		if (!incremental) {
-			// Non-incremental mode: use web worker, no throttling
 			if (throttleTimer != null) {
 				clearTimeout(throttleTimer);
 				throttleTimer = null;
 			}
 			doFullParse(source);
 		} else {
-			// Incremental mode: parse in main thread with throttling
 			if (!throttleTimer) {
-				const runThrottle = async () => {
+				const runThrottle = () => {
 					const lastParsedSource = untrack(() => pendingSource);
 					if (lastParsedSource !== null) {
-						await doIncrementalParse(lastParsedSource);
+						doIncrementalParse(lastParsedSource);
 					}
 
 					const currentPending = untrack(() => pendingSource);
@@ -86,6 +88,6 @@
 	</div>
 {:else}
 	<div class="space-y-2">
-		<Parser tokens={result.tokens} {source} />
+		<Parser nodes={result.nodes} />
 	</div>
 {/if}
