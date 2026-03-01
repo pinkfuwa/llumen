@@ -49,10 +49,12 @@ export function skipNewlines(
 }
 
 export function isTableRow(line: string): boolean {
-	if (line.includes('`')) {
-		return false;
-	}
 	const trimmed = line.trim();
+	if (trimmed.includes('`')) {
+		if (!trimmed.startsWith('|')) {
+			return false;
+		}
+	}
 	if (!trimmed.startsWith('|')) {
 		const hasLatex = trimmed.includes('\\(') || trimmed.includes('\\)');
 		if (hasLatex) {

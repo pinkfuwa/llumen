@@ -314,6 +314,16 @@ describe('MarkdownParser - Block-Level Tokens', () => {
 			expect(result.tokens[0].type).toBe(TokenType.Table);
 			expect(result.tokens[1].type).toBe(TokenType.Paragraph);
 		});
+
+		test('parses table with inline code in cells', () => {
+			const markdown =
+				'| 項目 | Llumen (Axum) | Tauri 版本 |\n|------|---------------|------------|\n| 後端啟動 | HTTP 伺服器 | Tauri Commands |\n| 前後端通訊 | `fetch("http://localhost:xxx")` | `invoke("command_name")` |\n| 靜態檔案 | Axum serve static | Tauri 內建 dist |';
+			const result = parse(markdown);
+			expect(result.tokens.length).toBe(1);
+			const table = result.tokens[0] as TableToken;
+			expect(table.type).toBe(TokenType.Table);
+			expect(table.children.length).toBe(4); // 1 header + 3 data rows
+		});
 	});
 
 	describe('Horizontal Rules', () => {

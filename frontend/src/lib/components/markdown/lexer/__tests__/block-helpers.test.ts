@@ -206,6 +206,17 @@ describe('BlockParser - Helper Functions', () => {
 			expect(isTableRow('text `a || b` more')).toBe(false);
 			expect(isTableRow('`x|y|z`')).toBe(false);
 		});
+
+		test('returns true for table rows with inline code', () => {
+			expect(isTableRow('| `code` | text |')).toBe(true);
+			expect(isTableRow('| text | `code` |')).toBe(true);
+			expect(isTableRow('| A | `fetch("http://localhost")` | B |')).toBe(true);
+		});
+
+		test('returns true for indented table rows with inline code', () => {
+			expect(isTableRow('  | `code` | text |')).toBe(true);
+			expect(isTableRow('\t| text | `code` |')).toBe(true);
+		});
 	});
 
 	describe('isTableSeparator', () => {
