@@ -19,7 +19,6 @@
 		if (page.route.id != '/chat/[id]') return;
 		return parseInt(page.params.id!);
 	});
-	console.log();
 
 	$effect(() => {
 		if (li !== entry.target) {

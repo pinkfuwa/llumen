@@ -8,7 +8,8 @@ export default defineConfig({
 		/** @type {any} */ (tailwindcss()),
 		sveltekit(),
 		SvelteKitPWA({
-			// mode: "development",
+			base: '/',
+			registerType: 'prompt'
 		})
 	],
 	build: {

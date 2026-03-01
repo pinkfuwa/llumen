@@ -389,7 +389,7 @@ function startSSE(chatId: number, signal: AbortSignal) {
 				}
 			}
 		} catch (e) {
-			console.log('SSE aborted', e);
+			if (dev) console.log('SSE aborted', e);
 		}
 	});
 }
