@@ -4,7 +4,7 @@ import type {
 	DynamicImportThemeRegistration,
 	HighlighterGeneric
 } from 'shiki/types';
-import { createSingletonShorthands, createdBundledHighlighter } from 'shiki/core';
+import { createSingletonShorthands, createBundledHighlighter } from 'shiki/core';
 import { createJavaScriptRegexEngine } from 'shiki/engine-javascript.mjs';
 
 type BundledLanguage =
@@ -206,7 +206,7 @@ const bundledThemes = {
 	'github-dark': () => import('shiki/themes/github-dark.mjs')
 } as Record<BundledTheme, DynamicImportThemeRegistration>;
 
-const createHighlighter = /* @__PURE__ */ createdBundledHighlighter<BundledLanguage, BundledTheme>({
+const createHighlighter = /* @__PURE__ */ createBundledHighlighter<BundledLanguage, BundledTheme>({
 	langs: bundledLanguages,
 	themes: bundledThemes,
 	engine: () => createJavaScriptRegexEngine()
