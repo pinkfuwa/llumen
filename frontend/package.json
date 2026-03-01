@@ -46,7 +46,7 @@
 		"@vite-pwa/sveltekit": "^1.1.0",
 		"clsx": "^2.1.1",
 		"jsdom": "^28.1.0",
-		"license-checker": "^25.0.1",
+		"license-checker-rseidelsohn": "^4.4.2",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.5.0",
 		"prettier-plugin-tailwindcss": "^0.7.2",
@@ -68,7 +68,8 @@
 			"serialize-javascript": ">=6.0.2",
 			"minimatch": ">=9.0.0",
 			"ajv": ">=8.18.0",
-			"qs": ">=6.14.0"
+			"qs": ">=6.14.0",
+			"glob": ">=11.0.0"
 		}
 	}
 }

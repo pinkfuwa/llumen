@@ -9,7 +9,6 @@ License: MIT
 Repository: https://github.com/codemirror/autocomplete
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
-URL: http://marijnhaverbeke.nl
 --------------------------------------------------------------------------------
 @codemirror/commands@6.10.2
 
@@ -17,15 +16,13 @@ License: MIT
 Repository: https://github.com/codemirror/commands
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
-URL: http://marijnhaverbeke.nl
 --------------------------------------------------------------------------------
-@codemirror/language@6.12.1
+@codemirror/language@6.12.2
 
 License: MIT
 Repository: https://github.com/codemirror/language
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
-URL: http://marijnhaverbeke.nl
 --------------------------------------------------------------------------------
 @codemirror/legacy-modes@6.5.2
 
@@ -33,7 +30,6 @@ License: MIT
 Repository: https://github.com/codemirror/legacy-modes
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
-URL: http://marijnhaverbeke.nl
 --------------------------------------------------------------------------------
 @codemirror/state@6.5.4
 
@@ -41,7 +37,6 @@ License: MIT
 Repository: https://github.com/codemirror/state
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
-URL: http://marijnhaverbeke.nl
 --------------------------------------------------------------------------------
 @codemirror/view@6.39.15
 
@@ -49,7 +44,6 @@ License: MIT
 Repository: https://github.com/codemirror/view
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
-URL: http://marijnhaverbeke.nl
 --------------------------------------------------------------------------------
 @lezer/highlight@1.2.3
 
@@ -76,7 +70,6 @@ License: MIT
 Repository: https://github.com/codemirror/basic-setup
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
-URL: http://marijnhaverbeke.nl
 --------------------------------------------------------------------------------
 fetch-event-stream@0.1.6
 
@@ -84,7 +77,6 @@ License: MIT
 Repository: https://github.com/lukeed/fetch-event-stream
 Publisher: Luke Edwards
 Email: luke@lukeed.com
-URL: https://lukeed.com
 --------------------------------------------------------------------------------
 mermaid@11.12.3
 

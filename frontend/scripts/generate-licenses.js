@@ -15,9 +15,9 @@ async function generateLicenses() {
 	console.log('Generating frontend third-party licenses...');
 
 	try {
-		// Run license-checker with JSON output
+		// Run license-checker-rseidelsohn with JSON output
 		const { stdout } = await execAsync(
-			'pnpm exec license-checker --json --production --excludePrivatePackages',
+			'pnpm exec license-checker-rseidelsohn --json --production --excludePrivatePackages',
 			{ cwd: projectRoot, maxBuffer: 10 * 1024 * 1024 }
 		);
 
