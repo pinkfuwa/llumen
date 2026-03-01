@@ -4,9 +4,11 @@
 	import { isLightTheme } from '$lib/preference';
 	import Monochrome from './Monochrome.svelte';
 
-	let { lang = 'bash', text = '', monochrome = false } = $props();
+	let { lang = 'text', text = '', monochrome = false } = $props();
 
 	let themeStyle = $derived(getThemeStyle($isLightTheme));
+
+	let monochromeInner = $derived(lang == 'text' || monochrome);
 </script>
 
 {#if text.trim().length != 0}
@@ -14,7 +16,7 @@
 		class="border-radius-md overflow-x-auto rounded-md border border-outline p-2"
 		style={themeStyle}
 	>
-		{#if monochrome}
+		{#if monochromeInner}
 			<Monochrome {text} />
 		{:else}
 			{#await highlight(text, lang, $isLightTheme ? 'light' : 'dark')}
