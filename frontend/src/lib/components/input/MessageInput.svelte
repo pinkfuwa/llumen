@@ -179,7 +179,13 @@
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
 			<ModelSelector bind:value={modelId} />
 			<ModeSelector bind:value={mode} limited={!selectModelCap?.tool} />
-			<ActionMenu bind:files bind:content {disabled} onFilesAdded={handleNewFiles} />
+			<ActionMenu
+				bind:files
+				bind:content
+				{disabled}
+				audioInput={selectModelCap?.audio_input ?? false}
+				onFilesAdded={handleNewFiles}
+			/>
 		</div>
 		{#if content.length != 0}
 			<MarkdownBtn bind:isEditing />

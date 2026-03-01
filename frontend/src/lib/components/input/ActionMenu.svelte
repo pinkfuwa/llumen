@@ -11,11 +11,13 @@
 		files = $bindable([]),
 		content = $bindable(''),
 		disabled = false,
+		audioInput = false,
 		onFilesAdded
 	}: {
 		files: File[];
 		content: string;
 		disabled?: boolean;
+		audioInput?: boolean;
 		onFilesAdded?: (files: File[]) => void;
 	} = $props();
 
@@ -166,8 +168,10 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover"
+			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover aria-disabled:text-text aria-disabled:opacity-50"
 			onSelect={openRecordDialog}
+			disabled={!audioInput}
+			data-disabled={!audioInput ? 'true' : 'false'}
 		>
 			<Mic class="size-4" />
 			<span>{$_('chat.record_audio')}</span>
