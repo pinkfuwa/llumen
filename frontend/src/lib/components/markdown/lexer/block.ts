@@ -56,10 +56,7 @@ function isLatexBlockOpen(source: string, pos: number): { delimiter: string; ski
 		return { delimiter: '\\[', skip: trimmedOffset + 2 };
 	}
 	if (source.substring(trimmedPos, trimmedPos + 2) === '$$') {
-		// $$ must be followed by newline to be a block delimiter
-		if (source[trimmedPos + 2] === '\n' || trimmedPos + 2 >= source.length) {
-			return { delimiter: '$$', skip: trimmedOffset + 2 };
-		}
+		return { delimiter: '$$', skip: trimmedOffset + 2 };
 	}
 	return null;
 }

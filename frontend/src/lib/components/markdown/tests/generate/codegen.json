@@ -2,87 +2,419 @@
 	{
 		"name": "heading-1",
 		"markdown": "# Heading 1",
-		"expectedTypes": ["Heading"],
+		"expectedTypes": [
+			"Heading"
+		],
 		"chunks": [
-			["# He", "a", "d", "i", "n", "g", " ", "1"],
-			["#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "1"],
-			["# Hea", "d", "i", "n", "g", " ", "1"]
+			[
+				"# He",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"1"
+			],
+			[
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"1"
+			],
+			[
+				"# Hea",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"1"
+			]
 		]
 	},
 	{
 		"name": "heading-2",
 		"markdown": "## Heading 2",
-		"expectedTypes": ["Heading"],
+		"expectedTypes": [
+			"Heading"
+		],
 		"chunks": [
-			["## H", "e", "a", "d", "i", "n", "g", " ", "2"],
-			["#", "#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "2"],
-			["## He", "a", "d", "i", "n", "g", " ", "2"]
+			[
+				"## H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"2"
+			],
+			[
+				"#",
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"2"
+			],
+			[
+				"## He",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"2"
+			]
 		]
 	},
 	{
 		"name": "heading-3",
 		"markdown": "### Heading 3",
-		"expectedTypes": ["Heading"],
+		"expectedTypes": [
+			"Heading"
+		],
 		"chunks": [
-			["### ", "H", "e", "a", "d", "i", "n", "g", " ", "3"],
-			["#", "#", "#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "3"],
-			["### H", "e", "a", "d", "i", "n", "g", " ", "3"]
+			[
+				"### ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"3"
+			],
+			[
+				"#",
+				"#",
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"3"
+			],
+			[
+				"### H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"3"
+			]
 		]
 	},
 	{
 		"name": "heading-4",
 		"markdown": "#### Heading 4",
-		"expectedTypes": ["Heading"],
+		"expectedTypes": [
+			"Heading"
+		],
 		"chunks": [
-			["####", " ", "H", "e", "a", "d", "i", "n", "g", " ", "4"],
-			["#", "#", "#", "#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "4"],
-			["#### ", "H", "e", "a", "d", "i", "n", "g", " ", "4"]
+			[
+				"####",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"4"
+			],
+			[
+				"#",
+				"#",
+				"#",
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"4"
+			],
+			[
+				"#### ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"4"
+			]
 		]
 	},
 	{
 		"name": "heading-5",
 		"markdown": "##### Heading 5",
-		"expectedTypes": ["Heading"],
+		"expectedTypes": [
+			"Heading"
+		],
 		"chunks": [
-			["####", "#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "5"],
-			["#", "#", "#", "#", "#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "5"],
-			["#####", " ", "H", "e", "a", "d", "i", "n", "g", " ", "5"]
+			[
+				"####",
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"5"
+			],
+			[
+				"#",
+				"#",
+				"#",
+				"#",
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"5"
+			],
+			[
+				"#####",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"5"
+			]
 		]
 	},
 	{
 		"name": "heading-6",
 		"markdown": "###### Heading 6",
-		"expectedTypes": ["Heading"],
+		"expectedTypes": [
+			"Heading"
+		],
 		"chunks": [
-			["####", "#", "#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "6"],
-			["#", "#", "#", "#", "#", "#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "6"],
-			["#####", "#", " ", "H", "e", "a", "d", "i", "n", "g", " ", "6"]
+			[
+				"####",
+				"#",
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"6"
+			],
+			[
+				"#",
+				"#",
+				"#",
+				"#",
+				"#",
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"6"
+			],
+			[
+				"#####",
+				"#",
+				" ",
+				"H",
+				"e",
+				"a",
+				"d",
+				"i",
+				"n",
+				"g",
+				" ",
+				"6"
+			]
 		]
 	},
 	{
 		"name": "paragraph-simple",
 		"markdown": "Just a paragraph.",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["Just", " ", "a", " ", "p", "a", "r", "a", "g", "r", "a", "p", "h", "."],
-			["J", "u", "s", "t", " ", "a", " ", "p", "a", "r", "a", "g", "r", "a", "p", "h", "."],
-			["Just ", "a", " ", "p", "a", "r", "a", "g", "r", "a", "p", "h", "."]
+			[
+				"Just",
+				" ",
+				"a",
+				" ",
+				"p",
+				"a",
+				"r",
+				"a",
+				"g",
+				"r",
+				"a",
+				"p",
+				"h",
+				"."
+			],
+			[
+				"J",
+				"u",
+				"s",
+				"t",
+				" ",
+				"a",
+				" ",
+				"p",
+				"a",
+				"r",
+				"a",
+				"g",
+				"r",
+				"a",
+				"p",
+				"h",
+				"."
+			],
+			[
+				"Just ",
+				"a",
+				" ",
+				"p",
+				"a",
+				"r",
+				"a",
+				"g",
+				"r",
+				"a",
+				"p",
+				"h",
+				"."
+			]
 		]
 	},
 	{
 		"name": "paragraph-multiline",
 		"markdown": "Line one\nLine two",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["Line", " ", "o", "n", "e", "\n", "L", "i", "n", "e", " ", "t", "w", "o"],
-			["L", "i", "n", "e", " ", "o", "n", "e", "\n", "L", "i", "n", "e", " ", "t", "w", "o"],
-			["Line ", "o", "n", "e", "\n", "L", "i", "n", "e", " ", "t", "w", "o"]
+			[
+				"Line",
+				" ",
+				"o",
+				"n",
+				"e",
+				"\n",
+				"L",
+				"i",
+				"n",
+				"e",
+				" ",
+				"t",
+				"w",
+				"o"
+			],
+			[
+				"L",
+				"i",
+				"n",
+				"e",
+				" ",
+				"o",
+				"n",
+				"e",
+				"\n",
+				"L",
+				"i",
+				"n",
+				"e",
+				" ",
+				"t",
+				"w",
+				"o"
+			],
+			[
+				"Line ",
+				"o",
+				"n",
+				"e",
+				"\n",
+				"L",
+				"i",
+				"n",
+				"e",
+				" ",
+				"t",
+				"w",
+				"o"
+			]
 		]
 	},
 	{
 		"name": "paragraph-multiple",
 		"markdown": "First paragraph\n\nSecond paragraph",
-		"expectedTypes": ["Paragraph", "Paragraph"],
+		"expectedTypes": [
+			"Paragraph",
+			"Paragraph"
+		],
 		"chunks": [
 			[
 				"Firs",
@@ -187,7 +519,9 @@
 	{
 		"name": "code-block-js",
 		"markdown": "```javascript\nconst x = 1;\n```",
-		"expectedTypes": ["CodeBlock"],
+		"expectedTypes": [
+			"CodeBlock"
+		],
 		"chunks": [
 			[
 				"```j",
@@ -283,17 +617,71 @@
 	{
 		"name": "code-block-no-lang",
 		"markdown": "```\nplain code\n```",
-		"expectedTypes": ["CodeBlock"],
+		"expectedTypes": [
+			"CodeBlock"
+		],
 		"chunks": [
-			["```\n", "p", "l", "a", "i", "n", " ", "c", "o", "d", "e", "\n", "`", "`", "`"],
-			["`", "`", "`", "\n", "p", "l", "a", "i", "n", " ", "c", "o", "d", "e", "\n", "`", "`", "`"],
-			["```\np", "l", "a", "i", "n", " ", "c", "o", "d", "e", "\n", "`", "`", "`"]
+			[
+				"```\n",
+				"p",
+				"l",
+				"a",
+				"i",
+				"n",
+				" ",
+				"c",
+				"o",
+				"d",
+				"e",
+				"\n",
+				"`",
+				"`",
+				"`"
+			],
+			[
+				"`",
+				"`",
+				"`",
+				"\n",
+				"p",
+				"l",
+				"a",
+				"i",
+				"n",
+				" ",
+				"c",
+				"o",
+				"d",
+				"e",
+				"\n",
+				"`",
+				"`",
+				"`"
+			],
+			[
+				"```\np",
+				"l",
+				"a",
+				"i",
+				"n",
+				" ",
+				"c",
+				"o",
+				"d",
+				"e",
+				"\n",
+				"`",
+				"`",
+				"`"
+			]
 		]
 	},
 	{
 		"name": "code-block-unclosed",
 		"markdown": "```python\ndef foo():\n    pass",
-		"expectedTypes": ["CodeBlock"],
+		"expectedTypes": [
+			"CodeBlock"
+		],
 		"chunks": [
 			[
 				"```p",
@@ -386,45 +774,163 @@
 	{
 		"name": "hr-dashes",
 		"markdown": "---",
-		"expectedTypes": ["HorizontalRule"],
-		"chunks": [["---"], ["-", "-", "-"], ["---"]]
+		"expectedTypes": [
+			"HorizontalRule"
+		],
+		"chunks": [
+			[
+				"---"
+			],
+			[
+				"-",
+				"-",
+				"-"
+			],
+			[
+				"---"
+			]
+		]
 	},
 	{
 		"name": "hr-stars",
 		"markdown": "***",
-		"expectedTypes": ["HorizontalRule"],
-		"chunks": [["***"], ["*", "*", "*"], ["***"]]
+		"expectedTypes": [
+			"HorizontalRule"
+		],
+		"chunks": [
+			[
+				"***"
+			],
+			[
+				"*",
+				"*",
+				"*"
+			],
+			[
+				"***"
+			]
+		]
 	},
 	{
 		"name": "hr-underscores",
 		"markdown": "___",
-		"expectedTypes": ["HorizontalRule"],
-		"chunks": [["___"], ["_", "_", "_"], ["___"]]
+		"expectedTypes": [
+			"HorizontalRule"
+		],
+		"chunks": [
+			[
+				"___"
+			],
+			[
+				"_",
+				"_",
+				"_"
+			],
+			[
+				"___"
+			]
+		]
 	},
 	{
 		"name": "blockquote-single",
 		"markdown": "> A quote",
-		"expectedTypes": ["Blockquote"],
+		"expectedTypes": [
+			"Blockquote"
+		],
 		"chunks": [
-			["> A ", "q", "u", "o", "t", "e"],
-			[">", " ", "A", " ", "q", "u", "o", "t", "e"],
-			["> A q", "u", "o", "t", "e"]
+			[
+				"> A ",
+				"q",
+				"u",
+				"o",
+				"t",
+				"e"
+			],
+			[
+				">",
+				" ",
+				"A",
+				" ",
+				"q",
+				"u",
+				"o",
+				"t",
+				"e"
+			],
+			[
+				"> A q",
+				"u",
+				"o",
+				"t",
+				"e"
+			]
 		]
 	},
 	{
 		"name": "blockquote-multi",
 		"markdown": "> Line 1\n> Line 2",
-		"expectedTypes": ["Blockquote"],
+		"expectedTypes": [
+			"Blockquote"
+		],
 		"chunks": [
-			["> Li", "n", "e", " ", "1", "\n", ">", " ", "L", "i", "n", "e", " ", "2"],
-			[">", " ", "L", "i", "n", "e", " ", "1", "\n", ">", " ", "L", "i", "n", "e", " ", "2"],
-			["> Lin", "e", " ", "1", "\n", ">", " ", "L", "i", "n", "e", " ", "2"]
+			[
+				"> Li",
+				"n",
+				"e",
+				" ",
+				"1",
+				"\n",
+				">",
+				" ",
+				"L",
+				"i",
+				"n",
+				"e",
+				" ",
+				"2"
+			],
+			[
+				">",
+				" ",
+				"L",
+				"i",
+				"n",
+				"e",
+				" ",
+				"1",
+				"\n",
+				">",
+				" ",
+				"L",
+				"i",
+				"n",
+				"e",
+				" ",
+				"2"
+			],
+			[
+				"> Lin",
+				"e",
+				" ",
+				"1",
+				"\n",
+				">",
+				" ",
+				"L",
+				"i",
+				"n",
+				"e",
+				" ",
+				"2"
+			]
 		]
 	},
 	{
 		"name": "ul-basic",
 		"markdown": "- Alpha\n- Beta\n- Gamma",
-		"expectedTypes": ["UnorderedList"],
+		"expectedTypes": [
+			"UnorderedList"
+		],
 		"chunks": [
 			[
 				"- Al",
@@ -496,17 +1002,50 @@
 	{
 		"name": "ul-star",
 		"markdown": "* One\n* Two",
-		"expectedTypes": ["UnorderedList"],
+		"expectedTypes": [
+			"UnorderedList"
+		],
 		"chunks": [
-			["* On", "e", "\n", "*", " ", "T", "w", "o"],
-			["*", " ", "O", "n", "e", "\n", "*", " ", "T", "w", "o"],
-			["* One", "\n", "*", " ", "T", "w", "o"]
+			[
+				"* On",
+				"e",
+				"\n",
+				"*",
+				" ",
+				"T",
+				"w",
+				"o"
+			],
+			[
+				"*",
+				" ",
+				"O",
+				"n",
+				"e",
+				"\n",
+				"*",
+				" ",
+				"T",
+				"w",
+				"o"
+			],
+			[
+				"* One",
+				"\n",
+				"*",
+				" ",
+				"T",
+				"w",
+				"o"
+			]
 		]
 	},
 	{
 		"name": "ol-basic",
 		"markdown": "1. First\n2. Second\n3. Third",
-		"expectedTypes": ["OrderedList"],
+		"expectedTypes": [
+			"OrderedList"
+		],
 		"chunks": [
 			[
 				"1. F",
@@ -593,17 +1132,59 @@
 	{
 		"name": "ol-start-5",
 		"markdown": "5. Five\n6. Six",
-		"expectedTypes": ["OrderedList"],
+		"expectedTypes": [
+			"OrderedList"
+		],
 		"chunks": [
-			["5. F", "i", "v", "e", "\n", "6", ".", " ", "S", "i", "x"],
-			["5", ".", " ", "F", "i", "v", "e", "\n", "6", ".", " ", "S", "i", "x"],
-			["5. Fi", "v", "e", "\n", "6", ".", " ", "S", "i", "x"]
+			[
+				"5. F",
+				"i",
+				"v",
+				"e",
+				"\n",
+				"6",
+				".",
+				" ",
+				"S",
+				"i",
+				"x"
+			],
+			[
+				"5",
+				".",
+				" ",
+				"F",
+				"i",
+				"v",
+				"e",
+				"\n",
+				"6",
+				".",
+				" ",
+				"S",
+				"i",
+				"x"
+			],
+			[
+				"5. Fi",
+				"v",
+				"e",
+				"\n",
+				"6",
+				".",
+				" ",
+				"S",
+				"i",
+				"x"
+			]
 		]
 	},
 	{
 		"name": "table-basic",
 		"markdown": "| A | B |\n|---|---|\n| 1 | 2 |",
-		"expectedTypes": ["Table"],
+		"expectedTypes": [
+			"Table"
+		],
 		"chunks": [
 			[
 				"| A ",
@@ -696,7 +1277,9 @@
 	{
 		"name": "table-multi-row",
 		"markdown": "| X | Y | Z |\n|---|---|---|\n| a | b | c |\n| d | e | f |",
-		"expectedTypes": ["Table"],
+		"expectedTypes": [
+			"Table"
+		],
 		"chunks": [
 			[
 				"| X ",
@@ -866,19 +1449,79 @@
 	{
 		"name": "latex-block-dollar",
 		"markdown": "$$\nE = mc^2\n$$",
-		"expectedTypes": ["LatexBlock"],
+		"expectedTypes": [
+			"LatexBlock"
+		],
 		"chunks": [
-			["$$\nE", " ", "=", " ", "m", "c", "^", "2", "\n", "$", "$"],
-			["$", "$", "\n", "E", " ", "=", " ", "m", "c", "^", "2", "\n", "$", "$"],
-			["$$\nE ", "=", " ", "m", "c", "^", "2", "\n", "$", "$"]
+			[
+				"$$\nE",
+				" ",
+				"=",
+				" ",
+				"m",
+				"c",
+				"^",
+				"2",
+				"\n",
+				"$",
+				"$"
+			],
+			[
+				"$",
+				"$",
+				"\n",
+				"E",
+				" ",
+				"=",
+				" ",
+				"m",
+				"c",
+				"^",
+				"2",
+				"\n",
+				"$",
+				"$"
+			],
+			[
+				"$$\nE ",
+				"=",
+				" ",
+				"m",
+				"c",
+				"^",
+				"2",
+				"\n",
+				"$",
+				"$"
+			]
 		]
 	},
 	{
 		"name": "latex-block-bracket",
 		"markdown": "\\[\n\\sum_{i=0}^n i\n\\]",
-		"expectedTypes": ["LatexBlock"],
+		"expectedTypes": [
+			"LatexBlock"
+		],
 		"chunks": [
-			["\\[\n\\", "s", "u", "m", "_", "{", "i", "=", "0", "}", "^", "n", " ", "i", "\n", "\\", "]"],
+			[
+				"\\[\n\\",
+				"s",
+				"u",
+				"m",
+				"_",
+				"{",
+				"i",
+				"=",
+				"0",
+				"}",
+				"^",
+				"n",
+				" ",
+				"i",
+				"\n",
+				"\\",
+				"]"
+			],
 			[
 				"\\",
 				"[",
@@ -901,53 +1544,190 @@
 				"\\",
 				"]"
 			],
-			["\\[\n\\s", "u", "m", "_", "{", "i", "=", "0", "}", "^", "n", " ", "i", "\n", "\\", "]"]
+			[
+				"\\[\n\\s",
+				"u",
+				"m",
+				"_",
+				"{",
+				"i",
+				"=",
+				"0",
+				"}",
+				"^",
+				"n",
+				" ",
+				"i",
+				"\n",
+				"\\",
+				"]"
+			]
 		]
 	},
 	{
 		"name": "inline-bold",
 		"markdown": "**bold text**",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["**bo", "l", "d", " ", "t", "e", "x", "t", "*", "*"],
-			["*", "*", "b", "o", "l", "d", " ", "t", "e", "x", "t", "*", "*"],
-			["**bol", "d", " ", "t", "e", "x", "t", "*", "*"]
+			[
+				"**bo",
+				"l",
+				"d",
+				" ",
+				"t",
+				"e",
+				"x",
+				"t",
+				"*",
+				"*"
+			],
+			[
+				"*",
+				"*",
+				"b",
+				"o",
+				"l",
+				"d",
+				" ",
+				"t",
+				"e",
+				"x",
+				"t",
+				"*",
+				"*"
+			],
+			[
+				"**bol",
+				"d",
+				" ",
+				"t",
+				"e",
+				"x",
+				"t",
+				"*",
+				"*"
+			]
 		]
 	},
 	{
 		"name": "inline-italic",
 		"markdown": "*italic text*",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["*ita", "l", "i", "c", " ", "t", "e", "x", "t", "*"],
-			["*", "i", "t", "a", "l", "i", "c", " ", "t", "e", "x", "t", "*"],
-			["*ital", "i", "c", " ", "t", "e", "x", "t", "*"]
+			[
+				"*ita",
+				"l",
+				"i",
+				"c",
+				" ",
+				"t",
+				"e",
+				"x",
+				"t",
+				"*"
+			],
+			[
+				"*",
+				"i",
+				"t",
+				"a",
+				"l",
+				"i",
+				"c",
+				" ",
+				"t",
+				"e",
+				"x",
+				"t",
+				"*"
+			],
+			[
+				"*ital",
+				"i",
+				"c",
+				" ",
+				"t",
+				"e",
+				"x",
+				"t",
+				"*"
+			]
 		]
 	},
 	{
 		"name": "inline-strike",
 		"markdown": "~~struck~~",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["~~st", "r", "u", "c", "k", "~", "~"],
-			["~", "~", "s", "t", "r", "u", "c", "k", "~", "~"],
-			["~~str", "u", "c", "k", "~", "~"]
+			[
+				"~~st",
+				"r",
+				"u",
+				"c",
+				"k",
+				"~",
+				"~"
+			],
+			[
+				"~",
+				"~",
+				"s",
+				"t",
+				"r",
+				"u",
+				"c",
+				"k",
+				"~",
+				"~"
+			],
+			[
+				"~~str",
+				"u",
+				"c",
+				"k",
+				"~",
+				"~"
+			]
 		]
 	},
 	{
 		"name": "inline-code",
 		"markdown": "`code`",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["`cod", "e", "`"],
-			["`", "c", "o", "d", "e", "`"],
-			["`code", "`"]
+			[
+				"`cod",
+				"e",
+				"`"
+			],
+			[
+				"`",
+				"c",
+				"o",
+				"d",
+				"e",
+				"`"
+			],
+			[
+				"`code",
+				"`"
+			]
 		]
 	},
 	{
 		"name": "inline-link",
 		"markdown": "[click](https://example.com)",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
 			[
 				"[cli",
@@ -1037,9 +1817,30 @@
 	{
 		"name": "inline-autolink",
 		"markdown": "<https://example.com>",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["<htt", "p", "s", ":", "/", "/", "e", "x", "a", "m", "p", "l", "e", ".", "c", "o", "m", ">"],
+			[
+				"<htt",
+				"p",
+				"s",
+				":",
+				"/",
+				"/",
+				"e",
+				"x",
+				"a",
+				"m",
+				"p",
+				"l",
+				"e",
+				".",
+				"c",
+				"o",
+				"m",
+				">"
+			],
 			[
 				"<",
 				"h",
@@ -1063,13 +1864,33 @@
 				"m",
 				">"
 			],
-			["<http", "s", ":", "/", "/", "e", "x", "a", "m", "p", "l", "e", ".", "c", "o", "m", ">"]
+			[
+				"<http",
+				"s",
+				":",
+				"/",
+				"/",
+				"e",
+				"x",
+				"a",
+				"m",
+				"p",
+				"l",
+				"e",
+				".",
+				"c",
+				"o",
+				"m",
+				">"
+			]
 		]
 	},
 	{
 		"name": "inline-image",
 		"markdown": "![alt](https://img.png)",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
 			[
 				"![al",
@@ -1144,9 +1965,28 @@
 	{
 		"name": "inline-latex-paren",
 		"markdown": "The \\(x^2\\) formula",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["The ", "\\", "(", "x", "^", "2", "\\", ")", " ", "f", "o", "r", "m", "u", "l", "a"],
+			[
+				"The ",
+				"\\",
+				"(",
+				"x",
+				"^",
+				"2",
+				"\\",
+				")",
+				" ",
+				"f",
+				"o",
+				"r",
+				"m",
+				"u",
+				"l",
+				"a"
+			],
 			[
 				"T",
 				"h",
@@ -1168,33 +2008,142 @@
 				"l",
 				"a"
 			],
-			["The \\", "(", "x", "^", "2", "\\", ")", " ", "f", "o", "r", "m", "u", "l", "a"]
+			[
+				"The \\",
+				"(",
+				"x",
+				"^",
+				"2",
+				"\\",
+				")",
+				" ",
+				"f",
+				"o",
+				"r",
+				"m",
+				"u",
+				"l",
+				"a"
+			]
 		]
 	},
 	{
 		"name": "inline-latex-dollar",
 		"markdown": "Inline $x^2$ math",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["Inli", "n", "e", " ", "$", "x", "^", "2", "$", " ", "m", "a", "t", "h"],
-			["I", "n", "l", "i", "n", "e", " ", "$", "x", "^", "2", "$", " ", "m", "a", "t", "h"],
-			["Inlin", "e", " ", "$", "x", "^", "2", "$", " ", "m", "a", "t", "h"]
+			[
+				"Inli",
+				"n",
+				"e",
+				" ",
+				"$",
+				"x",
+				"^",
+				"2",
+				"$",
+				" ",
+				"m",
+				"a",
+				"t",
+				"h"
+			],
+			[
+				"I",
+				"n",
+				"l",
+				"i",
+				"n",
+				"e",
+				" ",
+				"$",
+				"x",
+				"^",
+				"2",
+				"$",
+				" ",
+				"m",
+				"a",
+				"t",
+				"h"
+			],
+			[
+				"Inlin",
+				"e",
+				" ",
+				"$",
+				"x",
+				"^",
+				"2",
+				"$",
+				" ",
+				"m",
+				"a",
+				"t",
+				"h"
+			]
 		]
 	},
 	{
 		"name": "inline-br",
 		"markdown": "line1<br>line2",
-		"expectedTypes": ["Paragraph"],
+		"expectedTypes": [
+			"Paragraph"
+		],
 		"chunks": [
-			["line", "1", "<", "b", "r", ">", "l", "i", "n", "e", "2"],
-			["l", "i", "n", "e", "1", "<", "b", "r", ">", "l", "i", "n", "e", "2"],
-			["line1", "<", "b", "r", ">", "l", "i", "n", "e", "2"]
+			[
+				"line",
+				"1",
+				"<",
+				"b",
+				"r",
+				">",
+				"l",
+				"i",
+				"n",
+				"e",
+				"2"
+			],
+			[
+				"l",
+				"i",
+				"n",
+				"e",
+				"1",
+				"<",
+				"b",
+				"r",
+				">",
+				"l",
+				"i",
+				"n",
+				"e",
+				"2"
+			],
+			[
+				"line1",
+				"<",
+				"b",
+				"r",
+				">",
+				"l",
+				"i",
+				"n",
+				"e",
+				"2"
+			]
 		]
 	},
 	{
 		"name": "mixed-heading-para-hr",
 		"markdown": "# Title\n\nBody text.\n\n---",
-		"expectedTypes": ["Heading", "Paragraph", "HorizontalRule"],
+		"expectedTypes": [
+			"Heading",
+			"Paragraph",
+			"HorizontalRule"
+		],
 		"chunks": [
 			[
 				"# Ti",
@@ -1272,9 +2221,30 @@
 	{
 		"name": "mixed-code-then-list",
 		"markdown": "```\ncode\n```\n\n- item",
-		"expectedTypes": ["CodeBlock", "UnorderedList"],
+		"expectedTypes": [
+			"CodeBlock",
+			"UnorderedList"
+		],
 		"chunks": [
-			["```\n", "c", "o", "d", "e", "\n", "`", "`", "`", "\n", "\n", "-", " ", "i", "t", "e", "m"],
+			[
+				"```\n",
+				"c",
+				"o",
+				"d",
+				"e",
+				"\n",
+				"`",
+				"`",
+				"`",
+				"\n",
+				"\n",
+				"-",
+				" ",
+				"i",
+				"t",
+				"e",
+				"m"
+			],
 			[
 				"`",
 				"`",
@@ -1297,13 +2267,33 @@
 				"e",
 				"m"
 			],
-			["```\nc", "o", "d", "e", "\n", "`", "`", "`", "\n", "\n", "-", " ", "i", "t", "e", "m"]
+			[
+				"```\nc",
+				"o",
+				"d",
+				"e",
+				"\n",
+				"`",
+				"`",
+				"`",
+				"\n",
+				"\n",
+				"-",
+				" ",
+				"i",
+				"t",
+				"e",
+				"m"
+			]
 		]
 	},
 	{
 		"name": "mixed-quote-then-table",
 		"markdown": "> quoted\n\n| A | B |\n|---|---|\n| 1 | 2 |",
-		"expectedTypes": ["Blockquote", "Table"],
+		"expectedTypes": [
+			"Blockquote",
+			"Table"
+		],
 		"chunks": [
 			[
 				"> qu",
@@ -1426,7 +2416,9 @@
 	{
 		"name": "latex-in-table",
 		"markdown": "| Expr | Val |\n|---|---|\n| \\(|x|\\) | 42 |",
-		"expectedTypes": ["Table"],
+		"expectedTypes": [
+			"Table"
+		],
 		"chunks": [
 			[
 				"| Ex",
@@ -1549,6 +2541,464 @@
 				"2",
 				" ",
 				"|"
+			]
+		]
+	},
+	{
+		"name": "latex-block-dollar-no-newline",
+		"markdown": "$$x^2 + y^2 = z^2$$",
+		"expectedTypes": [
+			"LatexBlock"
+		],
+		"chunks": [
+			[
+				"$$x^",
+				"2",
+				" ",
+				"+",
+				" ",
+				"y",
+				"^",
+				"2",
+				" ",
+				"=",
+				" ",
+				"z",
+				"^",
+				"2",
+				"$",
+				"$"
+			],
+			[
+				"$",
+				"$",
+				"x",
+				"^",
+				"2",
+				" ",
+				"+",
+				" ",
+				"y",
+				"^",
+				"2",
+				" ",
+				"=",
+				" ",
+				"z",
+				"^",
+				"2",
+				"$",
+				"$"
+			],
+			[
+				"$$x^2",
+				" ",
+				"+",
+				" ",
+				"y",
+				"^",
+				"2",
+				" ",
+				"=",
+				" ",
+				"z",
+				"^",
+				"2",
+				"$",
+				"$"
+			]
+		]
+	},
+	{
+		"name": "latex-block-bracket-no-newline",
+		"markdown": "\\[E = mc^2\\]",
+		"expectedTypes": [
+			"LatexBlock"
+		],
+		"chunks": [
+			[
+				"\\[E ",
+				"=",
+				" ",
+				"m",
+				"c",
+				"^",
+				"2",
+				"\\",
+				"]"
+			],
+			[
+				"\\",
+				"[",
+				"E",
+				" ",
+				"=",
+				" ",
+				"m",
+				"c",
+				"^",
+				"2",
+				"\\",
+				"]"
+			],
+			[
+				"\\[E =",
+				" ",
+				"m",
+				"c",
+				"^",
+				"2",
+				"\\",
+				"]"
+			]
+		]
+	},
+	{
+		"name": "latex-block-dollar-sentence-prefix",
+		"markdown": "Here is the theorem:\n$$x^2$$",
+		"expectedTypes": [
+			"Paragraph",
+			"LatexBlock"
+		],
+		"chunks": [
+			[
+				"Here",
+				" ",
+				"i",
+				"s",
+				" ",
+				"t",
+				"h",
+				"e",
+				" ",
+				"t",
+				"h",
+				"e",
+				"o",
+				"r",
+				"e",
+				"m",
+				":",
+				"\n",
+				"$",
+				"$",
+				"x",
+				"^",
+				"2",
+				"$",
+				"$"
+			],
+			[
+				"H",
+				"e",
+				"r",
+				"e",
+				" ",
+				"i",
+				"s",
+				" ",
+				"t",
+				"h",
+				"e",
+				" ",
+				"t",
+				"h",
+				"e",
+				"o",
+				"r",
+				"e",
+				"m",
+				":",
+				"\n",
+				"$",
+				"$",
+				"x",
+				"^",
+				"2",
+				"$",
+				"$"
+			],
+			[
+				"Here ",
+				"i",
+				"s",
+				" ",
+				"t",
+				"h",
+				"e",
+				" ",
+				"t",
+				"h",
+				"e",
+				"o",
+				"r",
+				"e",
+				"m",
+				":",
+				"\n",
+				"$",
+				"$",
+				"x",
+				"^",
+				"2",
+				"$",
+				"$"
+			]
+		]
+	},
+	{
+		"name": "latex-block-bracket-sentence-prefix",
+		"markdown": "Consider:\n\\[F = ma\\]",
+		"expectedTypes": [
+			"Paragraph",
+			"LatexBlock"
+		],
+		"chunks": [
+			[
+				"Cons",
+				"i",
+				"d",
+				"e",
+				"r",
+				":",
+				"\n",
+				"\\",
+				"[",
+				"F",
+				" ",
+				"=",
+				" ",
+				"m",
+				"a",
+				"\\",
+				"]"
+			],
+			[
+				"C",
+				"o",
+				"n",
+				"s",
+				"i",
+				"d",
+				"e",
+				"r",
+				":",
+				"\n",
+				"\\",
+				"[",
+				"F",
+				" ",
+				"=",
+				" ",
+				"m",
+				"a",
+				"\\",
+				"]"
+			],
+			[
+				"Consi",
+				"d",
+				"e",
+				"r",
+				":",
+				"\n",
+				"\\",
+				"[",
+				"F",
+				" ",
+				"=",
+				" ",
+				"m",
+				"a",
+				"\\",
+				"]"
+			]
+		]
+	},
+	{
+		"name": "latex-inline-dollar-mid-sentence",
+		"markdown": "The value is $$42$$ in total.",
+		"expectedTypes": [
+			"Paragraph"
+		],
+		"chunks": [
+			[
+				"The ",
+				"v",
+				"a",
+				"l",
+				"u",
+				"e",
+				" ",
+				"i",
+				"s",
+				" ",
+				"$",
+				"$",
+				"4",
+				"2",
+				"$",
+				"$",
+				" ",
+				"i",
+				"n",
+				" ",
+				"t",
+				"o",
+				"t",
+				"a",
+				"l",
+				"."
+			],
+			[
+				"T",
+				"h",
+				"e",
+				" ",
+				"v",
+				"a",
+				"l",
+				"u",
+				"e",
+				" ",
+				"i",
+				"s",
+				" ",
+				"$",
+				"$",
+				"4",
+				"2",
+				"$",
+				"$",
+				" ",
+				"i",
+				"n",
+				" ",
+				"t",
+				"o",
+				"t",
+				"a",
+				"l",
+				"."
+			],
+			[
+				"The v",
+				"a",
+				"l",
+				"u",
+				"e",
+				" ",
+				"i",
+				"s",
+				" ",
+				"$",
+				"$",
+				"4",
+				"2",
+				"$",
+				"$",
+				" ",
+				"i",
+				"n",
+				" ",
+				"t",
+				"o",
+				"t",
+				"a",
+				"l",
+				"."
+			]
+		]
+	},
+	{
+		"name": "latex-dollar-not-price",
+		"markdown": "This costs $5 and $10 total.",
+		"expectedTypes": [
+			"Paragraph"
+		],
+		"chunks": [
+			[
+				"This",
+				" ",
+				"c",
+				"o",
+				"s",
+				"t",
+				"s",
+				" ",
+				"$",
+				"5",
+				" ",
+				"a",
+				"n",
+				"d",
+				" ",
+				"$",
+				"1",
+				"0",
+				" ",
+				"t",
+				"o",
+				"t",
+				"a",
+				"l",
+				"."
+			],
+			[
+				"T",
+				"h",
+				"i",
+				"s",
+				" ",
+				"c",
+				"o",
+				"s",
+				"t",
+				"s",
+				" ",
+				"$",
+				"5",
+				" ",
+				"a",
+				"n",
+				"d",
+				" ",
+				"$",
+				"1",
+				"0",
+				" ",
+				"t",
+				"o",
+				"t",
+				"a",
+				"l",
+				"."
+			],
+			[
+				"This ",
+				"c",
+				"o",
+				"s",
+				"t",
+				"s",
+				" ",
+				"$",
+				"5",
+				" ",
+				"a",
+				"n",
+				"d",
+				" ",
+				"$",
+				"1",
+				"0",
+				" ",
+				"t",
+				"o",
+				"t",
+				"a",
+				"l",
+				"."
 			]
 		]
 	}

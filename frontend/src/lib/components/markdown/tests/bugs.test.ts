@@ -107,15 +107,6 @@ describe('regression: consecutive blocks', () => {
 	});
 });
 
-describe('regression: LaTeX block delimiters', () => {
-	it('$$ not followed by newline is not block LaTeX', () => {
-		const { nodes } = parseSync('$$x^2$$');
-		// Should NOT be a LaTeX block since $$ is not on its own line
-		// It should be parsed as paragraph with inline content
-		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
-	});
-});
-
 describe('regression: empty constructs', () => {
 	it('empty code block', () => {
 		const { nodes } = parseSync('```\n```');

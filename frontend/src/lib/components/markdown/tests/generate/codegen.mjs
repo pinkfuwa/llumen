@@ -200,6 +200,36 @@ const templates = [
 		name: 'latex-in-table',
 		markdown: '| Expr | Val |\n|---|---|\n| \\(|x|\\) | 42 |',
 		expectedTypes: ['Table']
+	},
+	{
+		name: 'latex-block-dollar-no-newline',
+		markdown: '$$x^2 + y^2 = z^2$$',
+		expectedTypes: ['LatexBlock']
+	},
+	{
+		name: 'latex-block-bracket-no-newline',
+		markdown: '\\[E = mc^2\\]',
+		expectedTypes: ['LatexBlock']
+	},
+	{
+		name: 'latex-block-dollar-sentence-prefix',
+		markdown: 'Here is the theorem:\n$$x^2$$',
+		expectedTypes: ['Paragraph', 'LatexBlock']
+	},
+	{
+		name: 'latex-block-bracket-sentence-prefix',
+		markdown: 'Consider:\n\\[F = ma\\]',
+		expectedTypes: ['Paragraph', 'LatexBlock']
+	},
+	{
+		name: 'latex-inline-dollar-mid-sentence',
+		markdown: 'The value is $$42$$ in total.',
+		expectedTypes: ['Paragraph']
+	},
+	{
+		name: 'latex-dollar-not-price',
+		markdown: 'This costs $5 and $10 total.',
+		expectedTypes: ['Paragraph']
 	}
 ];
 

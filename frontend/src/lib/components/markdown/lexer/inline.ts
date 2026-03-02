@@ -45,6 +45,38 @@ export function lexInline(text: string, baseOffset: number): LexToken[] {
 			}
 		}
 
+		// Inline display math: $$...$$ (must precede single-$ check)
+		if (text[pos] === '$' && text[pos + 1] === '$') {
+			const endPos = text.indexOf('$$', pos + 2);
+			if (endPos !== -1) {
+				const content = text.substring(pos + 2, endPos);
+				if (content.length > 0) {
+					flushText(tokens, text, textStart, pos, baseOffset);
+					tokens.push({
+						kind: LexTokenKind.LatexInlineOpen,
+						start: baseOffset + pos,
+						end: baseOffset + pos + 2,
+						value: '$$'
+					});
+					tokens.push({
+						kind: LexTokenKind.Text,
+						start: baseOffset + pos + 2,
+						end: baseOffset + endPos,
+						value: content
+					});
+					tokens.push({
+						kind: LexTokenKind.LatexInlineClose,
+						start: baseOffset + endPos,
+						end: baseOffset + endPos + 2,
+						value: '$$'
+					});
+					pos = endPos + 2;
+					textStart = pos;
+					continue;
+				}
+			}
+		}
+
 		// Inline LaTeX: $...$  (not $$)
 		if (text[pos] === '$' && text[pos + 1] !== '$') {
 			const endPos = text.indexOf('$', pos + 1);
