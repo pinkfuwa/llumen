@@ -4,6 +4,7 @@ use crate::openrouter::{StreamCompletion, option::CompletionOption};
 use super::capability::CapabilityResolver;
 use super::model_cache::ModelCacheManager;
 use super::{Model, error::Error, raw};
+use http::header::CONTENT_TYPE;
 use protocol::OcrEngine;
 
 use super::HTTP_REFERER;
@@ -206,6 +207,7 @@ impl Openrouter {
             .bearer_auth(&self.api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
+            .header(CONTENT_TYPE, "application/json")
             .json(&req)
             .send()
             .await
@@ -345,6 +347,7 @@ impl Openrouter {
             .bearer_auth(&self.api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
+            .header(CONTENT_TYPE, "application/json")
             .json(&req)
             .send()
             .await

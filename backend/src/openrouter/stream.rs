@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, pin::Pin, task};
 
 use futures_util::FutureExt;
+use http::header::CONTENT_TYPE;
 use reqwest::Client;
 use reqwest_eventsource::{Event, EventSource};
 use tokio_stream::{Stream, StreamExt};
@@ -80,6 +81,7 @@ impl StreamCompletion {
             .bearer_auth(api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
+            .header(CONTENT_TYPE, "application/json")
             .json(&req);
 
         match EventSource::new(builder) {
