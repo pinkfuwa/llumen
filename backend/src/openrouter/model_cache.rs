@@ -89,8 +89,11 @@ impl ModelCache {
     }
 }
 
-async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<raw::Model>, Error> {
-    let client = reqwest::Client::new();
+async fn fetch_models(
+    client: &reqwest::Client,
+    url: &str,
+    api_key: &str,
+) -> Result<Vec<raw::Model>, Error> {
     let response = client
         .get(url)
         .bearer_auth(api_key)
@@ -106,12 +109,13 @@ async fn fetch_models(url: &str, api_key: &str) -> Result<Vec<raw::Model>, Error
 pub(super) struct ModelCacheManager {
     models: Arc<tokio::sync::RwLock<HashMap<String, ModelCache>>>,
     fetch_mutex: Arc<tokio::sync::Mutex<()>>,
+    http_client: reqwest::Client,
     models_endpoint: String,
     api_key: String,
 }
 
 impl ModelCacheManager {
-    pub fn new(models_endpoint: String, api_key: String) -> Self {
+    pub fn new(http_client: reqwest::Client, models_endpoint: String, api_key: String) -> Self {
         let models = Arc::new(tokio::sync::RwLock::new(HashMap::new()));
         let fetch_mutex = Arc::new(tokio::sync::Mutex::new(()));
 
@@ -119,8 +123,9 @@ impl ModelCacheManager {
             let models_clone = models.clone();
             let api_key_clone = api_key.clone();
             let endpoint_clone = models_endpoint.clone();
+            let http_client = http_client.clone();
             tokio::spawn(async move {
-                match fetch_models(&endpoint_clone, &api_key_clone).await {
+                match fetch_models(&http_client, &endpoint_clone, &api_key_clone).await {
                     Ok(model_list) => {
                         log::info!("{} models available", model_list.len());
                         let map: HashMap<String, ModelCache> = model_list
@@ -137,6 +142,7 @@ impl ModelCacheManager {
         Self {
             models,
             fetch_mutex,
+            http_client,
             models_endpoint,
             api_key,
         }
@@ -176,7 +182,7 @@ impl ModelCacheManager {
 
         // Fetch the full model list
         log::info!("Model {} not in cache, fetching full model list", model_id);
-        let model_list = fetch_models(&self.models_endpoint, &self.api_key).await?;
+        let model_list = fetch_models(&self.http_client, &self.models_endpoint, &self.api_key).await?;
 
         log::info!("Fetched {} models", model_list.len());
 

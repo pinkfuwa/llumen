@@ -138,14 +138,16 @@ impl Openrouter {
             log::warn!("Custom API_BASE detected, disabling plugin support");
         }
 
-        let model_cache = ModelCacheManager::new(models_endpoint, api_key.clone());
+        let http_client = reqwest::Client::new();
+
+        let model_cache = ModelCacheManager::new(http_client.clone(), models_endpoint, api_key.clone());
 
         Self {
             api_key,
             chat_completion_endpoint,
             embedding_endpoint,
             model_cache,
-            http_client: reqwest::Client::new(),
+            http_client,
             is_custom_api,
         }
     }
