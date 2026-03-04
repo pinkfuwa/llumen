@@ -1,14 +1,24 @@
 <script lang="ts">
 	import type { LatexInlineNode } from '../parser/types';
 	import LatexComponent from '../../latex/Latex.svelte';
+	import { copy } from '$lib/copy';
 
 	let { node }: { node: LatexInlineNode } = $props();
 
 	const content = $derived(node.content);
+
+	function copyToClipboard() {
+		copy(content);
+	}
 </script>
 
 <span class="inline-block p-1 align-middle">
-	<span class="inline-block max-w-full overflow-x-auto align-middle text-lg">
+	<button
+		type="button"
+		class="inline-block max-w-full cursor-pointer overflow-x-auto align-middle text-lg hover:opacity-80"
+		onclick={copyToClipboard}
+		title="Click to copy LaTeX"
+	>
 		<LatexComponent text={content} />
-	</span>
+	</button>
 </span>
