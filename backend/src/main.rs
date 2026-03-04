@@ -113,10 +113,8 @@ fn load_api_key() -> String {
             println!("Note: llumen read environment variable as well as .env file.");
             println!("You can get a key from https://openrouter.ai/keys");
             println!("Or use alternative setup:");
-            println!(
-                "- configuration: https://github.com/pinkfuwa/llumen/blob/main/docs/user/configuration.md"
-            );
-            println!("- documentation: https://pinkfuwa.github.io/llumen/user/config/model");
+            println!("- configuration: https://pinkfuwa.github.io/llumen/user/config/environment");
+            println!("- documentation: https://pinkfuwa.github.io/llumen/");
 
             #[cfg(windows)]
             {
