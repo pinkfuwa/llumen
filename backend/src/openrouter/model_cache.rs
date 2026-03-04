@@ -182,7 +182,8 @@ impl ModelCacheManager {
 
         // Fetch the full model list
         log::info!("Model {} not in cache, fetching full model list", model_id);
-        let model_list = fetch_models(&self.http_client, &self.models_endpoint, &self.api_key).await?;
+        let model_list =
+            fetch_models(&self.http_client, &self.models_endpoint, &self.api_key).await?;
 
         log::info!("Fetched {} models", model_list.len());
 

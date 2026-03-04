@@ -140,7 +140,8 @@ impl Openrouter {
 
         let http_client = reqwest::Client::new();
 
-        let model_cache = ModelCacheManager::new(http_client.clone(), models_endpoint, api_key.clone());
+        let model_cache =
+            ModelCacheManager::new(http_client.clone(), models_endpoint, api_key.clone());
 
         Self {
             api_key,
