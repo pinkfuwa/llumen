@@ -4,7 +4,7 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseSync } from '../../parser/block';
 import { parseIncremental, type IncrementalState } from '../../incremental';
-import { AstNodeType } from '../../parser/types';
+import { AstNodeType, type AstNode } from '../../parser/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixturesPath = resolve(__dirname, 'codegen.json');
@@ -26,6 +26,25 @@ function loadFixtures(): Fixture[] {
 
 const fixtures = loadFixtures();
 
+function serializeTree(nodes: AstNode[]): unknown[] {
+	return nodes.map((n) => {
+		const obj: Record<string, unknown> = { type: n.type };
+		if (n.children) {
+			obj.children = serializeTree(n.children);
+		}
+		if ('level' in n) obj.level = (n as { level: number }).level;
+		if ('language' in n) obj.language = (n as { language?: string }).language;
+		if ('content' in n) obj.content = (n as { content: string }).content;
+		if ('closed' in n) obj.closed = (n as { closed: boolean }).closed;
+		if ('url' in n) obj.url = (n as { url: string }).url;
+		if ('alt' in n) obj.alt = (n as { alt: string }).alt;
+		if ('isHeader' in n) obj.isHeader = (n as { isHeader: boolean }).isHeader;
+		if ('align' in n) obj.align = (n as { align?: string }).align;
+		if ('startNumber' in n) obj.startNumber = (n as { startNumber?: number }).startNumber;
+		return obj;
+	});
+}
+
 describe.skipIf(fixtures.length === 0)('codegen: incremental parsing', () => {
 	for (const fixture of fixtures) {
 		for (let ci = 0; ci < fixture.chunks.length; ci++) {
@@ -40,16 +59,15 @@ describe.skipIf(fixtures.length === 0)('codegen: incremental parsing', () => {
 					state = result.state;
 				}
 
-				// Final accumulated should equal full markdown
 				expect(accumulated).toBe(fixture.markdown);
 
-				// Compare incremental result with full parse
 				const fullResult = parseSync(fixture.markdown);
-				const incrementalResult = parseIncremental(fixture.markdown, null);
+				expect(state).not.toBeNull();
+				const finalIncrementalResult = state!.prevResult;
 
-				const fullTypes = fullResult.nodes.map((n) => n.type);
-				const incTypes = incrementalResult.result.nodes.map((n) => n.type);
-				expect(incTypes).toEqual(fullTypes);
+				expect(serializeTree(finalIncrementalResult.nodes)).toEqual(
+					serializeTree(fullResult.nodes)
+				);
 			});
 		}
 	}

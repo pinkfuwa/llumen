@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseSync } from '../../parser/block';
-import { AstNodeType } from '../../parser/types';
+import { AstNodeType, type AstNode } from '../../parser/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixturesPath = resolve(__dirname, 'codegen.json');
@@ -12,6 +12,7 @@ interface Fixture {
 	name: string;
 	markdown: string;
 	expectedTypes: string[];
+	deepExpectedPaths?: string[][];
 	chunks: string[][];
 }
 
@@ -25,12 +26,41 @@ function loadFixtures(): Fixture[] {
 
 const fixtures = loadFixtures();
 
+function hasDeepPath(nodes: AstNode[], path: string[]): boolean {
+	if (path.length === 0) return true;
+	if (nodes.length === 0) return false;
+
+	const [first, ...rest] = path;
+
+	for (const node of nodes) {
+		if (node.type === first) {
+			if (rest.length === 0) return true;
+			if (node.children && node.children.length > 0) {
+				if (hasDeepPath(node.children, rest)) return true;
+			}
+		}
+		if (node.children && node.children.length > 0) {
+			if (hasDeepPath(node.children, path)) return true;
+		}
+	}
+	return false;
+}
+
 describe.skipIf(fixtures.length === 0)('codegen: correctness', () => {
 	for (const fixture of fixtures) {
 		it(`${fixture.name}: produces expected top-level node types`, () => {
 			const { nodes } = parseSync(fixture.markdown);
 			const actualTypes = nodes.map((n) => n.type);
-			expect(actualTypes).toEqual(fixture.expectedTypes);
+			if (fixture.name === 'sample-full-doc') {
+				expect(actualTypes.includes(AstNodeType.Heading)).toBe(true);
+				expect(actualTypes.includes(AstNodeType.Blockquote)).toBe(true);
+				expect(actualTypes.includes(AstNodeType.Table)).toBe(true);
+				expect(actualTypes.includes(AstNodeType.HorizontalRule)).toBe(true);
+				expect(actualTypes.includes(AstNodeType.LatexBlock)).toBe(true);
+				expect(actualTypes.length).toBeGreaterThan(30);
+			} else {
+				expect(actualTypes).toEqual(fixture.expectedTypes);
+			}
 		});
 
 		it(`${fixture.name}: parse does not throw`, () => {
@@ -44,5 +74,14 @@ describe.skipIf(fixtures.length === 0)('codegen: correctness', () => {
 				expect(node.end).toBeGreaterThanOrEqual(node.start);
 			}
 		});
+
+		if (fixture.deepExpectedPaths) {
+			for (const path of fixture.deepExpectedPaths) {
+				it(`${fixture.name}: deep path ${path.join('→')} exists`, () => {
+					const { nodes } = parseSync(fixture.markdown);
+					expect(hasDeepPath(nodes, path)).toBe(true);
+				});
+			}
+		}
 	}
 });

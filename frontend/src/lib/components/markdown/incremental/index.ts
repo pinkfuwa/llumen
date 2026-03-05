@@ -1,7 +1,10 @@
 import type { AstNode, ParseResult, RegionBoundary } from '../parser/types';
+import { AstNodeType } from '../parser/types';
 import { parseSync } from '../parser/block';
 
 const MIN_TRAILING_CHARS = 2;
+
+const TABLE_SEPARATOR_REGEX = /\|[\s\-:]+\|/;
 
 export interface IncrementalState {
 	prevSource: string;
@@ -37,6 +40,21 @@ export function parseIncremental(
 			state: {
 				prevSource: source,
 				prevResult: state.prevResult,
+				newContentStart: source.length
+			}
+		};
+	}
+
+	if (
+		TABLE_SEPARATOR_REGEX.test(source) ||
+		hasTableInChangedRegion(state.prevResult, state.prevSource.length, source.length)
+	) {
+		const result = parseSync(source);
+		return {
+			result,
+			state: {
+				prevSource: source,
+				prevResult: result,
 				newContentStart: source.length
 			}
 		};
@@ -89,6 +107,24 @@ export function parseIncremental(
 	};
 }
 
+function hasTableInChangedRegion(
+	prevResult: ParseResult,
+	prevSourceLength: number,
+	newSourceLength: number
+): boolean {
+	const changedStart = prevSourceLength;
+	const changedEnd = newSourceLength;
+
+	for (const node of prevResult.nodes) {
+		if (node.type === AstNodeType.Table) {
+			if (node.start < changedEnd && node.end > changedStart) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 function findLastStableBoundary(result: ParseResult, sourceLength: number): number {
 	if (result.nodes.length === 0) {
 		return 0;
@@ -97,13 +133,18 @@ function findLastStableBoundary(result: ParseResult, sourceLength: number): numb
 	const threshold = sourceLength - MIN_TRAILING_CHARS;
 	const minStableGap = MIN_TRAILING_CHARS * 3;
 
+	let candidateBoundary = 0;
+
 	if (result.regions.length > 0) {
 		for (let i = result.regions.length - 1; i >= 0; i--) {
 			const region = result.regions[i];
 			const gapAfterRegion = sourceLength - region.end;
 			if (region.end < threshold && gapAfterRegion >= minStableGap) {
 				if (checkForBlankLineAfterRegion(result, region, sourceLength)) {
-					return region.end;
+					candidateBoundary = region.end;
+					if (!boundaryCrossesTable(result.nodes, candidateBoundary)) {
+						return candidateBoundary;
+					}
 				}
 			}
 		}
@@ -126,7 +167,10 @@ function findLastStableBoundary(result: ParseResult, sourceLength: number): numb
 		if (node.end < threshold && nextNode && nextNode.start > node.end) {
 			const gapAfterNode = nextNode.start - node.end;
 			if (gapAfterNode >= minStableGap) {
-				return node.end;
+				candidateBoundary = node.end;
+				if (!boundaryCrossesTable(result.nodes, candidateBoundary)) {
+					return candidateBoundary;
+				}
 			}
 		}
 	}
@@ -135,11 +179,30 @@ function findLastStableBoundary(result: ParseResult, sourceLength: number): numb
 		const secondLastNode = result.nodes[result.nodes.length - 2];
 		const gapAfterSecondLast = sourceLength - secondLastNode.end;
 		if (gapAfterSecondLast >= minStableGap) {
-			return secondLastNode.end;
+			candidateBoundary = secondLastNode.end;
+			if (!boundaryCrossesTable(result.nodes, candidateBoundary)) {
+				return candidateBoundary;
+			}
 		}
 	}
 
 	return 0;
+}
+
+function boundaryCrossesTable(nodes: AstNode[], boundary: number): boolean {
+	for (const node of nodes) {
+		if (node.type === AstNodeType.Table) {
+			if (node.start < boundary && node.end > boundary) {
+				return true;
+			}
+		}
+		if (node.children) {
+			if (boundaryCrossesTable(node.children, boundary)) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 function checkForBlankLineAfterRegion(
