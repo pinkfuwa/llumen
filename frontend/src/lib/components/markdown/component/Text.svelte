@@ -6,6 +6,6 @@
 	const content = $derived(node.content || '');
 </script>
 
-<span>
+<span class="align-middle">
 	{content}
 </span>
