@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { parseSync } from '../parser/block';
 import { AstNodeType } from '../parser/types';
-import type { ParagraphNode, TextNode, CodeBlockNode } from '../parser/types';
+import type {
+	ParagraphNode,
+	TextNode,
+	CodeBlockNode,
+	TableNode,
+	TableRowNode
+} from '../parser/types';
 
 describe('regression: unclosed formatting', () => {
 	it('treats unmatched ** as literal text', () => {
@@ -52,6 +58,23 @@ describe('regression: empty constructs', () => {
 	it('empty list item', () => {
 		const { nodes } = parseSync('- ');
 		expect(nodes).toHaveLength(1);
+	});
+});
+
+describe('regression: paragraph then table with single newline', () => {
+	it('parses paragraph followed by table on next line', () => {
+		const markdown =
+			'A line with only single newline followed\n| Notation | Relation Type | Property Example |\n| :--- | :--- | :--- |\n| \\( \\Theta \\) | Equivalence Relation | Has **Symmetry**, Reflexivity, Transitivity |';
+		const { nodes } = parseSync(markdown);
+		expect(nodes).toHaveLength(2);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		expect(nodes[1].type).toBe(AstNodeType.Table);
+
+		const table = nodes[1] as TableNode;
+		expect(table.children).toHaveLength(2); // header + 1 row
+
+		const headerRow = table.children[0] as TableRowNode;
+		expect(headerRow.children).toHaveLength(3);
 	});
 });
 

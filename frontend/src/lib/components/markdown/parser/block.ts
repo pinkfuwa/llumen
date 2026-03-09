@@ -580,7 +580,9 @@ function parseParagraph(tokens: LexToken[], i: number): BlockResult {
 			textContent += t.value;
 			end = t.end;
 		} else if (t.kind === LexTokenKind.Newline) {
-			// Single newline within paragraph — continue, add a linebreak
+			if (i + 1 < tokens.length && tokens[i + 1].kind === LexTokenKind.TablePipe) {
+				break;
+			}
 			textContent += '\n';
 			end = t.end;
 		}
