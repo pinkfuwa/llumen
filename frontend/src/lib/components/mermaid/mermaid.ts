@@ -33,7 +33,8 @@ export async function render(code: string): Promise<string> {
 
 	mermaidModule.default.initialize({
 		startOnLoad: false,
-		theme: 'base'
+		theme: 'base',
+		suppressErrorRendering: true
 	});
 
 	const cleanCode = code.replaceAll(/^\s*style\s+\S+.*$/gm, '').trim();
