@@ -53,7 +53,10 @@ RUN --mount=type=cache,id=target,target=/compiler/target \
     cp target/aarch64-unknown-linux-musl/release/backend /app/linux/arm64 && \
     cp target/x86_64-unknown-linux-musl/release/backend /app/linux/amd64
 
-FROM alpine AS ca
+FROM debian:trixie-slim AS ca
+RUN apt update -y \
+    && apt install -y ca-certificates
+RUN update-ca-certificates
 
 FROM scratch
 
