@@ -78,7 +78,7 @@ COPY --from=backend-builder /app/${TARGETPLATFORM} /backend
 
 ENV DATA_PATH="/data"
 ENV BIND_ADDR="0.0.0.0:80"
-ENV RUST_LOG=none,backend=debug
+ENV RUST_LOG=info
 
 EXPOSE 80
 
