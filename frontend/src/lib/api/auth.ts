@@ -64,6 +64,7 @@ export function initAuth() {
 	const unsubscribers = [
 		token.subscribe((token) => {
 			const pathname = page.url.pathname;
+			if (pathname.startsWith('/markdown')) return;
 			if (token) {
 				if (!pathname.startsWith('/chat')) {
 					const callback = page.url.searchParams.get('callback');
