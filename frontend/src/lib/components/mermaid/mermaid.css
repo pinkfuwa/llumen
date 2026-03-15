@@ -65,3 +65,85 @@ https://github.com/mermaid-js/mermaid/pull/6775
 .mermaid .edgeLabel p {
 	background-color: transparent !important;
 }
+
+.mermaid svg .actor {
+	fill: var(--color-component-bg) !important;
+	stroke: var(--color-outline) !important;
+	stroke-width: 1px;
+}
+
+.mermaid svg .actor-top,
+.mermaid svg .actor-bottom {
+	rx: 6;
+	ry: 6;
+}
+
+.mermaid svg .actor-line {
+	stroke: var(--color-outline) !important;
+	stroke-width: 1px;
+	opacity: 0.5;
+}
+
+.mermaid svg .actor-box {
+	fill: var(--color-component-bg) !important;
+}
+
+.mermaid svg .actor-box tspan {
+	fill: var(--color-text) !important;
+	font-size: 14px;
+}
+
+.mermaid svg .messageLine0 {
+	stroke: var(--color-outline) !important;
+	stroke-width: 1.5px;
+	fill: none;
+}
+
+.mermaid svg .messageLine1 {
+	stroke: var(--color-outline) !important;
+	stroke-width: 1.5px;
+	stroke-dasharray: 4, 3;
+	fill: none;
+}
+
+.mermaid svg .messageText {
+	fill: var(--color-text) !important;
+	font-size: 14px;
+}
+
+.mermaid svg .note {
+	fill: var(--color-chat-bg) !important;
+	stroke: var(--color-outline) !important;
+	stroke-width: 1px;
+	rx: 4;
+	ry: 4;
+}
+
+.mermaid svg .noteText tspan {
+	fill: var(--color-text) !important;
+	font-size: 14px;
+}
+
+.mermaid svg #arrowhead path {
+	fill: var(--color-outline) !important;
+	stroke: var(--color-outline) !important;
+}
+
+.mermaid svg .labelBox {
+	fill: var(--color-component-bg) !important;
+	stroke: var(--color-outline) !important;
+}
+
+.mermaid svg .labelText tspan {
+	fill: var(--color-text) !important;
+}
+
+.mermaid svg .loopText tspan {
+	fill: var(--color-text) !important;
+}
+
+.mermaid svg .loopLine {
+	stroke: var(--color-outline) !important;
+	stroke-width: 2px;
+	stroke-dasharray: 3, 2;
+}
