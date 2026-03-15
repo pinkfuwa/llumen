@@ -106,51 +106,10 @@ async fn fetch_models(
     match serde_json::from_str::<raw::ModelListResponse>(&body) {
         Ok(model_list) => Ok(model_list.data),
         Err(err) => {
-            log_model_list_body(&body);
+            log::warn!("invalid model list: {}", body);
             Err(err.into())
         }
     }
-}
-
-fn log_model_list_body(body: &str) {
-    let trimmed = body.trim();
-    if trimmed.is_empty() {
-        log::warn!("OpenRouter `/v1/models` returned an empty body");
-        return;
-    }
-
-    if trimmed.len() > 1 && trimmed.starts_with('"') && trimmed.ends_with('"') {
-        let inner = &trimmed[1..trimmed.len() - 1];
-        log::warn!(
-            "OpenRouter `/v1/models` returned string body: {}",
-            response_snippet(inner)
-        );
-    } else {
-        log::warn!(
-            "OpenRouter `/v1/models` returned unexpected body: {}",
-            response_snippet(trimmed)
-        );
-    }
-}
-
-fn response_snippet(body: &str) -> String {
-    const MAX: usize = 512;
-    let mut chars = body.chars();
-    let mut snippet = String::new();
-
-    for _ in 0..MAX {
-        match chars.next() {
-            Some('\n') => snippet.push(' '),
-            Some(ch) => snippet.push(ch),
-            None => break,
-        }
-    }
-
-    if chars.next().is_some() {
-        snippet.push_str("...");
-    }
-
-    snippet
 }
 
 pub(super) struct ModelCacheManager {
