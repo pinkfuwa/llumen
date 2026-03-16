@@ -77,8 +77,16 @@ impl Openrouter {
             Some(raw::UsageReq { include: true })
         };
 
+        let reasoning_effort = if option.reasoning_max_tokens.is_some() {
+            None
+        } else if capability.reasoning {
+            option.reasoning_effort.to_value()
+        } else {
+            None
+        };
+
         let mut reasoning = raw::Reasoning {
-            effort: option.reasoning_effort.to_value(),
+            effort: reasoning_effort,
             enabled: Some(capability.reasoning),
             max_tokens: option.reasoning_max_tokens,
         };

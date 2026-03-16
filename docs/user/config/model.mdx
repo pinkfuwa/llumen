@@ -37,7 +37,7 @@ audio = false # upload audio
 ocr = "Mistral"
 tool = true
 json = true
-reasoning = true
+reasoning = "high"  # Enable with high effort (options: true/false/low/medium/high/none/auto)
 
 [parameter]
 temperature = 0.7
@@ -72,6 +72,12 @@ Set `image`, `audio` to true to override auto-detection
 ocr = "Mistral"  # Options: "Native", "Text", "Mistral", "Disabled"
 ```
 
+All options are case-insensitive. You can use any naming convention:
+- `"Native"`, `"native"`, `"NATIVE"`, `"native_ocr"`, `"nativeocr"`
+- `"Text"`, `"text"`, `"TEXT"`, `"text_ocr"`, `"textocr"`, `"tesseract"`
+- `"Mistral"`, `"mistral"`, `"MISTRAL"`, `"mistral_ocr"`, `"mistralocr"`
+- `"Disabled"`, `"disabled"`, `"DISABLED"`, `"none"`, `"false"`, `"no"`
+
 ### Tool Use
 
 - When set to true: search/deep research mode will be enable. 
@@ -80,9 +86,35 @@ ocr = "Mistral"  # Options: "Native", "Text", "Mistral", "Disabled"
 
 ### Reasoning
 
-- When set to true: enable reasoning, generate nothing if model doesn't support it. 
-- When set to false: no reasoning.
-- When not set: Llumen will guess its support, enable if supported.
+Enable or configure reasoning effort for models that support extended thinking.
+
+**Boolean values (backward compatible):**
+
+```toml
+[capability]
+reasoning = true   # Enable reasoning with default effort
+reasoning = false  # Disable reasoning
+```
+
+**String values (effort levels):**
+
+```toml
+[capability]
+reasoning = "low"      # Low reasoning effort
+reasoning = "medium"   # Medium reasoning effort  
+reasoning = "high"     # High reasoning effort
+reasoning = "none"     # Disable reasoning
+reasoning = "auto"     # Use provider's default
+```
+
+All string values are case-insensitive: `"Low"`, `"LOW"`, `"low"` all work.
+
+- When set to `"high"`, `"medium"`, `"low"`: Enable reasoning with specified effort level
+- When set to `"none"`: Disable reasoning
+- When set to `"auto"`: Use the model's default reasoning behavior
+- When set to `true`: Enable reasoning with default effort
+- When set to `false`: Disable reasoning
+- When not set: Llumen will guess its support, enable if supported
 
 <Note>
 Llumen support interleaved thinking(If model support it)

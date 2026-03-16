@@ -13,7 +13,8 @@ impl From<ModelConfig> for openrouter::Model {
             toolcall: value.capability.tool,
             ocr: value.capability.ocr,
             audio: value.capability.audio,
-            reasoning: value.capability.reasoning,
+            reasoning: value.capability.reasoning.map(|r| r.is_enabled()),
+            reasoning_effort: value.capability.reasoning.map(|r| r.effort()),
         };
 
         openrouter::Model {
@@ -75,5 +76,118 @@ impl ModelChecker for ModelConfig {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use protocol::{ModelCapability, ReasoningEffort, ReasoningOption};
+
+    #[test]
+    fn test_reasoning_option_from_bool_true() {
+        let config = toml::from_str::<ModelConfig>(
+            r#"
+            display_name = "test"
+            model_id = "test/model"
+            [capability]
+            reasoning = true
+            "#,
+        )
+        .unwrap();
+        assert_eq!(config.capability.reasoning, Some(ReasoningOption::Enabled));
+    }
+
+    #[test]
+    fn test_reasoning_option_from_bool_false() {
+        let config = toml::from_str::<ModelConfig>(
+            r#"
+            display_name = "test"
+            model_id = "test/model"
+            [capability]
+            reasoning = false
+            "#,
+        )
+        .unwrap();
+        assert_eq!(config.capability.reasoning, Some(ReasoningOption::Disabled));
+    }
+
+    #[test]
+    fn test_reasoning_option_from_string_lowercase() {
+        let config = toml::from_str::<ModelConfig>(
+            r#"
+            display_name = "test"
+            model_id = "test/model"
+            [capability]
+            reasoning = "low"
+            "#,
+        )
+        .unwrap();
+        assert_eq!(
+            config.capability.reasoning,
+            Some(ReasoningOption::Effort(ReasoningEffort::Low))
+        );
+    }
+
+    #[test]
+    fn test_reasoning_option_from_string_uppercase() {
+        let config = toml::from_str::<ModelConfig>(
+            r#"
+            display_name = "test"
+            model_id = "test/model"
+            [capability]
+            reasoning = "HIGH"
+            "#,
+        )
+        .unwrap();
+        assert_eq!(
+            config.capability.reasoning,
+            Some(ReasoningOption::Effort(ReasoningEffort::High))
+        );
+    }
+
+    #[test]
+    fn test_reasoning_option_from_string_mixed_case() {
+        let config = toml::from_str::<ModelConfig>(
+            r#"
+            display_name = "test"
+            model_id = "test/model"
+            [capability]
+            reasoning = "Medium"
+            "#,
+        )
+        .unwrap();
+        assert_eq!(
+            config.capability.reasoning,
+            Some(ReasoningOption::Effort(ReasoningEffort::Medium))
+        );
+    }
+
+    #[test]
+    fn test_ocr_engine_case_insensitive() {
+        let config = toml::from_str::<ModelConfig>(
+            r#"
+            display_name = "test"
+            model_id = "test/model"
+            [capability]
+            ocr = "NATIVE"
+            "#,
+        )
+        .unwrap();
+        assert_eq!(config.capability.ocr, Some(protocol::OcrEngine::Native));
+    }
+
+    #[test]
+    fn test_ocr_engine_mistral_ocr() {
+        let config = toml::from_str::<ModelConfig>(
+            r#"
+            display_name = "test"
+            model_id = "test/model"
+            [capability]
+            ocr = "mistral_ocr"
+            "#,
+        )
+        .unwrap();
+        assert_eq!(config.capability.ocr, Some(protocol::OcrEngine::Mistral));
     }
 }

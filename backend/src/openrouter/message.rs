@@ -221,7 +221,8 @@ impl From<protocol::ModelCapability> for super::MaybeCapability {
             toolcall: capability.tool,
             ocr: capability.ocr,
             audio: capability.audio,
-            reasoning: capability.reasoning,
+            reasoning: capability.reasoning.map(|r| r.is_enabled()),
+            reasoning_effort: capability.reasoning.map(|r| r.effort()),
         }
     }
 }

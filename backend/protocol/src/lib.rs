@@ -1,6 +1,168 @@
 use sea_orm::{DeriveActiveEnum, EnumIter, FromJsonQueryResult};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use typeshare::typeshare;
+
+#[allow(dead_code)]
+fn deserialize_case_insensitive<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de> + TryFromStrEnum,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrBool {
+        Bool(bool),
+        String(String),
+    }
+
+    let value: Option<StringOrBool> = Option::deserialize(deserializer)?;
+
+    match value {
+        None => Ok(None),
+        Some(StringOrBool::Bool(b)) => Ok(Some(T::from_bool(b))),
+        Some(StringOrBool::String(s)) => Ok(Some(T::from_str(&s))),
+    }
+}
+
+#[allow(dead_code)]
+pub trait TryFromStrEnum: Sized {
+    fn from_bool(b: bool) -> Self;
+    fn from_str(s: &str) -> Self;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+#[typeshare]
+#[serde(rename_all = "lowercase")]
+pub enum ReasoningEffort {
+    #[default]
+    #[serde(alias = "none")]
+    None,
+    #[serde(alias = "low")]
+    Low,
+    #[serde(alias = "medium")]
+    Medium,
+    #[serde(alias = "high")]
+    High,
+    Auto,
+}
+
+impl<'de> Deserialize<'de> for ReasoningEffort {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrBool {
+            Bool(bool),
+            String(String),
+        }
+
+        let value: StringOrBool = StringOrBool::deserialize(deserializer)?;
+
+        match value {
+            StringOrBool::Bool(b) => Ok(if b {
+                ReasoningEffort::Auto
+            } else {
+                ReasoningEffort::None
+            }),
+            StringOrBool::String(s) => {
+                let lower = s.to_lowercase();
+                Ok(match lower.as_str() {
+                    "none" => ReasoningEffort::None,
+                    "low" => ReasoningEffort::Low,
+                    "medium" => ReasoningEffort::Medium,
+                    "high" => ReasoningEffort::High,
+                    "auto" => ReasoningEffort::Auto,
+                    "true" => ReasoningEffort::Auto,
+                    "false" => ReasoningEffort::None,
+                    _ => ReasoningEffort::Auto,
+                })
+            }
+        }
+    }
+}
+
+impl ReasoningEffort {
+    pub fn to_value(&self) -> Option<String> {
+        match self {
+            ReasoningEffort::None => Some("none".to_string()),
+            ReasoningEffort::Low => Some("low".to_string()),
+            ReasoningEffort::Medium => Some("medium".to_string()),
+            ReasoningEffort::High => Some("high".to_string()),
+            ReasoningEffort::Auto => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[typeshare]
+pub enum ReasoningOption {
+    Enabled,
+    Disabled,
+    Effort(ReasoningEffort),
+}
+
+impl ReasoningOption {
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            ReasoningOption::Enabled => true,
+            ReasoningOption::Disabled => false,
+            ReasoningOption::Effort(e) => *e != ReasoningEffort::None,
+        }
+    }
+
+    pub fn effort(&self) -> ReasoningEffort {
+        match self {
+            ReasoningOption::Enabled => ReasoningEffort::Auto,
+            ReasoningOption::Disabled => ReasoningEffort::None,
+            ReasoningOption::Effort(e) => *e,
+        }
+    }
+}
+
+impl Default for ReasoningOption {
+    fn default() -> Self {
+        ReasoningOption::Disabled
+    }
+}
+
+impl<'de> Deserialize<'de> for ReasoningOption {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrBool {
+            Bool(bool),
+            String(String),
+        }
+
+        let value: StringOrBool = StringOrBool::deserialize(deserializer)?;
+
+        match value {
+            StringOrBool::Bool(b) => Ok(if b {
+                ReasoningOption::Enabled
+            } else {
+                ReasoningOption::Disabled
+            }),
+            StringOrBool::String(s) => {
+                let lower = s.to_lowercase();
+                Ok(match lower.as_str() {
+                    "none" => ReasoningOption::Effort(ReasoningEffort::None),
+                    "low" => ReasoningOption::Effort(ReasoningEffort::Low),
+                    "medium" => ReasoningOption::Effort(ReasoningEffort::Medium),
+                    "high" => ReasoningOption::Effort(ReasoningEffort::High),
+                    "auto" => ReasoningOption::Effort(ReasoningEffort::Auto),
+                    "true" => ReasoningOption::Enabled,
+                    "false" => ReasoningOption::Disabled,
+                    _ => ReasoningOption::Enabled,
+                })
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[typeshare]
@@ -200,13 +362,30 @@ pub struct UserPreference {
     pub submit_on_enter: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 pub enum OcrEngine {
     Native,
     Text,
     Mistral,
     #[default]
     Disabled,
+}
+
+impl<'de> Deserialize<'de> for OcrEngine {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        let lower = s.to_lowercase();
+        Ok(match lower.as_str() {
+            "native" | "native_ocr" | "nativeocr" => OcrEngine::Native,
+            "text" | "text_ocr" | "textocr" | "tesseract" => OcrEngine::Text,
+            "mistral" | "mistral_ocr" | "mistralocr" => OcrEngine::Mistral,
+            "disabled" | "none" | "false" | "no" => OcrEngine::Disabled,
+            _ => OcrEngine::Disabled,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Default, Serialize, PartialEq)]
@@ -221,8 +400,18 @@ pub struct ModelCapability {
     pub tool: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub json: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reasoning: Option<bool>,
+    #[serde(default, deserialize_with = "deserialize_reasoning_option")]
+    pub reasoning: Option<ReasoningOption>,
+}
+
+fn deserialize_reasoning_option<'de, D>(
+    deserializer: D,
+) -> Result<Option<ReasoningOption>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value: Option<ReasoningOption> = Option::deserialize(deserializer)?;
+    Ok(value)
 }
 
 #[derive(Debug, Clone, Deserialize, Default, Serialize, PartialEq)]

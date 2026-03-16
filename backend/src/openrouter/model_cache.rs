@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use protocol::OcrEngine;
+use protocol::{OcrEngine, ReasoningEffort};
 
 use crate::openrouter::Capability;
 
@@ -34,6 +34,7 @@ impl From<ModelCache> for Capability {
             },
             audio: value.audio,
             reasoning: value.reasoning,
+            reasoning_effort: ReasoningEffort::Auto,
         }
     }
 }

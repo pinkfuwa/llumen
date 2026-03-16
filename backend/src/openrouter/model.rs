@@ -1,5 +1,5 @@
 use super::option::Tool;
-use protocol::OcrEngine;
+use protocol::{OcrEngine, ReasoningEffort, ReasoningOption};
 
 #[derive(Clone, Default)]
 pub struct Capability {
@@ -11,6 +11,7 @@ pub struct Capability {
     pub ocr: OcrEngine,
     pub audio: bool,
     pub reasoning: bool,
+    pub reasoning_effort: ReasoningEffort,
 }
 
 #[derive(Clone, Default)]
@@ -23,6 +24,17 @@ pub struct MaybeCapability {
     pub ocr: Option<OcrEngine>,
     pub audio: Option<bool>,
     pub reasoning: Option<bool>,
+    pub reasoning_effort: Option<ReasoningEffort>,
+}
+
+impl From<ReasoningOption> for MaybeCapability {
+    fn from(value: ReasoningOption) -> Self {
+        MaybeCapability {
+            reasoning: Some(value.is_enabled()),
+            reasoning_effort: Some(value.effort()),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Clone, Default)]

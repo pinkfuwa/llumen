@@ -1,5 +1,6 @@
 use super::model_cache::ModelCacheManager;
 use super::{Capability, MaybeCapability, Model};
+use protocol::ReasoningEffort;
 
 pub(super) struct CapabilityResolver<'a> {
     cache: &'a ModelCacheManager,
@@ -35,6 +36,7 @@ impl<'a> CapabilityResolver<'a> {
             ocr: merge!(ocr),
             audio: merge!(audio),
             reasoning: merge!(reasoning),
+            reasoning_effort: merge!(reasoning_effort),
         }
     }
 
@@ -43,9 +45,13 @@ impl<'a> CapabilityResolver<'a> {
         self.cache
             .get(model_id)
             .await
-            .map(|cache| cache.into())
+            .map(|cache| Capability {
+                reasoning_effort: ReasoningEffort::Auto,
+                ..cache.into()
+            })
             .unwrap_or_else(|| Capability {
                 text_output: true,
+                reasoning_effort: ReasoningEffort::Auto,
                 ..Default::default()
             })
     }
