@@ -5,6 +5,7 @@ use anyhow::Result;
 use mlua::{Lua, Value};
 use sqlx::{Column, Row, SqlitePool};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::Mutex;
 
 /// SQLite context for Lua
@@ -182,7 +183,10 @@ pub fn register_http_functions(lua: &Lua) -> Result<()> {
             .map_err(|e| mlua::Error::external(e))?;
 
         // Make HTTP request
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder()
+            .pool_idle_timeout(Duration::from_secs(30))
+            .build()
+            .map_err(|e| mlua::Error::external(e))?;
         let response = client
             .get(&url)
             .send()
@@ -207,7 +211,10 @@ pub fn register_http_functions(lua: &Lua) -> Result<()> {
             .map_err(|e| mlua::Error::external(e))?;
 
         // Make HTTP request
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder()
+            .pool_idle_timeout(Duration::from_secs(30))
+            .build()
+            .map_err(|e| mlua::Error::external(e))?;
         let response = client
             .post(&url)
             .body(body)

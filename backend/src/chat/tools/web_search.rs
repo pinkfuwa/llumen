@@ -1,6 +1,7 @@
 use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::Semaphore;
 
 /// Web search tool for searching the web using DuckDuckGo API
@@ -25,7 +26,8 @@ impl WebSearchTool {
                 .user_agent(
                     "Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)",
                 )
-                .timeout(std::time::Duration::from_secs(30))
+                .timeout(Duration::from_secs(30))
+                .pool_idle_timeout(Duration::from_secs(30))
                 .build()
                 .expect("Failed to create HTTP client"),
             // Limit concurrent requests to avoid rate limiting

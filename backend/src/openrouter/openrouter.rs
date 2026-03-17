@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::message::*;
 use crate::openrouter::{StreamCompletion, option::CompletionOption};
 
@@ -146,7 +148,10 @@ impl Openrouter {
             log::warn!("Custom API_BASE detected, disabling plugin support");
         }
 
-        let http_client = reqwest::Client::new();
+        let http_client = reqwest::Client::builder()
+            .pool_idle_timeout(Duration::from_secs(30))
+            .build()
+            .expect("Failed to create HTTP client");
 
         let model_cache =
             ModelCacheManager::new(http_client.clone(), models_endpoint, api_key.clone());

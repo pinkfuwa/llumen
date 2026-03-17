@@ -1,5 +1,6 @@
 use crate::utils::url_validation;
 use anyhow::{Context, Result};
+use std::time::Duration;
 use tokio::time;
 
 /// Crawl tool for fetching and converting web pages to markdown
@@ -14,7 +15,8 @@ impl CrawlTool {
                 .user_agent(
                     "Mozilla/5.0 (compatible; LLumen/1.0; +https://github.com/pinkfuwa/llumen)",
                 )
-                .timeout(std::time::Duration::from_secs(30))
+                .timeout(Duration::from_secs(30))
+                .pool_idle_timeout(Duration::from_secs(30))
                 .build()
                 .expect("Failed to create HTTP client"),
         }
