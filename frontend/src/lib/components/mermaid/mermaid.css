@@ -14,9 +14,11 @@ https://github.com/mermaid-js/mermaid/pull/6775
 .mermaid svg .edgeLabel,
 .mermaid svg .edgeLabel span,
 .mermaid svg .cluster-label,
-.mermaid svg .cluster-label text {
+.mermaid svg .cluster-label text,
+.mermaid svg .cluster-label div {
 	color: var(--color-text) !important;
 	fill: var(--color-text) !important;
+	word-break: break-word;
 }
 
 .mermaid svg .node rect,

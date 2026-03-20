@@ -41,7 +41,7 @@ export async function render(code: string): Promise<string> {
 
 	try {
 		const { svg } = await mermaidModule.default.render(id, cleanCode);
-		return svg;
+		return svg.replaceAll('\\n', '<br/>');
 	} catch {
 		throw new Error('Failed to render mermaid diagram');
 	}
