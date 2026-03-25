@@ -51,6 +51,7 @@
 	let rows = $state(minRow);
 
 	$effect(() => {
+		let savedScrollTop = input?.scrollTop;
 		rows = value.split('\n').length;
 		requestAnimationFrame(() => {
 			if (!input) return;
@@ -59,6 +60,10 @@
 			const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
 			const newRows = Math.ceil((input.scrollHeight - verticalPadding) / lineHeight);
 			rows = Math.max(minRow, Math.min(newRows, 20));
+			input.scrollTo({
+				top: savedScrollTop,
+				behavior: 'instant'
+			});
 		});
 	});
 
