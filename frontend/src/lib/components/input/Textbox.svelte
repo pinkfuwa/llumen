@@ -48,7 +48,19 @@
 	window.addEventListener('keydown', onKeyDown);
 	onDestroy(() => window.removeEventListener('keydown', onKeyDown));
 
-	let rows = () => Math.max(minRow, value.split('\n').length);
+	let rows = $state(minRow);
+
+	$effect(() => {
+		rows = value.split('\n').length;
+		requestAnimationFrame(() => {
+			if (!input) return;
+			const style = getComputedStyle(input);
+			const lineHeight = parseFloat(style.lineHeight);
+			const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+			const newRows = Math.ceil((input.scrollHeight - verticalPadding) / lineHeight);
+			rows = Math.max(minRow, Math.min(newRows, 20));
+		});
+	});
 
 	let virtualKeyboard = $state(false);
 	if ('virtualKeyboard' in navigator) {
@@ -71,7 +83,7 @@
 	class="editor field-sizing-content max-h-96 flex-grow resize-none overflow-auto rounded-md bg-input p-4 data-[state=hide]:hidden md:max-h-[60vh]"
 	bind:value
 	{placeholder}
-	rows={rows()}
+	{rows}
 	bind:this={input}
 	{disabled}
 	aria-label="type message"
