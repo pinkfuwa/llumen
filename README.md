@@ -40,7 +40,7 @@ Llumen carves out a different space: **privacy without the complexity**. You get
 | Universal API | Any OpenAI-compatible provider (OpenRouter, local models, etc.) |
 | Minimal Footprint | ~17MB binary, <128MB RAM usage |
 
-[![Video preview](./docs/video.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
+[![Video preview](https://pinkfuwa.github.io/llumen/img/theme/llumen.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
 
 ## Quickstart
 
@@ -60,7 +60,7 @@ That's it. No config files. No Python dependencies.
 
 **Want bleeding edge?** Use `ghcr.io/pinkfuwa/llumen:nightly`
 
-See [./docs/sample](./docs/sample) for docker-compose examples.
+See [docker sample](https://pinkfuwa.github.io/llumen/user/docker) for docker-compose examples.
 
 ### Native Binaries
 
