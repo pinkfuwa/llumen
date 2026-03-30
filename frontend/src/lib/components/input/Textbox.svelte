@@ -19,8 +19,11 @@
 	import { default as Markdown } from '$lib/components/markdown/Root.svelte';
 	import { onDestroy } from 'svelte';
 	import { shouldSubmitOnEnter } from './submitOnEnter';
+	import { stringWidthWithWrap } from '$lib/string-width';
 
 	let input = $state<null | HTMLElement>(null);
+	let charMeasure = $state<null | HTMLElement>(null);
+	let clientWidth = $state(0);
 
 	function onKeyDown(event: KeyboardEvent) {
 		const activeElement = document.activeElement;
@@ -51,20 +54,17 @@
 	let rows = $state(minRow);
 
 	$effect(() => {
-		let savedScrollTop = input?.scrollTop;
-		rows = value.split('\n').length;
-		requestAnimationFrame(() => {
-			if (!input) return;
-			const style = getComputedStyle(input);
-			const lineHeight = parseFloat(style.lineHeight);
-			const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-			const newRows = Math.ceil((input.scrollHeight - verticalPadding) / lineHeight);
-			rows = Math.max(minRow, Math.min(newRows, 20));
-			input.scrollTo({
-				top: savedScrollTop,
-				behavior: 'instant'
-			});
-		});
+		if (!clientWidth || !charMeasure || !input) return;
+
+		const charWidth = charMeasure.getBoundingClientRect().width;
+		if (charWidth === 0) return;
+
+		const style = getComputedStyle(input);
+		const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+		const contentWidth = clientWidth - horizontalPadding;
+		const charsPerLine = Math.max(1, Math.floor(contentWidth / charWidth));
+
+		rows = Math.max(minRow, Math.min(stringWidthWithWrap(value, charsPerLine), 20));
 	});
 
 	let virtualKeyboard = $state(false);
@@ -83,10 +83,17 @@
 	});
 </script>
 
+<span
+	bind:this={charMeasure}
+	class="editor pointer-events-none absolute opacity-0"
+	style="font-family: inherit; font-size: inherit; line-height: inherit; letter-spacing: inherit; white-space: pre;"
+	aria-hidden="true">0</span
+>
 <!-- TODO: replace max-h-96 with calc(... keyboard-inset-height) -->
 <textarea
 	class="editor field-sizing-content max-h-96 flex-grow resize-none overflow-auto rounded-md bg-input p-4 data-[state=hide]:hidden md:max-h-[60vh]"
 	bind:value
+	bind:clientWidth
 	{placeholder}
 	{rows}
 	bind:this={input}
