@@ -301,6 +301,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "stream-json",
  "time",
  "tokio",
  "tokio-console",
@@ -4333,6 +4334,30 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
+name = "stream-json"
+version = "0.1.0"
+source = "git+https://github.com/Eason0729/stream_json.git#00d88a124e8c101b5c83a3975bb0a47f35414edc"
+dependencies = [
+ "base64 0.22.1",
+ "bytes",
+ "futures-core",
+ "futures-io",
+ "serde_json",
+ "stream-json-macros",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "stream-json-macros"
+version = "0.1.0"
+source = "git+https://github.com/Eason0729/stream_json.git#00d88a124e8c101b5c83a3975bb0a47f35414edc"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
 
 [[package]]
 name = "string_cache"

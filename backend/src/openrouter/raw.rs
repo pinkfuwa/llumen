@@ -5,6 +5,7 @@
 //! https://openrouter.ai/docs
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
+use stream_json::IntoSerializer;
 
 #[derive(serde::Deserialize)]
 pub struct ModelListResponse {
@@ -52,45 +53,45 @@ pub struct Architecture {
     pub output_modalities: Vec<Modality>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, IntoSerializer)]
 pub struct CompletionReq {
     pub model: String,
     pub messages: Vec<Message>,
     pub stream: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<f32>| value.is_none()")]
     pub temperature: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<f32>| value.is_none()")]
     pub repeat_penalty: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<i32>| value.is_none()")]
     pub top_k: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<f32>| value.is_none()")]
     pub top_p: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<i32>| value.is_none()")]
     pub max_tokens: Option<i32>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[stream(skip_serialize_if = "|value: &Vec<Tool>| value.is_empty()")]
     pub tools: Vec<Tool>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[stream(skip_serialize_if = "|value: &Vec<Plugin>| value.is_empty()")]
     pub plugins: Vec<Plugin>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<WebSearchOptions>| value.is_none()")]
     pub web_search_options: Option<WebSearchOptions>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<UsageReq>| value.is_none()")]
     pub usage: Option<UsageReq>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<ResponseFormat>| value.is_none()")]
     pub response_format: Option<ResponseFormat>,
     // reasoning options
-    #[serde(skip_serializing_if = "Reasoning::is_empty")]
+    #[stream(skip_serialize_if = "|value: &Reasoning| value.is_empty()")]
     pub reasoning: Reasoning,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[stream(skip_serialize_if = "|value: &Vec<String>| value.is_empty()")]
     pub modalities: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Debug, Clone, IntoSerializer, Default)]
 pub struct Reasoning {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
     pub effort: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<bool>| value.is_none()")]
     pub enabled: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<i32>| value.is_none()")]
     pub max_tokens: Option<i32>,
 }
 
@@ -109,48 +110,21 @@ impl Reasoning {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
 pub struct ResponseFormat {
     pub r#type: String,
-    pub json_schema: serde_json::Value,
+    pub json_schema: String,
 }
 
-impl CompletionReq {
-    pub fn log(&self) {
-        #[cfg(feature = "dev")]
-        if let Ok(req) = serde_json::to_string_pretty(&self) {
-            fn truncate_base64_in_json(json: &str) -> String {
-                use regex::Regex;
-
-                let re =
-                    Regex::new(r#"("(?:data|file_data|url)"\s*:\s*"[^"]{64})[^"]{1,}""#).unwrap();
-                re.replace_all(json, |caps: &regex::Captures| {
-                    let prefix = &caps[1];
-                    format!(r#"{}...""#, prefix)
-                })
-                .to_string()
-            }
-
-            let truncated = truncate_base64_in_json(&req);
-            log::debug!(
-                "sending completion\n===============\n{}\n===============",
-                truncated
-            );
-        }
-        #[cfg(not(feature = "dev"))]
-        log::debug!("sending completion");
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
 pub struct UsageReq {
     pub include: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
 pub struct Plugin {
     pub id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<PdfPlugin>| value.is_none()")]
     pub pdf: Option<PdfPlugin>,
 }
 
@@ -187,24 +161,24 @@ impl Plugin {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
 pub struct WebSearchOptions {
-    #[serde(rename = "search_context_size")]
+    #[stream(rename = "search_context_size")]
     pub search_context_size: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
 pub struct PdfPlugin {
     pub engine: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
 pub struct Tool {
     pub r#type: String,
     pub function: FunctionTool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
 pub struct FunctionTool {
     pub name: String,
     pub description: String,
@@ -212,28 +186,29 @@ pub struct FunctionTool {
 }
 
 // TODO: have both content and contents set will cause serialization error
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Debug, Clone, Default, stream_json::IntoSerializer)]
 pub struct Message {
     pub role: Role,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
     pub content: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<Vec<ToolCallReq>>| value.is_none()")]
     pub tool_calls: Option<Vec<ToolCallReq>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
     pub tool_call_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "content")]
+    #[stream(
+        rename = "content",
+        skip_serialize_if = "|value: &Option<Vec<MessagePart>>| value.is_none()"
+    )]
     pub contents: Option<Vec<MessagePart>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<serde_json::Value>| value.is_none()")]
     pub annotations: Option<serde_json::Value>,
     // reasoning text or encrypted reasoning detail
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[stream(skip_serialize_if = "|value: &Vec<serde_json::Value>| value.is_empty()")]
     pub reasoning_details: Vec<serde_json::Value>,
 }
 
 // `data:image/jpeg;base64,${base64Image}`;
-#[derive(Debug, Clone, Serialize, Default)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Default, stream_json::IntoSerializer)]
 pub enum MultiPartMessageType {
     #[default]
     Text,
@@ -242,16 +217,16 @@ pub enum MultiPartMessageType {
     InputAudio,
 }
 
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Debug, Clone, Default, stream_json::IntoSerializer)]
 pub struct MessagePart {
     pub r#type: MultiPartMessageType,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
     pub text: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<InputAudio>| value.is_none()")]
     pub input_audio: Option<InputAudio>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<InputFile>| value.is_none()")]
     pub file: Option<InputFile>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<InputImage>| value.is_none()")]
     pub image_url: Option<InputImage>,
 }
 
@@ -362,24 +337,24 @@ impl MessagePart {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, stream_json::IntoSerializer)]
 pub struct InputAudio {
-    data: String,
-    format: String,
+    pub data: String,
+    pub format: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, stream_json::IntoSerializer)]
 pub struct InputFile {
-    filename: String,
-    file_data: String,
+    pub filename: String,
+    pub file_data: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, stream_json::IntoSerializer)]
 pub struct InputImage {
-    url: String,
+    pub url: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, stream_json::IntoSerializer)]
 pub struct ToolCallReq {
     pub id: String,
     pub function: ToolFunctionResp,
@@ -415,7 +390,9 @@ pub struct DetailCost {
     pub upstream_inference_cost: Option<f64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, stream_json::IntoSerializer,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum Role {
     #[default]
@@ -425,7 +402,7 @@ pub enum Role {
     System,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, stream_json::IntoSerializer)]
 #[serde(rename_all = "snake_case")]
 pub enum FinishReason {
     Stop,
@@ -475,11 +452,9 @@ pub struct ToolCall {
     pub r#type: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, IntoSerializer)]
 pub struct ToolFunctionResp {
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub arguments: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 
@@ -544,13 +519,13 @@ pub struct EmbeddingModelListResponse {
     pub data: Vec<EmbeddingModel>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(Debug, Clone, IntoSerializer)]
 pub struct EmbeddingReq {
     pub model: String,
     pub input: String,
 }
 
-#[derive(serde::Serialize)]
+#[derive(Debug, Clone, IntoSerializer)]
 pub struct EmbeddingBatchReq {
     pub model: String,
     pub input: Vec<String>,

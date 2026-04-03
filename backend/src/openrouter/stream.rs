@@ -2,8 +2,9 @@ use std::{collections::VecDeque, pin::Pin, task};
 
 use futures_util::FutureExt;
 use http::header::CONTENT_TYPE;
-use reqwest::Client;
+use reqwest::{Body, Client};
 use reqwest_eventsource::{Event, EventSource};
+use stream_json::IntoSerializer;
 use tokio_stream::{Stream, StreamExt};
 
 use super::Image;
@@ -76,13 +77,19 @@ impl StreamCompletion {
         }
         .to_string();
 
-        let builder = http_client
+        let content_length = req.size();
+        let body = Body::wrap_stream(req.into_stream());
+
+        let mut builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
-            .header(CONTENT_TYPE, "application/json")
-            .json(&req);
+            .header(CONTENT_TYPE, "application/json");
+        if let Some(len) = content_length {
+            builder = builder.header(http::header::CONTENT_LENGTH, len);
+        }
+        let builder = builder.body(body);
 
         match EventSource::new(builder) {
             Ok(source) => Ok(Self {

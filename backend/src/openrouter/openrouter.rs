@@ -11,6 +11,7 @@ use protocol::OcrEngine;
 
 use super::HTTP_REFERER;
 use super::X_TITLE;
+use stream_json::{IntoSerializer, IntoStreamSerializer};
 
 pub struct Openrouter {
     pub(super) api_key: String,
@@ -121,6 +122,18 @@ impl Openrouter {
         }
     }
 
+    fn completion_body(req: raw::CompletionReq) -> (Option<usize>, reqwest::Body) {
+        let size = req.size();
+        let body = reqwest::Body::wrap_stream(req.into_stream());
+        (size, body)
+    }
+
+    fn embedding_body(req: raw::EmbeddingBatchReq) -> (Option<usize>, reqwest::Body) {
+        let size = req.size();
+        let body = reqwest::Body::wrap_stream(req.into_stream());
+        (size, body)
+    }
+
     pub fn new(
         api_key: impl AsRef<str>,
         api_base: impl AsRef<str>,
@@ -202,8 +215,6 @@ impl Openrouter {
 
         let req = self.create_request(messages, true, model, option).await;
 
-        req.log();
-
         StreamCompletion::request(
             &self.http_client,
             &self.api_key,
@@ -217,14 +228,19 @@ impl Openrouter {
         &self,
         req: raw::CompletionReq,
     ) -> Result<ChatCompletion, Error> {
-        let res = self
+        let (content_length, body) = Self::completion_body(req);
+        let mut req_builder = self
             .http_client
             .post(&self.chat_completion_endpoint)
             .bearer_auth(&self.api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
-            .header(CONTENT_TYPE, "application/json")
-            .json(&req)
+            .header(CONTENT_TYPE, "application/json");
+        if let Some(len) = content_length {
+            req_builder = req_builder.header(http::header::CONTENT_LENGTH, len);
+        }
+        let res = req_builder
+            .body(body)
             .send()
             .await
             .map_err(Error::Http)?;
@@ -294,8 +310,6 @@ impl Openrouter {
         option.image_generation = false;
 
         let req = self.create_request(messages, false, model, option).await;
-        req.log();
-
         self.send_complete_request(req).await
     }
 
@@ -323,19 +337,17 @@ impl Openrouter {
 
         if structured_output {
             let schema = schemars::schema_for!(T);
-            let schema_json = serde_json::to_value(&schema).map_err(|e| Error::Serde(e))?;
+            let schema_json = serde_json::to_string(&schema).map_err(Error::Serde)?;
 
             req.response_format = Some(raw::ResponseFormat {
                 r#type: "json_schema".to_string(),
-                json_schema: serde_json::json!({
-                    "name": std::any::type_name::<T>().split("::").last().unwrap(),
-                    "strict": true,
-                    "schema": schema_json
-                }),
+                json_schema: format!(
+                    r#"{{"name":"{}","strict":true,"schema":{}}}"#,
+                    std::any::type_name::<T>().split("::").last().unwrap(),
+                    schema_json
+                ),
             });
         }
-
-        req.log();
 
         let completion = self.send_complete_request(req).await?;
         let result: T = serde_json::from_str(&completion.response).map_err(Error::Serde)?;
@@ -357,14 +369,19 @@ impl Openrouter {
             model: model.to_string(),
             input: input.to_vec(),
         };
-        let res = self
+        let (content_length, body) = Self::embedding_body(req);
+        let mut req_builder = self
             .http_client
             .post(&self.embedding_endpoint)
             .bearer_auth(&self.api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
-            .header(CONTENT_TYPE, "application/json")
-            .json(&req)
+            .header(CONTENT_TYPE, "application/json");
+        if let Some(len) = content_length {
+            req_builder = req_builder.header(http::header::CONTENT_LENGTH, len);
+        }
+        let res = req_builder
+            .body(body)
             .send()
             .await
             .map_err(Error::Http)?;

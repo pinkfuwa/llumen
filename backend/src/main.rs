@@ -45,6 +45,14 @@ mod openrouter;
 mod routes;
 mod utils;
 
+pub mod serde {
+    pub use stream_json::serde::*;
+}
+
+pub mod error {
+    pub use crate::openrouter::Error;
+}
+
 use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Context as _;
