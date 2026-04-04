@@ -56,6 +56,12 @@ impl std::fmt::Debug for BlobReader {
     }
 }
 
+impl BlobReader {
+    pub fn len(&self) -> usize {
+        self.reader.len()
+    }
+}
+
 impl Clone for BlobReader {
     fn clone(&self) -> Self {
         Self {
@@ -63,12 +69,6 @@ impl Clone for BlobReader {
             position: 0,
             read_task: None,
         }
-    }
-}
-
-impl BlobReader {
-    pub fn len(&self) -> usize {
-        self.reader.len()
     }
 }
 

@@ -3,9 +3,8 @@
 //! Not codegen, but it match the API spec
 //!
 //! https://openrouter.ai/docs
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use stream_json::{Base64EmbedFile, IntoSerializer, Serializer};
+use stream_json::{Base64EmbedURL, IntoSerializer, Serializer, Base64EmbedFile};
 
 use crate::utils::blob::BlobReader;
 
@@ -55,7 +54,7 @@ pub struct Architecture {
     pub output_modalities: Vec<Modality>,
 }
 
-#[derive(Debug, Clone, IntoSerializer)]
+#[derive(IntoSerializer)]
 pub struct CompletionReq {
     pub model: String,
     pub messages: Vec<Message>,
@@ -112,18 +111,18 @@ impl Reasoning {
     }
 }
 
-#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct ResponseFormat {
     pub r#type: String,
     pub json_schema: String,
 }
 
-#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct UsageReq {
     pub include: bool,
 }
 
-#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct Plugin {
     pub id: String,
     #[stream(skip_serialize_if = "|value: &Option<PdfPlugin>| value.is_none()")]
@@ -163,24 +162,24 @@ impl Plugin {
     }
 }
 
-#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct WebSearchOptions {
     #[stream(rename = "search_context_size")]
     pub search_context_size: String,
 }
 
-#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct PdfPlugin {
     pub engine: String,
 }
 
-#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct Tool {
     pub r#type: String,
     pub function: FunctionTool,
 }
 
-#[derive(Debug, Clone, Serialize, stream_json::IntoSerializer)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct FunctionTool {
     pub name: String,
     pub description: String,
@@ -188,7 +187,7 @@ pub struct FunctionTool {
 }
 
 // TODO: have both content and contents set will cause serialization error
-#[derive(Debug, Clone, Default, stream_json::IntoSerializer)]
+#[derive(Default, stream_json::IntoSerializer)]
 pub struct Message {
     pub role: Role,
     #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
@@ -210,7 +209,7 @@ pub struct Message {
 }
 
 // `data:image/jpeg;base64,${base64Image}`;
-#[derive(Debug, Clone, Serialize, Default, stream_json::IntoSerializer)]
+#[derive(Serialize, Default, stream_json::IntoSerializer)]
 pub enum MultiPartMessageType {
     #[default]
     Text,
@@ -219,7 +218,7 @@ pub enum MultiPartMessageType {
     InputAudio,
 }
 
-#[derive(Debug, Clone, Default, stream_json::IntoSerializer)]
+#[derive(Default, stream_json::IntoSerializer)]
 pub struct MessagePart {
     pub r#type: MultiPartMessageType,
     #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
@@ -230,94 +229,6 @@ pub struct MessagePart {
     pub file: Option<InputFile>,
     #[stream(skip_serialize_if = "|value: &Option<InputImage>| value.is_none()")]
     pub image_url: Option<InputImage>,
-}
-
-#[derive(Debug, Clone)]
-pub struct FileDataUri {
-    pub data: BlobReader,
-    pub size: usize,
-    pub mime_type: String,
-}
-
-impl FileDataUri {
-    pub fn new(data: BlobReader, mime_type: String) -> Self {
-        let size = data.len();
-        Self {
-            data,
-            size,
-            mime_type,
-        }
-    }
-
-    pub fn audio_format(&self) -> String {
-        self.mime_type
-            .rsplit('/')
-            .next()
-            .unwrap_or("wav")
-            .to_string()
-    }
-}
-
-impl IntoSerializer for FileDataUri {
-    type S = Base64EmbedFile<BlobReader>;
-
-    fn into_serializer(self) -> Self::S {
-        match Base64EmbedFile::new(self.data, self.size, self.mime_type) {
-            Ok(serializer) => serializer,
-            Err(_) => unreachable!("Base64EmbedFile::new is infallible"),
-        }
-    }
-
-    fn size(&self) -> Option<usize> {
-        Base64EmbedFile::new(self.data.clone(), self.size, self.mime_type.clone())
-            .ok()
-            .and_then(|serializer| serializer.size())
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum MaybeEmbedded {
-    Plain(String),
-    Embedded(FileDataUri),
-}
-
-pub enum MaybeEmbeddedSerializer {
-    Plain(<String as IntoSerializer>::S),
-    Embedded(<FileDataUri as IntoSerializer>::S),
-}
-
-impl Serializer for MaybeEmbeddedSerializer {
-    fn poll(
-        &mut self,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Option<Result<Bytes, stream_json::Error>>> {
-        match self {
-            MaybeEmbeddedSerializer::Plain(serializer) => serializer.poll(cx),
-            MaybeEmbeddedSerializer::Embedded(serializer) => serializer.poll(cx),
-        }
-    }
-}
-
-impl Unpin for MaybeEmbeddedSerializer {}
-
-impl IntoSerializer for MaybeEmbedded {
-    type S = MaybeEmbeddedSerializer;
-
-    fn into_serializer(self) -> Self::S {
-        match self {
-            MaybeEmbedded::Plain(value) => MaybeEmbeddedSerializer::Plain(value.into_serializer()),
-            MaybeEmbedded::Embedded(value) => {
-                MaybeEmbeddedSerializer::Embedded(value.into_serializer())
-            }
-        }
-    }
-
-    fn size(&self) -> Option<usize> {
-        match self {
-            MaybeEmbedded::Plain(value) => value.size(),
-            MaybeEmbedded::Embedded(value) => value.size(),
-        }
-    }
 }
 
 impl MessagePart {
@@ -336,113 +247,100 @@ impl MessagePart {
             data,
         } = file;
 
-        if mime_type == "application/pdf" {
-            return (
-                Self::text(format!("Uploaded file: {}", name)),
-                Self::pdf(name, data),
-            );
-        }
-
-        if mime_type.starts_with("image/") {
-            return (
-                Self::text(format!("Uploaded file: {}", name)),
-                Self::image_data(data, mime_type),
-            );
-        }
+        let data_len = data.len();
 
         if mime_type.starts_with("audio/") {
+            let format = mime_type
+                .split('/')
+                .nth(1)
+                .unwrap_or(&mime_type)
+                .to_string();
+            let embed_file = Base64EmbedFile::new(data, data_len).unwrap();
             return (
                 Self::text(format!("Uploaded file: {}", name)),
-                Self::input_audio(data, mime_type),
+                Self::input_audio(format, embed_file),
             );
         }
 
-        (
-            Self::text(format!("Uploaded file: {}", name)),
-            Self::file(name, data, mime_type),
-        )
+        let embed_url = Base64EmbedURL::new(data, data_len, mime_type.clone()).unwrap();
+
+        let name_part = Self::text(format!("Uploaded file: {}", name));
+        let file_part = match mime_type.as_str() {
+            "application/pdf" => Self::pdf(name, embed_url),
+            mime if mime_type.starts_with("image/") => Self::image_data(embed_url),
+            _ => Self::file(name, embed_url),
+        };
+
+        (name_part, file_part)
     }
 
-    pub fn image_url(url: String) -> Self {
+    pub fn image_data(embed_file: Base64EmbedURL<BlobReader>) -> Self {
         Self {
             r#type: MultiPartMessageType::ImageUrl,
-            image_url: Some(InputImage {
-                url: MaybeEmbedded::Plain(url),
-            }),
+            image_url: Some(InputImage { url: embed_file }),
             ..Default::default()
         }
     }
 
-    pub fn image_data(data: BlobReader, mime_type: String) -> Self {
-        Self {
-            r#type: MultiPartMessageType::ImageUrl,
-            image_url: Some(InputImage {
-                url: MaybeEmbedded::Embedded(FileDataUri::new(data, mime_type)),
-            }),
-            ..Default::default()
-        }
-    }
-
-    pub fn pdf(filename: String, data: BlobReader) -> Self {
+    pub fn pdf(filename: String, embed_file: Base64EmbedURL<BlobReader>) -> Self {
         Self {
             r#type: MultiPartMessageType::File,
             file: Some(InputFile {
                 filename,
-                file_data: FileDataUri::new(data, "application/pdf".to_string()),
+                file_data: embed_file,
             }),
             ..Default::default()
         }
     }
 
-    pub fn file(filename: String, file_data: BlobReader, mime_type: String) -> Self {
+    pub fn file(filename: String, embed_file: Base64EmbedURL<BlobReader>) -> Self {
         Self {
             r#type: MultiPartMessageType::File,
             file: Some(InputFile {
                 filename,
-                file_data: FileDataUri::new(file_data, mime_type),
+                file_data: embed_file,
             }),
             ..Default::default()
         }
     }
 
-    pub fn input_audio(data: BlobReader, mime_type: String) -> Self {
-        let data = FileDataUri::new(data, mime_type);
+    pub fn input_audio(format: String, embed_file: Base64EmbedFile<BlobReader>) -> Self {
         Self {
             r#type: MultiPartMessageType::InputAudio,
             input_audio: Some(InputAudio {
-                format: data.audio_format(),
-                data,
+                format,
+                data: embed_file,
             }),
             ..Default::default()
         }
     }
 }
 
-#[derive(Debug, Clone, stream_json::IntoSerializer)]
+#[derive(stream_json::IntoSerializer)]
 pub struct InputAudio {
-    pub data: FileDataUri,
+    pub data: Base64EmbedFile<BlobReader>,
     pub format: String,
 }
 
-#[derive(Debug, Clone, stream_json::IntoSerializer)]
+#[derive(stream_json::IntoSerializer)]
 pub struct InputFile {
     pub filename: String,
-    pub file_data: FileDataUri,
+    pub file_data: Base64EmbedURL<BlobReader>,
 }
 
-#[derive(Debug, Clone, stream_json::IntoSerializer)]
+#[derive(stream_json::IntoSerializer)]
 pub struct InputImage {
-    pub url: MaybeEmbedded,
+    pub url: Base64EmbedURL<BlobReader>,
 }
 
-#[derive(Debug, Clone, stream_json::IntoSerializer)]
+#[derive(stream_json::IntoSerializer)]
 pub struct ToolCallReq {
     pub id: String,
     pub function: ToolFunctionResp,
     pub r#type: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct StreamCompletionResponse {
     pub id: String,
     pub choices: Vec<Choice>,
@@ -451,14 +349,14 @@ pub struct StreamCompletionResponse {
 }
 
 /// openrouter specific response with usage and cost info
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct CompletionInfoResp {
     pub id: String,
     pub model: String,
     pub usage: Usage,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct Usage {
     pub total_tokens: Option<i64>,
     #[serde(default)]
@@ -471,9 +369,7 @@ pub struct DetailCost {
     pub upstream_inference_cost: Option<f64>,
 }
 
-#[derive(
-    Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, stream_json::IntoSerializer,
-)]
+#[derive(Debug, Clone, Deserialize, Default, PartialEq, Eq, stream_json::IntoSerializer)]
 #[serde(rename_all = "snake_case")]
 pub enum Role {
     #[default]
@@ -483,7 +379,7 @@ pub enum Role {
     System,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, stream_json::IntoSerializer)]
+#[derive(Deserialize, Debug, Clone, stream_json::IntoSerializer)]
 #[serde(rename_all = "snake_case")]
 pub enum FinishReason {
     Stop,
@@ -492,7 +388,7 @@ pub enum FinishReason {
     Error,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct Choice {
     pub index: i64,
     pub delta: Delta,
@@ -539,7 +435,7 @@ pub struct ToolFunctionResp {
     pub name: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct FullChoice {
     pub index: i64,
     pub finish_reason: Option<FinishReason>,
@@ -548,7 +444,7 @@ pub struct FullChoice {
     pub message: OutputMessage,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct CompletionResponse {
     pub choices: Option<Vec<FullChoice>>,
     pub error: Option<ErrorInfo>,
@@ -556,7 +452,7 @@ pub struct CompletionResponse {
     pub usage: Option<Usage>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct OutputMessage {
     pub role: String,
     pub content: String,
@@ -577,12 +473,12 @@ pub struct ImageUrl {
     // data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct ErrorResp {
     pub error: ErrorInfo,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct ErrorInfo {
     pub message: String,
     pub code: Option<i32>,
@@ -600,25 +496,25 @@ pub struct EmbeddingModelListResponse {
     pub data: Vec<EmbeddingModel>,
 }
 
-#[derive(Debug, Clone, IntoSerializer)]
+#[derive(IntoSerializer)]
 pub struct EmbeddingReq {
     pub model: String,
     pub input: String,
 }
 
-#[derive(Debug, Clone, IntoSerializer)]
+#[derive(IntoSerializer)]
 pub struct EmbeddingBatchReq {
     pub model: String,
     pub input: Vec<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct EmbeddingResult {
     pub embedding: Vec<f32>,
     pub index: usize,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct EmbeddingResponse {
     pub price: f64,
     pub data: Vec<EmbeddingResult>,

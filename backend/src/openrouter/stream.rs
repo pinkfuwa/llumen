@@ -8,9 +8,7 @@ use reqwest::Response;
 use stream_json::IntoSerializer;
 use tokio_stream::{Stream, StreamExt};
 
-use super::Image;
-
-use super::{HTTP_REFERER, X_TITLE, error::Error, raw};
+use super::{HTTP_REFERER, X_TITLE, error::Error, raw, GeneratedImage};
 
 #[derive(Default, Clone, Debug)]
 pub struct ToolCall {
@@ -34,7 +32,7 @@ pub struct StreamCompletion {
     annotations: Option<Vec<serde_json::Value>>,
     reasoning_details: Option<Vec<serde_json::Value>>,
     model_id: String,
-    images: Vec<Image>,
+    images: Vec<GeneratedImage>,
     citations: Vec<protocol::UrlCitation>,
     buffered: VecDeque<StreamCompletionResp>,
 }
@@ -46,7 +44,7 @@ pub struct StreamResult {
     pub responses: Vec<StreamCompletionResp>,
     pub annotations: Option<serde_json::Value>,
     pub reasoning_details: Option<serde_json::Value>,
-    pub image: Vec<Image>,
+    pub image: Vec<GeneratedImage>,
     pub citations: Vec<protocol::UrlCitation>,
 }
 
@@ -144,7 +142,7 @@ impl StreamCompletion {
         // Handle images
         if !delta.images.is_empty() {
             for raw_image in delta.images {
-                match Image::from_raw_image(raw_image) {
+                match GeneratedImage::from_raw_image(raw_image) {
                     Ok(image) => {
                         self.images.push(image);
                     }
