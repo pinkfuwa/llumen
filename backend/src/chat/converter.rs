@@ -92,9 +92,13 @@ pub fn history_to_openrouter(
                         .iter()
                         .filter_map(|f| {
                             let reader = blob.get(f.id)?;
+                            let mime_type = infer::get(reader.head(1024))
+                                .map(|kind| kind.mime_type().to_string())
+                                .unwrap_or_else(|| "application/octet-stream".to_string());
                             Some(openrouter::File {
                                 name: f.name.clone(),
-                                data: reader.as_ref().to_vec(),
+                                mime_type,
+                                data: reader.into(),
                             })
                         })
                         .collect();

@@ -239,11 +239,7 @@ impl Openrouter {
         if let Some(len) = content_length {
             req_builder = req_builder.header(http::header::CONTENT_LENGTH, len);
         }
-        let res = req_builder
-            .body(body)
-            .send()
-            .await
-            .map_err(Error::Http)?;
+        let res = req_builder.body(body).send().await.map_err(Error::Http)?;
 
         let json = res
             .json::<raw::CompletionResponse>()
@@ -380,11 +376,7 @@ impl Openrouter {
         if let Some(len) = content_length {
             req_builder = req_builder.header(http::header::CONTENT_LENGTH, len);
         }
-        let res = req_builder
-            .body(body)
-            .send()
-            .await
-            .map_err(Error::Http)?;
+        let res = req_builder.body(body).send().await.map_err(Error::Http)?;
 
         let mut result: raw::EmbeddingResponse = res.json().await.map_err(Error::Http)?;
 

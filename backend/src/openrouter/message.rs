@@ -1,11 +1,13 @@
 use protocol::OcrEngine;
 
 use super::{error::Error, raw};
+use crate::utils::blob::BlobReader;
 
 #[derive(Debug, Clone)]
 pub struct File {
     pub name: String,
-    pub data: Vec<u8>,
+    pub mime_type: String,
+    pub data: BlobReader,
 }
 
 // generated image
@@ -157,7 +159,7 @@ impl Message {
                 let mut parts = vec![raw::MessagePart::text(text)];
 
                 for file in files {
-                    let (description, content) = raw::MessagePart::unknown(&file.name, file.data);
+                    let (description, content) = raw::MessagePart::from_file(file);
                     parts.push(description);
 
                     // Filter based on content type and capabilities

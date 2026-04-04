@@ -3,9 +3,11 @@
 //! Not codegen, but it match the API spec
 //!
 //! https://openrouter.ai/docs
-use base64::{Engine as _, engine::general_purpose::STANDARD};
+use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use stream_json::IntoSerializer;
+use stream_json::{Base64EmbedFile, IntoSerializer, Serializer};
+
+use crate::utils::blob::BlobReader;
 
 #[derive(serde::Deserialize)]
 pub struct ModelListResponse {
@@ -230,6 +232,94 @@ pub struct MessagePart {
     pub image_url: Option<InputImage>,
 }
 
+#[derive(Debug, Clone)]
+pub struct FileDataUri {
+    pub data: BlobReader,
+    pub size: usize,
+    pub mime_type: String,
+}
+
+impl FileDataUri {
+    pub fn new(data: BlobReader, mime_type: String) -> Self {
+        let size = data.len();
+        Self {
+            data,
+            size,
+            mime_type,
+        }
+    }
+
+    pub fn audio_format(&self) -> String {
+        self.mime_type
+            .rsplit('/')
+            .next()
+            .unwrap_or("wav")
+            .to_string()
+    }
+}
+
+impl IntoSerializer for FileDataUri {
+    type S = Base64EmbedFile<BlobReader>;
+
+    fn into_serializer(self) -> Self::S {
+        match Base64EmbedFile::new(self.data, self.size, self.mime_type) {
+            Ok(serializer) => serializer,
+            Err(_) => unreachable!("Base64EmbedFile::new is infallible"),
+        }
+    }
+
+    fn size(&self) -> Option<usize> {
+        Base64EmbedFile::new(self.data.clone(), self.size, self.mime_type.clone())
+            .ok()
+            .and_then(|serializer| serializer.size())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum MaybeEmbedded {
+    Plain(String),
+    Embedded(FileDataUri),
+}
+
+pub enum MaybeEmbeddedSerializer {
+    Plain(<String as IntoSerializer>::S),
+    Embedded(<FileDataUri as IntoSerializer>::S),
+}
+
+impl Serializer for MaybeEmbeddedSerializer {
+    fn poll(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Result<Bytes, stream_json::Error>>> {
+        match self {
+            MaybeEmbeddedSerializer::Plain(serializer) => serializer.poll(cx),
+            MaybeEmbeddedSerializer::Embedded(serializer) => serializer.poll(cx),
+        }
+    }
+}
+
+impl Unpin for MaybeEmbeddedSerializer {}
+
+impl IntoSerializer for MaybeEmbedded {
+    type S = MaybeEmbeddedSerializer;
+
+    fn into_serializer(self) -> Self::S {
+        match self {
+            MaybeEmbedded::Plain(value) => MaybeEmbeddedSerializer::Plain(value.into_serializer()),
+            MaybeEmbedded::Embedded(value) => {
+                MaybeEmbeddedSerializer::Embedded(value.into_serializer())
+            }
+        }
+    }
+
+    fn size(&self) -> Option<usize> {
+        match self {
+            MaybeEmbedded::Plain(value) => value.size(),
+            MaybeEmbedded::Embedded(value) => value.size(),
+        }
+    }
+}
+
 impl MessagePart {
     pub fn text(text: String) -> Self {
         Self {
@@ -239,98 +329,89 @@ impl MessagePart {
         }
     }
 
-    pub fn unknown(filename: &str, blob: Vec<u8>) -> (Self, Self) {
-        let ext = filename
-            .rsplit('.')
-            .next()
-            .map(|s| s.to_lowercase())
-            .unwrap_or_default();
+    pub fn from_file(file: super::message::File) -> (Self, Self) {
+        let super::message::File {
+            name,
+            mime_type,
+            data,
+        } = file;
 
-        if infer::is_image(&blob) {
+        if mime_type == "application/pdf" {
             return (
-                Self::text(format!("Uploaded file: {}", filename)),
-                Self::image_url(format!(
-                    "data:image/{};base64,{}",
-                    ext,
-                    STANDARD.encode(&blob)
-                )),
+                Self::text(format!("Uploaded file: {}", name)),
+                Self::pdf(name, data),
             );
         }
 
-        if infer::is_audio(&blob) {
+        if mime_type.starts_with("image/") {
             return (
-                Self::text(format!("Uploaded file: {}", filename)),
-                Self::input_audio(blob, ext),
+                Self::text(format!("Uploaded file: {}", name)),
+                Self::image_data(data, mime_type),
             );
         }
 
-        if infer::archive::is_pdf(&blob) {
+        if mime_type.starts_with("audio/") {
             return (
-                Self::text(format!("Uploaded file: {}", filename)),
-                Self::pdf(filename.to_string(), &blob),
+                Self::text(format!("Uploaded file: {}", name)),
+                Self::input_audio(data, mime_type),
             );
         }
 
-        if infer::is_document(&blob) || infer::is_book(&blob) {
-            return (
-                Self::text(format!("Uploaded file: {}\n\n", filename)),
-                Self::text(
-                    "<content>Error: cannot parse file. supported format: PDF.</content>"
-                        .to_string(),
-                ),
-            );
-        }
-
-        // TODO: add video
-
-        match String::from_utf8(blob) {
-            Ok(content) => (
-                Self::text(format!("Uploaded file: {}\n\n", filename)),
-                Self::text(format!("<content>{}</content>", content)),
-            ),
-            Err(_) => (
-                Self::text(format!("Uploaded file: {}\n\n", filename)),
-                Self::text("<content>Error: cannot parse file</content>".to_string()),
-            ),
-        }
+        (
+            Self::text(format!("Uploaded file: {}", name)),
+            Self::file(name, data, mime_type),
+        )
     }
 
     pub fn image_url(url: String) -> Self {
         Self {
             r#type: MultiPartMessageType::ImageUrl,
-            image_url: Some(InputImage { url }),
-            ..Default::default()
-        }
-    }
-
-    pub fn pdf(filename: String, data: &[u8]) -> Self {
-        Self {
-            r#type: MultiPartMessageType::File,
-            file: Some(InputFile {
-                filename,
-                file_data: format!("data:application/pdf;base64,{}", STANDARD.encode(data)),
+            image_url: Some(InputImage {
+                url: MaybeEmbedded::Plain(url),
             }),
             ..Default::default()
         }
     }
 
-    pub fn file(filename: String, file_data: Vec<u8>) -> Self {
+    pub fn image_data(data: BlobReader, mime_type: String) -> Self {
         Self {
-            r#type: MultiPartMessageType::File,
-            file: Some(InputFile {
-                filename,
-                file_data: STANDARD.encode(file_data),
+            r#type: MultiPartMessageType::ImageUrl,
+            image_url: Some(InputImage {
+                url: MaybeEmbedded::Embedded(FileDataUri::new(data, mime_type)),
             }),
             ..Default::default()
         }
     }
 
-    pub fn input_audio(data: Vec<u8>, format: String) -> Self {
+    pub fn pdf(filename: String, data: BlobReader) -> Self {
+        Self {
+            r#type: MultiPartMessageType::File,
+            file: Some(InputFile {
+                filename,
+                file_data: FileDataUri::new(data, "application/pdf".to_string()),
+            }),
+            ..Default::default()
+        }
+    }
+
+    pub fn file(filename: String, file_data: BlobReader, mime_type: String) -> Self {
+        Self {
+            r#type: MultiPartMessageType::File,
+            file: Some(InputFile {
+                filename,
+                file_data: FileDataUri::new(file_data, mime_type),
+            }),
+            ..Default::default()
+        }
+    }
+
+    pub fn input_audio(data: BlobReader, mime_type: String) -> Self {
+        let data = FileDataUri::new(data, mime_type);
         Self {
             r#type: MultiPartMessageType::InputAudio,
             input_audio: Some(InputAudio {
-                data: STANDARD.encode(data),
-                format,
+                format: data.audio_format(),
+                data,
             }),
             ..Default::default()
         }
@@ -339,19 +420,19 @@ impl MessagePart {
 
 #[derive(Debug, Clone, stream_json::IntoSerializer)]
 pub struct InputAudio {
-    pub data: String,
+    pub data: FileDataUri,
     pub format: String,
 }
 
 #[derive(Debug, Clone, stream_json::IntoSerializer)]
 pub struct InputFile {
     pub filename: String,
-    pub file_data: String,
+    pub file_data: FileDataUri,
 }
 
 #[derive(Debug, Clone, stream_json::IntoSerializer)]
 pub struct InputImage {
-    pub url: String,
+    pub url: MaybeEmbedded,
 }
 
 #[derive(Debug, Clone, stream_json::IntoSerializer)]
