@@ -4,7 +4,8 @@
 //!
 //! https://openrouter.ai/docs
 use serde::{Deserialize, Serialize};
-use stream_json::{Base64EmbedURL, IntoSerializer, Serializer, Base64EmbedFile};
+use stream_json::{Base64EmbedFile, Base64EmbedURL, IntoSerializer, Serializer};
+use stream_json::serializers::PlainText;
 
 use crate::utils::blob::BlobReader;
 
@@ -226,6 +227,8 @@ pub struct MessagePart {
     pub file: Option<InputFile>,
     #[stream(skip_serialize_if = "Option::is_none")]
     pub image_url: Option<InputImage>,
+    #[stream(rename = "text", skip_serialize_if = "Option::is_none")]
+    pub text_file: Option<PlainText<BlobReader>>,
 }
 
 impl MessagePart {
@@ -237,7 +240,7 @@ impl MessagePart {
         }
     }
 
-    pub fn from_file(file: super::message::File) -> (Self, Self) {
+    pub fn from_file(file: super::message::File) -> Vec<Self> {
         let super::message::File {
             name,
             mime_type,
@@ -253,22 +256,37 @@ impl MessagePart {
                 .unwrap_or(&mime_type)
                 .to_string();
             let embed_file = Base64EmbedFile::new(data, data_len).unwrap();
-            return (
+            vec![
                 Self::text(format!("Uploaded file: {}", name)),
                 Self::input_audio(format, embed_file),
-            );
+            ]
+        } else if mime_type.starts_with("application/pdf") {
+            let embed_file = Base64EmbedURL::new(data, data_len, mime_type.clone()).unwrap();
+            vec![
+                Self::text(format!("Uploaded file: {}", name)),
+                Self::pdf(name, embed_file),
+            ]
+        } else if mime_type.starts_with("image/") {
+            let embed_file = Base64EmbedURL::new(data, data_len, mime_type.clone()).unwrap();
+            vec![
+                Self::text(format!("Uploaded file: {}", name)),
+                Self::image_data(embed_file),
+            ]
+        } else {
+            vec![
+                Self::text(format!("Uploaded file: {}\n<content>\n", name)),
+                Self::text_file(PlainText::new(data)),
+                Self::text("\n</content>".to_string()),
+            ]
         }
+    }
 
-        let embed_url = Base64EmbedURL::new(data, data_len, mime_type.clone()).unwrap();
-
-        let name_part = Self::text(format!("Uploaded file: {}", name));
-        let file_part = match mime_type.as_str() {
-            "application/pdf" => Self::pdf(name, embed_url),
-            mime if mime_type.starts_with("image/") => Self::image_data(embed_url),
-            _ => Self::file(name, embed_url),
-        };
-
-        (name_part, file_part)
+    pub fn text_file(text_file: PlainText<BlobReader>) -> Self {
+        Self {
+            r#type: MultiPartMessageType::Text,
+            text_file: Some(text_file),
+            ..Default::default()
+        }
     }
 
     pub fn image_data(embed_file: Base64EmbedURL<BlobReader>) -> Self {

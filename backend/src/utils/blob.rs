@@ -1,9 +1,7 @@
-use std::{io, path::Path, pin::Pin, task};
+use std::{path::Path, pin::Pin, task};
 
 use bytes::Bytes;
-use futures_util::FutureExt;
 use redb::*;
-use tokio::task::JoinHandle;
 use tokio_stream::{Stream, StreamExt};
 
 use std::sync::Arc;
@@ -43,14 +41,11 @@ impl Reader {
 
 pub struct BlobReader {
     reader: Arc<Reader>,
-    position: usize,
-    read_task: Option<JoinHandle<io::Result<Bytes>>>,
 }
 
 impl std::fmt::Debug for BlobReader {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("BlobReader")
-            .field("position", &self.position)
             .field("len", &self.reader.len())
             .finish()
     }
@@ -62,51 +57,21 @@ impl BlobReader {
     }
 }
 
+impl AsRef<[u8]> for BlobReader {
+    fn as_ref(&self) -> &[u8] {
+        self.reader.as_ref().as_ref()
+    }
+}
+
 impl Clone for BlobReader {
     fn clone(&self) -> Self {
-        Self {
-            reader: self.reader.clone(),
-            position: 0,
-            read_task: None,
-        }
+        Self { reader: self.reader.clone() }
     }
 }
 
 impl From<Reader> for BlobReader {
     fn from(reader: Reader) -> Self {
-        Self {
-            reader: Arc::new(reader),
-            position: 0,
-            read_task: None,
-        }
-    }
-}
-
-impl futures_util::io::AsyncRead for BlobReader {
-    fn poll_read(
-        mut self: Pin<&mut Self>,
-        _cx: &mut task::Context<'_>,
-        buf: &mut [u8],
-    ) -> task::Poll<io::Result<usize>> {
-        if buf.is_empty() {
-            return task::Poll::Ready(Ok(0));
-        }
-
-        if self.position >= self.reader.len() {
-            return task::Poll::Ready(Ok(0));
-        }
-
-        let position = self.position;
-        let max_len = std::cmp::min(CHUNK_SIZE, buf.len());
-        let end = std::cmp::min(position + max_len, self.reader.len());
-
-        // FIXME: mmap was not a great IO model
-        let data = self.reader.as_ref().as_ref();
-        let read_len = end - position;
-        buf[..read_len].copy_from_slice(&data[position..end]);
-        self.position = end;
-
-        task::Poll::Ready(Ok(read_len))
+        Self { reader: Arc::new(reader) }
     }
 }
 
@@ -115,7 +80,6 @@ const CHUNK_SIZE: usize = 256 * 1024;
 pub struct MmapStream {
     reader: Arc<Reader>,
     position: usize,
-    read_task: Option<JoinHandle<Bytes>>,
 }
 
 impl MmapStream {
@@ -123,7 +87,6 @@ impl MmapStream {
         Self {
             reader: Arc::new(reader),
             position: 0,
-            read_task: None,
         }
     }
 }
@@ -147,26 +110,9 @@ impl Stream for MmapStream {
 
         let position = self.position;
         let end = std::cmp::min(position + CHUNK_SIZE, self.reader.len());
-
-        if self.read_task.is_none() {
-            let reader = self.reader.clone();
-            self.read_task = Some(tokio::task::spawn_blocking(move || {
-                Bytes::copy_from_slice(&reader.as_ref().as_ref()[position..end])
-            }));
-        }
-
-        self.read_task
-            .as_mut()
-            .unwrap()
-            .poll_unpin(_cx)
-            .map(|x| match x {
-                Ok(buf) => {
-                    self.position = end;
-                    self.read_task = None;
-                    Some(Ok(buf))
-                }
-                Err(_) => None,
-            })
+        let buf = Bytes::copy_from_slice(&self.reader.as_ref().as_ref()[position..end]);
+        self.position = end;
+        task::Poll::Ready(Some(Ok(buf)))
     }
 }
 

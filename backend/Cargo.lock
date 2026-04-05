@@ -4358,12 +4358,11 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stream-json"
 version = "0.1.0"
-source = "git+https://github.com/Eason0729/stream_json.git?rev=0547fc56d8e309e3038dae61ce8819a7a2771004#0547fc56d8e309e3038dae61ce8819a7a2771004"
+source = "git+https://github.com/Eason0729/stream_json.git?rev=002e2b35f81493f9a24d9260fe01211f9e633be9#002e2b35f81493f9a24d9260fe01211f9e633be9"
 dependencies = [
  "base64 0.22.1",
  "bytes",
  "futures-core",
- "futures-io",
  "serde_json",
  "stream-json-macros",
  "thiserror",
@@ -4372,7 +4371,7 @@ dependencies = [
 [[package]]
 name = "stream-json-macros"
 version = "0.1.0"
-source = "git+https://github.com/Eason0729/stream_json.git?rev=0547fc56d8e309e3038dae61ce8819a7a2771004#0547fc56d8e309e3038dae61ce8819a7a2771004"
+source = "git+https://github.com/Eason0729/stream_json.git?rev=002e2b35f81493f9a24d9260fe01211f9e633be9#002e2b35f81493f9a24d9260fe01211f9e633be9"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -130,7 +130,7 @@ fn mime_type_for_openrouter(file_name: &str, data: &[u8]) -> String {
 
     infer::get(data)
         .map(|kind| kind.mime_type().to_string())
-        .unwrap_or_else(|| "application/octet-stream".to_string())
+        .unwrap_or_else(|| "text/plain".to_string())
 }
 
 fn is_audio_extension(extension: &str) -> bool {

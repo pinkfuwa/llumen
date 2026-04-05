@@ -32,15 +32,14 @@ fn file_to_parts(
     file: File,
     capability: &super::Capability,
 ) -> impl Iterator<Item = raw::MessagePart> + '_ {
-    let (description, content) = raw::MessagePart::from_file(file);
-    std::iter::once(description).chain(std::iter::once(content).filter(
-        move |part| match part.r#type {
+    raw::MessagePart::from_file(file)
+        .into_iter()
+        .filter(move |part| match part.r#type {
             raw::MultiPartMessageType::ImageUrl => capability.image_input,
             raw::MultiPartMessageType::InputAudio => capability.audio,
             raw::MultiPartMessageType::File => capability.ocr != OcrEngine::Disabled,
             raw::MultiPartMessageType::Text => true,
-        },
-    ))
+        })
 }
 
 /// Generated Image that haven't been stored
@@ -58,7 +57,6 @@ impl GeneratedImage {
         let (mime_part, base64_data) = data_url
             .split_once(';')
             .ok_or_else(|| Error::Incompatible("Image URL missing mime type"))?;
-        let _mime_prefix = mime_part.strip_prefix("image/").unwrap_or(mime_part);
         let base64_data = base64_data
             .strip_prefix("base64,")
             .ok_or_else(|| Error::Incompatible("Image URL missing base64, prefix"))?;
