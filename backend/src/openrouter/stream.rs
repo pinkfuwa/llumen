@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, pin::Pin, task};
 
-use futures_util::FutureExt;
+use futures_util::{FutureExt, TryStreamExt};
 use http::header::CONTENT_TYPE;
 use reqwest::{Body, Client};
 use eventsource_stream::{Event, Eventsource, EventStreamError};

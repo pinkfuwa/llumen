@@ -59,40 +59,40 @@ pub struct CompletionReq {
     pub model: String,
     pub messages: Vec<Message>,
     pub stream: bool,
-    #[stream(skip_serialize_if = "|value: &Option<f32>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub temperature: Option<f32>,
-    #[stream(skip_serialize_if = "|value: &Option<f32>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub repeat_penalty: Option<f32>,
-    #[stream(skip_serialize_if = "|value: &Option<i32>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub top_k: Option<i32>,
-    #[stream(skip_serialize_if = "|value: &Option<f32>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub top_p: Option<f32>,
-    #[stream(skip_serialize_if = "|value: &Option<i32>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub max_tokens: Option<i32>,
-    #[stream(skip_serialize_if = "|value: &Vec<Tool>| value.is_empty()")]
+    #[stream(skip_serialize_if = "Vec::is_empty")]
     pub tools: Vec<Tool>,
-    #[stream(skip_serialize_if = "|value: &Vec<Plugin>| value.is_empty()")]
+    #[stream(skip_serialize_if = "Vec::is_empty")]
     pub plugins: Vec<Plugin>,
-    #[stream(skip_serialize_if = "|value: &Option<WebSearchOptions>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub web_search_options: Option<WebSearchOptions>,
-    #[stream(skip_serialize_if = "|value: &Option<UsageReq>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub usage: Option<UsageReq>,
-    #[stream(skip_serialize_if = "|value: &Option<ResponseFormat>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
     // reasoning options
-    #[stream(skip_serialize_if = "|value: &Reasoning| value.is_empty()")]
+    #[stream(skip_serialize_if = "Reasoning::is_empty")]
     pub reasoning: Reasoning,
-    #[stream(skip_serialize_if = "|value: &Vec<String>| value.is_empty()")]
+    #[stream(skip_serialize_if = "Vec::is_empty")]
     pub modalities: Vec<String>,
 }
 
 #[derive(Debug, Clone, IntoSerializer, Default)]
 pub struct Reasoning {
-    #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub effort: Option<String>,
-    #[stream(skip_serialize_if = "|value: &Option<bool>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[stream(skip_serialize_if = "|value: &Option<i32>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub max_tokens: Option<i32>,
 }
 
@@ -190,25 +190,21 @@ pub struct FunctionTool {
 #[derive(Default, stream_json::IntoSerializer)]
 pub struct Message {
     pub role: Role,
-    #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub content: Option<String>,
-    #[stream(skip_serialize_if = "|value: &Option<Vec<ToolCallReq>>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub tool_calls: Option<Vec<ToolCallReq>>,
-    #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub tool_call_id: Option<String>,
-    #[stream(
-        rename = "content",
-        skip_serialize_if = "|value: &Option<Vec<MessagePart>>| value.is_none()"
-    )]
+    #[stream(rename = "content", skip_serialize_if = "Option::is_none")]
     pub contents: Option<Vec<MessagePart>>,
-    #[stream(skip_serialize_if = "|value: &Option<serde_json::Value>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub annotations: Option<serde_json::Value>,
     // reasoning text or encrypted reasoning detail
-    #[stream(skip_serialize_if = "|value: &Vec<serde_json::Value>| value.is_empty()")]
+    #[stream(skip_serialize_if = "Vec::is_empty")]
     pub reasoning_details: Vec<serde_json::Value>,
 }
 
-// `data:image/jpeg;base64,${base64Image}`;
 #[derive(Serialize, Default, stream_json::IntoSerializer)]
 pub enum MultiPartMessageType {
     #[default]
@@ -221,13 +217,13 @@ pub enum MultiPartMessageType {
 #[derive(Default, stream_json::IntoSerializer)]
 pub struct MessagePart {
     pub r#type: MultiPartMessageType,
-    #[stream(skip_serialize_if = "|value: &Option<String>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub text: Option<String>,
-    #[stream(skip_serialize_if = "|value: &Option<InputAudio>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub input_audio: Option<InputAudio>,
-    #[stream(skip_serialize_if = "|value: &Option<InputFile>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub file: Option<InputFile>,
-    #[stream(skip_serialize_if = "|value: &Option<InputImage>| value.is_none()")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub image_url: Option<InputImage>,
 }
 
