@@ -1,14 +1,14 @@
 use std::{collections::VecDeque, pin::Pin, task};
 
-use futures_util::FutureExt;
+use futures_util::{FutureExt, TryStreamExt};
 use http::header::CONTENT_TYPE;
-use reqwest::Client;
-use reqwest_eventsource::{Event, EventSource};
+use reqwest::{Body, Client};
+use eventsource_stream::{Event, Eventsource, EventStreamError};
+use reqwest::Response;
+use stream_json::IntoSerializer;
 use tokio_stream::{Stream, StreamExt};
 
-use super::Image;
-
-use super::{HTTP_REFERER, X_TITLE, error::Error, raw};
+use super::{HTTP_REFERER, X_TITLE, error::Error, raw, GeneratedImage};
 
 #[derive(Default, Clone, Debug)]
 pub struct ToolCall {
@@ -24,7 +24,7 @@ pub struct Usage {
 }
 
 pub struct StreamCompletion {
-    source: EventSource,
+    source: Pin<Box<dyn Stream<Item = Result<Event, EventStreamError<reqwest::Error>>> + Send>>,
     toolcalls: Vec<ToolCall>,
     usage: Usage,
     stop_reason: Option<raw::FinishReason>,
@@ -32,7 +32,7 @@ pub struct StreamCompletion {
     annotations: Option<Vec<serde_json::Value>>,
     reasoning_details: Option<Vec<serde_json::Value>>,
     model_id: String,
-    images: Vec<Image>,
+    images: Vec<GeneratedImage>,
     citations: Vec<protocol::UrlCitation>,
     buffered: VecDeque<StreamCompletionResp>,
 }
@@ -44,7 +44,7 @@ pub struct StreamResult {
     pub responses: Vec<StreamCompletionResp>,
     pub annotations: Option<serde_json::Value>,
     pub reasoning_details: Option<serde_json::Value>,
-    pub image: Vec<Image>,
+    pub image: Vec<GeneratedImage>,
     pub citations: Vec<protocol::UrlCitation>,
 }
 
@@ -76,37 +76,39 @@ impl StreamCompletion {
         }
         .to_string();
 
-        let builder = http_client
+        let content_length = req.size();
+        let body = Body::wrap_stream(req.into_stream());
+
+        let mut builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
-            .header(CONTENT_TYPE, "application/json")
-            .json(&req);
-
-        match EventSource::new(builder) {
-            Ok(source) => Ok(Self {
-                source,
-                toolcalls: Vec::new(),
-                usage: Usage::default(),
-                stop_reason: None,
-                responses: vec![],
-                annotations: None,
-                reasoning_details: None,
-                model_id,
-                images: Vec::new(),
-                citations: Vec::new(),
-                buffered: VecDeque::new(),
-            }),
-            Err(e) => {
-                log::error!("Failed to create event source: {}", e);
-                Err(Error::CannotCloneRequest(e))
-            }
+            .header(CONTENT_TYPE, "application/json");
+        if let Some(len) = content_length {
+            builder = builder.header(http::header::CONTENT_LENGTH, len);
         }
-    }
+        let builder = builder.body(body);
 
-    pub fn close(&mut self) {
-        self.source.close();
+        let response = builder.send().await?;
+        if !response.status().is_success() {
+            return Err(Self::handle_status_error(response).await);
+        }
+        let source = Box::pin(response.bytes_stream().eventsource());
+
+        Ok(Self {
+            source,
+            toolcalls: Vec::new(),
+            usage: Usage::default(),
+            stop_reason: None,
+            responses: vec![],
+            annotations: None,
+            reasoning_details: None,
+            model_id,
+            images: Vec::new(),
+            citations: Vec::new(),
+            buffered: VecDeque::new(),
+        })
     }
 
     fn handle_choice(&mut self, choice: raw::Choice) -> Vec<StreamCompletionResp> {
@@ -140,7 +142,7 @@ impl StreamCompletion {
         // Handle images
         if !delta.images.is_empty() {
             for raw_image in delta.images {
-                match Image::from_raw_image(raw_image) {
+                match GeneratedImage::from_raw_image(raw_image) {
                     Ok(image) => {
                         self.images.push(image);
                     }
@@ -293,21 +295,17 @@ impl StreamCompletion {
         Ok(responses)
     }
 
-    async fn handle_error(&self, err: reqwest_eventsource::Error) -> Error {
-        use reqwest_eventsource::Error as EventErr;
-        if let EventErr::InvalidStatusCode(code, res) = err {
-            match res.json::<raw::ErrorResp>().await {
-                Ok(error) => Error::Api {
-                    message: error.error.message,
-                    code: Some(code.as_u16() as i32),
-                },
-                Err(e) => Error::Api {
-                    message: format!("cannot parse error message: {}", e),
-                    code: Some(code.as_u16() as i32),
-                },
-            }
-        } else {
-            Error::EventSource(err)
+    async fn handle_status_error(response: reqwest::Response) -> Error {
+        let status = response.status();
+        match response.json::<raw::ErrorResp>().await {
+            Ok(error) => Error::Api {
+                message: error.error.message,
+                code: Some(status.as_u16() as i32),
+            },
+            Err(e) => Error::Api {
+                message: format!("cannot parse error message: {}", e),
+                code: Some(status.as_u16() as i32),
+            },
         }
     }
 
@@ -318,9 +316,9 @@ impl StreamCompletion {
                 return Some(Ok(item));
             }
 
-            match self.source.next().await? {
-                Ok(Event::Message(e)) if &e.data != "[DONE]" => {
-                    match self.handle_data(&e.data) {
+            match self.source.next().await {
+                Some(Ok(Event { data, .. })) if data != "[DONE]" => {
+                    match self.handle_data(&data) {
                         Ok(items) => {
                             // Buffer all items except the first one
                             if items.is_empty() {
@@ -339,15 +337,8 @@ impl StreamCompletion {
                         Err(err) => return Some(Err(err)),
                     };
                 }
-                Err(e) => {
-                    return match e {
-                        reqwest_eventsource::Error::StreamEnded => {
-                            log::debug!("Stream ended");
-                            None
-                        }
-                        e => Some(Err(self.handle_error(e).await)),
-                    };
-                }
+                Some(Err(err)) => return Some(Err(err.into())),
+                None => return None,
                 _ => continue,
             }
         }
@@ -417,12 +408,6 @@ impl Stream for StreamCompletion {
             }
             return result;
         }
-    }
-}
-
-impl Drop for StreamCompletion {
-    fn drop(&mut self) {
-        self.source.close();
     }
 }
 

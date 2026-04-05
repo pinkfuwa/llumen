@@ -5,8 +5,8 @@ use std::fmt;
 pub enum Error {
     /// Errors from HTTP client (reqwest)
     Http(reqwest::Error),
-    /// Errors from event streaming (reqwest_eventsource)
-    EventSource(reqwest_eventsource::Error),
+    /// Errors from event streaming (eventsource_stream)
+    EventSource(eventsource_stream::EventStreamError<reqwest::Error>),
     /// Errors from JSON serialization/deserialization
     Serde(serde_json::Error),
     /// Upstream Openrouter API returned an error
@@ -15,8 +15,6 @@ pub enum Error {
     MalformedResponse(&'static str),
     /// incompatible upstream, not a fatal error
     Incompatible(&'static str),
-    /// Cannot clone reqwest request (EventSource::new)
-    CannotCloneRequest(reqwest_eventsource::CannotCloneRequestError),
     /// Model does not support text output
     TextOutputNotSupported,
 }
@@ -36,7 +34,6 @@ impl fmt::Display for Error {
             }
             Error::MalformedResponse(msg) => write!(f, "Malformed response: {}", msg),
             Error::Incompatible(msg) => write!(f, "Incompatible upstream: {}", msg),
-            Error::CannotCloneRequest(e) => write!(f, "Cannot clone reqwest request: {}", e),
             Error::TextOutputNotSupported => write!(f, "Model does not support text output"),
         }
     }
@@ -59,8 +56,8 @@ impl From<reqwest::Error> for Error {
     }
 }
 
-impl From<reqwest_eventsource::Error> for Error {
-    fn from(e: reqwest_eventsource::Error) -> Self {
+impl From<eventsource_stream::EventStreamError<reqwest::Error>> for Error {
+    fn from(e: eventsource_stream::EventStreamError<reqwest::Error>) -> Self {
         Error::EventSource(e)
     }
 }
@@ -78,12 +75,6 @@ impl From<crate::openrouter::raw::ErrorInfo> for Error {
             message: e.message,
             code: e.code,
         }
-    }
-}
-
-impl From<reqwest_eventsource::CannotCloneRequestError> for Error {
-    fn from(e: reqwest_eventsource::CannotCloneRequestError) -> Self {
-        Error::CannotCloneRequest(e)
     }
 }
 

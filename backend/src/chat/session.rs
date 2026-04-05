@@ -286,7 +286,7 @@ impl CompletionSession {
         }
     }
 
-    async fn store_image(&self, img: &openrouter::Image) -> Option<i32> {
+    async fn store_image(&self, img: &openrouter::GeneratedImage) -> Option<i32> {
         // Image already has decoded data and mime_type
         let size = img.data.len();
 
@@ -459,7 +459,7 @@ impl CompletionSession {
                 content: assistant_truncated,
                 annotations: None,
                 reasoning_details: None,
-                images: Vec::new(),
+                files: Vec::new(),
             },
             openrouter::Message::User(
                 "Please generate a concise title, starting with a emoji".to_string(),

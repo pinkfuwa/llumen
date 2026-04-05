@@ -1,55 +1,74 @@
 use protocol::OcrEngine;
 
 use super::{error::Error, raw};
+use crate::utils::blob::BlobReader;
+
+use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
+use base64::engine::Engine;
 
 #[derive(Debug, Clone)]
 pub struct File {
     pub name: String,
-    pub data: Vec<u8>,
+    pub mime_type: String,
+    pub data: BlobReader,
 }
 
-// generated image
-#[derive(Debug, Clone)]
-pub struct Image {
+impl File {
+    pub fn is_image(&self) -> bool {
+        self.mime_type.starts_with("image/")
+    }
+    pub fn is_pdf(&self) -> bool {
+        self.mime_type == "application/pdf"
+    }
+    pub fn is_video(&self) -> bool {
+        self.mime_type.starts_with("video/")
+    }
+    pub fn is_audio(&self) -> bool {
+        self.mime_type.starts_with("audio/")
+    }
+}
+
+fn file_to_parts(
+    file: File,
+    capability: &super::Capability,
+) -> impl Iterator<Item = raw::MessagePart> + '_ {
+    let (description, content) = raw::MessagePart::from_file(file);
+    std::iter::once(description).chain(std::iter::once(content).filter(
+        move |part| match part.r#type {
+            raw::MultiPartMessageType::ImageUrl => capability.image_input,
+            raw::MultiPartMessageType::InputAudio => capability.audio,
+            raw::MultiPartMessageType::File => capability.ocr != OcrEngine::Disabled,
+            raw::MultiPartMessageType::Text => true,
+        },
+    ))
+}
+
+/// Generated Image that haven't been stored
+pub struct GeneratedImage {
     pub data: Vec<u8>,
     pub mime_type: String,
 }
 
-impl Image {
-    /// Parse a data URL like "data:image/png;base64,iVBORw0KGgo..."
-    pub fn from_data_url(url: &str) -> Result<Self, Error> {
-        if !url.starts_with("data:") {
-            return Err(Error::MalformedResponse(
-                "Image URL does not start with 'data:'",
-            ));
-        }
-
-        let url = url.strip_prefix("data:").unwrap();
-
-        let parts: Vec<&str> = url.splitn(2, ',').collect();
-        if parts.len() != 2 {
-            return Err(Error::MalformedResponse("Invalid data URL format"));
-        }
-
-        let metadata = parts[0];
-        let base64_data = parts[1];
-
-        // Parse metadata like "image/png;base64"
-        let mime_type = if let Some(semicolon_pos) = metadata.find(';') {
-            metadata[..semicolon_pos].to_string()
-        } else {
-            metadata.to_string()
-        };
-
-        // Decode base64
-        let data = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, base64_data)
-            .map_err(|_| Error::MalformedResponse("Failed to decode base64 image data"))?;
-
-        Ok(Image { data, mime_type })
-    }
-
-    pub fn from_raw_image(raw_image: super::raw::Image) -> Result<Self, Error> {
-        Self::from_data_url(&raw_image.image_url.url)
+impl GeneratedImage {
+    pub fn from_raw_image(raw: raw::Image) -> Result<Self, Error> {
+        let raw::ImageUrl { url } = raw.image_url;
+        let data_url = url
+            .strip_prefix("data:")
+            .ok_or_else(|| Error::Incompatible("Image URL missing data: prefix"))?;
+        let (mime_part, base64_data) = data_url
+            .split_once(';')
+            .ok_or_else(|| Error::Incompatible("Image URL missing mime type"))?;
+        let _mime_prefix = mime_part.strip_prefix("image/").unwrap_or(mime_part);
+        let base64_data = base64_data
+            .strip_prefix("base64,")
+            .ok_or_else(|| Error::Incompatible("Image URL missing base64, prefix"))?;
+        let data = BASE64_STANDARD
+            .decode(base64_data)
+            .map_err(|e| Error::Incompatible("Failed to decode base64 image"))?;
+        Ok(Self {
+            data,
+            mime_type: mime_part.to_string(),
+        })
     }
 }
 
@@ -74,7 +93,7 @@ pub enum Message {
         content: String,
         annotations: Option<serde_json::Value>,
         reasoning_details: Option<serde_json::Value>,
-        images: Vec<Image>,
+        files: Vec<File>,
     },
     MultipartUser {
         text: String,
@@ -95,7 +114,7 @@ impl Message {
                 content,
                 annotations,
                 reasoning_details,
-                images,
+                files,
             } => {
                 let mut reasoning_details_value = None;
                 if let Some(details) = reasoning_details {
@@ -107,7 +126,7 @@ impl Message {
                         }
                     }
                 }
-                if images.is_empty() {
+                if files.is_empty() {
                     return raw::Message {
                         role: raw::Role::Assistant,
                         content: Some(content),
@@ -120,16 +139,8 @@ impl Message {
                 }
                 let mut parts = Vec::new();
 
-                for image in images {
-                    let data_url = format!(
-                        "data:{};base64,{}",
-                        image.mime_type,
-                        base64::Engine::encode(
-                            &base64::engine::general_purpose::STANDARD,
-                            &image.data
-                        )
-                    );
-                    parts.push(raw::MessagePart::image_url(data_url));
+                for file in files {
+                    parts.extend(file_to_parts(file, capability));
                 }
 
                 parts.push(raw::MessagePart::text(content));
@@ -157,25 +168,7 @@ impl Message {
                 let mut parts = vec![raw::MessagePart::text(text)];
 
                 for file in files {
-                    let (description, content) = raw::MessagePart::unknown(&file.name, file.data);
-                    parts.push(description);
-
-                    // Filter based on content type and capabilities
-                    match content.r#type {
-                        raw::MultiPartMessageType::ImageUrl if capability.image_input => {
-                            parts.push(content)
-                        }
-                        raw::MultiPartMessageType::InputAudio if capability.audio => {
-                            parts.push(content)
-                        }
-                        raw::MultiPartMessageType::File
-                            if capability.ocr != OcrEngine::Disabled =>
-                        {
-                            parts.push(content)
-                        }
-                        raw::MultiPartMessageType::Text => parts.push(content),
-                        _ => {}
-                    }
+                    parts.extend(file_to_parts(file, capability));
                 }
 
                 raw::Message {

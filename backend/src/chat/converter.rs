@@ -92,9 +92,13 @@ pub fn history_to_openrouter(
                         .iter()
                         .filter_map(|f| {
                             let reader = blob.get(f.id)?;
+                            let mime_type = infer::get(reader.head(1024))
+                                .map(|kind| kind.mime_type().to_string())
+                                .unwrap_or_else(|| "application/octet-stream".to_string());
                             Some(openrouter::File {
                                 name: f.name.clone(),
-                                data: reader.as_ref().to_vec(),
+                                mime_type,
+                                data: reader.into(),
                             })
                         })
                         .collect();
@@ -117,19 +121,16 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
     let mut text_parts: Vec<String> = Vec::new();
     let mut annotations: Option<serde_json::Value> = None;
     let mut reasoning_details: Option<serde_json::Value> = None;
-    let mut images: Vec<openrouter::Image> = Vec::new();
 
-    let flush = |text_parts: &mut Vec<String>,
-                 images: &mut Vec<openrouter::Image>,
-                 out: &mut Vec<openrouter::Message>| {
-        if text_parts.is_empty() && images.is_empty() {
+    let flush = |text_parts: &mut Vec<String>, out: &mut Vec<openrouter::Message>| {
+        if text_parts.is_empty() {
             return;
         }
         out.push(openrouter::Message::Assistant {
             content: text_parts.join(""),
             annotations: None,
             reasoning_details: None,
-            images: std::mem::take(images),
+            files: Vec::new(),
         });
         text_parts.clear();
     };
@@ -145,7 +146,7 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
                 annotations = Some(a.clone());
             }
             AssistantChunk::ToolCall { id, name, arg } => {
-                flush(&mut text_parts, &mut images, out);
+                flush(&mut text_parts, out);
                 out.push(openrouter::Message::ToolCall(openrouter::MessageToolCall {
                     id: id.clone(),
                     name: name.clone(),
@@ -170,12 +171,12 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
     }
 
     // Final flush with annotations and reasoning_details
-    if !text_parts.is_empty() || !images.is_empty() {
+    if !text_parts.is_empty() {
         out.push(openrouter::Message::Assistant {
             content: text_parts.join(""),
             annotations,
             reasoning_details,
-            images,
+            files: Vec::new(),
         });
     }
 }

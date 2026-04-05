@@ -1,4 +1,4 @@
-use std::{path::Path, pin::Pin, task};
+use std::{io, path::Path, pin::Pin, task};
 
 use bytes::Bytes;
 use futures_util::FutureExt;
@@ -33,6 +33,80 @@ impl AsRef<[u8]> for Reader {
 impl Reader {
     pub fn len(&self) -> usize {
         self.guard.value().len()
+    }
+
+    pub fn head(&self, size: usize) -> &[u8] {
+        let end = std::cmp::min(size, self.len());
+        &self.guard.value()[..end]
+    }
+}
+
+pub struct BlobReader {
+    reader: Arc<Reader>,
+    position: usize,
+    read_task: Option<JoinHandle<io::Result<Bytes>>>,
+}
+
+impl std::fmt::Debug for BlobReader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BlobReader")
+            .field("position", &self.position)
+            .field("len", &self.reader.len())
+            .finish()
+    }
+}
+
+impl BlobReader {
+    pub fn len(&self) -> usize {
+        self.reader.len()
+    }
+}
+
+impl Clone for BlobReader {
+    fn clone(&self) -> Self {
+        Self {
+            reader: self.reader.clone(),
+            position: 0,
+            read_task: None,
+        }
+    }
+}
+
+impl From<Reader> for BlobReader {
+    fn from(reader: Reader) -> Self {
+        Self {
+            reader: Arc::new(reader),
+            position: 0,
+            read_task: None,
+        }
+    }
+}
+
+impl futures_util::io::AsyncRead for BlobReader {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        _cx: &mut task::Context<'_>,
+        buf: &mut [u8],
+    ) -> task::Poll<io::Result<usize>> {
+        if buf.is_empty() {
+            return task::Poll::Ready(Ok(0));
+        }
+
+        if self.position >= self.reader.len() {
+            return task::Poll::Ready(Ok(0));
+        }
+
+        let position = self.position;
+        let max_len = std::cmp::min(CHUNK_SIZE, buf.len());
+        let end = std::cmp::min(position + max_len, self.reader.len());
+
+        // FIXME: mmap was not a great IO model
+        let data = self.reader.as_ref().as_ref();
+        let read_len = end - position;
+        buf[..read_len].copy_from_slice(&data[position..end]);
+        self.position = end;
+
+        task::Poll::Ready(Ok(read_len))
     }
 }
 

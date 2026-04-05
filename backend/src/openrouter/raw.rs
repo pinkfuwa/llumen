@@ -3,8 +3,10 @@
 //! Not codegen, but it match the API spec
 //!
 //! https://openrouter.ai/docs
-use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
+use stream_json::{Base64EmbedURL, IntoSerializer, Serializer, Base64EmbedFile};
+
+use crate::utils::blob::BlobReader;
 
 #[derive(serde::Deserialize)]
 pub struct ModelListResponse {
@@ -52,45 +54,45 @@ pub struct Architecture {
     pub output_modalities: Vec<Modality>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(IntoSerializer)]
 pub struct CompletionReq {
     pub model: String,
     pub messages: Vec<Message>,
     pub stream: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub temperature: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub repeat_penalty: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub top_k: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub top_p: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub max_tokens: Option<i32>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[stream(skip_serialize_if = "Vec::is_empty")]
     pub tools: Vec<Tool>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[stream(skip_serialize_if = "Vec::is_empty")]
     pub plugins: Vec<Plugin>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub web_search_options: Option<WebSearchOptions>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub usage: Option<UsageReq>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
     // reasoning options
-    #[serde(skip_serializing_if = "Reasoning::is_empty")]
+    #[stream(skip_serialize_if = "Reasoning::is_empty")]
     pub reasoning: Reasoning,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[stream(skip_serialize_if = "Vec::is_empty")]
     pub modalities: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Debug, Clone, IntoSerializer, Default)]
 pub struct Reasoning {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub effort: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub max_tokens: Option<i32>,
 }
 
@@ -109,48 +111,21 @@ impl Reasoning {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct ResponseFormat {
     pub r#type: String,
     pub json_schema: serde_json::Value,
 }
 
-impl CompletionReq {
-    pub fn log(&self) {
-        #[cfg(feature = "dev")]
-        if let Ok(req) = serde_json::to_string_pretty(&self) {
-            fn truncate_base64_in_json(json: &str) -> String {
-                use regex::Regex;
-
-                let re =
-                    Regex::new(r#"("(?:data|file_data|url)"\s*:\s*"[^"]{64})[^"]{1,}""#).unwrap();
-                re.replace_all(json, |caps: &regex::Captures| {
-                    let prefix = &caps[1];
-                    format!(r#"{}...""#, prefix)
-                })
-                .to_string()
-            }
-
-            let truncated = truncate_base64_in_json(&req);
-            log::debug!(
-                "sending completion\n===============\n{}\n===============",
-                truncated
-            );
-        }
-        #[cfg(not(feature = "dev"))]
-        log::debug!("sending completion");
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct UsageReq {
     pub include: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct Plugin {
     pub id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "|value: &Option<PdfPlugin>| value.is_none()")]
     pub pdf: Option<PdfPlugin>,
 }
 
@@ -187,24 +162,24 @@ impl Plugin {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct WebSearchOptions {
-    #[serde(rename = "search_context_size")]
+    #[stream(rename = "search_context_size")]
     pub search_context_size: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct PdfPlugin {
     pub engine: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct Tool {
     pub r#type: String,
     pub function: FunctionTool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct FunctionTool {
     pub name: String,
     pub description: String,
@@ -212,27 +187,25 @@ pub struct FunctionTool {
 }
 
 // TODO: have both content and contents set will cause serialization error
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Default, stream_json::IntoSerializer)]
 pub struct Message {
     pub role: Role,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub content: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub tool_calls: Option<Vec<ToolCallReq>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub tool_call_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "content")]
+    #[stream(rename = "content", skip_serialize_if = "Option::is_none")]
     pub contents: Option<Vec<MessagePart>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub annotations: Option<serde_json::Value>,
     // reasoning text or encrypted reasoning detail
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[stream(skip_serialize_if = "Vec::is_empty")]
     pub reasoning_details: Vec<serde_json::Value>,
 }
 
-// `data:image/jpeg;base64,${base64Image}`;
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Serialize, Default, stream_json::IntoSerializer)]
 #[serde(rename_all = "snake_case")]
 pub enum MultiPartMessageType {
     #[default]
@@ -242,16 +215,16 @@ pub enum MultiPartMessageType {
     InputAudio,
 }
 
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Default, stream_json::IntoSerializer)]
 pub struct MessagePart {
     pub r#type: MultiPartMessageType,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub text: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub input_audio: Option<InputAudio>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub file: Option<InputFile>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[stream(skip_serialize_if = "Option::is_none")]
     pub image_url: Option<InputImage>,
 }
 
@@ -264,129 +237,107 @@ impl MessagePart {
         }
     }
 
-    pub fn unknown(filename: &str, blob: Vec<u8>) -> (Self, Self) {
-        let ext = filename
-            .rsplit('.')
-            .next()
-            .map(|s| s.to_lowercase())
-            .unwrap_or_default();
+    pub fn from_file(file: super::message::File) -> (Self, Self) {
+        let super::message::File {
+            name,
+            mime_type,
+            data,
+        } = file;
 
-        if infer::is_image(&blob) {
+        let data_len = data.len();
+
+        if mime_type.starts_with("audio/") {
+            let format = mime_type
+                .split('/')
+                .nth(1)
+                .unwrap_or(&mime_type)
+                .to_string();
+            let embed_file = Base64EmbedFile::new(data, data_len).unwrap();
             return (
-                Self::text(format!("Uploaded file: {}", filename)),
-                Self::image_url(format!(
-                    "data:image/{};base64,{}",
-                    ext,
-                    STANDARD.encode(&blob)
-                )),
+                Self::text(format!("Uploaded file: {}", name)),
+                Self::input_audio(format, embed_file),
             );
         }
 
-        if infer::is_audio(&blob) {
-            return (
-                Self::text(format!("Uploaded file: {}", filename)),
-                Self::input_audio(blob, ext),
-            );
-        }
+        let embed_url = Base64EmbedURL::new(data, data_len, mime_type.clone()).unwrap();
 
-        if infer::archive::is_pdf(&blob) {
-            return (
-                Self::text(format!("Uploaded file: {}", filename)),
-                Self::pdf(filename.to_string(), &blob),
-            );
-        }
+        let name_part = Self::text(format!("Uploaded file: {}", name));
+        let file_part = match mime_type.as_str() {
+            "application/pdf" => Self::pdf(name, embed_url),
+            mime if mime_type.starts_with("image/") => Self::image_data(embed_url),
+            _ => Self::file(name, embed_url),
+        };
 
-        if infer::is_document(&blob) || infer::is_book(&blob) {
-            return (
-                Self::text(format!("Uploaded file: {}\n\n", filename)),
-                Self::text(
-                    "<content>Error: cannot parse file. supported format: PDF.</content>"
-                        .to_string(),
-                ),
-            );
-        }
-
-        // TODO: add video
-
-        match String::from_utf8(blob) {
-            Ok(content) => (
-                Self::text(format!("Uploaded file: {}\n\n", filename)),
-                Self::text(format!("<content>{}</content>", content)),
-            ),
-            Err(_) => (
-                Self::text(format!("Uploaded file: {}\n\n", filename)),
-                Self::text("<content>Error: cannot parse file</content>".to_string()),
-            ),
-        }
+        (name_part, file_part)
     }
 
-    pub fn image_url(url: String) -> Self {
+    pub fn image_data(embed_file: Base64EmbedURL<BlobReader>) -> Self {
         Self {
             r#type: MultiPartMessageType::ImageUrl,
-            image_url: Some(InputImage { url }),
+            image_url: Some(InputImage { url: embed_file }),
             ..Default::default()
         }
     }
 
-    pub fn pdf(filename: String, data: &[u8]) -> Self {
+    pub fn pdf(filename: String, embed_file: Base64EmbedURL<BlobReader>) -> Self {
         Self {
             r#type: MultiPartMessageType::File,
             file: Some(InputFile {
                 filename,
-                file_data: format!("data:application/pdf;base64,{}", STANDARD.encode(data)),
+                file_data: embed_file,
             }),
             ..Default::default()
         }
     }
 
-    pub fn file(filename: String, file_data: Vec<u8>) -> Self {
+    pub fn file(filename: String, embed_file: Base64EmbedURL<BlobReader>) -> Self {
         Self {
             r#type: MultiPartMessageType::File,
             file: Some(InputFile {
                 filename,
-                file_data: STANDARD.encode(file_data),
+                file_data: embed_file,
             }),
             ..Default::default()
         }
     }
 
-    pub fn input_audio(data: Vec<u8>, format: String) -> Self {
+    pub fn input_audio(format: String, embed_file: Base64EmbedFile<BlobReader>) -> Self {
         Self {
             r#type: MultiPartMessageType::InputAudio,
             input_audio: Some(InputAudio {
-                data: STANDARD.encode(data),
                 format,
+                data: embed_file,
             }),
             ..Default::default()
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(stream_json::IntoSerializer)]
 pub struct InputAudio {
-    data: String,
-    format: String,
+    pub data: Base64EmbedFile<BlobReader>,
+    pub format: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(stream_json::IntoSerializer)]
 pub struct InputFile {
-    filename: String,
-    file_data: String,
+    pub filename: String,
+    pub file_data: Base64EmbedURL<BlobReader>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(stream_json::IntoSerializer)]
 pub struct InputImage {
-    url: String,
+    pub url: Base64EmbedURL<BlobReader>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(stream_json::IntoSerializer)]
 pub struct ToolCallReq {
     pub id: String,
     pub function: ToolFunctionResp,
     pub r#type: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct StreamCompletionResponse {
     pub id: String,
     pub choices: Vec<Choice>,
@@ -395,14 +346,14 @@ pub struct StreamCompletionResponse {
 }
 
 /// openrouter specific response with usage and cost info
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct CompletionInfoResp {
     pub id: String,
     pub model: String,
     pub usage: Usage,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct Usage {
     pub total_tokens: Option<i64>,
     #[serde(default)]
@@ -415,7 +366,7 @@ pub struct DetailCost {
     pub upstream_inference_cost: Option<f64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Default, PartialEq, Eq, stream_json::IntoSerializer)]
 #[serde(rename_all = "snake_case")]
 pub enum Role {
     #[default]
@@ -425,7 +376,7 @@ pub enum Role {
     System,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Deserialize, Debug, Clone, stream_json::IntoSerializer)]
 #[serde(rename_all = "snake_case")]
 pub enum FinishReason {
     Stop,
@@ -434,7 +385,7 @@ pub enum FinishReason {
     Error,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct Choice {
     pub index: i64,
     pub delta: Delta,
@@ -475,15 +426,13 @@ pub struct ToolCall {
     pub r#type: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, IntoSerializer)]
 pub struct ToolFunctionResp {
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub arguments: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct FullChoice {
     pub index: i64,
     pub finish_reason: Option<FinishReason>,
@@ -492,7 +441,7 @@ pub struct FullChoice {
     pub message: OutputMessage,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct CompletionResponse {
     pub choices: Option<Vec<FullChoice>>,
     pub error: Option<ErrorInfo>,
@@ -500,7 +449,7 @@ pub struct CompletionResponse {
     pub usage: Option<Usage>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct OutputMessage {
     pub role: String,
     pub content: String,
@@ -521,12 +470,12 @@ pub struct ImageUrl {
     // data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct ErrorResp {
     pub error: ErrorInfo,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct ErrorInfo {
     pub message: String,
     pub code: Option<i32>,
@@ -544,25 +493,25 @@ pub struct EmbeddingModelListResponse {
     pub data: Vec<EmbeddingModel>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(IntoSerializer)]
 pub struct EmbeddingReq {
     pub model: String,
     pub input: String,
 }
 
-#[derive(serde::Serialize)]
+#[derive(IntoSerializer)]
 pub struct EmbeddingBatchReq {
     pub model: String,
     pub input: Vec<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct EmbeddingResult {
     pub embedding: Vec<f32>,
     pub index: usize,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Deserialize)]
 pub struct EmbeddingResponse {
     pub price: f64,
     pub data: Vec<EmbeddingResult>,

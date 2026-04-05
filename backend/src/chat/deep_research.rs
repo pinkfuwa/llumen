@@ -271,7 +271,7 @@ impl DeepAgent {
                 content: assistant_text.clone(),
                 annotations: None,
                 reasoning_details: None,
-                images: Vec::new(),
+                files: Vec::new(),
             });
 
             for tool_call in tool_calls {

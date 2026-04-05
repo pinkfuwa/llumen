@@ -274,51 +274,63 @@ async fn parallel_tool_calls() {
 
 #[test]
 fn test_image_data_url_parsing() {
-    use crate::openrouter::Image;
+    use crate::openrouter::message::GeneratedImage;
+    use crate::openrouter::raw::{Image, ImageUrl};
 
-    // Test parsing a valid PNG data URL
+    fn make_raw_image(data_url: &str) -> Image {
+        Image {
+            r#type: "image".to_string(),
+            image_url: ImageUrl {
+                url: data_url.to_string(),
+            },
+        }
+    }
+
     let data_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
-    let image = Image::from_data_url(data_url).expect("Failed to parse valid PNG data URL");
+    let image = GeneratedImage::from_raw_image(make_raw_image(data_url))
+        .expect("Failed to parse valid PNG data URL");
 
     assert_eq!(image.mime_type, "image/png");
     assert!(!image.data.is_empty(), "Image data should not be empty");
 
-    // Test parsing a valid JPEG data URL
-    let jpeg_url = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=";
-    let jpeg_image = Image::from_data_url(jpeg_url).expect("Failed to parse valid JPEG data URL");
+    let jpeg_url = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=";
+    let jpeg_image = GeneratedImage::from_raw_image(make_raw_image(jpeg_url))
+        .expect("Failed to parse valid JPEG data URL");
 
     assert_eq!(jpeg_image.mime_type, "image/jpeg");
     assert!(!jpeg_image.data.is_empty(), "JPEG data should not be empty");
 
-    // Test invalid data URL (missing data: prefix)
     let invalid_url = "image/png;base64,iVBORw0KGgo=";
-    let result = Image::from_data_url(invalid_url);
+    let result = GeneratedImage::from_raw_image(make_raw_image(invalid_url));
     assert!(result.is_err(), "Should fail for URL without data: prefix");
 
-    // Test invalid data URL (missing comma separator)
     let invalid_url2 = "data:image/png;base64";
-    let result2 = Image::from_data_url(invalid_url2);
+    let result2 = GeneratedImage::from_raw_image(make_raw_image(invalid_url2));
     assert!(
         result2.is_err(),
         "Should fail for URL without comma separator"
     );
 
-    // Test invalid base64
     let invalid_base64 = "data:image/png;base64,invalid-base64!!!";
-    let result3 = Image::from_data_url(invalid_base64);
+    let result3 = GeneratedImage::from_raw_image(make_raw_image(invalid_base64));
     assert!(result3.is_err(), "Should fail for invalid base64 data");
 }
 
 #[test]
 fn test_stream_result_images() {
+    use crate::openrouter::message::GeneratedImage;
+    use crate::openrouter::raw::{Image, FinishReason, ImageUrl};
     use crate::openrouter::stream::{StreamCompletionResp, StreamResult, Usage};
-    use crate::openrouter::{Image, raw::FinishReason};
 
-    // Create a sample image
     let data_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
-    let image = Image::from_data_url(data_url).expect("Failed to parse test image");
+    let raw_image = Image {
+        r#type: "image".to_string(),
+        image_url: ImageUrl {
+            url: data_url.to_string(),
+        },
+    };
+    let image = GeneratedImage::from_raw_image(raw_image).expect("Failed to parse test image");
 
-    // Create a StreamResult with images
     let result = StreamResult {
         toolcalls: vec![],
         usage: Usage {

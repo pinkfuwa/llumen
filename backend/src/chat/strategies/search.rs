@@ -70,7 +70,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
             content: assistant_text,
             annotations: None,
             reasoning_details: None,
-            images: Vec::new(),
+            files: Vec::new(),
         });
 
         for tc in tool_calls {
