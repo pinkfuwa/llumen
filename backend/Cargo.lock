@@ -4358,7 +4358,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stream-json"
 version = "0.1.0"
-source = "git+https://github.com/Eason0729/stream_json.git#7579099e2ebae8c85fa99f0d6c11d688656071a6"
+source = "git+https://github.com/Eason0729/stream_json.git?rev=7579099e2ebae8c85fa99f0d6c11d688656071a6#7579099e2ebae8c85fa99f0d6c11d688656071a6"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -4372,7 +4372,7 @@ dependencies = [
 [[package]]
 name = "stream-json-macros"
 version = "0.1.0"
-source = "git+https://github.com/Eason0729/stream_json.git#7579099e2ebae8c85fa99f0d6c11d688656071a6"
+source = "git+https://github.com/Eason0729/stream_json.git?rev=7579099e2ebae8c85fa99f0d6c11d688656071a6#7579099e2ebae8c85fa99f0d6c11d688656071a6"
 dependencies = [
  "proc-macro2",
  "quote",

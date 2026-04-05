@@ -333,15 +333,15 @@ impl Openrouter {
 
         if structured_output {
             let schema = schemars::schema_for!(T);
-            let schema_json = serde_json::to_string(&schema).map_err(Error::Serde)?;
+            let schema_json = serde_json::to_value(&schema).map_err(Error::Serde)?;
 
             req.response_format = Some(raw::ResponseFormat {
                 r#type: "json_schema".to_string(),
-                json_schema: format!(
-                    r#"{{"name":"{}","strict":true,"schema":{}}}"#,
-                    std::any::type_name::<T>().split("::").last().unwrap(),
-                    schema_json
-                ),
+                json_schema: serde_json::json!({
+                    "name": std::any::type_name::<T>().split("::").last().unwrap(),
+                    "strict": true,
+                    "schema": schema_json
+                }),
             });
         }
 

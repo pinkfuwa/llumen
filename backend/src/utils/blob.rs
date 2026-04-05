@@ -85,7 +85,7 @@ impl From<Reader> for BlobReader {
 impl futures_util::io::AsyncRead for BlobReader {
     fn poll_read(
         mut self: Pin<&mut Self>,
-        cx: &mut task::Context<'_>,
+        _cx: &mut task::Context<'_>,
         buf: &mut [u8],
     ) -> task::Poll<io::Result<usize>> {
         if buf.is_empty() {
@@ -100,38 +100,13 @@ impl futures_util::io::AsyncRead for BlobReader {
         let max_len = std::cmp::min(CHUNK_SIZE, buf.len());
         let end = std::cmp::min(position + max_len, self.reader.len());
 
-        if self.read_task.is_none() {
-            let reader = self.reader.clone();
-            self.read_task = Some(tokio::task::spawn_blocking(move || {
-                Ok(Bytes::copy_from_slice(
-                    &reader.as_ref().as_ref()[position..end],
-                ))
-            }));
-        }
+        // FIXME: mmap was not a great IO model
+        let data = self.reader.as_ref().as_ref();
+        let read_len = end - position;
+        buf[..read_len].copy_from_slice(&data[position..end]);
+        self.position = end;
 
-        match self
-            .read_task
-            .as_mut()
-            .expect("read_task initialized")
-            .poll_unpin(cx)
-        {
-            task::Poll::Ready(Ok(Ok(chunk))) => {
-                let read_len = chunk.len();
-                buf[..read_len].copy_from_slice(&chunk);
-                self.position = end;
-                self.read_task = None;
-                task::Poll::Ready(Ok(read_len))
-            }
-            task::Poll::Ready(Ok(Err(err))) => {
-                self.read_task = None;
-                task::Poll::Ready(Err(err))
-            }
-            task::Poll::Ready(Err(_)) => {
-                self.read_task = None;
-                task::Poll::Ready(Err(io::Error::other("spawn_blocking failed")))
-            }
-            task::Poll::Pending => task::Poll::Pending,
-        }
+        task::Poll::Ready(Ok(read_len))
     }
 }
 

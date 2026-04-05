@@ -114,7 +114,7 @@ impl Reasoning {
 #[derive(Serialize, stream_json::IntoSerializer)]
 pub struct ResponseFormat {
     pub r#type: String,
-    pub json_schema: String,
+    pub json_schema: serde_json::Value,
 }
 
 #[derive(Serialize, stream_json::IntoSerializer)]
@@ -206,6 +206,7 @@ pub struct Message {
 }
 
 #[derive(Serialize, Default, stream_json::IntoSerializer)]
+#[serde(rename_all = "snake_case")]
 pub enum MultiPartMessageType {
     #[default]
     Text,

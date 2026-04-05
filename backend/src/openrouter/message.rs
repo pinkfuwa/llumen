@@ -28,6 +28,21 @@ impl File {
     }
 }
 
+fn file_to_parts(
+    file: File,
+    capability: &super::Capability,
+) -> impl Iterator<Item = raw::MessagePart> + '_ {
+    let (description, content) = raw::MessagePart::from_file(file);
+    std::iter::once(description).chain(std::iter::once(content).filter(
+        move |part| match part.r#type {
+            raw::MultiPartMessageType::ImageUrl => capability.image_input,
+            raw::MultiPartMessageType::InputAudio => capability.audio,
+            raw::MultiPartMessageType::File => capability.ocr != OcrEngine::Disabled,
+            raw::MultiPartMessageType::Text => true,
+        },
+    ))
+}
+
 /// Generated Image that haven't been stored
 pub struct GeneratedImage {
     pub data: Vec<u8>,
@@ -39,14 +54,14 @@ impl GeneratedImage {
         let raw::ImageUrl { url } = raw.image_url;
         let data_url = url
             .strip_prefix("data:")
-            .ok_or_else(|| Error::Incompatible("Image URL missing data: prefix".into()))?;
+            .ok_or_else(|| Error::Incompatible("Image URL missing data: prefix"))?;
         let (mime_part, base64_data) = data_url
             .split_once(';')
-            .ok_or_else(|| Error::Incompatible("Image URL missing mime type".into()))?;
+            .ok_or_else(|| Error::Incompatible("Image URL missing mime type"))?;
         let _mime_prefix = mime_part.strip_prefix("image/").unwrap_or(mime_part);
         let base64_data = base64_data
             .strip_prefix("base64,")
-            .ok_or_else(|| Error::Incompatible("Image URL missing base64, prefix".into()))?;
+            .ok_or_else(|| Error::Incompatible("Image URL missing base64, prefix"))?;
         let data = BASE64_STANDARD
             .decode(base64_data)
             .map_err(|e| Error::Incompatible("Failed to decode base64 image"))?;
@@ -125,9 +140,7 @@ impl Message {
                 let mut parts = Vec::new();
 
                 for file in files {
-                    todo!(
-                        "read capability to see image support, and filter out image file if unsupport"
-                    );
+                    parts.extend(file_to_parts(file, capability));
                 }
 
                 parts.push(raw::MessagePart::text(content));
@@ -155,25 +168,7 @@ impl Message {
                 let mut parts = vec![raw::MessagePart::text(text)];
 
                 for file in files {
-                    let (description, content) = raw::MessagePart::from_file(file);
-                    parts.push(description);
-
-                    // Filter based on content type and capabilities
-                    match content.r#type {
-                        raw::MultiPartMessageType::ImageUrl if capability.image_input => {
-                            parts.push(content)
-                        }
-                        raw::MultiPartMessageType::InputAudio if capability.audio => {
-                            parts.push(content)
-                        }
-                        raw::MultiPartMessageType::File
-                            if capability.ocr != OcrEngine::Disabled =>
-                        {
-                            parts.push(content)
-                        }
-                        raw::MultiPartMessageType::Text => parts.push(content),
-                        _ => {}
-                    }
+                    parts.extend(file_to_parts(file, capability));
                 }
 
                 raw::Message {
