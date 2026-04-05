@@ -68,3 +68,7 @@ Available commands:
 - `gen-ts` - Run typeshare codegen
 - `gen-entity` - Generate SeaORM entities
 - `gen-license` - Generate THIRDPARTY.toml
+
+## Dependency Management
+
+- stream-json is a customized version of (JSON)serialization only framework.
