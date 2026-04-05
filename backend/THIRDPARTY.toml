@@ -15064,7 +15064,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "fastrand"
-package_version = "2.3.0"
+package_version = "2.4.0"
 repository = "https://github.com/smol-rs/fastrand"
 license = "Apache-2.0 OR MIT"
 
