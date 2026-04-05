@@ -13,6 +13,7 @@ use crate::openrouter::{self, StreamCompletionResp};
 use crate::routes::chat::sse::*;
 use entity::message;
 use protocol::{AssistantChunk, MessageInner};
+use std::path::Path;
 
 use super::token::Token;
 
@@ -92,9 +93,7 @@ pub fn history_to_openrouter(
                         .iter()
                         .filter_map(|f| {
                             let reader = blob.get(f.id)?;
-                            let mime_type = infer::get(reader.head(1024))
-                                .map(|kind| kind.mime_type().to_string())
-                                .unwrap_or_else(|| "application/octet-stream".to_string());
+                            let mime_type = mime_type_for_openrouter(&f.name, reader.head(1024));
                             Some(openrouter::File {
                                 name: f.name.clone(),
                                 mime_type,
@@ -115,6 +114,44 @@ pub fn history_to_openrouter(
     }
 
     messages
+}
+
+fn mime_type_for_openrouter(file_name: &str, data: &[u8]) -> String {
+    let extension = Path::new(file_name)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.to_ascii_lowercase());
+
+    if let Some(extension) = extension.as_deref() {
+        if is_audio_extension(extension) || is_video_extension(extension) {
+            return format!("{}/{}", audio_or_video_prefix(extension), extension);
+        }
+    }
+
+    infer::get(data)
+        .map(|kind| kind.mime_type().to_string())
+        .unwrap_or_else(|| "application/octet-stream".to_string())
+}
+
+fn is_audio_extension(extension: &str) -> bool {
+    matches!(
+        extension,
+        "mp3" | "wav" | "flac" | "ogg" | "oga" | "opus" | "m4a" | "aac" | "webm"
+    )
+}
+
+fn is_video_extension(extension: &str) -> bool {
+    matches!(
+        extension,
+        "mp4" | "m4v" | "mov" | "webm" | "mkv" | "avi" | "flv" | "wmv"
+    )
+}
+
+fn audio_or_video_prefix(extension: &str) -> &'static str {
+    match extension {
+        "mp3" | "wav" | "flac" | "ogg" | "oga" | "opus" | "m4a" | "aac" => "audio",
+        _ => "video",
+    }
 }
 
 fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Message>) {
