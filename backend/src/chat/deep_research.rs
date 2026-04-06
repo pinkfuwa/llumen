@@ -87,7 +87,8 @@ impl DeepAgent {
         &self.input.locale
     }
 
-    async fn enhance(&mut self, sink: &mut impl TokenSink) -> Result<()> {
+    async fn enhance(&mut self, _sink: &mut impl TokenSink) -> Result<()> {
+        // sink is unused because enhance prompt require no sending
         let original_prompt = &self.input.user_message;
 
         let system_prompt = self.ctx.prompt.render_prompt_enhancer(self.get_locale())?;

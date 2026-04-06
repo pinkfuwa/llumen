@@ -9,6 +9,51 @@ use stream_json::serializers::PlainText;
 
 use crate::utils::blob::BlobReader;
 
+fn detect_audio_format(data: &[u8]) -> String {
+    match data {
+        [0x1A, 0x45, 0xDF, 0xA3, ..] => "webm".to_string(),
+        [0x4F, 0x67, 0x67, 0x53, ..] => "ogg".to_string(),
+        [0x49, 0x44, 0x33, ..] => "mp3".to_string(),
+        [0xFF, 0xFB, ..] | [0xFF, 0xF3, ..] | [0xFF, 0xFA, ..] => "mp3".to_string(),
+        _ => if infer::audio::is_wav(data) {
+            "wav"
+        } else if infer::audio::is_flac(data) {
+            "flac"
+        } else if infer::audio::is_aac(data) {
+            "aac"
+        } else if infer::audio::is_m4a(data) {
+            "m4a"
+        } else if infer::audio::is_aiff(data) {
+            "aiff"
+        } else {
+            "opus"
+        }
+        .to_string(),
+    }
+}
+
+fn detect_image_format(data: &[u8]) -> Option<String> {
+    if infer::image::is_png(data) {
+        Some("png".to_string())
+    } else if infer::image::is_jpeg(data) {
+        Some("jpeg".to_string())
+    } else if infer::image::is_gif(data) {
+        Some("gif".to_string())
+    } else if infer::image::is_webp(data) {
+        Some("webp".to_string())
+    } else if infer::image::is_bmp(data) {
+        Some("bmp".to_string())
+    } else if infer::image::is_ico(data) {
+        Some("ico".to_string())
+    } else {
+        None
+    }
+}
+
+fn detect_pdf(data: &[u8]) -> bool {
+    infer::archive::is_pdf(data)
+}
+
 #[derive(serde::Deserialize)]
 pub struct ModelListResponse {
     pub data: Vec<Model>,
@@ -241,33 +286,27 @@ impl MessagePart {
     }
 
     pub fn from_file(file: super::message::File) -> Vec<Self> {
-        let super::message::File {
-            name,
-            mime_type,
-            data,
-        } = file;
+        let super::message::File { name, data } = file;
 
         let data_len = data.len();
 
-        if mime_type.starts_with("audio/") {
-            let format = mime_type
-                .split('/')
-                .nth(1)
-                .unwrap_or(&mime_type)
-                .to_string();
+        if infer::is_audio(data.as_ref()) {
+            let format = detect_audio_format(data.as_ref());
             let embed_file = Base64EmbedFile::new(data, data_len).unwrap();
             vec![
                 Self::text(format!("Uploaded file: {}", name)),
                 Self::input_audio(format, embed_file),
             ]
-        } else if mime_type.starts_with("application/pdf") {
-            let embed_file = Base64EmbedURL::new(data, data_len, mime_type.clone()).unwrap();
+        } else if detect_pdf(data.as_ref()) {
+            let embed_file =
+                Base64EmbedURL::new(data, data_len, "application/pdf".to_string()).unwrap();
             vec![
                 Self::text(format!("Uploaded file: {}", name)),
                 Self::pdf(name, embed_file),
             ]
-        } else if mime_type.starts_with("image/") {
-            let embed_file = Base64EmbedURL::new(data, data_len, mime_type.clone()).unwrap();
+        } else if let Some(format) = detect_image_format(data.as_ref()) {
+            let mime_type = format!("image/{}", format);
+            let embed_file = Base64EmbedURL::new(data, data_len, mime_type).unwrap();
             vec![
                 Self::text(format!("Uploaded file: {}", name)),
                 Self::image_data(embed_file),

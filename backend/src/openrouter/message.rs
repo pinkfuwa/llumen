@@ -9,23 +9,7 @@ use base64::engine::Engine;
 #[derive(Debug, Clone)]
 pub struct File {
     pub name: String,
-    pub mime_type: String,
     pub data: BlobReader,
-}
-
-impl File {
-    pub fn is_image(&self) -> bool {
-        self.mime_type.starts_with("image/")
-    }
-    pub fn is_pdf(&self) -> bool {
-        self.mime_type == "application/pdf"
-    }
-    pub fn is_video(&self) -> bool {
-        self.mime_type.starts_with("video/")
-    }
-    pub fn is_audio(&self) -> bool {
-        self.mime_type.starts_with("audio/")
-    }
 }
 
 fn file_to_parts(
@@ -62,7 +46,7 @@ impl GeneratedImage {
             .ok_or_else(|| Error::Incompatible("Image URL missing base64, prefix"))?;
         let data = BASE64_STANDARD
             .decode(base64_data)
-            .map_err(|e| Error::Incompatible("Failed to decode base64 image"))?;
+            .map_err(|_| Error::Incompatible("Failed to decode base64 image"))?;
         Ok(Self {
             data,
             mime_type: mime_part.to_string(),
