@@ -86,10 +86,34 @@
 		showRecordAudioDialog = true;
 	}
 
+	function getSupportedAudioMimeType(): string {
+		const types = [
+			'audio/webm;codecs=opus',
+			'audio/webm',
+			'audio/ogg;codecs=opus',
+			'audio/ogg;codecs=vorbis',
+			'audio/ogg',
+			'audio/mp4',
+			'audio/aac',
+			'audio/mpeg',
+			'audio/x-m4a',
+			'audio/m4a',
+			'audio/flac',
+			'audio/wav'
+		];
+		for (const type of types) {
+			if (MediaRecorder.isTypeSupported(type)) {
+				return type;
+			}
+		}
+		return 'audio/webm';
+	}
+
 	async function startRecording() {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			mediaRecorder = new MediaRecorder(stream);
+			const mimeType = getSupportedAudioMimeType();
+			mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
 			audioChunks = [];
 
 			mediaRecorder.ondataavailable = (event) => {
@@ -97,10 +121,23 @@
 			};
 
 			mediaRecorder.onstop = () => {
-				const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+				const audioBlob = new Blob(audioChunks, { type: mimeType });
+				const extMap: Record<string, string> = {
+					mp4: 'm4a',
+					aac: 'm4a',
+					'x-m4a': 'm4a',
+					m4a: 'm4a',
+					mpeg: 'mp3',
+					flac: 'flac',
+					webm: 'webm',
+					ogg: 'ogg',
+					wav: 'wav'
+				};
+				const rawExt = mimeType.split('/')[1]?.split(';')[0] ?? 'webm';
+				const ext = extMap[rawExt] ?? rawExt;
 				const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-				const audioFile = new File([audioBlob], `recording-${timestamp}.mp3`, {
-					type: 'audio/mp3'
+				const audioFile = new File([audioBlob], `recording-${timestamp}.${ext}`, {
+					type: mimeType
 				});
 				files.push(audioFile);
 

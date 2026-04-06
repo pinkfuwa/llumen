@@ -6,7 +6,21 @@ interface CapabilityFileType {
 }
 
 /** Mapping of capability flags to valid MIME‑type lists. */
-const IMAGE_TYPES = ['avif', 'webp', 'bmp', 'gif', 'png', 'jpg', 'jpeg'];
+const IMAGE_TYPES = [
+	'avif',
+	'webp',
+	'bmp',
+	'gif',
+	'png',
+	'jpg',
+	'jpeg',
+	'svg',
+	'tiff',
+	'tif',
+	'ico',
+	'heic',
+	'heif'
+];
 
 const AUDIO_TYPES = ['audio/*'];
 
