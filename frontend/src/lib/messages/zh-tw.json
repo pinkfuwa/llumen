@@ -53,9 +53,8 @@
 		"welcome": "Ask anything!",
 		"question": "在此輸入問題",
 		"model_mode": {
-			"normal": "正常聊天",
 			"search": "網頁搜尋",
-			"deep": "深度搜尋"
+			"deep_research": "深度研究"
 		},
 		"markdown_mode": {
 			"enable": "已啟用 markdown 渲染",

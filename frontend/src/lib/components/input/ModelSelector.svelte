@@ -18,7 +18,7 @@
 {#if selectData == undefined}
 	<div
 		class="inline-flex h-full grow cursor-not-allowed items-center justify-between rounded-lg border border-outline
-		px-3 text-center text-nowrap text-text duration-150 sm:w-56 sm:grow-0"
+		px-3 text-center text-nowrap text-text duration-150 sm:w-64 sm:grow-0"
 	>
 		<span class="flex min-w-0 grow items-center justify-start truncate">
 			<span> {$_('common.loading')} </span>
@@ -31,7 +31,7 @@
 		fallback={$_('chat.select_model')}
 		bind:selected={value}
 		{disabled}
-		class="grow truncate sm:w-56 sm:grow-0"
-		popupClass="w-56"
+		class="grow truncate sm:w-64 sm:grow-0"
+		popupClass="w-64"
 	></Select>
 {/if}

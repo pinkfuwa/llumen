@@ -53,9 +53,8 @@
 		"welcome": "Ask anything!",
 		"question": "Send your question here",
 		"model_mode": {
-			"normal": "Normal Chat",
-			"search": "Web search enabled chat",
-			"deep": "In depth research on complex topic"
+			"search": "Web Search",
+			"deep_research": "Deep Research"
 		},
 		"markdown_mode": {
 			"enable": "Markdown rendering",

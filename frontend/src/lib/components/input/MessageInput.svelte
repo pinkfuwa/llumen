@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { createDropZone } from './dropzone.svelte';
 	import Textbox from './Textbox.svelte';
-	import ModeSelector from './ModeSelector.svelte';
 	import ActionMenu from './ActionMenu.svelte';
 	import Send from './Send.svelte';
 	import FileGroup from '../common/FileGroup.svelte';
@@ -178,13 +177,13 @@
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
 			<ModelSelector bind:value={modelId} />
-			<ModeSelector bind:value={mode} limited={!selectModelCap?.tool} />
 			<ActionMenu
 				bind:files
 				bind:content
-				{disabled}
+				bind:mode
 				audioInput={selectModelCap?.audio_input ?? false}
 				onFilesAdded={handleNewFiles}
+				modeDisabled={!selectModelCap?.tool}
 			/>
 		</div>
 		{#if content.length != 0}

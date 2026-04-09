@@ -53,9 +53,8 @@
 		"welcome": "Ask anything!",
 		"question": "在此输入问题",
 		"model_mode": {
-			"normal": "正常聊天",
 			"search": "网页搜索",
-			"deep": "深度搜索"
+			"deep_research": "深度研究"
 		},
 		"markdown_mode": {
 			"enable": "已启用 markdown 渲染",
