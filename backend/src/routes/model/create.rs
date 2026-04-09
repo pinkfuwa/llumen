@@ -22,6 +22,7 @@ pub struct ModelCreateResp {
     pub display_name: String,
     pub image_input: bool,
     pub audio_input: bool,
+    pub video_input: bool,
     pub other_file_input: bool,
     pub tool: bool,
 }
@@ -51,6 +52,7 @@ pub async fn route(
                 id,
                 image_input: caps.image_input,
                 audio_input: caps.audio,
+                video_input: caps.video_input,
                 other_file_input: caps.ocr != OcrEngine::Disabled,
                 tool: caps.toolcall,
                 display_name: config.display_name,

@@ -9,6 +9,7 @@ impl From<ModelConfig> for openrouter::Model {
             text_output: None,
             image_output: None,
             image_input: value.capability.image,
+            video_input: value.capability.video,
             structured_output: value.capability.json,
             toolcall: value.capability.tool,
             ocr: value.capability.ocr,

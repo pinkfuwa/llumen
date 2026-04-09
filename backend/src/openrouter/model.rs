@@ -6,6 +6,7 @@ pub struct Capability {
     pub text_output: bool,
     pub image_output: bool,
     pub image_input: bool,
+    pub video_input: bool,
     pub structured_output: bool,
     pub toolcall: bool,
     pub ocr: OcrEngine,
@@ -19,6 +20,7 @@ pub struct MaybeCapability {
     pub text_output: Option<bool>,
     pub image_output: Option<bool>,
     pub image_input: Option<bool>,
+    pub video_input: Option<bool>,
     pub structured_output: Option<bool>,
     pub toolcall: Option<bool>,
     pub ocr: Option<OcrEngine>,
@@ -126,6 +128,11 @@ impl ModelBuilder {
 
     pub fn image_input(mut self, image_input: bool) -> Self {
         self.capability.image_input = Some(image_input);
+        self
+    }
+
+    pub fn video_input(mut self, video_input: bool) -> Self {
+        self.capability.video_input = Some(video_input);
         self
     }
 

@@ -26,6 +26,7 @@ impl From<ModelCache> for Capability {
             text_output: value.text_output,
             image_output: value.image_output,
             image_input: value.image_input,
+            video_input: false,
             structured_output: value.structured_output,
             toolcall: value.toolcall,
             ocr: match value.support_native_ocr {

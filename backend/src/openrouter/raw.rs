@@ -54,6 +54,26 @@ fn detect_pdf(data: &[u8]) -> bool {
     infer::archive::is_pdf(data)
 }
 
+fn detect_video_format(data: &[u8]) -> Option<String> {
+    if data.len() >= 12 && data[4..8] == *b"ftyp" {
+        let brand = &data[8..12];
+        if brand.starts_with(b"qt") {
+            Some("mov".to_string())
+        } else {
+            Some("mp4".to_string())
+        }
+    } else if data.starts_with(&[0x00, 0x00, 0x01, 0xBA])
+        || data.starts_with(&[0x00, 0x00, 0x01, 0xB3])
+        || data.starts_with(&[0x00, 0x00, 0x01, 0xB4])
+    {
+        Some("mpeg".to_string())
+    } else if data.starts_with(&[0x1A, 0x45, 0xDF, 0xA3]) {
+        Some("webm".to_string())
+    } else {
+        None
+    }
+}
+
 #[derive(serde::Deserialize)]
 pub struct ModelListResponse {
     pub data: Vec<Model>,
@@ -259,6 +279,7 @@ pub enum MultiPartMessageType {
     ImageUrl,
     File,
     InputAudio,
+    VideoUrl,
 }
 
 #[derive(Default, stream_json::IntoSerializer)]
@@ -272,6 +293,8 @@ pub struct MessagePart {
     pub file: Option<InputFile>,
     #[stream(skip_serialize_if = "Option::is_none")]
     pub image_url: Option<InputImage>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub video_url: Option<VideoUrl>,
     #[stream(rename = "text", skip_serialize_if = "Option::is_none")]
     pub text_file: Option<PlainText<BlobReader>>,
 }
@@ -311,6 +334,13 @@ impl MessagePart {
                 Self::text(format!("Uploaded file: {}", name)),
                 Self::image_data(embed_file),
             ]
+        } else if let Some(format) = detect_video_format(data.as_ref()) {
+            let mime_type = format!("video/{}", format);
+            let embed_file = Base64EmbedURL::new(data, data_len, mime_type).unwrap();
+            vec![
+                Self::text(format!("Uploaded file: {}", name)),
+                Self::video_data(embed_file),
+            ]
         } else {
             vec![
                 Self::text(format!("Uploaded file: {}\n<content>\n", name)),
@@ -332,6 +362,14 @@ impl MessagePart {
         Self {
             r#type: MultiPartMessageType::ImageUrl,
             image_url: Some(InputImage { url: embed_file }),
+            ..Default::default()
+        }
+    }
+
+    pub fn video_data(embed_file: Base64EmbedURL<BlobReader>) -> Self {
+        Self {
+            r#type: MultiPartMessageType::VideoUrl,
+            video_url: Some(VideoUrl { url: embed_file }),
             ..Default::default()
         }
     }
@@ -384,6 +422,11 @@ pub struct InputFile {
 
 #[derive(stream_json::IntoSerializer)]
 pub struct InputImage {
+    pub url: Base64EmbedURL<BlobReader>,
+}
+
+#[derive(stream_json::IntoSerializer)]
+pub struct VideoUrl {
     pub url: Base64EmbedURL<BlobReader>,
 }
 

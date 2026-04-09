@@ -21,6 +21,7 @@ fn file_to_parts(
         .filter(move |part| match part.r#type {
             raw::MultiPartMessageType::ImageUrl => capability.image_input,
             raw::MultiPartMessageType::InputAudio => capability.audio,
+            raw::MultiPartMessageType::VideoUrl => capability.video_input,
             raw::MultiPartMessageType::File => capability.ocr != OcrEngine::Disabled,
             raw::MultiPartMessageType::Text => true,
         })
@@ -192,6 +193,7 @@ impl From<protocol::ModelCapability> for super::MaybeCapability {
             text_output: None,
             image_output: capability.image,
             image_input: None,
+            video_input: capability.video,
             structured_output: capability.json,
             toolcall: capability.tool,
             ocr: capability.ocr,

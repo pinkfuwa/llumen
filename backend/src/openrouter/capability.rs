@@ -31,6 +31,7 @@ impl<'a> CapabilityResolver<'a> {
             text_output: merge!(text_output),
             image_output: merge!(image_output),
             image_input: merge!(image_input),
+            video_input: merge!(video_input),
             structured_output: merge!(structured_output),
             toolcall: merge!(toolcall),
             ocr: merge!(ocr),
@@ -52,6 +53,7 @@ impl<'a> CapabilityResolver<'a> {
             .unwrap_or_else(|| Capability {
                 text_output: true,
                 reasoning_effort: ReasoningEffort::Auto,
+                video_input: false,
                 ..Default::default()
             })
     }

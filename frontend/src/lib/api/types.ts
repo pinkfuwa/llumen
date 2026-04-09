@@ -343,6 +343,7 @@ export interface ModelCreateResp {
 	display_name: string;
 	image_input: boolean;
 	audio_input: boolean;
+	video_input: boolean;
 	other_file_input: boolean;
 	tool: boolean;
 }
@@ -367,6 +368,7 @@ export interface ModelList {
 	ocr_file_input: boolean;
 	image_input: boolean;
 	audio_input: boolean;
+	video_input: boolean;
 	native_file_input: boolean;
 	tool: boolean;
 }

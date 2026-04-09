@@ -1,6 +1,7 @@
 interface CapabilityFileType {
 	image_input: boolean;
 	audio_input: boolean;
+	video_input: boolean;
 	native_file_input: boolean;
 	ocr_file_input: boolean;
 }
@@ -23,6 +24,8 @@ const IMAGE_TYPES = [
 ];
 
 const AUDIO_TYPES = ['audio/*'];
+
+const VIDEO_TYPES = ['mp4', 'mpeg', 'mov', 'webm'];
 
 const NATIVE_TYPES: string[] = ['pdf'];
 
@@ -64,6 +67,10 @@ export function getSupportedFileExtensions(capability?: CapabilityFileType): str
 		parts.push(...AUDIO_TYPES);
 	}
 
+	if (capability.video_input) {
+		parts.push(...VIDEO_TYPES);
+	}
+
 	if (capability.native_file_input) {
 		parts.push(...NATIVE_TYPES);
 	}
@@ -76,7 +83,7 @@ export function getSupportedFileExtensions(capability?: CapabilityFileType): str
 }
 
 export function getAllFileExtensions(): string[] {
-	return [...LITERAL_TYPES, ...IMAGE_TYPES, ...AUDIO_TYPES, ...NATIVE_TYPES];
+	return [...LITERAL_TYPES, ...IMAGE_TYPES, ...AUDIO_TYPES, ...VIDEO_TYPES, ...NATIVE_TYPES];
 }
 
 export function isFileSupported(fileName: string, extensions: string[]): boolean {

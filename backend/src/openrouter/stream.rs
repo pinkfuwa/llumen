@@ -1,10 +1,9 @@
 use std::{collections::VecDeque, pin::Pin, task};
 
-use futures_util::{FutureExt, TryStreamExt};
+use futures_util::{FutureExt};
 use http::header::CONTENT_TYPE;
 use reqwest::{Body, Client};
 use eventsource_stream::{Event, Eventsource, EventStreamError};
-use reqwest::Response;
 use stream_json::IntoSerializer;
 use tokio_stream::{Stream, StreamExt};
 
@@ -77,6 +76,25 @@ impl StreamCompletion {
         .to_string();
 
         let content_length = req.size();
+
+        // log::info!("content_length: {:?}", content_length);
+
+        // let mut debug_file = tokio::fs::File::options()
+        //     .write(true)
+        //     .create(true)
+        //     .open("./output.json")
+        //     .await
+        //     .unwrap();
+        // let mut req_stream = req.into_stream();
+
+        // while let Some(Ok(x)) = req_stream.next().await {
+        //     tokio::io::AsyncWriteExt::write_all(&mut debug_file, &x)
+        //         .await
+        //         .unwrap();
+        // }
+
+        // let body: Body = todo!();
+
         let body = Body::wrap_stream(req.into_stream());
 
         let mut builder = http_client
