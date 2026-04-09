@@ -58,6 +58,13 @@
 		return models?.list.find((x) => x.id.toString() == modelId);
 	});
 	let extensions = $derived(getSupportedFileExtensions(selectModelCap));
+	let modeRequiresToolSupport = $derived(mode !== Mode.Normal && !selectModelCap?.tool);
+
+	$effect(() => {
+		if (!selectModelCap?.tool && mode !== Mode.Normal) {
+			mode = Mode.Normal;
+		}
+	});
 
 	function handleNewFiles(newFiles: File[]) {
 		const { supported, unsupported } = separateFiles(newFiles, extensions);
@@ -181,9 +188,8 @@
 				bind:files
 				bind:content
 				bind:mode
-				audioInput={selectModelCap?.audio_input ?? false}
+				modelCap={selectModelCap}
 				onFilesAdded={handleNewFiles}
-				modeDisabled={!selectModelCap?.tool}
 			/>
 		</div>
 		{#if content.length != 0}

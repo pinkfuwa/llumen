@@ -3,7 +3,8 @@
 	import Dropdown from '$lib/ui/Dropdown.svelte';
 	import { _ } from 'svelte-i18n';
 	import { DropdownMenu } from 'bits-ui';
- 	import { ChatMode as Mode } from '$lib/api/types';
+	import { ChatMode as Mode } from '$lib/api/types';
+	import type { ModelList } from '$lib/api/types';
 	import ConvertToFileModal from './ConvertToFileModal.svelte';
 	import RecordAudioModal from './RecordAudioModal.svelte';
 	import ModeSelector from './ModeSelector.svelte';
@@ -12,15 +13,13 @@
 		files = $bindable([]),
 		content = $bindable(''),
 		mode = $bindable(Mode.Normal),
-		modeDisabled = false,
-		audioInput = false,
+		modelCap = undefined,
 		onFilesAdded
 	}: {
 		files: File[];
 		content: string;
 		mode: Mode;
-		modeDisabled?: boolean;
-		audioInput?: boolean;
+		modelCap?: ModelList;
 		onFilesAdded?: (files: File[]) => void;
 	} = $props();
 
@@ -82,8 +81,8 @@
 		<DropdownMenu.Item
 			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover aria-disabled:text-text aria-disabled:opacity-50"
 			onSelect={openRecordDialog}
-			disabled={!audioInput}
-			data-disabled={!audioInput ? 'true' : 'false'}
+			disabled={!modelCap?.audio_input}
+			data-disabled={!modelCap?.audio_input ? 'true' : 'false'}
 		>
 			<Mic class="size-4" />
 			<span>{$_('chat.record_audio')}</span>
@@ -99,7 +98,7 @@
 			<span>{$_('chat.convert_to_file.action')}</span>
 		</DropdownMenu.Item>
 
-		<ModeSelector bind:value={mode} disabled={modeDisabled} />
+		<ModeSelector bind:value={mode} modelCap={modelCap} />
 	{/snippet}
 </Dropdown>
 

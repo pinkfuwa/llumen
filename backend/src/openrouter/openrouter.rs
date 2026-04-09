@@ -98,7 +98,11 @@ impl Openrouter {
             reasoning.set_compatible();
         }
 
-        let tools: Vec<raw::Tool> = option.tools.into_iter().map(|t| t.into()).collect();
+        let mut tools = Vec::new();
+
+        if capability.toolcall {
+            tools.extend(option.tools.into_iter().map(|t| t.into()));
+        }
 
         raw::CompletionReq {
             model: model.id.clone(),

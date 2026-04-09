@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { ChatMode as Mode } from '$lib/api/types';
+	import type { ModelList } from '$lib/api/types';
 	import { SearchCode, Atom } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import { DropdownMenu } from 'bits-ui';
 
 	let {
 		value = $bindable(Mode.Normal) as Mode,
-		disabled = false
-	}: { value: Mode; disabled?: boolean } = $props();
+		modelCap = undefined
+	}: { value: Mode; modelCap?: ModelList } = $props();
 
 	function setMode(nextMode: Mode) {
 		value = value === nextMode ? Mode.Normal : nextMode;
@@ -16,6 +17,8 @@
 	function isActive(mode: Mode) {
 		return value === mode;
 	}
+
+	const deepResearchDisabled = $derived(modelCap != null && !modelCap.tool);
 </script>
 
 <div class="pt-1">
@@ -24,7 +27,6 @@
 		<DropdownMenu.Item
 			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover ${isActive(Mode.Search) ? 'bg-primary text-text-hover' : ''}`}
 			onSelect={() => setMode(Mode.Search)}
-			disabled={disabled}
 			data-active={isActive(Mode.Search) ? 'true' : 'false'}
 		>
 			<SearchCode class="size-4" />
@@ -34,7 +36,8 @@
 		<DropdownMenu.Item
 			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover ${isActive(Mode.Research) ? 'bg-primary text-text-hover' : ''}`}
 			onSelect={() => setMode(Mode.Research)}
-			disabled={disabled}
+			disabled={deepResearchDisabled}
+			aria-disabled={deepResearchDisabled}
 			data-active={isActive(Mode.Research) ? 'true' : 'false'}
 		>
 			<Atom class="size-4" />
