@@ -98,12 +98,12 @@
 			<span>{$_('chat.convert_to_file.action')}</span>
 		</DropdownMenu.Item>
 
-		<ModeSelector bind:value={mode} modelCap={modelCap} />
+		<ModeSelector bind:value={mode} {modelCap} />
 	{/snippet}
 </Dropdown>
 
 <input type="file" class="hidden" bind:this={inputElement} multiple={true} onchange={onChange} />
 
-<ConvertToFileModal bind:open={showConvertToFileDialog} {content} onAddFiles={addFiles} />
+<ConvertToFileModal bind:open={showConvertToFileDialog} bind:content onAddFiles={addFiles} />
 
 <RecordAudioModal bind:open={showRecordAudioDialog} onAddFiles={addFiles} />

@@ -8,7 +8,7 @@
 		onAddFiles: (files: File[]) => void;
 	}
 
-	let { open = $bindable(false), content, onAddFiles }: Props = $props();
+	let { open = $bindable(false), content = $bindable(''), onAddFiles }: Props = $props();
 	let convertFileName = $state('');
 
 	function close() {
@@ -34,7 +34,7 @@
 	}
 </script>
 
-<Modal bind:open={open} title={$_('chat.convert_to_file.title')} onClose={close}>
+<Modal bind:open title={$_('chat.convert_to_file.title')} onClose={close}>
 	{#snippet children()}
 		<form
 			class="space-y-4"
