@@ -58,10 +58,12 @@
 		return models?.list.find((x) => x.id.toString() == modelId);
 	});
 	let extensions = $derived(getSupportedFileExtensions(selectModelCap));
-	let modeRequiresToolSupport = $derived(mode !== Mode.Normal && !selectModelCap?.tool);
+	let modeRequiresToolSupport = $derived(
+		mode !== Mode.Normal && mode !== Mode.Media && !selectModelCap?.tool
+	);
 
 	$effect(() => {
-		if (!selectModelCap?.tool && mode !== Mode.Normal) {
+		if (!selectModelCap?.tool && mode !== Mode.Normal && mode !== Mode.Media) {
 			mode = Mode.Normal;
 		}
 	});

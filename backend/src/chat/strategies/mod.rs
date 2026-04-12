@@ -6,6 +6,7 @@
 //! callers to select which mode to run.
 
 mod deep_research;
+mod media;
 mod normal;
 mod search;
 
@@ -20,6 +21,7 @@ pub enum Strategy {
     Normal,
     Search,
     DeepResearch,
+    Media,
 }
 
 impl From<crate::utils::chat::ChatMode> for Strategy {
@@ -28,6 +30,7 @@ impl From<crate::utils::chat::ChatMode> for Strategy {
             crate::utils::chat::ChatMode::Normal => Self::Normal,
             crate::utils::chat::ChatMode::Search => Self::Search,
             crate::utils::chat::ChatMode::Research => Self::DeepResearch,
+            crate::utils::chat::ChatMode::Media => Self::Media,
         }
     }
 }
@@ -42,5 +45,6 @@ pub async fn dispatch(
         Strategy::Normal => normal::execute(&ctx, session).await,
         Strategy::Search => search::execute(&ctx, session).await,
         Strategy::DeepResearch => deep_research::execute(ctx, session).await,
+        Strategy::Media => media::execute(&ctx, session).await,
     }
 }

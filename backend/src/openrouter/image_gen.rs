@@ -119,12 +119,14 @@ impl ImageGenClient {
             })
             .unwrap_or_default();
 
-        let choice = json
-            .choices
-            .unwrap_or_default()
-            .into_iter()
-            .next()
-            .ok_or(Error::MalformedResponse("No choices in completion response"))?;
+        let choice =
+            json.choices
+                .unwrap_or_default()
+                .into_iter()
+                .next()
+                .ok_or(Error::MalformedResponse(
+                    "No choices in completion response",
+                ))?;
 
         let images = choice
             .message
@@ -139,11 +141,7 @@ impl ImageGenClient {
 
         Ok(ImageGenOutput {
             images,
-            text: if choice.message.content.is_empty() {
-                None
-            } else {
-                Some(choice.message.content)
-            },
+            text: choice.message.content,
             price,
             token: token.unwrap_or_default() as usize,
         })

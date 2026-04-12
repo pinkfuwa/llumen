@@ -269,7 +269,7 @@ impl ChatClient {
         Ok(ChatCompletion {
             price,
             token: token.unwrap_or_default() as usize,
-            response: choice.message.content,
+            response: choice.message.content.unwrap_or_default(),
         })
     }
 

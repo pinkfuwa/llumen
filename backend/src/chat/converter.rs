@@ -30,7 +30,9 @@ pub fn token_to_sse(token: Token) -> Option<SseResp> {
         Token::ToolCall { name, arg } => {
             Some(SseResp::ToolCall(SseRespToolCall { name, args: arg }))
         }
-        Token::ToolResult(content) => Some(SseResp::ToolResult(SseRespToolResult { content })),
+        Token::ToolResult { content, files } => {
+            Some(SseResp::ToolResult(SseRespToolResult { content, files }))
+        }
         Token::Complete {
             message_id,
             token,
@@ -55,8 +57,11 @@ pub fn token_to_sse(token: Token) -> Option<SseResp> {
             name,
             args: arg,
         })),
-        Token::DeepStepToolResult(content) => {
-            Some(SseResp::DeepStepToolResult(SseRespToolResult { content }))
+        Token::DeepStepToolResult { content, files } => {
+            Some(SseResp::DeepStepToolResult(SseRespToolResult {
+                content,
+                files,
+            }))
         }
         Token::DeepStepToken(content) => Some(SseResp::DeepStepToken(content)),
         Token::DeepReport(content) => Some(SseResp::DeepReport(content)),
@@ -149,11 +154,16 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
                     arguments: arg.clone(),
                 }));
             }
-            AssistantChunk::ToolResult { id, response } => {
+            AssistantChunk::ToolResult {
+                id,
+                response,
+                files,
+            } => {
                 out.push(openrouter::Message::ToolResult(
                     openrouter::MessageToolResult {
                         id: id.clone(),
                         content: response.clone(),
+                        files: files.clone(),
                     },
                 ));
             }
@@ -381,6 +391,7 @@ mod tests {
             AssistantChunk::ToolResult {
                 id: "call_1".into(),
                 response: "result".into(),
+                files: Vec::new(),
             },
             AssistantChunk::Text("Second".into()),
         ];

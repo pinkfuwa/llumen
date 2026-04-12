@@ -147,7 +147,8 @@ const Handlers: {
 	},
 
 	tool_result(toolResult) {
-		handleToolResult(toolResult.content);
+		const payload = toolResult as { content: string; files?: FileMetadata[] };
+		handleToolResult(payload.content, payload.files || []);
 		cursor!.index++;
 		cursor!.offset = 0;
 	},
@@ -293,7 +294,9 @@ const Handlers: {
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
 		const step = plan.steps[deepState!.currentStepIndex];
-		const result = (toolResult as { content: string }).content;
+		const payload = toolResult as { content: string; files?: FileMetadata[] };
+		const result = payload.content;
+		const files = payload.files || [];
 		// Find the last tool_call in progress that doesn't have a matching tool_result yet
 		for (let i = step.progress.length - 1; i >= 0; i--) {
 			const chunk = step.progress[i];
@@ -306,7 +309,8 @@ const Handlers: {
 						t: 'tool_result',
 						c: {
 							id: chunk.c.id,
-							response: result
+							response: result,
+							files
 						}
 					});
 					break;
@@ -442,7 +446,7 @@ async function syncMessages(chatId: number) {
 	}
 }
 
-function handleToolResult(result: string) {
+function handleToolResult(result: string, files: FileMetadata[] = []) {
 	const firstMsg = messages.at(0);
 	if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
@@ -454,7 +458,8 @@ function handleToolResult(result: string) {
 			t: 'tool_result',
 			c: {
 				id: lastChunk.c.id,
-				response: result
+				response: result,
+				files
 			}
 		});
 	} else {

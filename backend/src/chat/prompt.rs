@@ -41,6 +41,7 @@ impl Prompt {
         let templates = [
             ("normal", "normal.j2"),
             ("search", "search.j2"),
+            ("media", "media.j2"),
             ("coordinator", "coordinator.j2"),
             ("context", "context.j2"),
             ("title_generation", "title_generation.j2"),
@@ -95,6 +96,20 @@ impl Prompt {
         model_provider: &str,
     ) -> Result<String> {
         let tmpl = self.env.get_template("search")?;
+        Ok(tmpl.render(minijinja::context! {
+            locale,
+            model_name,
+            model_provider,
+        })?)
+    }
+
+    pub fn render_media(
+        &self,
+        locale: &str,
+        model_name: &str,
+        model_provider: &str,
+    ) -> Result<String> {
+        let tmpl = self.env.get_template("media")?;
         Ok(tmpl.render(minijinja::context! {
             locale,
             model_name,

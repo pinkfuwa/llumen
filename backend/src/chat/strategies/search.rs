@@ -92,13 +92,18 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
                 openrouter::MessageToolResult {
                     id: tc.id.clone(),
                     content: tool_result.clone(),
+                    files: Vec::new(),
                 },
             ));
 
-            session.add_token(Token::ToolResult(tool_result.clone()));
+            session.add_token(Token::ToolResult {
+                content: tool_result.clone(),
+                files: Vec::new(),
+            });
             session.add_chunk(AssistantChunk::ToolResult {
                 id: tc.id,
                 response: tool_result,
+                files: Vec::new(),
             });
         }
     }

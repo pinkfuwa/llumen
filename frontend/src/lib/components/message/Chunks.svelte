@@ -36,10 +36,17 @@
 			nextChunk && nextChunk.t == 'tool_result' && nextChunk.c.id == toolCall.id
 				? nextChunk.c.response
 				: ''}
+		{@const resultFiles =
+			nextChunk && nextChunk.t == 'tool_result' && nextChunk.c.id == toolCall.id
+				? (nextChunk.c as { files?: { id: number; name: string }[] }).files || []
+				: []}
 		<ToolBox toolname={toolCall.name}>
 			<Tool content={toolCall.arg} />
 			<Result content={result} />
 		</ToolBox>
+		{#each resultFiles as file}
+			<Image id={file.id} />
+		{/each}
 	{:else if kind == 'error'}
 		<ResponseError content={chunk.c} />
 	{:else if kind == 'deep_agent'}

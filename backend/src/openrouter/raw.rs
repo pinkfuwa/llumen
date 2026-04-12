@@ -555,7 +555,8 @@ pub struct CompletionResponse {
 #[derive(Deserialize)]
 pub struct OutputMessage {
     pub role: String,
-    pub content: String,
+    #[serde(default)]
+    pub content: Option<String>,
     pub reasoning: Option<String>,
     #[serde(default)]
     pub images: Vec<Image>,

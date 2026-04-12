@@ -26,6 +26,7 @@ pub struct ModelList {
     pub video_input: bool,
     pub native_file_input: bool,
     pub tool: bool,
+    pub media_gen: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -59,6 +60,7 @@ pub async fn route(
             ocr_file_input: matches!(caps.ocr, OcrEngine::Mistral | OcrEngine::Text),
             native_file_input: caps.ocr == OcrEngine::Native,
             tool: caps.toolcall,
+            media_gen: config.media_gen.image_model.is_some() || config.media_gen.video_model.is_some(),
             display_name: config.display_name,
         });
     }

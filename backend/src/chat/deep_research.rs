@@ -293,10 +293,14 @@ impl DeepAgent {
                     openrouter::MessageToolResult {
                         id: tool_call.id,
                         content: result.clone(),
+                        files: Vec::new(),
                     },
                 ));
 
-                sink.add_token(Token::DeepStepToolResult(result))
+                sink.add_token(Token::DeepStepToolResult {
+                    content: result,
+                    files: Vec::new(),
+                })
             }
         }
 

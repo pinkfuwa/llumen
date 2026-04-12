@@ -6,12 +6,14 @@ use std::sync::Arc;
 // with flyweight)
 pub(crate) mod crawl;
 pub(crate) mod lua;
+pub(crate) mod media_image;
 #[allow(unused)]
 pub(crate) mod runner;
 pub(crate) mod web_search;
 
 pub(crate) use crawl::{CrawlTool, get_crawl_tool_def};
 pub(crate) use lua::{LuaReplTool, get_lua_repl_def};
+pub(crate) use media_image::get_generate_image_tool_def;
 pub(crate) use web_search::{WebSearchTool, get_web_search_tool_def};
 
 /// Collection of all available tools in llumen.
@@ -63,6 +65,10 @@ impl Tools {
             tools.push(get_web_search_tool_def());
         }
         tools
+    }
+
+    pub fn for_media_mode(&self) -> Vec<crate::openrouter::Tool> {
+        vec![get_generate_image_tool_def()]
     }
 
     /// Returns the handoff tool for the coordinator to trigger deep research.

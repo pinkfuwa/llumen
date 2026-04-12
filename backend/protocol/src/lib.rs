@@ -225,6 +225,8 @@ pub enum AssistantChunk {
     ToolResult {
         id: String,
         response: String,
+        #[serde(default)]
+        files: Vec<FileMetadata>,
     },
     Error(String),
     DeepAgent(Deep),
@@ -428,7 +430,7 @@ pub struct ModelParameter {
     pub top_p: Option<f32>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, PartialEq)]
 pub struct ModelConfig {
     pub display_name: String,
     pub model_id: String,
@@ -436,6 +438,14 @@ pub struct ModelConfig {
     pub capability: ModelCapability,
     #[serde(default)]
     pub parameter: ModelParameter,
+    #[serde(default)]
+    pub media_gen: MediaGenerationConfig,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Default)]
+pub struct MediaGenerationConfig {
+    pub image_model: Option<String>,
+    pub video_model: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -452,4 +462,5 @@ pub enum ModeKind {
     Normal = 0,
     Search = 1,
     Research = 3,
+    Media = 4,
 }

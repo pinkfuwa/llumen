@@ -153,6 +153,10 @@ impl CompletionSession {
                 ctx.prompt
                     .render_search(locale, &self.model.config.display_name, "")?
             }
+            ModeKind::Media => {
+                ctx.prompt
+                    .render_media(locale, &self.model.config.display_name, "")?
+            }
             ModeKind::Research => ctx.prompt.render_coordinator(locale)?,
         };
 
@@ -316,6 +320,28 @@ impl CompletionSession {
 
         log::info!("store_image: stored image as file_id={}", file_id);
         Some(file_id)
+    }
+
+    pub async fn store_blob_file(&self, img: &openrouter::GeneratedImage) -> Result<i32> {
+        let size = img.data.len();
+
+        use ::entity::file;
+        let file_record = file::ActiveModel {
+            chat_id: Set(Some(self.chat.id)),
+            owner_id: Set(None),
+            mime_type: Set(Some(img.mime_type.clone())),
+            valid_until: Set(None),
+            ..Default::default()
+        };
+
+        let file_id = file::Entity::insert(file_record)
+            .exec(&self.ctx.db)
+            .await?
+            .last_insert_id;
+
+        let byte_stream = tokio_stream::iter(vec![bytes::Bytes::from(img.data.clone())]);
+        self.ctx.blob.insert(file_id, size, byte_stream).await?;
+        Ok(file_id)
     }
 
     /// Appends assistant chunks to the message being built.

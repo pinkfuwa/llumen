@@ -8,6 +8,7 @@ pub enum ChatMode {
     Normal,
     Search,
     Research,
+    Media,
 }
 
 impl From<protocol::ModeKind> for ChatMode {
@@ -16,6 +17,7 @@ impl From<protocol::ModeKind> for ChatMode {
             protocol::ModeKind::Normal => Self::Normal,
             protocol::ModeKind::Search => Self::Search,
             protocol::ModeKind::Research => Self::Research,
+            protocol::ModeKind::Media => Self::Media,
         }
     }
 }
@@ -26,6 +28,7 @@ impl From<ChatMode> for protocol::ModeKind {
             ChatMode::Normal => Self::Normal,
             ChatMode::Search => Self::Search,
             ChatMode::Research => Self::Research,
+            ChatMode::Media => Self::Media,
         }
     }
 }

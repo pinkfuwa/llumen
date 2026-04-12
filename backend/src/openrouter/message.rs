@@ -66,6 +66,7 @@ pub struct MessageToolCall {
 pub struct MessageToolResult {
     pub id: String,
     pub content: String,
+    pub files: Vec<protocol::FileMetadata>,
 }
 
 #[derive(Debug, Clone)]
@@ -177,9 +178,18 @@ impl Message {
                 content: Some("".to_string()),
                 ..Default::default()
             },
-            Message::ToolResult(MessageToolResult { id, content }) => raw::Message {
+            Message::ToolResult(MessageToolResult { id, content, files }) => raw::Message {
                 role: raw::Role::Tool,
-                content: Some(content),
+                content: Some(match files.is_empty() {
+                    true => content,
+                    false => {
+                        let payload = serde_json::json!({
+                            "content": content,
+                            "files": files,
+                        });
+                        payload.to_string()
+                    }
+                }),
                 tool_call_id: Some(id),
                 ..Default::default()
             },

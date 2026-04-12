@@ -124,6 +124,8 @@ pub struct SseRespToolCall {
 #[typeshare]
 pub struct SseRespToolResult {
     pub content: String,
+    #[serde(default)]
+    pub files: Vec<protocol::FileMetadata>,
 }
 
 #[derive(Debug, Serialize)]

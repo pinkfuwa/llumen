@@ -5,7 +5,8 @@
 export enum ChatMode {
 	Normal = 'normal',
 	Search = 'search',
-	Research = 'research'
+	Research = 'research',
+	Media = 'media'
 }
 
 export interface ChatCreateReq {
@@ -111,6 +112,7 @@ export type AssistantChunk =
 			c: {
 				id: string;
 				response: string;
+				files?: FileMetadata[];
 			};
 	  }
 	| { t: 'error'; c: string }
@@ -371,6 +373,7 @@ export interface ModelList {
 	video_input: boolean;
 	native_file_input: boolean;
 	tool: boolean;
+	media_gen: boolean;
 }
 
 export interface ModelListReq {}
@@ -439,6 +442,7 @@ export interface SseRespToolCall {
 
 export interface SseRespToolResult {
 	content: string;
+	files: FileMetadata[];
 }
 
 export interface SseStart {

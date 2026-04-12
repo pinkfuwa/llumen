@@ -25,7 +25,10 @@ pub enum Token {
     // result json of tool, tools are called sequentially
     // For example, ToolCall(1)->ToolCall(2)->ToolCall(3), then first ToolResult are for first
     // call
-    ToolResult(String),
+    ToolResult {
+        content: String,
+        files: Vec<protocol::FileMetadata>,
+    },
     Reasoning(String),
     Empty,
     DeepPlan(String),
@@ -35,7 +38,10 @@ pub enum Token {
         name: String,
         arg: String,
     },
-    DeepStepToolResult(String),
+    DeepStepToolResult {
+        content: String,
+        files: Vec<protocol::FileMetadata>,
+    },
     DeepStepToken(String),
     DeepReport(String),
     Error(String),
@@ -99,10 +105,10 @@ impl Mergeable for Token {
             | Token::DeepReport(s)
             | Token::Error(s)
             | Token::DeepPlan(s) => s.len(),
-            Token::ToolResult(_)
+            Token::ToolResult { .. }
             | Token::Empty
             | Token::DeepStepStart(_)
-            | Token::DeepStepToolResult(_)
+            | Token::DeepStepToolResult { .. }
             | Token::Complete { .. }
             | Token::Title(_)
             | Token::Start { .. }
