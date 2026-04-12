@@ -17,6 +17,14 @@ pub enum Error {
     Incompatible(&'static str),
     /// Model does not support text output
     TextOutputNotSupported,
+    /// Model is not eligible for image generation
+    ImageGenNotSupported,
+    /// Model does not exist in the image generation listing
+    ImageGenModelNotFound,
+    /// Model cannot accept reference images
+    ImageGenReferenceImagesNotSupported,
+    /// Image generation response did not include any images
+    ImageGenNoImagesInResponse,
 }
 
 impl fmt::Display for Error {
@@ -35,6 +43,16 @@ impl fmt::Display for Error {
             Error::MalformedResponse(msg) => write!(f, "Malformed response: {}", msg),
             Error::Incompatible(msg) => write!(f, "Incompatible upstream: {}", msg),
             Error::TextOutputNotSupported => write!(f, "Model does not support text output"),
+            Error::ImageGenNotSupported => {
+                write!(f, "Model does not support image-only generation")
+            }
+            Error::ImageGenModelNotFound => write!(f, "Image generation model not found"),
+            Error::ImageGenReferenceImagesNotSupported => {
+                write!(f, "Model does not support reference images")
+            }
+            Error::ImageGenNoImagesInResponse => {
+                write!(f, "No images in image generation response")
+            }
         }
     }
 }

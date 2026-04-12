@@ -87,6 +87,7 @@ pub enum Modality {
     Image,
     Text,
     Audio,
+    Video,
     #[serde(other)]
     Unknown,
 }
@@ -145,6 +146,8 @@ pub struct CompletionReq {
     pub usage: Option<UsageReq>,
     #[stream(skip_serialize_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub image_config: Option<serde_json::Value>,
     // reasoning options
     #[stream(skip_serialize_if = "Reasoning::is_empty")]
     pub reasoning: Reasoning,

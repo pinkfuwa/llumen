@@ -65,13 +65,17 @@ impl AsRef<[u8]> for BlobReader {
 
 impl Clone for BlobReader {
     fn clone(&self) -> Self {
-        Self { reader: self.reader.clone() }
+        Self {
+            reader: self.reader.clone(),
+        }
     }
 }
 
 impl From<Reader> for BlobReader {
     fn from(reader: Reader) -> Self {
-        Self { reader: Arc::new(reader) }
+        Self {
+            reader: Arc::new(reader),
+        }
     }
 }
 
