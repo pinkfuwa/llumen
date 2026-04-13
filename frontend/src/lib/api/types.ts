@@ -380,6 +380,7 @@ export interface ModelList {
 	native_file_input: boolean;
 	tool: boolean;
 	media_gen: boolean;
+	media_mode_supported: boolean;
 }
 
 export interface ModelListReq {}

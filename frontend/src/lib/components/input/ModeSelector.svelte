@@ -19,7 +19,7 @@
 	}
 
 	const deepResearchDisabled = $derived(modelCap != null && !modelCap.tool);
-	const mediaDisabled = $derived(modelCap != null && !modelCap.media_gen);
+	const mediaDisabled = $derived(modelCap != null && !modelCap.media_mode_supported);
 </script>
 
 <div class="pt-1">

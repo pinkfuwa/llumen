@@ -98,12 +98,16 @@ describe('TOML Completion', () => {
 		expect(completionLabels(result)).toContain('[media_gen]');
 
 		const fieldResult = getCompletions('[media_gen]\n|');
-		expect(completionLabels(fieldResult)).toEqual(expect.arrayContaining(['image_model', 'video_model']));
+		expect(completionLabels(fieldResult)).toEqual(
+			expect.arrayContaining(['image_model', 'video_model'])
+		);
 	});
 
 	it('keeps table header suggestions complete', () => {
 		const result = getCompletions('|');
-		expect(completionLabels(result)).toEqual(expect.arrayContaining(['[capability]', '[parameter]', '[media_gen]']));
+		expect(completionLabels(result)).toEqual(
+			expect.arrayContaining(['[capability]', '[parameter]', '[media_gen]'])
+		);
 	});
 
 	it('handles empty completion result safely', () => {

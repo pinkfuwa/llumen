@@ -27,6 +27,7 @@ pub struct ModelList {
     pub native_file_input: bool,
     pub tool: bool,
     pub media_gen: bool,
+    pub media_mode_supported: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -62,6 +63,9 @@ pub async fn route(
             tool: caps.toolcall,
             media_gen: config.media_gen.image_model.is_some()
                 || config.media_gen.video_model.is_some(),
+            media_mode_supported: caps.toolcall
+                && (config.media_gen.image_model.is_some()
+                    || config.media_gen.video_model.is_some()),
             display_name: config.display_name,
         });
     }

@@ -81,7 +81,10 @@ function buildValueCompletionOptions(
 	}));
 }
 
-function getValueRange(parsed: ParsedLine, context: CompletionContext): { from: number; to: number } {
+function getValueRange(
+	parsed: ParsedLine,
+	context: CompletionContext
+): { from: number; to: number } {
 	const line = context.state.doc.lineAt(context.pos);
 
 	let valueStart: number;
@@ -101,7 +104,10 @@ function getValueRange(parsed: ParsedLine, context: CompletionContext): { from: 
 	let valueEnd: number;
 	if (parsed.quoteChar) {
 		const closingQuotePos = parsed.afterCursor.indexOf(parsed.quoteChar);
-		valueEnd = closingQuotePos >= 0 ? context.pos + closingQuotePos : context.pos + parsed.afterCursor.length;
+		valueEnd =
+			closingQuotePos >= 0
+				? context.pos + closingQuotePos
+				: context.pos + parsed.afterCursor.length;
 	} else {
 		valueEnd = context.pos + parsed.afterCursor.trimEnd().length;
 	}
@@ -271,7 +277,9 @@ function completeBooleanValue(
 ): CompletionResult | null {
 	const { from, to } = getValueRange(parsed, context);
 	const prefix = parsed.valueBeforeCursor;
-	const filtered = prefix ? BOOLEAN_FIELD_VALUES.filter((value) => value.startsWith(prefix)) : BOOLEAN_FIELD_VALUES;
+	const filtered = prefix
+		? BOOLEAN_FIELD_VALUES.filter((value) => value.startsWith(prefix))
+		: BOOLEAN_FIELD_VALUES;
 
 	return {
 		from,
@@ -281,7 +289,10 @@ function completeBooleanValue(
 	};
 }
 
-function completeModelFieldValue(parsed: ParsedLine, context: CompletionContext): CompletionResult | null {
+function completeModelFieldValue(
+	parsed: ParsedLine,
+	context: CompletionContext
+): CompletionResult | null {
 	if (!parsed.fieldName) return null;
 
 	if (MODEL_ID_FIELDS.has(parsed.fieldName)) {
@@ -303,10 +314,7 @@ function completeModelFieldValue(parsed: ParsedLine, context: CompletionContext)
 /**
  * Complete field names
  */
-function completeFieldName(
-	fields: string[],
-	context: CompletionContext
-): CompletionResult | null {
+function completeFieldName(fields: string[], context: CompletionContext): CompletionResult | null {
 	const word = context.matchBefore(/\w*/);
 	if (!word) return null;
 
