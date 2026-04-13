@@ -69,14 +69,21 @@ Set `image`, `audio` to true to override auto-detection
 
 ```toml
 [capability]
-ocr = "Mistral"  # Options: "Native", "Text", "Mistral", "Disabled"
+ocr = "Mistral"  # Options: "Native", "Text", "Mistral", "Cloudflare", "Disabled"
 ```
 
 All options are case-insensitive. You can use any naming convention:
 - `"Native"`, `"native"`, `"NATIVE"`, `"native_ocr"`, `"nativeocr"`
 - `"Text"`, `"text"`, `"TEXT"`, `"text_ocr"`, `"textocr"`, `"tesseract"`
 - `"Mistral"`, `"mistral"`, `"MISTRAL"`, `"mistral_ocr"`, `"mistralocr"`
+- `"Cloudflare"`, `"cloudflare"`, `"CLOUDFLARE"`, `"cloudflare_ai"`, `"cloudflareai"`
 - `"Disabled"`, `"disabled"`, `"DISABLED"`, `"none"`, `"false"`, `"no"`
+
+**Engine differences:**
+- `"Cloudflare"` (free): Converts PDFs to markdown using Cloudflare Workers AI
+- `"Mistral"`: Best for scanned documents or PDFs with images (paid, per 1,000 pages)
+- `"Text"`: Alias for Cloudflare AI (deprecated, redirects to Cloudflare)
+- `"Native"`: Uses model's built-in file input (if supported)
 
 ### Tool Use
 

@@ -9,7 +9,7 @@ export const MEDIA_GEN_FIELDS = ['image_model', 'video_model'];
 export const TOML_TABLE_HEADERS = ['[capability]', '[parameter]', '[media_gen]'];
 
 const BOOLEAN_FIELD_VALUES = ['true', 'false'];
-const OCR_FIELD_VALUES = ['native', 'text', 'mistral', 'disabled'];
+const OCR_FIELD_VALUES = ['native', 'text', 'mistral', 'cloudflare', 'disabled'];
 const REASONING_FIELD_VALUES = ['true', 'false', 'low', 'medium', 'high', 'none', 'auto'];
 const MODEL_ID_FIELDS = new Set(['model_id', 'image_model', 'video_model']);
 const BOOLEAN_FIELDS = new Set(['image', 'audio', 'video', 'tool', 'json']);

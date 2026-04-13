@@ -379,6 +379,7 @@ pub enum OcrEngine {
     Native,
     Text,
     Mistral,
+    Cloudflare,
     #[default]
     Disabled,
 }
@@ -394,6 +395,7 @@ impl<'de> Deserialize<'de> for OcrEngine {
             "native" | "native_ocr" | "nativeocr" => OcrEngine::Native,
             "text" | "text_ocr" | "textocr" | "tesseract" => OcrEngine::Text,
             "mistral" | "mistral_ocr" | "mistralocr" => OcrEngine::Mistral,
+            "cloudflare" | "cloudflare_ai" | "cloudflareai" => OcrEngine::Cloudflare,
             "disabled" | "none" | "false" | "no" => OcrEngine::Disabled,
             _ => OcrEngine::Disabled,
         })

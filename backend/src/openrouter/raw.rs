@@ -205,7 +205,7 @@ impl Plugin {
         Self {
             id: "file-parser".to_string(),
             pdf: Some(PdfPlugin {
-                engine: "pdf-text".to_string(),
+                engine: "cloudflare-ai".to_string(),
             }),
         }
     }
@@ -214,6 +214,14 @@ impl Plugin {
             id: "file-parser".to_string(),
             pdf: Some(PdfPlugin {
                 engine: "mistral-ocr".to_string(),
+            }),
+        }
+    }
+    pub fn cloudflare_ocr() -> Self {
+        Self {
+            id: "file-parser".to_string(),
+            pdf: Some(PdfPlugin {
+                engine: "cloudflare-ai".to_string(),
             }),
         }
     }

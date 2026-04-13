@@ -136,6 +136,7 @@ impl ChatClient {
                 protocol::OcrEngine::Native => plugins.push(raw::Plugin::pdf_native()),
                 protocol::OcrEngine::Text => plugins.push(raw::Plugin::pdf_text()),
                 protocol::OcrEngine::Mistral => plugins.push(raw::Plugin::mistral_ocr()),
+                protocol::OcrEngine::Cloudflare => plugins.push(raw::Plugin::cloudflare_ocr()),
                 protocol::OcrEngine::Disabled => {}
             }
 
