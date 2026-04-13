@@ -26,7 +26,7 @@
 	<DropdownMenu.Separator class="mx-1 mb-1 h-px bg-outline/80" />
 	<div class="space-y-1">
 		<DropdownMenu.Item
-			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover ${isActive(Mode.Search) ? 'bg-primary text-text-hover' : ''}`}
+			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover data-disabled:opacity-50 ${isActive(Mode.Search) ? 'bg-primary text-text-hover' : ''}`}
 			onSelect={() => setMode(Mode.Search)}
 			data-active={isActive(Mode.Search) ? 'true' : 'false'}
 		>
@@ -35,7 +35,7 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover ${isActive(Mode.Research) ? 'bg-primary text-text-hover' : ''}`}
+			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover data-disabled:opacity-50 ${isActive(Mode.Research) ? 'bg-primary text-text-hover' : ''}`}
 			onSelect={() => setMode(Mode.Research)}
 			disabled={deepResearchDisabled}
 			aria-disabled={deepResearchDisabled}
@@ -46,7 +46,7 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover ${isActive(Mode.Media) ? 'bg-primary text-text-hover' : ''}`}
+			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover data-disabled:opacity-50 ${isActive(Mode.Media) ? 'bg-primary text-text-hover' : ''}`}
 			onSelect={() => setMode(Mode.Media)}
 			disabled={mediaDisabled}
 			aria-disabled={mediaDisabled}
