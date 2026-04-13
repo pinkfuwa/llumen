@@ -3,21 +3,21 @@
 This file contains license information for all third-party dependencies used in the frontend.
 Generated from package.json and pnpm-lock.yaml.
 --------------------------------------------------------------------------------
-@codemirror/autocomplete@6.20.0
+@codemirror/autocomplete@6.20.1
 
 License: MIT
 Repository: https://github.com/codemirror/autocomplete
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
-@codemirror/commands@6.10.2
+@codemirror/commands@6.10.3
 
 License: MIT
 Repository: https://github.com/codemirror/commands
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
-@codemirror/language@6.12.2
+@codemirror/language@6.12.3
 
 License: MIT
 Repository: https://github.com/codemirror/language
@@ -31,14 +31,14 @@ Repository: https://github.com/codemirror/legacy-modes
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
-@codemirror/state@6.5.4
+@codemirror/state@6.6.0
 
 License: MIT
 Repository: https://github.com/codemirror/state
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
-@codemirror/view@6.39.15
+@codemirror/view@6.41.0
 
 License: MIT
 Repository: https://github.com/codemirror/view
@@ -57,7 +57,7 @@ Email: marijn@haverbeke.berlin
 License: MIT
 Repository: https://github.com/sveltejs/kit
 --------------------------------------------------------------------------------
-bits-ui@2.16.2
+bits-ui@2.17.3
 
 License: MIT
 Repository: https://github.com/huntabyte/bits-ui
@@ -78,7 +78,7 @@ Repository: https://github.com/lukeed/fetch-event-stream
 Publisher: Luke Edwards
 Email: luke@lukeed.com
 --------------------------------------------------------------------------------
-mermaid@11.12.3
+mermaid@11.14.0
 
 License: MIT
 Repository: https://github.com/mermaid-js/mermaid
@@ -96,7 +96,7 @@ Repository: https://github.com/kaisermann/svelte-i18n
 Publisher: Christian Kaisermann
 Email: christian@kaisermann.me
 --------------------------------------------------------------------------------
-temml@0.13.1
+temml@0.13.2
 
 License: MIT
 Repository: https://github.com/ronkok/Temml

@@ -15064,7 +15064,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "fastrand"
-package_version = "2.4.0"
+package_version = "2.4.1"
 repository = "https://github.com/smol-rs/fastrand"
 license = "Apache-2.0 OR MIT"
 
@@ -21776,7 +21776,7 @@ limitations under the License.
 
 [[third_party_libraries]]
 package_name = "hashbrown"
-package_version = "0.16.1"
+package_version = "0.17.0"
 repository = "https://github.com/rust-lang/hashbrown"
 license = "MIT OR Apache-2.0"
 
@@ -25070,7 +25070,7 @@ THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "hyper-rustls"
-package_version = "0.27.7"
+package_version = "0.27.8"
 repository = "https://github.com/rustls/hyper-rustls"
 license = "Apache-2.0 OR ISC OR MIT"
 
@@ -25282,23 +25282,7 @@ limitations under the License.
 
 [[third_party_libraries.licenses]]
 license = "ISC"
-text = """
-ISC License (ISC)
-Copyright (c) 2016, Joseph Birr-Pixton <jpixton@gmail.com>
-
-Permission to use, copy, modify, and/or distribute this software for
-any purpose with or without fee is hereby granted, provided that the
-above copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL
-WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
-AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
-PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
-ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
-THIS SOFTWARE.
-"""
+text = "NOT FOUND"
 
 [[third_party_libraries.licenses]]
 license = "MIT"
@@ -27480,7 +27464,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "indexmap"
-package_version = "2.13.1"
+package_version = "2.14.0"
 repository = "https://github.com/indexmap-rs/indexmap"
 license = "Apache-2.0 OR MIT"
 
@@ -29130,7 +29114,7 @@ END OF TERMS AND CONDITIONS
 
 [[third_party_libraries]]
 package_name = "js-sys"
-package_version = "0.3.94"
+package_version = "0.3.95"
 repository = "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys"
 license = "MIT OR Apache-2.0"
 
@@ -29854,7 +29838,7 @@ limitations under the License.
 
 [[third_party_libraries]]
 package_name = "libc"
-package_version = "0.2.184"
+package_version = "0.2.185"
 repository = "https://github.com/rust-lang/libc"
 license = "MIT OR Apache-2.0"
 
@@ -30375,7 +30359,7 @@ DEALINGS IN THE SOFTWARE."""
 
 [[third_party_libraries]]
 package_name = "libredox"
-package_version = "0.1.15"
+package_version = "0.1.16"
 repository = "https://gitlab.redox-os.org/redox-os/libredox.git"
 license = "MIT"
 
@@ -36559,7 +36543,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "openssl"
-package_version = "0.10.76"
+package_version = "0.10.77"
 repository = "https://github.com/rust-openssl/rust-openssl"
 license = "Apache-2.0"
 
@@ -37251,7 +37235,7 @@ limitations under the License.
 
 [[third_party_libraries]]
 package_name = "openssl-sys"
-package_version = "0.9.112"
+package_version = "0.9.113"
 repository = "https://github.com/rust-openssl/rust-openssl"
 license = "MIT"
 
@@ -44112,7 +44096,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "redox_syscall"
-package_version = "0.7.3"
+package_version = "0.7.4"
 repository = "https://gitlab.redox-os.org/redox-os/syscall"
 license = "MIT"
 
@@ -46912,7 +46896,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "rustls"
-package_version = "0.23.37"
+package_version = "0.23.38"
 repository = "https://github.com/rustls/rustls"
 license = "Apache-2.0 OR ISC OR MIT"
 
@@ -47416,7 +47400,7 @@ limitations under the License.
 
 [[third_party_libraries]]
 package_name = "rustls-webpki"
-package_version = "0.103.10"
+package_version = "0.103.11"
 repository = "https://github.com/rustls/webpki"
 license = "ISC"
 
@@ -59708,7 +59692,7 @@ freely, subject to the following restrictions:
 
 [[third_party_libraries]]
 package_name = "tokio"
-package_version = "1.51.0"
+package_version = "1.51.1"
 repository = "https://github.com/tokio-rs/tokio"
 license = "MIT"
 
@@ -60826,7 +60810,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "toml_edit"
-package_version = "0.25.10+spec-1.1.0"
+package_version = "0.25.11+spec-1.1.0"
 repository = "https://github.com/toml-rs/toml"
 license = "MIT OR Apache-2.0"
 
@@ -65829,7 +65813,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "wasm-bindgen"
-package_version = "0.2.117"
+package_version = "0.2.118"
 repository = "https://github.com/wasm-bindgen/wasm-bindgen"
 license = "MIT OR Apache-2.0"
 
@@ -66071,7 +66055,7 @@ limitations under the License.
 
 [[third_party_libraries]]
 package_name = "wasm-bindgen-futures"
-package_version = "0.4.67"
+package_version = "0.4.68"
 repository = "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/futures"
 license = "MIT OR Apache-2.0"
 
@@ -66313,7 +66297,7 @@ limitations under the License.
 
 [[third_party_libraries]]
 package_name = "wasm-bindgen-macro"
-package_version = "0.2.117"
+package_version = "0.2.118"
 repository = "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro"
 license = "MIT OR Apache-2.0"
 
@@ -66555,7 +66539,7 @@ limitations under the License.
 
 [[third_party_libraries]]
 package_name = "wasm-bindgen-macro-support"
-package_version = "0.2.117"
+package_version = "0.2.118"
 repository = "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro-support"
 license = "MIT OR Apache-2.0"
 
@@ -66797,7 +66781,7 @@ limitations under the License.
 
 [[third_party_libraries]]
 package_name = "wasm-bindgen-shared"
-package_version = "0.2.117"
+package_version = "0.2.118"
 repository = "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared"
 license = "MIT OR Apache-2.0"
 
@@ -67308,7 +67292,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "web-sys"
-package_version = "0.3.94"
+package_version = "0.3.95"
 repository = "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/web-sys"
 license = "MIT OR Apache-2.0"
 
