@@ -7,6 +7,7 @@
   [![Nightly Docker](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/docker-nightly.yml)
   [![status check](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml/badge.svg)](https://github.com/pinkfuwa/llumen/actions/workflows/check.yml)
   ![MSRV](https://img.shields.io/static/v1?label=MSRV&message=1.89&color=orange&logo=rust)
+  [![Docs](https://img.shields.io/badge/Docs-pinkfuwa.github.io%2Fllumen/-blue)](https://pinkfuwa.github.io/llumen/)
 </div>
 
 <div align="center">
