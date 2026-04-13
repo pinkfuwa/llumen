@@ -51,6 +51,7 @@ impl Tools {
     /// Returns tool definitions for normal mode.
     ///
     /// Currently: empty (normal mode has no tools)
+    #[allow(dead_code)]
     pub fn for_normal_mode(&self) -> Vec<crate::openrouter::Tool> {
         vec![]
     }

@@ -520,13 +520,12 @@ impl CompletionSession {
                             std::io::Error,
                         >(None);
                     }
-                    Ok::<
-                        Option<(bytes::Bytes, (tokio::fs::File, Vec<u8>))>,
-                        std::io::Error,
-                    >(Some((
-                        bytes::Bytes::copy_from_slice(&buffer[..read_bytes]),
-                        (temp_file, buffer),
-                    )))
+                    Ok::<Option<(bytes::Bytes, (tokio::fs::File, Vec<u8>))>, std::io::Error>(Some(
+                        (
+                            bytes::Bytes::copy_from_slice(&buffer[..read_bytes]),
+                            (temp_file, buffer),
+                        ),
+                    ))
                 },
             )
             .map_err(anyhow::Error::from);
@@ -738,6 +737,7 @@ impl CompletionSession {
 /// the concrete session type.
 pub trait TokenSink {
     fn add_token(&mut self, token: Token);
+    #[allow(dead_code)]
     fn add_error(&mut self, msg: String);
     fn update_usage(&mut self, cost: f32, tokens: i32);
     fn put_stream(

@@ -137,7 +137,7 @@
 	}
 </script>
 
-<Modal bind:open={open} title={$_('chat.record_audio_dialog.title')} onClose={cancelRecording}>
+<Modal bind:open title={$_('chat.record_audio_dialog.title')} onClose={cancelRecording}>
 	{#snippet children()}
 		<div class="space-y-4">
 			<p>
@@ -145,7 +145,9 @@
 			</p>
 			{#if isRecording}
 				<div class="flex flex-col items-center gap-4 py-6">
-					<div class="flex size-16 animate-pulse items-center justify-center rounded-full bg-red-500">
+					<div
+						class="flex size-16 animate-pulse items-center justify-center rounded-full bg-red-500"
+					>
 						<Mic class="size-8 text-white" />
 					</div>
 					<div class="font-mono text-2xl font-semibold">

@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use stream_json::{Base64EmbedFile, Base64EmbedURL, IntoSerializer, Serializer};
+use stream_json::{Base64EmbedFile, Base64EmbedURL, IntoSerializer};
 use stream_json::serializers::PlainText;
 
 use crate::utils::blob::BlobReader;

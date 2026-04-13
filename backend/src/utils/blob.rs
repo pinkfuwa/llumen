@@ -157,6 +157,7 @@ impl BlobDB {
             .ok()?
     }
 
+    #[allow(deprecated)]
     pub async fn insert_with_error<S, E>(
         &self,
         id: i32,

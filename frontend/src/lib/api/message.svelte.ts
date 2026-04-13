@@ -467,7 +467,9 @@ function handleToolResult(result: string, files: FileMetadata[] = []) {
 	}
 }
 
-function normalizeFiles(files: Array<{ name: string; id: number; kind?: FileKind }>): FileMetadata[] {
+function normalizeFiles(
+	files: Array<{ name: string; id: number; kind?: FileKind }>
+): FileMetadata[] {
 	return files.map((file) => ({
 		name: file.name,
 		id: file.id,

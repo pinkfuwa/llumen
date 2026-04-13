@@ -83,7 +83,7 @@ impl ModelChecker for ModelConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use protocol::{ModelCapability, ReasoningEffort, ReasoningOption};
+    use protocol::{ReasoningEffort, ReasoningOption};
 
     #[test]
     fn test_reasoning_option_from_bool_true() {

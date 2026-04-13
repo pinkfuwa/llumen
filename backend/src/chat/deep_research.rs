@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context as _, Result, bail};
+use anyhow::{Result, bail};
 use protocol::*;
 use serde::Deserialize;
 use tokio_stream::StreamExt;

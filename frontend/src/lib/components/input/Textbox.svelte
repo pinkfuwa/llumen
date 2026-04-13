@@ -51,7 +51,7 @@
 	window.addEventListener('keydown', onKeyDown);
 	onDestroy(() => window.removeEventListener('keydown', onKeyDown));
 
-	let rows = $state(minRow);
+	let rows = $state(1);
 
 	$effect(() => {
 		if (!clientWidth || !charMeasure || !input) return;

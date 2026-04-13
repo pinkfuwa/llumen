@@ -36,6 +36,7 @@ impl LuaReplTool {
     }
 
     /// Clears the Lua REPL state
+    #[allow(dead_code)]
     pub async fn clear(&self) -> Result<()> {
         Ok(self.runner.clear_cache().await?)
     }

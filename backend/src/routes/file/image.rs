@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::extract::{Extension, Json, Path, State};
 use axum::response::{IntoResponse, Response};
-use entity::file::{self, Entity as File};
+use entity::file::Entity as File;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::config::IMAGE_CACHE_MAX_AGE_SECS;

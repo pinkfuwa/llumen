@@ -39,9 +39,11 @@
 				: ''}
 		{@const resultFiles =
 			nextChunk && nextChunk.t == 'tool_result' && nextChunk.c.id == toolCall.id
-				? (nextChunk.c as {
-						files?: { id: number; name: string; kind?: 'image' | 'video' | 'other' }[];
-				  }).files || []
+				? (
+						nextChunk.c as {
+							files?: { id: number; name: string; kind?: 'image' | 'video' | 'other' }[];
+						}
+					).files || []
 				: []}
 		<ToolBox toolname={toolCall.name}>
 			<Tool content={toolCall.arg} />

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::extract::{Path, State};
 use axum::response::{IntoResponse, Response};
 use axum::{Extension, Json};
-use entity::file::{self, Entity as File};
+use entity::file::Entity as File;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::AppState;
