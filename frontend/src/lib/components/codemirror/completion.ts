@@ -3,12 +3,20 @@ import { get, writable, type Readable } from 'svelte/store';
 
 // Constants for TOML completion
 export const TOP_LEVEL_FIELDS = ['model_id', 'display_name'];
-export const CAPABILITY_FIELDS = ['image', 'audio', 'ocr', 'tool', 'reasoning'];
+export const CAPABILITY_FIELDS = ['image', 'audio', 'video', 'ocr', 'tool', 'json', 'reasoning'];
 export const PARAMETER_FIELDS = ['temperature', 'repeat_penalty', 'top_k', 'top_p'];
-export const TOML_TABLE_HEADERS = ['[capability]', '[parameter]'];
+export const MEDIA_GEN_FIELDS = ['image_model', 'video_model'];
+export const TOML_TABLE_HEADERS = ['[capability]', '[parameter]', '[media_gen]'];
 
-// Known boolean fields for autocomplete
-export const BOOLEAN_FIELDS = ['image', 'audio', 'ocr', 'tool'];
+const BOOLEAN_FIELD_VALUES = ['true', 'false'];
+const OCR_FIELD_VALUES = ['native', 'text', 'mistral', 'disabled'];
+const REASONING_FIELD_VALUES = ['true', 'false', 'low', 'medium', 'high', 'none', 'auto'];
+const MODEL_ID_FIELDS = new Set(['model_id', 'image_model', 'video_model']);
+const BOOLEAN_FIELDS = new Set(['image', 'audio', 'video', 'tool', 'json']);
+const STRING_VALUE_FIELDS = new Map([
+	['ocr', OCR_FIELD_VALUES],
+	['reasoning', REASONING_FIELD_VALUES]
+]);
 
 // Model IDs getter - will be set by the Svelte component
 let modelIds: Readable<string[]> = writable([]);
@@ -36,6 +44,87 @@ interface ParsedLine {
 	valueBeforeCursor: string;
 	// Text inside quotes after cursor (if in quoted value)
 	valueAfterCursor: string;
+}
+
+interface TomlLine {
+	text: string;
+}
+
+interface TomlDocument {
+	lines: number;
+	line: (lineNumber: number) => TomlLine;
+	lineAt: (position: number) => TomlLine & { from: number; number: number };
+}
+
+interface TomlState {
+	doc: TomlDocument;
+}
+
+interface TextCompletionOption {
+	label: string;
+	type: 'variable' | 'keyword';
+	info?: string;
+	apply?: string;
+}
+
+function buildValueCompletionOptions(
+	values: string[],
+	quoted: boolean,
+	info: string,
+	wrapInQuotes: boolean
+): TextCompletionOption[] {
+	return values.map((value) => ({
+		label: value,
+		type: value === 'true' || value === 'false' ? 'keyword' : 'variable',
+		info,
+		apply: quoted || !wrapInQuotes ? value : `"${value}"`
+	}));
+}
+
+function getValueRange(parsed: ParsedLine, context: CompletionContext): { from: number; to: number } {
+	const line = context.state.doc.lineAt(context.pos);
+
+	let valueStart: number;
+	if (parsed.quoteChar) {
+		const quotePos = parsed.beforeCursor.lastIndexOf(parsed.quoteChar);
+		valueStart = line.from + quotePos + 1;
+	} else {
+		const equalsPos = parsed.beforeCursor.lastIndexOf('=');
+		const afterEquals = parsed.beforeCursor.slice(equalsPos + 1).trimStart();
+		valueStart =
+			line.from +
+			equalsPos +
+			1 +
+			(parsed.beforeCursor.slice(equalsPos + 1).length - afterEquals.length);
+	}
+
+	let valueEnd: number;
+	if (parsed.quoteChar) {
+		const closingQuotePos = parsed.afterCursor.indexOf(parsed.quoteChar);
+		valueEnd = closingQuotePos >= 0 ? context.pos + closingQuotePos : context.pos + parsed.afterCursor.length;
+	} else {
+		valueEnd = context.pos + parsed.afterCursor.trimEnd().length;
+	}
+
+	return { from: valueStart, to: valueEnd };
+}
+
+function completeKnownValue(
+	parsed: ParsedLine,
+	context: CompletionContext,
+	values: string[],
+	info: string
+): CompletionResult {
+	const { from, to } = getValueRange(parsed, context);
+	const prefix = parsed.valueBeforeCursor;
+	const filtered = prefix ? values.filter((value) => value.startsWith(prefix)) : values;
+
+	return {
+		from,
+		to,
+		options: buildValueCompletionOptions(filtered, parsed.quoteChar != null, info, true),
+		validFor: /^.*$/
+	};
 }
 
 /**
@@ -106,7 +195,7 @@ function parseLine(lineText: string, cursorOffset: number): ParsedLine {
 /**
  * Find the current table context by scanning upward from current line
  */
-function findCurrentTable(state: any, lineNumber: number): string | null {
+function findCurrentTable(state: TomlState, lineNumber: number): string | null {
 	for (let i = lineNumber - 1; i >= 1; i--) {
 		const line = state.doc.line(i);
 		const match = line.text.trim().match(/^\[(\w+)\]$/);
@@ -120,7 +209,7 @@ function findCurrentTable(state: any, lineNumber: number): string | null {
 /**
  * Get all existing table headers in the document
  */
-function getExistingTables(state: any): Set<string> {
+function getExistingTables(state: TomlState): Set<string> {
 	const tables = new Set<string>();
 	for (let i = 1; i <= state.doc.lines; i++) {
 		const line = state.doc.line(i);
@@ -137,40 +226,8 @@ function getExistingTables(state: any): Set<string> {
  */
 function completeModelId(parsed: ParsedLine, context: CompletionContext): CompletionResult | null {
 	const models = get(modelIds);
-	const currentValue = parsed.valueBeforeCursor + parsed.valueAfterCursor;
 	const prefix = parsed.valueBeforeCursor;
-
-	// Calculate the replacement range
-	// We want to replace from the start of the value to the end of the value
-	const line = context.state.doc.lineAt(context.pos);
-
-	// Find where the quote starts (or where value starts if unquoted)
-	let valueStart: number;
-	if (parsed.quoteChar) {
-		const quotePos = parsed.beforeCursor.lastIndexOf(parsed.quoteChar);
-		valueStart = line.from + quotePos + 1;
-	} else {
-		const equalsPos = parsed.beforeCursor.lastIndexOf('=');
-		const afterEquals = parsed.beforeCursor.slice(equalsPos + 1).trimStart();
-		valueStart =
-			line.from +
-			equalsPos +
-			1 +
-			(parsed.beforeCursor.slice(equalsPos + 1).length - afterEquals.length);
-	}
-
-	// Find where the value ends
-	let valueEnd: number;
-	if (parsed.quoteChar) {
-		const closingQuotePos = parsed.afterCursor.indexOf(parsed.quoteChar);
-		if (closingQuotePos >= 0) {
-			valueEnd = context.pos + closingQuotePos;
-		} else {
-			valueEnd = context.pos + parsed.afterCursor.length;
-		}
-	} else {
-		valueEnd = context.pos + parsed.afterCursor.trimEnd().length;
-	}
+	const { from: valueStart, to: valueEnd } = getValueRange(parsed, context);
 
 	// Determine what to show based on current value
 	if (!prefix || !prefix.includes('/')) {
@@ -190,7 +247,6 @@ function completeModelId(parsed: ParsedLine, context: CompletionContext): Comple
 		};
 	} else {
 		// Show full model IDs matching the prefix
-		const fullValue = prefix + parsed.valueAfterCursor;
 		const filtered = models.filter((id) => id.startsWith(prefix));
 
 		return {
@@ -213,26 +269,35 @@ function completeBooleanValue(
 	parsed: ParsedLine,
 	context: CompletionContext
 ): CompletionResult | null {
-	const line = context.state.doc.lineAt(context.pos);
-
-	// Find where the value starts (after =)
-	const equalsPos = parsed.beforeCursor.lastIndexOf('=');
-	const afterEquals = parsed.beforeCursor.slice(equalsPos + 1).trimStart();
-	const valueStart =
-		line.from +
-		equalsPos +
-		1 +
-		(parsed.beforeCursor.slice(equalsPos + 1).length - afterEquals.length);
+	const { from, to } = getValueRange(parsed, context);
+	const prefix = parsed.valueBeforeCursor;
+	const filtered = prefix ? BOOLEAN_FIELD_VALUES.filter((value) => value.startsWith(prefix)) : BOOLEAN_FIELD_VALUES;
 
 	return {
-		from: valueStart,
-		to: context.pos + parsed.afterCursor.split(/\s/)[0].length,
-		options: [
-			{ label: 'true', type: 'keyword', info: 'boolean' },
-			{ label: 'false', type: 'keyword', info: 'boolean' }
-		],
-		validFor: /^(true|false|t|f)?$/
+		from,
+		to,
+		options: buildValueCompletionOptions(filtered, parsed.quoteChar != null, 'boolean', false),
+		validFor: /^(true|false)?$/
 	};
+}
+
+function completeModelFieldValue(parsed: ParsedLine, context: CompletionContext): CompletionResult | null {
+	if (!parsed.fieldName) return null;
+
+	if (MODEL_ID_FIELDS.has(parsed.fieldName)) {
+		return completeModelId(parsed, context);
+	}
+
+	if (BOOLEAN_FIELDS.has(parsed.fieldName)) {
+		return completeBooleanValue(parsed, context);
+	}
+
+	const stringValues = STRING_VALUE_FIELDS.get(parsed.fieldName);
+	if (stringValues != null) {
+		return completeKnownValue(parsed, context, stringValues, parsed.fieldName);
+	}
+
+	return null;
 }
 
 /**
@@ -240,8 +305,7 @@ function completeBooleanValue(
  */
 function completeFieldName(
 	fields: string[],
-	context: CompletionContext,
-	beforeCursor: string
+	context: CompletionContext
 ): CompletionResult | null {
 	const word = context.matchBefore(/\w*/);
 	if (!word) return null;
@@ -261,7 +325,7 @@ function completeFieldName(
  * Check if current table section has any field definitions
  */
 function hasFieldsInCurrentTable(
-	state: any,
+	state: TomlState,
 	lineNumber: number,
 	currentTable: string | null
 ): boolean {
@@ -300,7 +364,7 @@ function completeTableHeader(
 	context: CompletionContext,
 	existingTables: Set<string>,
 	currentTable: string | null,
-	state: any,
+	state: TomlState,
 	lineNumber: number
 ): CompletionResult | null {
 	const line = context.state.doc.lineAt(context.pos);
@@ -310,7 +374,6 @@ function completeTableHeader(
 	const tableMatch = beforeCursor.match(/^(\s*)\[(\w*)$/);
 	if (tableMatch) {
 		const indent = tableMatch[1];
-		const partial = tableMatch[2];
 		const missingHeaders = TOML_TABLE_HEADERS.filter((h) => !existingTables.has(h));
 
 		return {
@@ -367,18 +430,7 @@ export function tomlCompletion(context: CompletionContext): CompletionResult | n
 
 	// If we're in a value position
 	if (parsed.inValue && parsed.fieldName) {
-		// model_id completion
-		if (parsed.fieldName === 'model_id') {
-			return completeModelId(parsed, context);
-		}
-
-		// Boolean field completion
-		if (BOOLEAN_FIELDS.includes(parsed.fieldName)) {
-			return completeBooleanValue(parsed, context);
-		}
-
-		// Other values - no completion
-		return null;
+		return completeModelFieldValue(parsed, context);
 	}
 
 	// Table header completion (passing currentTable and line info for context awareness)
@@ -394,13 +446,16 @@ export function tomlCompletion(context: CompletionContext): CompletionResult | n
 	// Field name completion based on context
 	if (!currentTable) {
 		// Top-level fields
-		return completeFieldName(TOP_LEVEL_FIELDS, context, parsed.beforeCursor);
+		return completeFieldName(TOP_LEVEL_FIELDS, context);
 	} else if (currentTable === '[capability]') {
 		// Capability fields
-		return completeFieldName(CAPABILITY_FIELDS, context, parsed.beforeCursor);
+		return completeFieldName(CAPABILITY_FIELDS, context);
 	} else if (currentTable === '[parameter]') {
 		// Parameter fields
-		return completeFieldName(PARAMETER_FIELDS, context, parsed.beforeCursor);
+		return completeFieldName(PARAMETER_FIELDS, context);
+	} else if (currentTable === '[media_gen]') {
+		// Media generation fields
+		return completeFieldName(MEDIA_GEN_FIELDS, context);
 	}
 
 	return null;
