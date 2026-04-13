@@ -10,6 +10,7 @@ mod option;
 #[allow(dead_code)]
 mod raw;
 mod stream;
+mod video_gen;
 
 pub static HTTP_REFERER: &str = "https://pinkfuwa.github.io/llumen/";
 pub static X_TITLE: &str = "llumen";
@@ -26,3 +27,4 @@ pub use raw::{FinishReason, Image};
 pub use stream::{
     StreamCompletion, StreamCompletionResp, StreamResult, StreamWithOrderedTokens, ToolCall,
 };
+pub use video_gen::{GeneratedVideo, VideoGenOutput, VideoGenerationOption, VideoModelCapability};

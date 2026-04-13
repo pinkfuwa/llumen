@@ -25,6 +25,26 @@ pub enum Error {
     ImageGenReferenceImagesNotSupported,
     /// Image generation response did not include any images
     ImageGenNoImagesInResponse,
+    /// Model is not eligible for video generation
+    VideoGenNotSupported,
+    /// Model does not exist in the video generation listing
+    VideoGenModelNotFound,
+    /// Model cannot accept reference images for video generation
+    VideoGenReferenceImagesNotSupported,
+    /// Model cannot accept reference videos for video generation
+    VideoGenReferenceVideosNotSupported,
+    /// Too many reference images for video generation model limits
+    VideoGenReferenceImagesLimitExceeded { max: usize },
+    /// Too many reference videos for video generation model limits
+    VideoGenReferenceVideosLimitExceeded { max: usize },
+    /// Reference file was not image/video
+    VideoGenInvalidReferenceFile,
+    /// Video generation response did not include downloadable videos
+    VideoGenNoVideosInResponse,
+    /// Video generation job failed on provider
+    VideoGenJobFailed(String),
+    /// Video generation polling exceeded configured limits
+    VideoGenPollingTimeout,
 }
 
 impl fmt::Display for Error {
@@ -52,6 +72,40 @@ impl fmt::Display for Error {
             }
             Error::ImageGenNoImagesInResponse => {
                 write!(f, "No images in image generation response")
+            }
+            Error::VideoGenNotSupported => {
+                write!(f, "Model does not support video generation")
+            }
+            Error::VideoGenModelNotFound => write!(f, "Video generation model not found"),
+            Error::VideoGenReferenceImagesNotSupported => {
+                write!(
+                    f,
+                    "Model does not support reference images for video generation"
+                )
+            }
+            Error::VideoGenReferenceVideosNotSupported => {
+                write!(
+                    f,
+                    "Model does not support reference videos for video generation"
+                )
+            }
+            Error::VideoGenReferenceImagesLimitExceeded { max } => {
+                write!(f, "Too many reference images for model limit ({max})")
+            }
+            Error::VideoGenReferenceVideosLimitExceeded { max } => {
+                write!(f, "Too many reference videos for model limit ({max})")
+            }
+            Error::VideoGenInvalidReferenceFile => {
+                write!(f, "Reference file must be an image or video")
+            }
+            Error::VideoGenNoVideosInResponse => {
+                write!(f, "No videos in video generation response")
+            }
+            Error::VideoGenJobFailed(msg) => {
+                write!(f, "Video generation failed: {msg}")
+            }
+            Error::VideoGenPollingTimeout => {
+                write!(f, "Video generation polling timed out")
             }
         }
     }

@@ -3,9 +3,10 @@ use std::time::Duration;
 
 use super::chat::ChatClient;
 use super::image_gen::{AspectRatio, ImageGenClient};
-use super::listing::ModelListing;
+use super::listing::{ModelListing, VideoModelListing};
 use super::message::Message;
 use super::raw;
+use super::video_gen::{VideoGenClient, VideoGenerationOption, VideoModelCapability};
 use super::{CompletionOption, Error, File, Model, StreamCompletion, HTTP_REFERER, X_TITLE};
 use http::header::CONTENT_TYPE;
 use stream_json::IntoSerializer;
@@ -14,8 +15,10 @@ pub struct Openrouter {
     pub(super) api_key: String,
     pub(super) embedding_endpoint: String,
     listing: Arc<ModelListing>,
+    video_listing: Arc<VideoModelListing>,
     chat: ChatClient,
     image_gen: ImageGenClient,
+    video_gen: VideoGenClient,
     http_client: reqwest::Client,
     is_custom_api: bool,
 }
@@ -41,6 +44,8 @@ impl Openrouter {
         let embedding_endpoint = format!("{}/v1/embeddings", api_base.trim_end_matches('/'));
         let chat_completion_endpoint =
             format!("{}/v1/chat/completions", api_base.trim_end_matches('/'));
+        let videos_endpoint = format!("{}/v1/videos", api_base.trim_end_matches('/'));
+        let video_models_endpoint = format!("{}/v1/videos/models", api_base.trim_end_matches('/'));
         let models_endpoint = match is_custom_api {
             true => format!("{}/v1/models", api_base.trim_end_matches('/')),
             false => {
@@ -62,6 +67,8 @@ impl Openrouter {
             .expect("Failed to create HTTP client");
 
         let listing = ModelListing::new(http_client.clone(), models_endpoint, api_key.clone());
+        let video_listing =
+            VideoModelListing::new(http_client.clone(), video_models_endpoint, api_key.clone());
         let chat = ChatClient::new(
             api_key.clone(),
             chat_completion_endpoint.clone(),
@@ -73,13 +80,20 @@ impl Openrouter {
             chat_completion_endpoint.clone(),
             http_client.clone(),
         );
+        let video_gen = VideoGenClient::new(
+            api_key.clone(),
+            videos_endpoint.clone(),
+            http_client.clone(),
+        );
 
         Self {
             api_key,
             embedding_endpoint,
             listing,
+            video_listing,
             chat,
             image_gen,
+            video_gen,
             http_client,
             is_custom_api,
         }
@@ -91,6 +105,26 @@ impl Openrouter {
 
     pub async fn get_model_ids(&self) -> Vec<String> {
         self.listing.get_model_ids().await
+    }
+
+    pub async fn get_video_model_ids(&self) -> Vec<String> {
+        self.video_listing.get_model_ids().await
+    }
+
+    pub async fn get_video_model_capability(
+        &self,
+        model_id: &str,
+    ) -> Result<VideoModelCapability, Error> {
+        if !self.is_custom_api {
+            self.video_listing.ensure(model_id).await?;
+        }
+
+        let model_id = model_id.split(':').next().unwrap_or(model_id);
+        self.video_listing
+            .get(model_id)
+            .await
+            .map(Into::into)
+            .ok_or(Error::VideoGenModelNotFound)
     }
 
     pub async fn get_capability(&self, model: &Model) -> super::Capability {
@@ -171,6 +205,22 @@ impl Openrouter {
                 reference_images,
                 aspect_ratio,
             )
+            .await
+    }
+
+    pub async fn video_generate(
+        &self,
+        model_id: String,
+        prompt: String,
+        references: Vec<File>,
+        option: VideoGenerationOption,
+    ) -> Result<super::VideoGenOutput, Error> {
+        if !self.is_custom_api {
+            self.video_listing.ensure(&model_id).await?;
+        }
+
+        self.video_gen
+            .video_generate(&self.video_listing, model_id, prompt, references, option)
             .await
     }
 

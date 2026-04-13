@@ -3,6 +3,8 @@
 //! Not codegen, but it match the API spec
 //!
 //! https://openrouter.ai/docs
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use stream_json::{Base64EmbedFile, Base64EmbedURL, IntoSerializer, Serializer};
 use stream_json::serializers::PlainText;
@@ -577,6 +579,116 @@ pub struct ImageUrl {
 #[derive(Deserialize)]
 pub struct ErrorResp {
     pub error: ErrorInfo,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum VideoJobStatus {
+    Pending,
+    InProgress,
+    Completed,
+    Failed,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VideoModel {
+    pub id: String,
+    pub name: Option<String>,
+    #[serde(default)]
+    pub supported_resolutions: Vec<String>,
+    #[serde(default)]
+    pub supported_aspect_ratios: Vec<String>,
+    #[serde(default)]
+    pub supported_sizes: Vec<String>,
+    #[serde(default)]
+    pub allowed_passthrough_parameters: Vec<String>,
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VideoModelListResponse {
+    pub data: Vec<VideoModel>,
+}
+
+#[derive(Default, stream_json::IntoSerializer)]
+pub struct VideoGenerationReq {
+    pub model: String,
+    pub prompt: String,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub duration: Option<u32>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub resolution: Option<String>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub aspect_ratio: Option<String>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[stream(skip_serialize_if = "Vec::is_empty")]
+    pub input_references: Vec<VideoInputReference>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub generate_audio: Option<bool>,
+}
+
+#[derive(Serialize, Default, Clone, Copy, stream_json::IntoSerializer)]
+#[serde(rename_all = "snake_case")]
+pub enum VideoInputReferenceType {
+    #[default]
+    ImageUrl,
+    VideoUrl,
+}
+
+#[derive(Default, stream_json::IntoSerializer)]
+pub struct VideoInputReference {
+    pub r#type: VideoInputReferenceType,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub image_url: Option<InputImage>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub video_url: Option<VideoUrl>,
+}
+
+impl VideoInputReference {
+    pub fn image_data(embed_file: Base64EmbedURL<BlobReader>) -> Self {
+        Self {
+            r#type: VideoInputReferenceType::ImageUrl,
+            image_url: Some(InputImage { url: embed_file }),
+            ..Default::default()
+        }
+    }
+
+    pub fn video_data(embed_file: Base64EmbedURL<BlobReader>) -> Self {
+        Self {
+            r#type: VideoInputReferenceType::VideoUrl,
+            video_url: Some(VideoUrl { url: embed_file }),
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VideoGenerationSubmitResponse {
+    pub id: String,
+    pub polling_url: String,
+    pub status: VideoJobStatus,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VideoUsage {
+    #[serde(default)]
+    pub cost: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VideoGenerationStatusResponse {
+    pub id: String,
+    pub generation_id: Option<String>,
+    pub polling_url: String,
+    pub status: VideoJobStatus,
+    #[serde(default)]
+    pub unsigned_urls: Vec<String>,
+    pub usage: Option<VideoUsage>,
+    pub error: Option<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
