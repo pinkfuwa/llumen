@@ -228,9 +228,15 @@ export interface Error {
 	reason: string;
 }
 
+export enum FileKind {
+	Image = 'image',
+	Video = 'video'
+}
+
 export interface FileMetadata {
 	name: string;
 	id: number;
+	kind?: FileKind;
 }
 
 export interface FileRefreshReq {
@@ -442,7 +448,7 @@ export interface SseRespToolCall {
 
 export interface SseRespToolResult {
 	content: string;
-	files: FileMetadata[];
+	files?: FileMetadata[];
 }
 
 export interface SseStart {
@@ -523,6 +529,14 @@ export type ChatPaginateReq =
 export type MessagePaginateReq =
 	| { t: 'limit'; c: MessagePaginateReqLimit }
 	| { t: 'range'; c: MessagePaginateReqRange };
+
+export enum ReasoningEffort {
+	None = 'none',
+	Low = 'low',
+	Medium = 'medium',
+	High = 'high',
+	Auto = 'auto'
+}
 
 /**
  * Represents a message sent over the SSE (Server-Sent Events) stream in the

@@ -68,6 +68,7 @@ pub async fn route(
         .map(|f| FileMetadata {
             name: f.name,
             id: f.id,
+            kind: None,
         })
         .collect::<Vec<_>>();
 

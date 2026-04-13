@@ -9,6 +9,7 @@
 	import ToolBox from './ToolBox.svelte';
 	import DeepResearch from './DeepResearch.svelte';
 	import Image from './Image.svelte';
+	import Video from './Video.svelte';
 
 	let {
 		chunks,
@@ -38,14 +39,20 @@
 				: ''}
 		{@const resultFiles =
 			nextChunk && nextChunk.t == 'tool_result' && nextChunk.c.id == toolCall.id
-				? (nextChunk.c as { files?: { id: number; name: string }[] }).files || []
+				? (nextChunk.c as {
+						files?: { id: number; name: string; kind?: 'image' | 'video' | 'other' }[];
+				  }).files || []
 				: []}
 		<ToolBox toolname={toolCall.name}>
 			<Tool content={toolCall.arg} />
 			<Result content={result} />
 		</ToolBox>
 		{#each resultFiles as file}
-			<Image id={file.id} />
+			{#if file.kind === 'video'}
+				<Video id={file.id} name={file.name} />
+			{:else}
+				<Image id={file.id} name={file.name} />
+			{/if}
 		{/each}
 	{:else if kind == 'error'}
 		<ResponseError content={chunk.c} />

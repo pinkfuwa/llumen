@@ -79,13 +79,17 @@ impl Prompt {
         &self,
         locale: &str,
         model_name: &str,
+        model_id: &str,
         model_provider: &str,
+        model_supported_parameters: &[String],
     ) -> Result<String> {
         let tmpl = self.env.get_template("normal")?;
         Ok(tmpl.render(minijinja::context! {
             locale,
             model_name,
+            model_id,
             model_provider,
+            model_supported_parameters,
         })?)
     }
 
@@ -93,13 +97,17 @@ impl Prompt {
         &self,
         locale: &str,
         model_name: &str,
+        model_id: &str,
         model_provider: &str,
+        model_supported_parameters: &[String],
     ) -> Result<String> {
         let tmpl = self.env.get_template("search")?;
         Ok(tmpl.render(minijinja::context! {
             locale,
             model_name,
+            model_id,
             model_provider,
+            model_supported_parameters,
         })?)
     }
 
@@ -107,13 +115,25 @@ impl Prompt {
         &self,
         locale: &str,
         model_name: &str,
+        model_id: &str,
         model_provider: &str,
+        model_supported_parameters: &[String],
+        image_model_id: Option<&str>,
+        video_model_id: Option<&str>,
+        image_model_supported_parameters: &[String],
+        video_model_supported_parameters: &[String],
     ) -> Result<String> {
         let tmpl = self.env.get_template("media")?;
         Ok(tmpl.render(minijinja::context! {
             locale,
             model_name,
+            model_id,
             model_provider,
+            model_supported_parameters,
+            image_model_id,
+            video_model_id,
+            image_model_supported_parameters,
+            video_model_supported_parameters,
         })?)
     }
 

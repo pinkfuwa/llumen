@@ -8,6 +8,7 @@ import {
 	type MutationResult,
 	type RawMutationResult
 } from './state';
+import { FileKind, MessagePaginateReqOrder } from './types';
 import type {
 	MessageDeleteReq,
 	MessageCreateReq,
@@ -23,7 +24,6 @@ import type {
 	SseCursor,
 	UrlCitation
 } from './types';
-import { MessagePaginateReqOrder } from './types';
 import { dispatchError } from '$lib/error';
 import { updateInfiniteQueryDataById } from './state';
 import { getRoomPages, setRoomPages } from './chatroom.svelte';
@@ -467,6 +467,14 @@ function handleToolResult(result: string, files: FileMetadata[] = []) {
 	}
 }
 
+function normalizeFiles(files: Array<{ name: string; id: number; kind?: FileKind }>): FileMetadata[] {
+	return files.map((file) => ({
+		name: file.name,
+		id: file.id,
+		kind: file.kind ?? FileKind.Image
+	}));
+}
+
 export function getMessages(): {
 	readonly messages: Message[];
 } {
@@ -487,14 +495,18 @@ export function getStream(): {
 	};
 }
 
-export function pushUserMessage(user_id: number, content: string, files: FileMetadata[]) {
+export function pushUserMessage(
+	user_id: number,
+	content: string,
+	files: Array<{ name: string; id: number; kind?: FileKind }>
+) {
 	pushMessage({
 		id: user_id,
 		inner: {
 			t: 'user',
 			c: {
 				text: content,
-				files: files
+				files: normalizeFiles(files)
 			}
 		},
 		token_count: 0,

@@ -54,7 +54,8 @@
 		"question": "在此輸入問題",
 		"model_mode": {
 			"search": "網頁搜尋",
-			"deep_research": "深度研究"
+			"deep_research": "深度研究",
+			"media": "生圖/生影片"
 		},
 		"markdown_mode": {
 			"enable": "已啟用 markdown 渲染",
@@ -70,6 +71,8 @@
 		"upload_file": "上傳檔案",
 		"loading_image": "載入圖片中...",
 		"failed_load_image": "無法載入圖片",
+		"loading_video": "載入影片中...",
+		"failed_load_video": "無法載入影片",
 		"image_alt": "產生的圖片",
 		"select_model": "選擇模型",
 		"research_agent": "研究代理",

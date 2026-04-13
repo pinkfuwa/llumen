@@ -6,14 +6,14 @@ use std::sync::Arc;
 // with flyweight)
 pub(crate) mod crawl;
 pub(crate) mod lua;
-pub(crate) mod media_image;
+pub(crate) mod media;
 #[allow(unused)]
 pub(crate) mod runner;
 pub(crate) mod web_search;
 
 pub(crate) use crawl::{CrawlTool, get_crawl_tool_def};
 pub(crate) use lua::{LuaReplTool, get_lua_repl_def};
-pub(crate) use media_image::get_generate_image_tool_def;
+pub(crate) use media::{get_generate_image_tool_def, get_generate_video_tool_def};
 pub(crate) use web_search::{WebSearchTool, get_web_search_tool_def};
 
 /// Collection of all available tools in llumen.
@@ -67,8 +67,18 @@ impl Tools {
         tools
     }
 
-    pub fn for_media_mode(&self) -> Vec<crate::openrouter::Tool> {
-        vec![get_generate_image_tool_def()]
+    pub fn for_media_mode(
+        &self,
+        media_gen: &protocol::MediaGenerationConfig,
+    ) -> Vec<crate::openrouter::Tool> {
+        let mut tools = Vec::new();
+        if media_gen.image_model.is_some() {
+            tools.push(get_generate_image_tool_def());
+        }
+        if media_gen.video_model.is_some() {
+            tools.push(get_generate_video_tool_def());
+        }
+        tools
     }
 
     /// Returns the handoff tool for the coordinator to trigger deep research.

@@ -53,7 +53,7 @@
 			data-active={isActive(Mode.Media) ? 'true' : 'false'}
 		>
 			<ImagePlus class="size-4" />
-			<span>Media</span>
+			<span>{$_('chat.model_mode.media')}</span>
 		</DropdownMenu.Item>
 	</div>
 </div>

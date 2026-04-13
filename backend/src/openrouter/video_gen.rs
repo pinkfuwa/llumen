@@ -269,13 +269,24 @@ impl VideoGenClient {
         Err(Error::VideoGenPollingTimeout)
     }
 
-    async fn open_download_streams(&self, urls: Vec<String>) -> Result<Vec<GeneratedVideo>, Error> {
-        let mut generated_videos = Vec::with_capacity(urls.len());
+    async fn open_download_streams(
+        &self,
+        job_id: &str,
+        video_count: usize,
+    ) -> Result<Vec<GeneratedVideo>, Error> {
+        let mut generated_videos = Vec::with_capacity(video_count);
 
-        for (index, url) in urls.into_iter().enumerate() {
+        for index in 0..video_count {
+            let url = format!(
+                "{}/{job_id}/content?index={index}",
+                self.videos_endpoint.trim_end_matches('/')
+            );
             let response = self
                 .http_client
                 .get(&url)
+                .bearer_auth(&self.api_key)
+                .header("HTTP-Referer", super::HTTP_REFERER)
+                .header("X-Title", super::X_TITLE)
                 .send()
                 .await
                 .map_err(Error::Http)?;
@@ -397,7 +408,7 @@ impl VideoGenClient {
         }
 
         let generated_videos = self
-            .open_download_streams(status_response.unsigned_urls)
+            .open_download_streams(&job_id, status_response.unsigned_urls.len())
             .await?;
 
         let price = status_response.usage.map(|usage| usage.cost).unwrap_or(0.0);

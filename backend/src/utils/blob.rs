@@ -161,10 +161,10 @@ impl BlobDB {
         &self,
         id: i32,
         size: usize,
-        mut chunk_stream: S,
+        chunk_stream: S,
     ) -> Result<Result<(), E>, redb::Error>
     where
-        S: Stream<Item = Result<bytes::Bytes, E>> + Unpin + Send,
+        S: Stream<Item = Result<bytes::Bytes, E>> + Send,
     {
         let (tx, mut rx) = tokio::sync::mpsc::channel::<bytes::Bytes>(1);
 
@@ -188,6 +188,7 @@ impl BlobDB {
             Ok::<(), redb::Error>(())
         });
 
+        tokio::pin!(chunk_stream);
         while let Some(chunk) = chunk_stream.next().await {
             match chunk {
                 Err(e) => return Ok(Err(e)),
@@ -216,7 +217,7 @@ impl BlobDB {
 
     pub async fn insert<S>(&self, id: i32, size: usize, chunk_stream: S) -> Result<(), redb::Error>
     where
-        S: Stream<Item = bytes::Bytes> + Unpin + 'static + Send,
+        S: Stream<Item = bytes::Bytes> + 'static + Send,
     {
         self.insert_with_error(
             id,

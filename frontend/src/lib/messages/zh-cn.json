@@ -54,7 +54,8 @@
 		"question": "在此输入问题",
 		"model_mode": {
 			"search": "网页搜索",
-			"deep_research": "深度研究"
+			"deep_research": "深度研究",
+			"media": "生图/生影片"
 		},
 		"markdown_mode": {
 			"enable": "已启用 markdown 渲染",
@@ -70,6 +71,8 @@
 		"upload_file": "上传文件",
 		"loading_image": "加载图片中...",
 		"failed_load_image": "无法加载图片",
+		"loading_video": "加载视频中...",
+		"failed_load_video": "无法加载视频",
 		"image_alt": "生成的图片",
 		"select_model": "选择模型",
 		"research_agent": "研究代理",

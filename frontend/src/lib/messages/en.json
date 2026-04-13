@@ -54,7 +54,8 @@
 		"question": "Send your question here",
 		"model_mode": {
 			"search": "Web Search",
-			"deep_research": "Deep Research"
+			"deep_research": "Deep Research",
+			"media": "Media Generation"
 		},
 		"markdown_mode": {
 			"enable": "Markdown rendering",
@@ -70,6 +71,8 @@
 		"upload_file": "Upload File",
 		"loading_image": "Loading image...",
 		"failed_load_image": "Failed to load image",
+		"loading_video": "Loading video...",
+		"failed_load_video": "Failed to load video",
 		"image_alt": "Generated",
 		"select_model": "Select Model",
 		"research_agent": "Research Agent",

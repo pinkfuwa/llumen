@@ -9,8 +9,10 @@ use std::sync::Arc;
 use anyhow::{Context as _, Result};
 use ::entity::{chat, message, prelude::*, user};
 use ::entity::model as entity_model;
+use futures_util::TryStreamExt;
 use protocol::*;
 use sea_orm::*;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use super::context::{Context, StreamEndReason};
 use super::converter;
@@ -142,21 +144,39 @@ impl CompletionSession {
     ) -> Result<Vec<openrouter::Message>> {
         let locale = self.locale();
         let mode = self.chat.mode;
+        let model_id = self.model.config.model_id.as_str();
+        let model_supported_parameters = self.model_supported_parameters();
+        let (image_model_id, video_model_id) = self.media_model_ids();
+        let (image_model_supported_parameters, video_model_supported_parameters) =
+            self.media_model_prompt_parameters();
 
         // 1. System prompt
         let system_prompt = match mode {
-            ModeKind::Normal => {
-                ctx.prompt
-                    .render_normal(locale, &self.model.config.display_name, "")?
-            }
-            ModeKind::Search => {
-                ctx.prompt
-                    .render_search(locale, &self.model.config.display_name, "")?
-            }
-            ModeKind::Media => {
-                ctx.prompt
-                    .render_media(locale, &self.model.config.display_name, "")?
-            }
+            ModeKind::Normal => ctx.prompt.render_normal(
+                locale,
+                &self.model.config.display_name,
+                model_id,
+                "",
+                &model_supported_parameters,
+            )?,
+            ModeKind::Search => ctx.prompt.render_search(
+                locale,
+                &self.model.config.display_name,
+                model_id,
+                "",
+                &model_supported_parameters,
+            )?,
+            ModeKind::Media => ctx.prompt.render_media(
+                locale,
+                &self.model.config.display_name,
+                model_id,
+                "",
+                &model_supported_parameters,
+                image_model_id,
+                video_model_id,
+                &image_model_supported_parameters,
+                &video_model_supported_parameters,
+            )?,
             ModeKind::Research => ctx.prompt.render_coordinator(locale)?,
         };
 
@@ -214,6 +234,94 @@ impl CompletionSession {
             MessageInner::User { text, .. } => Some(text.as_str()),
             _ => None,
         })
+    }
+
+    fn model_supported_parameters(&self) -> Vec<String> {
+        let mut parameters = Vec::new();
+        let parameter = &self.model.config.parameter;
+        let capability = &self.model.config.capability;
+
+        if parameter.temperature.is_some() {
+            parameters.push("temperature".to_string());
+        }
+        if parameter.repeat_penalty.is_some() {
+            parameters.push("repeat_penalty".to_string());
+        }
+        if parameter.top_k.is_some() {
+            parameters.push("top_k".to_string());
+        }
+        if parameter.top_p.is_some() {
+            parameters.push("top_p".to_string());
+        }
+
+        if capability.tool == Some(true) {
+            parameters.push("tools".to_string());
+        }
+        if capability.json == Some(true) {
+            parameters.push("structured_output".to_string());
+        }
+        if capability.reasoning.map(|value| value.is_enabled()) == Some(true) {
+            parameters.push("reasoning".to_string());
+        }
+
+        parameters.sort();
+        parameters.dedup();
+        parameters
+    }
+
+    pub fn media_model_ids(&self) -> (Option<&str>, Option<&str>) {
+        (
+            self.model.config.media_gen.image_model.as_deref(),
+            self.model.config.media_gen.video_model.as_deref(),
+        )
+    }
+
+    fn media_model_prompt_parameters(&self) -> (Vec<String>, Vec<String>) {
+        let (image_model_id, video_model_id) = self.media_model_ids();
+        let mut image_parameters = Vec::new();
+        let mut video_parameters = Vec::new();
+
+        if image_model_id.is_some() {
+            image_parameters.extend(
+                ["prompt", "aspect_ratio", "reference_file_names"]
+                    .into_iter()
+                    .map(str::to_string),
+            );
+        }
+
+        if let Some(video_model_id) = video_model_id {
+            video_parameters.extend(
+                [
+                    "prompt",
+                    "duration",
+                    "resolution",
+                    "aspect_ratio",
+                    "size",
+                    "generate_audio",
+                    "reference_file_names",
+                ]
+                .into_iter()
+                .map(str::to_string),
+            );
+
+            let _ = video_model_id;
+            video_parameters.extend(
+                [
+                    "supported_resolutions",
+                    "supported_aspect_ratios",
+                    "supported_sizes",
+                    "allowed_passthrough_parameters",
+                ]
+                .into_iter()
+                .map(str::to_string),
+            );
+        }
+
+        image_parameters.sort();
+        image_parameters.dedup();
+        video_parameters.sort();
+        video_parameters.dedup();
+        (image_parameters, video_parameters)
     }
 
     /// Builds an `openrouter::Model` from the stored config.
@@ -341,6 +449,121 @@ impl CompletionSession {
 
         let byte_stream = tokio_stream::iter(vec![bytes::Bytes::from(img.data.clone())]);
         self.ctx.blob.insert(file_id, size, byte_stream).await?;
+        Ok(file_id)
+    }
+
+    pub async fn store_blob_video(&self, video: &mut openrouter::GeneratedVideo) -> Result<i32> {
+        let mime_type = video
+            .mime_type
+            .clone()
+            .unwrap_or_else(|| "video/mp4".to_string());
+
+        use ::entity::file;
+        let file_record = file::ActiveModel {
+            chat_id: Set(Some(self.chat.id)),
+            owner_id: Set(None),
+            mime_type: Set(Some(mime_type)),
+            valid_until: Set(None),
+            ..Default::default()
+        };
+
+        let file_id = file::Entity::insert(file_record)
+            .exec(&self.ctx.db)
+            .await?
+            .last_insert_id;
+
+        let insert_result = if let Some(size) = video
+            .content_length
+            .and_then(|value| usize::try_from(value).ok())
+        {
+            let chunk_stream = futures_util::stream::try_unfold(video, |video| async move {
+                match video.next_chunk().await {
+                    Ok(Some(chunk)) => Ok(Some((chunk, video))),
+                    Ok(None) => Ok(None),
+                    Err(error) => Err(error),
+                }
+            })
+            .map_err(anyhow::Error::from);
+
+            self.ctx
+                .blob
+                .insert_with_error(file_id, size, chunk_stream)
+                .await
+        } else {
+            let temp_path = std::env::temp_dir().join(format!("llumen-video-{file_id}.tmp"));
+            let mut temp_file = tokio::fs::OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .open(&temp_path)
+                .await?;
+
+            let mut size = 0usize;
+            while let Some(chunk) = video.next_chunk().await? {
+                size += chunk.len();
+                temp_file.write_all(&chunk).await?;
+            }
+            temp_file.flush().await?;
+            drop(temp_file);
+
+            let temp_file = tokio::fs::OpenOptions::new()
+                .read(true)
+                .open(&temp_path)
+                .await?;
+            let chunk_stream = futures_util::stream::try_unfold(
+                (temp_file, vec![0u8; 256 * 1024]),
+                |(mut temp_file, mut buffer)| async move {
+                    let read_bytes = temp_file.read(&mut buffer).await?;
+                    if read_bytes == 0 {
+                        return Ok::<
+                            Option<(bytes::Bytes, (tokio::fs::File, Vec<u8>))>,
+                            std::io::Error,
+                        >(None);
+                    }
+                    Ok::<
+                        Option<(bytes::Bytes, (tokio::fs::File, Vec<u8>))>,
+                        std::io::Error,
+                    >(Some((
+                        bytes::Bytes::copy_from_slice(&buffer[..read_bytes]),
+                        (temp_file, buffer),
+                    )))
+                },
+            )
+            .map_err(anyhow::Error::from);
+
+            let insert_result = self
+                .ctx
+                .blob
+                .insert_with_error(file_id, size, chunk_stream)
+                .await;
+            if let Err(error) = tokio::fs::remove_file(&temp_path).await {
+                log::warn!(
+                    "failed to remove temp video file {}: {error}",
+                    temp_path.display()
+                );
+            }
+            insert_result
+        };
+
+        let insert_result = match insert_result {
+            Ok(value) => value,
+            Err(error) => {
+                if let Err(delete_error) =
+                    file::Entity::delete_by_id(file_id).exec(&self.ctx.db).await
+                {
+                    log::warn!("failed to delete file record {file_id}: {delete_error}");
+                }
+                return Err(error.into());
+            }
+        };
+        if let Err(error) = insert_result {
+            if let Err(delete_error) = file::Entity::delete_by_id(file_id).exec(&self.ctx.db).await
+            {
+                log::warn!("failed to delete file record {file_id}: {delete_error}");
+            }
+            return Err(error);
+        }
+
         Ok(file_id)
     }
 

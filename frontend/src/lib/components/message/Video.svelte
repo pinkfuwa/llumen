@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { downloadCompressed, download } from '$lib/api/files.svelte';
+	import { download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 
@@ -10,16 +10,19 @@
 	let error = $state(false);
 	let isDownloading = $state(false);
 
-	async function downloadImage() {
+	async function downloadVideo() {
 		if (isDownloading) return;
 		isDownloading = true;
 
 		const src = await download(id);
-		if (!src) return;
+		if (!src) {
+			isDownloading = false;
+			return;
+		}
 
 		const link = document.createElement('a');
 		link.href = src;
-		link.download = name ?? `image-${id}`;
+		link.download = name ?? `video-${id}`;
 		link.click();
 		window.URL.revokeObjectURL(src);
 		isDownloading = false;
@@ -31,7 +34,7 @@
 	}
 
 	$effect(() => {
-		downloadCompressed(id).then((url) => {
+		download(id).then((url) => {
 			if (url) setSrc(url);
 			else error = true;
 		});
@@ -44,26 +47,28 @@
 
 {#if error}
 	<div class="border-border my-2 flex justify-center rounded-lg border p-4">
-		{$_('chat.failed_load_image')}
+		{$_('chat.failed_load_video')}
 	</div>
 {:else if src}
 	<div class="my-2 flex justify-center">
-		<div class="group relative">
-			<img
+		<div class="group relative w-full max-w-3xl">
+			<video
 				{src}
-				alt={$_('chat.image_alt')}
-				class="border-border group relative h-auto max-h-[min(30rem,85vw,70vh)] max-w-full rounded-lg border"
-				loading="lazy"
-			/>
+				controls
+				preload="metadata"
+				class="border-border h-auto max-h-[min(30rem,85vw,70vh)] w-full rounded-lg border"
+			>
+				<track kind="captions" />
+			</video>
 			{#if name}
 				<div class="absolute top-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white">
 					{name}
 				</div>
 			{/if}
 			<button
-				onclick={downloadImage}
+				onclick={downloadVideo}
 				disabled={isDownloading}
-				aria-label="download image"
+				aria-label="download video"
 				class="visible absolute top-2 right-2 rounded-lg bg-secondary p-2 duration-150 hover:bg-primary hover:text-text-hover disabled:opacity-50 md:invisible md:group-hover:visible"
 			>
 				<Download class="h-5 w-5" />
@@ -72,6 +77,6 @@
 	</div>
 {:else}
 	<div class="border-border my-2 flex justify-center rounded-lg border p-4">
-		{$_('chat.loading_image')}
+		{$_('chat.loading_video')}
 	</div>
 {/if}

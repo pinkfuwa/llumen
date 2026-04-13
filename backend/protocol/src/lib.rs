@@ -96,7 +96,6 @@ impl ReasoningEffort {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[typeshare]
 pub enum ReasoningOption {
     Enabled,
     Disabled,
@@ -238,6 +237,17 @@ pub enum AssistantChunk {
 pub struct FileMetadata {
     pub name: String,
     pub id: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<FileKind>,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[typeshare]
+#[serde(rename_all = "snake_case")]
+pub enum FileKind {
+    #[default]
+    Image,
+    Video,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, FromJsonQueryResult)]

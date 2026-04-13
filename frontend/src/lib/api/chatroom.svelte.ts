@@ -4,6 +4,7 @@ import type {
 	ChatCreateResp,
 	MessageCreateResp,
 	MessageCreateReq,
+	FileKind,
 	ChatPaginateRespList,
 	ChatPaginateReq,
 	ChatPaginateResp,
@@ -37,6 +38,7 @@ export interface CreateRoomRequest {
 	files: {
 		name: string;
 		id: number;
+		kind?: FileKind;
 	}[];
 	mode: ChatMode;
 }

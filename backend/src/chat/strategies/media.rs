@@ -1,5 +1,5 @@
 use anyhow::Result;
-use protocol::AssistantChunk;
+use protocol::{AssistantChunk, FileMetadata};
 use tokio_stream::StreamExt;
 
 use crate::chat::context::StreamEndReason;
@@ -14,7 +14,28 @@ struct GenerateImageArgs {
     prompt: String,
     aspect_ratio: String,
     #[serde(default)]
-    reference_file_names: Vec<String>,
+    generating_file: Option<String>,
+    #[serde(default)]
+    reference_files: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct GenerateVideoArgs {
+    prompt: String,
+    #[serde(default)]
+    generating_file: Option<String>,
+    #[serde(default)]
+    duration: Option<u32>,
+    #[serde(default)]
+    resolution: Option<String>,
+    #[serde(default)]
+    aspect_ratio: Option<String>,
+    #[serde(default)]
+    size: Option<String>,
+    #[serde(default)]
+    generate_audio: Option<bool>,
+    #[serde(default)]
+    reference_files: Vec<String>,
 }
 
 fn parse_aspect_ratio(value: &str) -> Option<AspectRatio> {
@@ -41,7 +62,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
         return Ok(());
     }
 
-    let tools = ctx.tools.for_media_mode();
+    let tools = ctx.tools.for_media_mode(&session.model.config.media_gen);
     let option = openrouter::CompletionOption::builder()
         .tools(&tools)
         .build();
@@ -137,10 +158,64 @@ async fn execute_tool(
     name: &str,
     args: &str,
 ) -> (String, Vec<protocol::FileMetadata>) {
-    if name != "generate_image" {
-        return (format!("Unknown tool: {name}"), Vec::new());
+    match name {
+        "generate_image" => execute_generate_image(ctx, session, args).await,
+        "generate_video" => execute_generate_video(ctx, session, args).await,
+        _ => (format!("Unknown tool: {name}"), Vec::new()),
+    }
+}
+
+fn latest_reference_files(session: &CompletionSession) -> Vec<FileMetadata> {
+    let mut reference_files = Vec::new();
+
+    session
+        .history
+        .iter()
+        .for_each(|message| match &message.inner {
+            protocol::MessageInner::User { files, .. } => {
+                reference_files.extend(files.clone());
+            }
+            protocol::MessageInner::Assistant(chunks) => {
+                for chunk in chunks {
+                    if let AssistantChunk::ToolResult { files, .. } = chunk {
+                        reference_files.extend(files.clone());
+                    }
+                }
+            }
+        });
+
+    reference_files
+}
+
+fn resolve_reference_files(
+    session: &CompletionSession,
+    reference_file_names: &[String],
+) -> Vec<FileMetadata> {
+    if reference_file_names.is_empty() {
+        return Vec::new();
     }
 
+    let reference_files = latest_reference_files(session);
+    reference_file_names
+        .iter()
+        .filter_map(|reference_name| {
+            reference_files
+                .iter()
+                .find(|file| file.name == *reference_name)
+                .cloned()
+        })
+        .collect()
+}
+
+fn generated_file_name(file_name: Option<String>, default_name: &str) -> String {
+    file_name.unwrap_or_else(|| default_name.to_string())
+}
+
+async fn execute_generate_image(
+    ctx: &Context,
+    session: &mut CompletionSession,
+    args: &str,
+) -> (String, Vec<protocol::FileMetadata>) {
     let parsed: GenerateImageArgs = match serde_json::from_str(args) {
         Ok(value) => value,
         Err(error) => {
@@ -171,35 +246,16 @@ async fn execute_tool(
         }
     };
 
-    let mut reference_images = Vec::new();
-    if !parsed.reference_file_names.is_empty() {
-        let user_files = session
-            .history
-            .iter()
-            .rev()
-            .find_map(|message| match &message.inner {
-                protocol::MessageInner::User { files, .. } => {
-                    if files.is_empty() {
-                        None
-                    } else {
-                        Some(files.clone())
-                    }
-                }
-                _ => None,
+    let reference_images = resolve_reference_files(session, &parsed.reference_files)
+        .into_iter()
+        .filter_map(|file_meta| {
+            let reader = ctx.blob.get(file_meta.id)?;
+            Some(openrouter::File {
+                name: file_meta.name,
+                data: reader.into(),
             })
-            .unwrap_or_default();
-
-        for reference_name in &parsed.reference_file_names {
-            if let Some(file_meta) = user_files.iter().find(|file| file.name == *reference_name) {
-                if let Some(reader) = ctx.blob.get(file_meta.id) {
-                    reference_images.push(openrouter::File {
-                        name: file_meta.name.clone(),
-                        data: reader.into(),
-                    });
-                }
-            }
-        }
-    }
+        })
+        .collect::<Vec<_>>();
 
     let output = match ctx
         .openrouter
@@ -222,17 +278,121 @@ async fn execute_tool(
     let mut file_refs = Vec::new();
     for image in &output.images {
         if let Ok(file_id) = session.store_blob_file(image).await {
+            let file_name = generated_file_name(
+                parsed.generating_file.clone(),
+                &format!("generated-image-{file_id}.png"),
+            );
             file_refs.push(protocol::FileMetadata {
                 id: file_id,
-                name: format!("generated-image-{file_id}.png"),
+                name: file_name,
+                kind: Some(protocol::FileKind::Image),
             });
             session.add_token(Token::Image(file_id));
         }
     }
 
-    let summary = match output.text {
-        Some(text) if !text.trim().is_empty() => text,
-        _ => "Generated image successfully.".to_string(),
+    let summary = if file_refs.is_empty() {
+        match output.text {
+            Some(text) if !text.trim().is_empty() => text,
+            _ => "Generated image successfully.".to_string(),
+        }
+    } else {
+        let names = file_refs
+            .iter()
+            .map(|file| file.name.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("Generated image successfully: {names}.")
+    };
+
+    (summary, file_refs)
+}
+
+async fn execute_generate_video(
+    ctx: &Context,
+    session: &mut CompletionSession,
+    args: &str,
+) -> (String, Vec<protocol::FileMetadata>) {
+    let parsed: GenerateVideoArgs = match serde_json::from_str(args) {
+        Ok(value) => value,
+        Err(error) => {
+            return (
+                format!("Invalid arguments for generate_video: {error}"),
+                Vec::new(),
+            );
+        }
+    };
+
+    let video_model = match session.model.config.media_gen.video_model.clone() {
+        Some(model) => model,
+        None => {
+            return (
+                "Model config missing [media_gen].video_model".to_string(),
+                Vec::new(),
+            );
+        }
+    };
+
+    let references = resolve_reference_files(session, &parsed.reference_files)
+        .into_iter()
+        .filter_map(|file_meta| {
+            let reader = ctx.blob.get(file_meta.id)?;
+            Some(openrouter::File {
+                name: file_meta.name,
+                data: reader.into(),
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let option = openrouter::VideoGenerationOption {
+        duration: parsed.duration,
+        resolution: parsed.resolution,
+        aspect_ratio: parsed.aspect_ratio,
+        size: parsed.size,
+        generate_audio: parsed.generate_audio,
+        ..Default::default()
+    };
+
+    let mut output = match ctx
+        .openrouter
+        .video_generate(video_model, parsed.prompt.clone(), references, option)
+        .await
+    {
+        Ok(output) => output,
+        Err(error) => {
+            return (format!("Video generation failed: {error}"), Vec::new());
+        }
+    };
+
+    session.update_usage(output.price as f32, 0);
+
+    let mut file_refs = Vec::new();
+    for video in &mut output.videos {
+        if let Ok(file_id) = session.store_blob_video(video).await {
+            let file_name = generated_file_name(
+                parsed.generating_file.clone(),
+                &format!("generated-video-{file_id}.mp4"),
+            );
+            file_refs.push(protocol::FileMetadata {
+                id: file_id,
+                name: file_name,
+                kind: Some(protocol::FileKind::Video),
+            });
+        }
+    }
+
+    let summary = if file_refs.is_empty() {
+        format!("Video generation completed (job {}).", output.job_id)
+    } else {
+        let names = file_refs
+            .iter()
+            .map(|file| file.name.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!(
+            "Generated video successfully (job {}): {names}.",
+            output.job_id
+        )
     };
 
     (summary, file_refs)
