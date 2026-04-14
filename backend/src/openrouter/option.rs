@@ -31,6 +31,7 @@ pub struct CompletionOption {
     pub tools: Vec<Tool>,
     pub temperature: Option<f32>,
     pub reasoning_max_tokens: Option<i32>,
+    pub session_id: Option<String>,
 }
 
 impl CompletionOption {
@@ -55,6 +56,7 @@ pub struct OptionBuilder {
     tools: Vec<Tool>,
     temperature: Option<f32>,
     reasoning_max_tokens: Option<i32>,
+    session_id: Option<String>,
 }
 
 impl OptionBuilder {
@@ -100,6 +102,11 @@ impl OptionBuilder {
         self
     }
 
+    pub fn session_id(mut self, session_id: String) -> Self {
+        self.session_id = Some(session_id);
+        self
+    }
+
     pub fn build(self) -> CompletionOption {
         CompletionOption {
             insert_web_search_context: self.insert_web_search_context,
@@ -109,6 +116,7 @@ impl OptionBuilder {
             tools: self.tools,
             temperature: self.temperature,
             reasoning_max_tokens: self.reasoning_max_tokens,
+            session_id: self.session_id,
         }
     }
 }

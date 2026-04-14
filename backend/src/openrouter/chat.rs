@@ -206,6 +206,7 @@ impl ChatClient {
             modalities,
             response_format: None,
             image_config: None,
+            session_id: option.session_id,
         };
 
         (request, capability)
@@ -221,6 +222,7 @@ impl ChatClient {
         &self,
         req: raw::CompletionReq,
     ) -> Result<ChatCompletion, Error> {
+        let session_id = req.session_id.clone();
         let (content_length, body) = Self::completion_body(req);
         let mut req_builder = self
             .http_client
@@ -229,6 +231,12 @@ impl ChatClient {
             .header("HTTP-Referer", super::HTTP_REFERER)
             .header("X-Title", super::X_TITLE)
             .header(http::header::CONTENT_TYPE, "application/json");
+
+        if !self.is_custom_api {
+            if let Some(ref sid) = session_id {
+                req_builder = req_builder.header("x-session-id", sid);
+            }
+        }
 
         if let Some(len) = content_length {
             req_builder = req_builder.header(http::header::CONTENT_LENGTH, len);
@@ -293,6 +301,7 @@ impl ChatClient {
             &self.http_client,
             &self.api_key,
             &self.chat_completion_endpoint,
+            self.is_custom_api,
             request,
         )
         .await

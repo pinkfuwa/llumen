@@ -16,6 +16,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
     let option = openrouter::CompletionOption::builder()
         .web_search(true)
         .tools(&tools)
+        .session_id(session.chat.id.to_string())
         .build();
     let mut messages = session.assemble_messages(ctx, option.clone())?;
 

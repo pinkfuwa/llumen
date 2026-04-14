@@ -65,6 +65,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
     let tools = ctx.tools.for_media_mode(&session.model.config.media_gen);
     let option = openrouter::CompletionOption::builder()
         .tools(&tools)
+        .session_id(session.chat.id.to_string())
         .build();
     let mut messages = session.assemble_messages(ctx, option.clone())?;
 

@@ -190,6 +190,7 @@ impl ImageGenClient {
             response_format: None,
             reasoning: raw::Reasoning::default(),
             modalities: vec!["image".to_string()],
+            session_id: None,
             image_config: Some(serde_json::json!({
                 "aspect_ratio": aspect_ratio.as_str(),
             })),

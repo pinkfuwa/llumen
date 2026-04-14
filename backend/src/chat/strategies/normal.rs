@@ -14,9 +14,13 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
 
     let model = session.openrouter_model();
 
+    let option = openrouter::CompletionOption::builder()
+        .session_id(session.chat.id.to_string())
+        .build();
+
     let mut stream: openrouter::StreamCompletion = ctx
         .openrouter
-        .stream(model, messages, openrouter::CompletionOption::default())
+        .stream(model, messages, option)
         .await?;
 
     let halt = session

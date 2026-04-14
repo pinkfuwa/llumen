@@ -64,8 +64,10 @@ impl StreamCompletion {
         http_client: &Client,
         api_key: &str,
         endpoint: &str,
+        is_custom_api: bool,
         req: raw::CompletionReq,
     ) -> Result<StreamCompletion, Error> {
+        let session_id = req.session_id.clone();
         let model_id = {
             let model_id = req.model.as_str();
             match model_id.find(":") {
@@ -103,6 +105,13 @@ impl StreamCompletion {
             .header("HTTP-Referer", HTTP_REFERER)
             .header("X-Title", X_TITLE)
             .header(CONTENT_TYPE, "application/json");
+
+        if !is_custom_api {
+            if let Some(ref sid) = session_id {
+                builder = builder.header("x-session-id", sid);
+            }
+        }
+
         if let Some(len) = content_length {
             builder = builder.header(http::header::CONTENT_LENGTH, len);
         }

@@ -155,6 +155,8 @@ pub struct CompletionReq {
     pub reasoning: Reasoning,
     #[stream(skip_serialize_if = "Vec::is_empty")]
     pub modalities: Vec<String>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub session_id: Option<String>,
 }
 
 #[derive(Debug, Clone, IntoSerializer, Default)]

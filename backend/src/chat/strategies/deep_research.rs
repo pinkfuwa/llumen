@@ -18,7 +18,10 @@ pub async fn execute(ctx: Arc<Context>, session: &mut CompletionSession) -> Resu
 
     // Get the deep research tool definition
     let deep_tool = ctx.tools.get_deep_research_def();
-    let option = openrouter::CompletionOption::tools(&[deep_tool]);
+    let option = openrouter::CompletionOption::builder()
+        .tools(&[deep_tool])
+        .session_id(session.chat.id.to_string())
+        .build();
 
     // Stream the coordinator's response
     let stream: openrouter::StreamCompletion =
