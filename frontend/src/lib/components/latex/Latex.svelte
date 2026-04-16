@@ -1,5 +1,4 @@
 <script lang="ts">
-	import 'katex/dist/katex.min.css';
 	import { toHtml } from './latex';
 
 	let { text, displayMode = false } = $props<{ text: string; displayMode?: boolean }>();

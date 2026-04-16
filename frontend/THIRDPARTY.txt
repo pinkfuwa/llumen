@@ -78,11 +78,6 @@ Repository: https://github.com/lukeed/fetch-event-stream
 Publisher: Luke Edwards
 Email: luke@lukeed.com
 --------------------------------------------------------------------------------
-katex@0.16.45
-
-License: MIT
-Repository: https://github.com/KaTeX/KaTeX
---------------------------------------------------------------------------------
 mermaid@11.14.0
 
 License: MIT
@@ -100,4 +95,8 @@ License: MIT
 Repository: https://github.com/kaisermann/svelte-i18n
 Publisher: Christian Kaisermann
 Email: christian@kaisermann.me
+--------------------------------------------------------------------------------
+texzilla@0.9.9
+
+License: MPL-2.0
 --------------------------------------------------------------------------------

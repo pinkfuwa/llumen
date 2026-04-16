@@ -15,7 +15,7 @@
 <span class="inline-block p-1 align-middle">
 	<button
 		type="button"
-		class="inline-block max-w-full cursor-pointer overflow-x-auto align-middle hover:opacity-80"
+		class="inline-block max-w-full cursor-pointer overflow-x-auto align-middle text-lg hover:opacity-80"
 		onclick={copyToClipboard}
 		title="Click to copy LaTeX"
 	>

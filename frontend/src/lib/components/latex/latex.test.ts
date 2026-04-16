@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { toHtml } from './latex';
 
-describe('toHtml with katex', () => {
+describe('toHtml with texzilla', () => {
 	it('should render inline math and return MathML', async () => {
 		const result = await toHtml('E = mc^2', false);
 		expect(result).toContain('<math');
