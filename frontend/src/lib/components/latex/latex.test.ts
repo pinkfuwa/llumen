@@ -26,4 +26,11 @@ describe('toHtml with temml', () => {
 		expect(result1).toContain('<math');
 		expect(result2).toContain('<math');
 	});
+
+	it('should support greek letters', async () => {
+		const result = await toHtml('\\phi', false);
+		expect(result).toContain('<mi>');
+		expect(result).toContain('</mi>');
+		expect(result).toContain('ϕ');
+	});
 });
