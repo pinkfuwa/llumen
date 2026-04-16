@@ -55,6 +55,9 @@ importers:
       fetch-event-stream:
         specifier: ^0.1.6
         version: 0.1.6
+      katex:
+        specifier: ^0.16.45
+        version: 0.16.45
       mermaid:
         specifier: ^11.14.0
         version: 11.14.0
@@ -64,9 +67,6 @@ importers:
       svelte-i18n:
         specifier: ^4.0.1
         version: 4.0.1(svelte@5.55.3)
-      texzilla:
-        specifier: ^0.9.4
-        version: 0.9.9
     devDependencies:
       '@internationalized/date':
         specifier: ^3.12.0
@@ -3271,10 +3271,6 @@ packages:
   terser@5.46.1:
     resolution: {integrity: sha512-vzCjQO/rgUuK9sf8VJZvjqiqiHFaZLnOiimmUuOKODxWL8mm/xua7viT7aqX7dgPY60otQjUotzFMmCB4VdmqQ==}
     engines: {node: '>=10'}
-    hasBin: true
-
-  texzilla@0.9.9:
-    resolution: {integrity: sha512-ulfP3Q/Qc+B+qLdmE3OCVzpr9We7HFfBsGO4aEDQPnYj5nmaZolFUDZ0HafVd6gDeeWEv9RaKmuYcJhxNyib2Q==}
     hasBin: true
 
   timers-ext@0.1.8:
@@ -7062,8 +7058,6 @@ snapshots:
       acorn: 8.16.0
       commander: 2.20.3
       source-map-support: 0.5.21
-
-  texzilla@0.9.9: {}
 
   timers-ext@0.1.8:
     dependencies:

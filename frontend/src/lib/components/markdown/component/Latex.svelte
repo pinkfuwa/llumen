@@ -15,7 +15,7 @@
 <div class="flex justify-center">
 	<button
 		type="button"
-		class="max-w-full cursor-pointer overflow-x-auto p-1.5 text-center text-xl hover:opacity-80"
+		class="max-w-full cursor-pointer overflow-x-auto p-1.5 text-center hover:opacity-80"
 		onclick={copyToClipboard}
 		title="Click to copy LaTeX"
 	>
