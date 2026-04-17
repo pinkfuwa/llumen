@@ -58,7 +58,10 @@ pub async fn route(
             image_input: caps.image_input,
             audio_input: caps.audio,
             video_input: caps.video_input,
-            ocr_file_input: matches!(caps.ocr, OcrEngine::Mistral | OcrEngine::Text | OcrEngine::Cloudflare),
+            ocr_file_input: matches!(
+                caps.ocr,
+                OcrEngine::Mistral | OcrEngine::Text | OcrEngine::Cloudflare
+            ),
             native_file_input: caps.ocr == OcrEngine::Native,
             tool: caps.toolcall,
             media_gen: config.media_gen.image_model.is_some()

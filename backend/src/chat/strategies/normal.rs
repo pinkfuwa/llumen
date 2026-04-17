@@ -18,10 +18,8 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
         .session_id(session.chat.id.to_string())
         .build();
 
-    let mut stream: openrouter::StreamCompletion = ctx
-        .openrouter
-        .stream(model, messages, option)
-        .await?;
+    let mut stream: openrouter::StreamCompletion =
+        ctx.openrouter.stream(model, messages, option).await?;
 
     let halt = session
         .put_stream((&mut stream).map(|resp| resp.map(openrouter_to_buffer_token)))

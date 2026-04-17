@@ -49,6 +49,10 @@ Video model supported parameters: {% if video_model_supported_parameters|length 
 {% endif %}</generation_tool>
 {% if image_model_id %}
 <image_generation_guide>
+Functionality:
+- Edit image by passing reference image with prompt expciltly ask to remove/add element
+- Generate new image from scratch based on prompt
+
 Use the user's prompt specificity to decide how much augmentation is appropriate:
 - If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
 - If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.

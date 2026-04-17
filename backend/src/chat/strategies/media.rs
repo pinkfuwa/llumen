@@ -247,16 +247,29 @@ async fn execute_generate_image(
         }
     };
 
-    let reference_images = resolve_reference_files(session, &parsed.reference_files)
+    let resolved_files = resolve_reference_files(session, &parsed.reference_files);
+    let mut missing_files = Vec::new();
+    let reference_images = resolved_files
         .into_iter()
-        .filter_map(|file_meta| {
-            let reader = ctx.blob.get(file_meta.id)?;
-            Some(openrouter::File {
+        .filter_map(|file_meta| match ctx.blob.get(file_meta.id) {
+            Some(reader) => Some(openrouter::File {
                 name: file_meta.name,
                 data: reader.into(),
-            })
+            }),
+            None => {
+                missing_files.push(file_meta.name);
+                None
+            }
         })
         .collect::<Vec<_>>();
+
+    if !missing_files.is_empty() {
+        let names = missing_files.join(", ");
+        return (
+            format!("Referenced image(s) not found: {names}"),
+            Vec::new(),
+        );
+    }
 
     let output = match ctx
         .openrouter
@@ -334,16 +347,26 @@ async fn execute_generate_video(
         }
     };
 
-    let references = resolve_reference_files(session, &parsed.reference_files)
+    let resolved_files = resolve_reference_files(session, &parsed.reference_files);
+    let mut missing_files = Vec::new();
+    let references = resolved_files
         .into_iter()
-        .filter_map(|file_meta| {
-            let reader = ctx.blob.get(file_meta.id)?;
-            Some(openrouter::File {
+        .filter_map(|file_meta| match ctx.blob.get(file_meta.id) {
+            Some(reader) => Some(openrouter::File {
                 name: file_meta.name,
                 data: reader.into(),
-            })
+            }),
+            None => {
+                missing_files.push(file_meta.name);
+                None
+            }
         })
         .collect::<Vec<_>>();
+
+    if !missing_files.is_empty() {
+        let names = missing_files.join(", ");
+        return (format!("Referenced file(s) not found: {names}"), Vec::new());
+    }
 
     let option = openrouter::VideoGenerationOption {
         duration: parsed.duration,
