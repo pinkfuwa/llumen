@@ -9,7 +9,7 @@
 
 <span class="mx-1 py-1">
 	<button
-		class="my-0.5 cursor-pointer rounded-md bg-secondary px-2 py-0.5 font-mono break-all text-text duration-150 hover:bg-primary hover:text-text-hover"
+		class="my-0.5 rounded-md bg-secondary px-2 py-0.5 font-mono break-all text-text duration-150 select-text hover:bg-primary hover:text-text-hover"
 		onclick={() => copy(content)}>{content}</button
 	>
 </span>
