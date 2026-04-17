@@ -6,13 +6,13 @@ import {
 	type BoldNode,
 	type ItalicNode,
 	type StrikethroughNode,
-		type InlineCodeNode,
-		type LinkNode,
-		type ImageNode,
-		type LatexInlineNode,
-		type LatexBlockNode,
-		type LineBreakNode
-	} from './types';
+	type InlineCodeNode,
+	type LinkNode,
+	type ImageNode,
+	type LatexInlineNode,
+	type LatexBlockNode,
+	type LineBreakNode
+} from './types';
 import { lexInline } from '../lexer/inline';
 
 /**
