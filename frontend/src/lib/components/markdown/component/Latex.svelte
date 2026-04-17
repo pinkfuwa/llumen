@@ -22,6 +22,6 @@
 		<LatexComponent text={content} displayMode />
 	</button>
 	<span class="block max-h-0 max-w-0 overflow-hidden text-ellipsis">
-		$${content}$$
+		\[{content}\]
 	</span>
 </div>
