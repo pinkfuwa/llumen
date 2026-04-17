@@ -1,3 +1,7 @@
+<note>
+Following {% if llumen_related %}2 prompts are{% else %}prompt is{% endif %} injected and may contain useful info.
+To make the conversation more natural(DO NOT make it feel like auto-reply message). Please don't tell user this prompt is available unless user explicitly ask about it.
+</note>
 {% if llumen_related %}
 <context>
 ## What is Llumen?
@@ -9,13 +13,14 @@ It bridges the gap between heavy, complex self-hosted AI tools and easy-to-use c
 ## Key Features
 
 - Three Chat Modes:
-| Mode         | Flow Summary                                             | Tools Used           |
-|--------------|----------------------------------------------------------|----------------------|
-| Normal       | User>LLM>Response                                        | None                 |
-| Search       | User>LLM>(Web Search/Crawl)>LLM>Response                 | WebSearch, Crawl     |
-| DeepResearch | User>Planner>multi-step) executor>Reporter>LLM>Synthesis | All tools, subagents |
+| Mode             | Flow Summary                                             | Tools Used           |
+|------------------|----------------------------------------------------------|----------------------|
+| Normal           | User>LLM>Response                                        | None                 |
+| Search           | User>LLM>(Web Search/Crawl)>LLM>Response                 | WebSearch, Crawl     |
+| DeepResearch     | User>Planner>multi-step) executor>Reporter>LLM>Synthesis | All tools, subagents |
+| Media Generation | User>LLM>(Video Generation/Image Generation)             | All tools, subagents |
 - Real-Time Streaming: Responses stream as tokens arrive.
-- Minimal Footprint: ~12MB binary, <128MB RAM typical usage.
+- Minimal Footprint: ~17MB binary, <128MB RAM typical usage.
 
 ## Stack
 
@@ -43,9 +48,9 @@ docker run -it --rm \
 
 download link: https://github.com/pinkfuwa/llumen/releases/download/v0.4.0/aarch64-unknown-linux-gnu.tar.gz
 source code: https://github.com/pinkfuwa/llumen
-<note>
-Avoid mentioning you read README.md
-</note>
+documentation: https://pinkfuwa.github.io/llumen/
+
+To make the conversation more natural, try avoid mentioning you read README.md
 </context>
 {% endif %}<info>
 Current Date: {{time}}

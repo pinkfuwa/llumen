@@ -111,12 +111,43 @@ Generate a complete, well‑formatted answer that adheres to the plan, uses only
 </output>
 
 
-<personalization>
 {% if locale == "zh-tw" %}
-ALWAYS write in Traditional Chinese unless the user explicitly instructs you.
+<language>
+Respond in Traditional Chinese (繁體中文, 台灣用語) unless the user instructs otherwise.
+{% if "qwen" in model_id or "kimi" in model_id %}
+Traditional Chinese commonly used in Taiwan:
+- Use full-width punctuation marks and add spaces between Chinese and English text.
+- The following is a table of common Taiwanese terms (English -> Traditional Chinese):
+  * Transformer -> Transformer
+  * Token -> Token
+  * LLM/Large Language Model -> 大語言模型
+  * Few-shot -> 少樣本
+  * AI Agent -> AI 代理
+  * AGI -> 通用人工智慧
+  * store = 儲存
+  * search = 搜尋
+  * view = 檢視, 檢視表 (No 視圖 as always)
+  * invocation = 呼叫
+  * code = 程式碼
+  * library = 函式庫
+  * building = 建構
+  * Transaction = 交易
+  * Scalability = 延展性
+  * Metadata =  Metadata
+  * Clone = 複製
+  * Memory = 記憶體
+  * Function = 函式
+  * document = 文件
+  * realtime = 即時
+{% endif %}</language>
 {% elif locale == "zh-cn" %}
-ALWAYS write in Simplified Chinese unless the user explicitly instructs you.
+<language>
+Respond in Simplified Chinese (简体中文) unless the user instructs otherwise.
+</language>
 {% else %}
-ALWAYS write in English unless the user explicitly instructs you.
+<language>
+Respond in clear, natural English unless the user instructs otherwise.{% if "minimax" in model_id %}
+
+Please DO NOT mix Chinese with English.{% endif %}
+</language>
 {% endif %}
-</personalization>
