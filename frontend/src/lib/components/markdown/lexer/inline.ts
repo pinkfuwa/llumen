@@ -13,6 +13,38 @@ export function lexInline(text: string, baseOffset: number): LexToken[] {
 	let textStart = 0;
 
 	while (pos < text.length) {
+		// Display math: \[ ... \]
+		if (text[pos] === '\\' && text[pos + 1] === '[') {
+			const endPos = text.indexOf('\\]', pos + 2);
+			if (endPos !== -1) {
+				flushText(tokens, text, textStart, pos, baseOffset);
+				tokens.push({
+					kind: LexTokenKind.LatexBlockOpen,
+					start: baseOffset + pos,
+					end: baseOffset + pos + 2,
+					value: '\\['
+				});
+				const content = text.substring(pos + 2, endPos);
+				if (content.length > 0) {
+					tokens.push({
+						kind: LexTokenKind.Text,
+						start: baseOffset + pos + 2,
+						end: baseOffset + endPos,
+						value: content
+					});
+				}
+				tokens.push({
+					kind: LexTokenKind.LatexBlockClose,
+					start: baseOffset + endPos,
+					end: baseOffset + endPos + 2,
+					value: '\\]'
+				});
+				pos = endPos + 2;
+				textStart = pos;
+				continue;
+			}
+		}
+
 		// LaTeX inline: \( ... \)
 		if (text[pos] === '\\' && text[pos + 1] === '(') {
 			const endPos = text.indexOf('\\)', pos + 2);

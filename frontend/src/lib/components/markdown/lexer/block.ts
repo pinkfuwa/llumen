@@ -48,14 +48,12 @@ function isTableSeparator(line: string): boolean {
 }
 
 function isLatexBlockOpen(source: string, pos: number): { delimiter: string; skip: number } | null {
-	const line = peekLine(source, pos);
-	const trimmedOffset = line.length - line.trimStart().length;
-	const trimmedPos = pos + trimmedOffset;
-
-	if (source.substring(trimmedPos, trimmedPos + 2) === '\\[') {
-		return { delimiter: '\\[', skip: trimmedOffset + 2 };
+	if (source.substring(pos, pos + 2) === '\\[') {
+		return { delimiter: '\\[', skip: 2 };
 	}
-	if (source.substring(trimmedPos, trimmedPos + 2) === '$$') {
+	const line = peekLine(source, pos);
+	if (line.trimStart().startsWith('$$')) {
+		const trimmedOffset = line.length - line.trimStart().length;
 		return { delimiter: '$$', skip: trimmedOffset + 2 };
 	}
 	return null;

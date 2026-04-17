@@ -6,12 +6,13 @@ import {
 	type BoldNode,
 	type ItalicNode,
 	type StrikethroughNode,
-	type InlineCodeNode,
-	type LinkNode,
-	type ImageNode,
-	type LatexInlineNode,
-	type LineBreakNode
-} from './types';
+		type InlineCodeNode,
+		type LinkNode,
+		type ImageNode,
+		type LatexInlineNode,
+		type LatexBlockNode,
+		type LineBreakNode
+	} from './types';
 import { lexInline } from '../lexer/inline';
 
 /**
@@ -36,6 +37,28 @@ export function buildInlineFromLexTokens(tokens: LexToken[]): AstNode[] {
 		const token = tokens[i];
 
 		switch (token.kind) {
+			case LexTokenKind.LatexBlockOpen: {
+				const closeIdx = findClosingDelim(tokens, i + 1, LexTokenKind.LatexBlockClose);
+				if (closeIdx !== -1) {
+					let content = '';
+					for (let j = i + 1; j < closeIdx; j++) {
+						content += tokens[j].value;
+					}
+					const node: LatexBlockNode = {
+						type: AstNodeType.LatexBlock,
+						start: token.start,
+						end: tokens[closeIdx].end,
+						content: content.trim()
+					};
+					result.push(node);
+					i = closeIdx + 1;
+				} else {
+					pushText(result, token);
+					i++;
+				}
+				break;
+			}
+
 			case LexTokenKind.BoldDelim: {
 				const closeIdx = findClosingDelim(tokens, i + 1, LexTokenKind.BoldDelim);
 				if (closeIdx !== -1) {

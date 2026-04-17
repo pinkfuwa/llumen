@@ -6,7 +6,8 @@ import type {
 	TextNode,
 	CodeBlockNode,
 	TableNode,
-	TableRowNode
+	TableRowNode,
+	LatexBlockNode
 } from '../parser/types';
 
 describe('regression: unclosed formatting', () => {
@@ -75,6 +76,21 @@ describe('regression: paragraph then table with single newline', () => {
 
 		const headerRow = table.children[0] as TableRowNode;
 		expect(headerRow.children).toHaveLength(3);
+	});
+});
+
+describe('regression: escaped latex brackets', () => {
+	it('parses escaped brackets', () => {
+		const markdown = 'prefix：\\[ X \\rightarrow Y a \\]';
+		const { nodes } = parseSync(markdown);
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+
+		const textContent = flattenText((nodes[0] as ParagraphNode).children);
+		expect(textContent).toContain('prefix：');
+		const latexNode = nodes[0].children!.at(-1) as LatexBlockNode;
+		expect(latexNode.type).toBe(AstNodeType.LatexBlock);
+		expect(latexNode.content).toBe('X \\rightarrow Y a');
 	});
 });
 
