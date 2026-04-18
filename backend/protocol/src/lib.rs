@@ -237,17 +237,18 @@ pub enum AssistantChunk {
 pub struct FileMetadata {
     pub name: String,
     pub id: i32,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<FileKind>,
+    #[serde(default)]
+    pub kind: FileKind,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[typeshare]
 #[serde(rename_all = "snake_case")]
 pub enum FileKind {
-    #[default]
     Image,
     Video,
+    #[default]
+    User,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, FromJsonQueryResult)]

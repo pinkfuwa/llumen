@@ -33,26 +33,14 @@
 	{:else if kind == 'tool_call'}
 		{@const toolCall = chunk.c}
 		{@const nextChunk = chunks[chunks.indexOf(chunk) + 1]}
-		{@const result =
-			nextChunk && nextChunk.t == 'tool_result' && nextChunk.c.id == toolCall.id
-				? nextChunk.c.response
-				: ''}
-		{@const resultFiles =
-			nextChunk && nextChunk.t == 'tool_result' && nextChunk.c.id == toolCall.id
-				? (
-						nextChunk.c as {
-							files?: { id: number; name: string; kind?: 'image' | 'video' | 'other' }[];
-						}
-					).files || []
-				: []}
 		<ToolBox toolname={toolCall.name}>
 			<Tool content={toolCall.arg} />
-			<Result content={result} />
+			<Result content={nextChunk.c.response || ''} />
 		</ToolBox>
-		{#each resultFiles as file}
+		{#each nextChunk.c.files as file}
 			{#if file.kind === 'video'}
 				<Video id={file.id} name={file.name} />
-			{:else}
+			{:else if file.kind == 'user'}
 				<Image id={file.id} name={file.name} />
 			{/if}
 		{/each}

@@ -299,9 +299,9 @@ async fn execute_generate_image(
             file_refs.push(protocol::FileMetadata {
                 id: file_id,
                 name: file_name,
-                kind: Some(protocol::FileKind::Image),
+                kind: protocol::FileKind::Image,
             });
-            session.add_token(Token::Image(file_id));
+            // TODO: session.add_token(Token::Image(file_id));
         }
     }
 
@@ -400,7 +400,7 @@ async fn execute_generate_video(
             file_refs.push(protocol::FileMetadata {
                 id: file_id,
                 name: file_name,
-                kind: Some(protocol::FileKind::Video),
+                kind: protocol::FileKind::Video,
             });
         }
     }

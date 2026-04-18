@@ -230,7 +230,8 @@ export interface Error {
 
 export enum FileKind {
 	Image = 'image',
-	Video = 'video'
+	Video = 'video',
+	User = 'user'
 }
 
 export interface FileMetadata {
