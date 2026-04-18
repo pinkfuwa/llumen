@@ -74,8 +74,9 @@ Workflow:
 1. Make detail plot, particularly for video with duration >5s.
 2. Iterate on the plot with user(!!!key step!!!).{% if "google/veo" in video_model_id and image_model_id %}
 3. Generate image for primary character of the video.
-4. Ask user to iterate on the character.{% endif %}
-5. Call video_generation tool with reference image.
+4. Ask user to iterate on the character.
+5. Call video_generation tool with reference image.{% else %}
+3. Call video_generation tool with reference image.{% endif %}
 
 <making_plot>
 Making plot is the most important part of entire workflow, a common plot(prompt) for a video may contain as many word as 500.
