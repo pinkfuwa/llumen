@@ -23,6 +23,8 @@
 		onFilesAdded?: (files: File[]) => void;
 	} = $props();
 
+	$inspect('content', content);
+
 	let dropdownOpen = $state(false);
 	let showConvertToFileDialog = $state(false);
 	let showRecordAudioDialog = $state(false);

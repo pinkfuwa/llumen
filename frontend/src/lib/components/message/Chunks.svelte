@@ -37,13 +37,15 @@
 			<Tool content={toolCall.arg} />
 			<Result content={nextChunk.c.response || ''} />
 		</ToolBox>
-		{#each nextChunk.c.files as file}
-			{#if file.kind === 'video'}
-				<Video id={file.id} name={file.name} />
-			{:else if file.kind == 'user'}
-				<Image id={file.id} name={file.name} />
-			{/if}
-		{/each}
+		{#if nextChunk.t == 'tool_result'}
+			{#each nextChunk.c.files as file}
+				{#if file.kind === 'video'}
+					<Video id={file.id} name={file.name} />
+				{:else if file.kind == 'image'}
+					<Image id={file.id} name={file.name} />
+				{/if}
+			{/each}
+		{/if}
 	{:else if kind == 'error'}
 		<ResponseError content={chunk.c} />
 	{:else if kind == 'deep_agent'}

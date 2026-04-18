@@ -50,6 +50,11 @@ let version = $state(-1);
 // **Quick Answer:** -> version 2 index 1 offset 17
 let cursor = $state<SseCursor | null>(null);
 
+function consumeDiscreteChunk() {
+	cursor!.index++;
+	cursor!.offset = 1;
+}
+
 // sorted in descending order by id
 let messages = $state<Array<Message>>([]);
 
@@ -96,7 +101,7 @@ const Handlers: {
 		};
 		pushMessage(message);
 		version = data.version;
-		cursor = { index: 0, offset: 0 };
+		cursor = { index: 0, offset: 1 };
 		deepState = null;
 	},
 
@@ -142,15 +147,13 @@ const Handlers: {
 				arg: toolCallObj.args
 			}
 		});
-		cursor!.index++;
-		cursor!.offset = 0;
+		consumeDiscreteChunk();
 	},
 
 	tool_result(toolResult) {
 		const payload = toolResult as { content: string; files?: FileMetadata[] };
 		handleToolResult(payload.content, payload.files || []);
-		cursor!.index++;
-		cursor!.offset = 0;
+		consumeDiscreteChunk();
 	},
 
 	complete(data) {
@@ -167,8 +170,7 @@ const Handlers: {
 	title(data, chatId) {
 		const pages = getRoomPages();
 		setRoomPages(updateInfiniteQueryDataById(pages, chatId, (chat) => ({ ...chat, title: data })));
-		cursor!.index++;
-		cursor!.offset = 0;
+		consumeDiscreteChunk();
 	},
 
 	error(err) {
@@ -235,8 +237,7 @@ const Handlers: {
 		if (!deepState) throw new Error('deepState is not initialized');
 		const lastChunk = firstMsg.inner.c.at(-1)!;
 		deepState.currentStepIndex = stepIndex as number;
-		cursor!.index++;
-		cursor!.offset = 0;
+		consumeDiscreteChunk();
 	},
 
 	deep_step_token(token) {
@@ -285,8 +286,7 @@ const Handlers: {
 				arg: toolCallObj.args
 			}
 		});
-		cursor!.index++;
-		cursor!.offset = 0;
+		consumeDiscreteChunk();
 	},
 
 	deep_step_tool_result(toolResult) {
@@ -317,8 +317,7 @@ const Handlers: {
 				}
 			}
 		}
-		cursor!.index++;
-		cursor!.offset = 0;
+		consumeDiscreteChunk();
 	},
 
 	deep_report(report) {
@@ -344,8 +343,7 @@ const Handlers: {
 			t: 'image',
 			c: fileId as number
 		});
-		cursor!.index++;
-		cursor!.offset = 0;
+		consumeDiscreteChunk();
 	},
 
 	url_citation(citations) {
@@ -355,8 +353,7 @@ const Handlers: {
 			t: 'url_citation',
 			c: citations as UrlCitation[]
 		});
-		cursor!.index++;
-		cursor!.offset = 0;
+		consumeDiscreteChunk();
 	}
 };
 

@@ -30,6 +30,7 @@
 		const file = new File([blob], fileName, { type: 'text/markdown' });
 
 		onAddFiles([file]);
+		content = '';
 		close();
 	}
 </script>
