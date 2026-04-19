@@ -14,6 +14,7 @@ enum Commands {
     BuildFrontend,
     Build,
     Run,
+    Trace,
     RunWithBuild,
     Fresh,
     Refresh,
@@ -29,6 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::BuildFrontend => build_frontend()?,
         Commands::Build => build()?,
         Commands::Run => run()?,
+        Commands::Trace => trace()?,
         Commands::RunWithBuild => run_with_build()?,
         Commands::Fresh => fresh()?,
         Commands::Refresh => refresh()?,
@@ -59,6 +61,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     cmd.env("RUST_LOG", "trace");
     cmd.env("BIND_ADDR", "127.0.0.1:8001");
     run_cmd(cmd)?;
+    Ok(())
+}
+
+fn trace() -> Result<(), Box<dyn std::error::Error>> {
+    let mut backend = Command::new("cargo");
+    backend.args(["run", "--features", "tracing,dev", "--bin", "backend"]);
+    backend.env("RUST_BACKTRACE", "1");
+    backend.env("RUST_LOG", "trace,tokio=trace,runtime=trace");
+    backend.env("TOKIO_CONSOLE_BIND", "127.0.0.1:6669");
+    backend.env("BIND_ADDR", "127.0.0.1:8001");
+
+    run_cmd(backend)?;
+
     Ok(())
 }
 

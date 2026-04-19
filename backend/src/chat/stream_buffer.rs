@@ -4,9 +4,9 @@ use std::{
     sync::{Arc, Mutex, Weak},
 };
 
-use tokio::sync::{Notify, mpsc, watch};
+use futures_util::stream;
+use tokio::sync::{Notify, watch};
 use tokio_stream::Stream;
-use tokio_stream::wrappers::ReceiverStream;
 
 /// Defines how chat stream tokens merge and slice across buffered chunks.
 pub trait Mergeable
@@ -111,35 +111,21 @@ impl<S: Mergeable + Clone + Send + 'static + Sync> Context<S> {
         if let Some(cursor) = cursor {
             subscriber.cursor = cursor;
         }
-        let (tx, rx) = mpsc::channel::<S>(1);
 
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    recv_result = subscriber.recv() => {
-                        match recv_result {
-                            Some(item) if item.len() == 0 => continue,
-                            None => {
-                                if tx.is_closed() {
-                                    break;
-                                }
-                                subscriber = self.get_subscriber(id);
-                            }
-                            Some(item) => {
-                                if tx.send(item).await.is_err() {
-                                    break;
-                                }
-                            }
+        stream::unfold(
+            (self, id, subscriber),
+            |(ctx, id, mut subscriber)| async move {
+                loop {
+                    match subscriber.recv().await {
+                        Some(item) if item.len() == 0 => continue,
+                        Some(item) => return Some((item, (ctx, id, subscriber))),
+                        None => {
+                            subscriber = ctx.get_subscriber(id);
                         }
                     }
-                    _ = tx.closed() => {
-                        break;
-                    }
                 }
-            }
-        });
-
-        ReceiverStream::new(rx)
+            },
+        )
     }
     /// Returns true when a new publisher can be created for the channel.
     pub fn publishable(&self, id: i32) -> bool {

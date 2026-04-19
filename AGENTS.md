@@ -2,6 +2,8 @@
 
 Privacy-focused LLM chat web-application optimized for minimal hardware (Raspberry Pi, old laptops).
 
+> You probably should read BUILD.md for how to build llumen
+
 ## Architecture
 
 llumen follows mono repo file structure:
