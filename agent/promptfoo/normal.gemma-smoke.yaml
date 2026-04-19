@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+providers:
+  - id: openrouter:google/gemma-3n-e4b-it
+    label: "normal-gemma-3n"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      temperature: 0.2
+      max_tokens: 2048
+
+defaultTest:
+  options:
+    transformVars: file://./common_transform.js:transformNormalVars
+  vars:
+    system_template: prompt/normal.j2
+    context_template: prompt/context.j2
+    locale: en
+    time: "Monday, 12:00, 15 December 2025"
+    chat_title: ""
+
+prompts:
+  - |
+    {% set system_message %}{% include system_template %}{% endset %}
+    {% set context_message %}{% include context_template %}{% endset %}
+    [
+      {
+        "role": "system",
+        "content": {{ system_message | trim | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ context_message | trim | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ user_query | dump }}
+      }
+    ]
+
+tests:
+  - description: "normal chat: conversational and no leaked xml tag"
+    vars:
+      user_query: "Hey, I just had a rough day at work. Can we talk for a minute?"
+      locale: en
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertNoTaskTag
+
+outputPath: ./promptfoo/normal-gemma-smoke.json
+sharing: false

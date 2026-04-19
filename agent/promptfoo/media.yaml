@@ -1,0 +1,205 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+description: "llumen media generation mode prompt regression"
+
+providers:
+  - id: openrouter:google/gemma-4-26b-a4b-it
+    label: "media-gemma-4-26b"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      max_tokens: 2048
+      temperature: 0.2
+      tools: &media_tools
+        - type: function
+          function:
+            name: generate_image
+            description: Generate an image with optional reference files and aspect ratio.
+            parameters:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                aspect_ratio:
+                  type: string
+                  enum:
+                    - "1:1"
+                    - "2:3"
+                    - "3:2"
+                    - "3:4"
+                    - "4:3"
+                    - "4:5"
+                    - "5:4"
+                    - "9:16"
+                    - "16:9"
+                    - "21:9"
+                generating_file:
+                  type: string
+                reference_files:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - prompt
+                - aspect_ratio
+        - type: function
+          function:
+            name: generate_video
+            description: Generate a video with optional references and controls.
+            parameters:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                generating_file:
+                  type: string
+                duration:
+                  type: integer
+                resolution:
+                  type: string
+                aspect_ratio:
+                  type: string
+                size:
+                  type: string
+                generate_audio:
+                  type: boolean
+                reference_files:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - prompt
+      tool_choice: auto
+
+  - id: openrouter:google/gemini-3.1-flash-lite-preview
+    label: "media-gemini31-lite"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      max_tokens: 2048
+      temperature: 0.2
+      tools: *media_tools
+      tool_choice: auto
+
+  - id: openrouter:minimax/minimax-m2.5
+    label: "judge-minimax-m25"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      max_tokens: 1024
+      temperature: 0
+      passthrough:
+        provider:
+          order:
+            - minimax/fp8
+          allow_fallbacks: false
+
+defaultTest:
+  providers:
+    - media-gemma-4-26b
+    - media-gemini31-lite
+  options:
+    transformVars: file://./common_transform.js:transformMediaVars
+    transform: file://./common_transform.js:transformThinkingOutput
+  vars:
+    system_template: prompt/media.j2
+    context_template: prompt/context.j2
+    locale: en
+    time: "Monday, 12:00, 15 December 2025"
+    chat_title: ""
+    image_model_id: "google/gemini-2.5-flash-image-preview"
+    video_model_id: "google/veo-3-fast"
+
+prompts:
+  - |
+    {% set system_message %}{% include system_template %}{% endset %}
+    {% set context_message %}{% include context_template %}{% endset %}
+    [
+      {
+        "role": "system",
+        "content": {{ system_message | trim | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ context_message | trim | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ user_query | dump }}
+      }
+    ]
+
+tests:
+  - description: "image generation from scratch: tool call with valid prompt"
+    vars:
+      user_query: "Generate a photorealistic image of a red fox reading a newspaper in a cozy cafe."
+      locale: en
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertToolName
+        config:
+          expected: generate_image
+      - type: javascript
+        value: file://./assertions.js:assertMediaPromptLanguage
+        config:
+          threshold: 0.8
+      - type: llm-rubric
+        provider: openrouter:minimax/minimax-m2.5
+        transform: file://./assertions.js:extractToolPromptOnly
+        value: |
+          Evaluate the generated image prompt quality.
+          Pass only when all conditions hold:
+          1) It keeps the original subject (a red fox reading newspaper in cafe).
+          2) It adds useful quality/composition/style enhancements.
+          3) Enhancements are concrete and improve generation quality.
+
+  - description: "image generation from scratch: avoid wrong extra elements"
+    vars:
+      user_query: "Generate a minimalist logo of a blue mountain and a sun."
+      locale: en
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertToolName
+        config:
+          expected: generate_image
+      - type: llm-rubric
+        provider: openrouter:minimax/minimax-m2.5
+        transform: file://./assertions.js:extractToolPromptOnly
+        value: |
+          Check that prompt augmentation does NOT add unrelated main elements.
+          The core request is a minimalist logo with blue mountain and sun.
+          Fail if the prompt introduces unrelated major objects (people, animals, vehicles, cityscape, extra scenes).
+
+  - description: "image generation zh-tw input: mostly english prompt and correct script if chinese appears"
+    vars:
+      user_query: "幫我生成一張插畫：一隻橘貓在雨天窗邊看書，溫暖室內光線。"
+      locale: zh-tw
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertToolName
+        config:
+          expected: generate_image
+      - type: javascript
+        value: file://./assertions.js:assertMediaPromptLanguage
+        config:
+          threshold: 0.8
+
+  - description: "video generation from scratch: follow 3-step workflow without calling api now"
+    vars:
+      user_query: "Create a 12-second cinematic video of a traveler walking into an ancient library at night."
+      locale: en
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertNoToolCall
+      - type: llm-rubric
+        provider: openrouter:minimax/minimax-m2.5
+        value: |
+          Check if assistant follows the 3-step workflow before generating video:
+          1) proposes a detailed plot/timeline first,
+          2) asks user to iterate/confirm plot,
+          3) indicates video tool call should happen only after that.
+          Pass only if all 3 are clearly present.
+
+outputPath: ./promptfoo/promptfoo-results-media.json
+
+sharing: false

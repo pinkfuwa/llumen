@@ -1,116 +1,177 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 
+description: "llumen title generation prompt regression"
+
 providers:
+  - id: openrouter:google/gemma-3n-e4b-it
+    label: "title-gemma-3n"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      showThinking: false
+      max_tokens: 256
+      temperature: 0.2
+
   - id: openrouter:openai/gpt-oss-20b
+    label: "title-gpt-oss-20b"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnv: API_KEY
-      max_tokens: 512
+      apiKeyEnvar: API_KEY
+      showThinking: false
+      max_tokens: 256
       temperature: 0.2
 
-  - id: openrouter:mistralai/mistral-small-3.2-24b-instruct
+  - id: openrouter:liquid/lfm-2-24b-a2b
+    label: "title-lfm-2-24b"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnv: API_KEY
-      max_tokens: 512
+      apiKeyEnvar: API_KEY
+      showThinking: false
+      max_tokens: 256
       temperature: 0.2
 
-  - id: openrouter:qwen/qwen-2.5-7b-instruct
+  - id: openrouter:qwen/qwen3.5-flash-02-23
+    label: "title-qwen3.5-flash"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnv: API_KEY
-      max_tokens: 512
+      apiKeyEnvar: API_KEY
+      showThinking: false
+      max_tokens: 256
       temperature: 0.2
+
+  - id: openrouter:z-ai/glm-4.5-air
+    label: "title-glm-4.5-air"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      showThinking: false
+      max_tokens: 256
+      temperature: 0.2
+
+  - id: openrouter:google/gemma-4-26b-a4b-it
+    label: "title-gemma-4-26b"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      showThinking: false
+      max_tokens: 256
+      temperature: 0.2
+
+  - id: openrouter:google/gemini-3.1-flash-lite-preview
+    label: "title-gemini-3.1-flash-lite"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      showThinking: false
+      max_tokens: 256
+      temperature: 0.2
+
+  - id: openrouter:minimax/minimax-m2.5
+    label: "judge-minimax-m25"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      showThinking: false
+      max_tokens: 1024
+      temperature: 0
+      passthrough:
+        provider:
+          order:
+            - minimax/fp8
+          allow_fallbacks: false
 
 defaultTest:
+  providers:
+    - title-gemma-3n
   options:
-    transformVars: file://./title_transform.js:transformVars
-    transform: file://./title_transform.js:transformOutput
+    transformVars: file://./common_transform.js:transformTitleVars
+    transform: file://./common_transform.js:transformTitleOutput
   vars:
-    system_message: file://../prompt/title_generation.j2
-    locale: "en"
+    system_template: prompt/title_generation.j2
+    locale: en
 
 prompts:
-  - >
-    {{ title_messages | dump }}
+  - |
+    {% set system_message %}{% include system_template %}{% endset %}
+    [
+      {
+        "role": "system",
+        "content": {{ system_message | trim | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ user_query | dump }}
+      },
+      {% if assistant_truncated %}
+      {
+        "role": "assistant",
+        "content": {{ assistant_truncated | dump }}
+      },
+      {% endif %}
+      {
+        "role": "user",
+        "content": {{ user_prefix | dump }}
+      }
+    ]
 
 tests:
-  - description: "Normal chat"
+  - description: "title generation english"
     vars:
-      user_prompt: "What is the capital of France?"
-      agent_answer: |
-        Paris is the capital of France. It one of the most visited cities in the world, and known for Eiffel Tower, Notre-Dame Cathedral, and the Louvre Museum.
+      user_query: "What is the capital of France?"
+      agent_answer: "Paris is the capital city of France, famous for culture and landmarks."
+      locale: en
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertTitleFormat
+      - type: llm-rubric
+        provider: openrouter:minimax/minimax-m2.5
+        value: |
+          Check if this title is a concise chat title:
+          - starts with exactly one emoji and one space
+          - single line only
+          - in English
+          - reflects the user query and assistant answer
+          Return pass only if all are satisfied.
 
-        Tell me if you want to know more about Paris.
-    assert:
-      - type: contains
-        value: "Paris"
-  - description: "Generate image"
+  - description: "title generation simplified chinese"
     vars:
-      user_prompt: "Generate a photorealistic image of a bustling street market in New Orleans during Mardi Gras"
-      agent_answer: I’m sorry, but I can’t help with that.
+      user_query: "什么是机器学习?"
+      agent_answer: "机器学习是人工智能的一个分支，重点是让系统从数据中学习。"
+      locale: zh-cn
     assert:
-      - type: contains-any
-        value:
-          - "Mardi"
-          - "Gras"
-  - description: "What's the meaning of life?"
-    vars:
-      user_prompt: "What's the meaning of life?"
-      agent_answer: |
-        The meaning of life is subjective and varies from person to person. Some people believe that life is about finding happiness, while others believe that it's about achieving success or making a difference in the world.
-    assert:
-      - type: contains-any
-        value:
-          - "Meaning"
-          - "Life"
-  - description: "Simplified Chinese title generation"
-    vars:
-      user_prompt: "什么是机器学习?"
-      agent_answer: |
-        机器学习是人工智能的一个分支，它使计算机能够在没有明确编程的情况下学习和改进。
-      locale: "zh-cn"
-    assert:
-      - type: contains-any
-        value:
-          - "机器"
-          - "学习"
-  - description: "Traditional Chinese title generation"
-    vars:
-      user_prompt: "台灣夜市有什麼必吃美食？"
-      agent_answer: |
-        台灣夜市有許多經典小吃，例如鹽酥雞、珍珠奶茶、蚵仔煎與滷味。各地夜市特色不同，可以依照口味挑選。
-      locale: "zh-tw"
-    assert:
-      - type: contains-any
-        value:
-          - "台灣"
-          - "夜市"
-          - "美食"
-  - description: "Rust lifetime troubleshooting"
-    vars:
-      user_prompt: "Why does Rust complain about lifetimes in this function?"
-      agent_answer: |
-        Rust needs explicit lifetimes when it can't infer how long references live. Add named lifetimes to the function signature and avoid returning references to local data.
-    assert:
-      - type: contains-any
-        value:
-          - "Rust"
-          - "lifetime"
-          - "borrow"
-  - description: "Project planning summary"
-    vars:
-      user_prompt: "Help me draft a 3-step rollout plan for a new feature."
-      agent_answer: |
-        Start with internal testing, then limited beta rollout, and finally a full public launch with monitoring and support.
-    assert:
-      - type: contains-any
-        value:
-          - "Plan"
-          - "Rollout"
-          - "Launch"
+      - type: javascript
+        value: file://./assertions.js:assertTitleFormat
+      - type: llm-rubric
+        provider: openrouter:minimax/minimax-m2.5
+        value: |
+          Judge this title:
+          - one emoji prefix
+          - concise and single-line
+          - Simplified Chinese
+          - semantically matches the conversation
 
-#
+  - description: "title generation traditional chinese"
+    vars:
+      user_query: "台灣夜市有什麼必吃美食？"
+      agent_answer: "台灣夜市常見美食包含鹽酥雞、蚵仔煎與珍珠奶茶。"
+      locale: zh-tw
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertTitleFormat
+      - type: javascript
+        value: file://./assertions.js:assertLanguageByScript
+        config:
+          expected: zh-tw
+          threshold: 0.8
+      - type: llm-rubric
+        provider: openrouter:minimax/minimax-m2.5
+        value: |
+          Judge this title:
+          - one emoji prefix
+          - concise and single-line
+          - Traditional Chinese (Taiwan usage)
+          - semantically matches the conversation
+
 outputPath: ./promptfoo/promptfoo-results-title.json
 
 sharing: false
