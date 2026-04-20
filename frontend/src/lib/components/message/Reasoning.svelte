@@ -3,8 +3,6 @@
 	import { _ } from 'svelte-i18n';
 	import { Collapsible } from 'bits-ui';
 	let { content, open = $bindable(false) }: { content: string; open?: boolean } = $props();
-
-	const lines = $derived(content.split('\n'));
 </script>
 
 <Collapsible.Root bind:open>
@@ -19,8 +17,6 @@
 	<Collapsible.Content
 		class="py-2 slide-out-to-start-2 fade-in fade-out slide-in-from-top-2 data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
-		{#each lines as line}
-			<p class="whitespace-pre-wrap">{line}</p>
-		{/each}
+		<p class="whitespace-pre-line">{content}</p>
 	</Collapsible.Content>
 </Collapsible.Root>

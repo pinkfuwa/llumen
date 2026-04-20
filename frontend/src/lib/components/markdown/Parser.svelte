@@ -40,7 +40,7 @@
 	let { nodes }: { nodes: AstNode[] } = $props();
 </script>
 
-{#each nodes as node}
+{#each nodes as node (node.type + ':' + node.start + ':' + node.end)}
 	{#if node.type === AstNodeType.Heading}
 		<Heading node={node as HeadingNode}>
 			<Parser nodes={node.children || []} />
