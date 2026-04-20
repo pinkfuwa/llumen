@@ -13,3 +13,6 @@ pub const IMAGE_CACHE_MAX_AGE_SECS: u32 = 259200;
 
 // Token expiration time: 7 days in seconds
 pub const TOKEN_EXPIRATION_SECS: u64 = 60 * 60 * 24 * 7;
+
+// Cache size of sqlite in byte: 32MiB
+pub const DB_CACHE_SIZE: usize = 1024 * 1024 * 32;

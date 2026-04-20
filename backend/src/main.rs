@@ -58,7 +58,7 @@ use std::{path::PathBuf, sync::Arc};
 use anyhow::Context as _;
 use axum::{Router, middleware};
 use chat::Context;
-use config::{DB_BUSY_TIMEOUT_MS, DEFAULT_BIND_ADDR};
+use config::{DB_BUSY_TIMEOUT_MS, DEFAULT_BIND_ADDR, DB_CACHE_SIZE};
 use dotenv::var;
 use entity::prelude::*;
 
@@ -164,8 +164,18 @@ async fn shutdown_signal() {
     }
 }
 
+fn setup_panic_handler() {
+    let default_panic = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        default_panic(info);
+        std::process::exit(1);
+    }));
+}
+
 #[tokio::main]
 async fn main() {
+    setup_panic_handler();
+
     dotenv::dotenv().ok();
 
     crate::utils::logger::init();
@@ -209,8 +219,9 @@ async fn main() {
     conn.execute(sea_orm::Statement::from_string(
         conn.get_database_backend(),
         &format!(
-            "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;PRAGMA busy_timeout={};",
-            DB_BUSY_TIMEOUT_MS
+            "PRAGMA journal_mode = WAL;PRAGMA synchronous = normal;PRAGMA busy_timeout={};PRAGMA cache_size = -{};",
+            DB_BUSY_TIMEOUT_MS,
+            DB_CACHE_SIZE/1024
         ),
     ))
     .await
