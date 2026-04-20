@@ -1,4 +1,4 @@
-use std::{io::Write, panic, str::FromStr, sync::Arc};
+use std::{io::IsTerminal, io::Write, panic, str::FromStr, sync::Arc};
 
 use dotenv::var;
 use flexi_logger::{DeferredNow, LogSpecification, Logger};
@@ -31,15 +31,27 @@ fn custom_format(
     now: &mut DeferredNow,
     record: &log::Record,
 ) -> std::io::Result<()> {
-    // TODO: add options to use ISO 8601 format
     let ts = now.format("%H:%M:%S%.3fZ");
 
     write!(w, "{} {:<5}| {}", ts, record.level(), record.args())
 }
 
 #[cfg(not(feature = "tracing"))]
+fn iso_format(
+    w: &mut dyn Write,
+    now: &mut DeferredNow,
+    record: &log::Record,
+) -> std::io::Result<()> {
+    let ts = now.format("%Y-%m-%dT%H:%M:%S%.3fZ");
+
+    write!(w, "{} {:<5}| {}", ts, record.level(), record.args())
+}
+
+#[cfg(not(feature = "tracing"))]
 pub fn init() {
-    // Only run flexi_logger if tracing is NOT enabled
+    let is_tty = std::io::stdout().is_terminal();
+    let fmt = if is_tty { custom_format } else { iso_format };
+
     let level = match var("RUST_LOG").map(|x| LevelFilter::from_str(&x.to_lowercase())) {
         Ok(Ok(level)) => level,
         _ => LevelFilter::Info,
@@ -51,10 +63,12 @@ pub fn init() {
         .build();
 
     Logger::with(spec)
-        .format(custom_format)
+        .format(fmt)
         .use_utc()
         .start()
-        .unwrap();
+        .expect("Fail to setup logger");
+
+    log::info!("using log level: {}", level);
 
     let hook = Arc::new(|info: &panic::PanicHookInfo| {
         if let Some(s) = info.payload().downcast_ref::<&str>() {
@@ -67,11 +81,15 @@ pub fn init() {
 
         if let Some(location) = info.location() {
             log::error!(
-                "Location: {}:{}:{}",
+                "Panic location: {}:{}:{}",
                 location.file(),
                 location.line(),
                 location.column()
             );
+        }
+
+        if let Some(thread) = std::thread::current().name() {
+            log::error!("Panic thread: {}", thread);
         }
     });
     panic::set_hook(Box::new(move |info| hook(info)));

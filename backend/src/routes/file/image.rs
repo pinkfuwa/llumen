@@ -59,7 +59,8 @@ pub async fn route(
         .into());
     }
 
-    // FIXME: we should stream original data if image is too large(low-memory design)
+    // FIXME: we should stream original data if image is too large(low-memory
+    // design)
     let original_data = app.blob.get_vectored(id).await.ok_or(Json(Error {
         error: ErrorKind::ResourceNotFound,
         reason: "File data not found".to_owned(),

@@ -112,6 +112,14 @@ impl CompletionSession {
             .publish(chat_id)
             .context("another session is already streaming on this chat")?;
 
+        log::debug!(
+            "session created: chat_id={}, user_id={}, model_id={}, msg_id={}",
+            chat_id,
+            user_id,
+            model_id,
+            msg_id
+        );
+
         Ok(Self {
             ctx,
             user: SessionUser {
@@ -357,6 +365,7 @@ impl CompletionSession {
             tokio::select! {
                 biased;
                 _ = self.publisher.wait_halt() => {
+                    log::debug!("session halted: msg_id={}", self.message.id);
                     return Ok(StreamEndReason::Halt);
                 }
                 item = StreamExt::next(&mut stream) => {
@@ -367,7 +376,10 @@ impl CompletionSession {
                             self.publisher.publish(Token::Error(e.to_string()));
                             return Ok(StreamEndReason::Exhausted);
                         }
-                        None => return Ok(StreamEndReason::Exhausted),
+                        None => {
+                            log::debug!("session stream exhausted: msg_id={}", self.message.id);
+                            return Ok(StreamEndReason::Exhausted);
+                        }
                     }
                 }
             }
@@ -585,6 +597,9 @@ impl CompletionSession {
     /// token.
     pub async fn save(mut self) -> Result<()> {
         let db = &self.ctx.db;
+        let msg_id = self.message.id;
+        let cost = self.cost;
+        let token_count = self.token_count;
 
         // Persist the assistant message
         let mut active: message::ActiveModel = self.message.clone().into();
@@ -599,6 +614,13 @@ impl CompletionSession {
             cost: self.cost,
             token: self.token_count,
         });
+
+        log::debug!(
+            "session saved: msg_id={}, cost={}, tokens={}",
+            msg_id,
+            cost,
+            token_count
+        );
 
         Ok(())
     }

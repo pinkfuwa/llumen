@@ -84,6 +84,9 @@ impl Context {
         strategy: Strategy,
         mut session: CompletionSession,
     ) -> anyhow::Result<()> {
+        let msg_id = session.message.id;
+        log::debug!("session started: msg_id={}", msg_id);
+
         // Emit Start token
         let user_msg_id = session.history.last().map(|m| m.id).unwrap_or(0);
         session.add_token(Token::Start {
@@ -110,6 +113,7 @@ impl Context {
         // Persist
         session.save().await?;
 
+        log::debug!("session completed: msg_id={}", msg_id);
         Ok(())
     }
 }

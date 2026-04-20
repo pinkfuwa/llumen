@@ -141,6 +141,7 @@ fn load_api_key() -> String {
 /// systems. This allows the server to clean up resources and finish in-flight
 /// requests before stopping.
 async fn shutdown_signal() {
+    log::debug!("Shutdown signal handler started");
     let ctrl_c = async {
         signal::ctrl_c()
             .await
@@ -162,6 +163,7 @@ async fn shutdown_signal() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
+    log::debug!("Shutdown signal received, shutting down");
 }
 
 fn setup_panic_handler() {
@@ -187,19 +189,25 @@ async fn main() {
     let api_base = var("API_BASE").unwrap_or_else(|_| {
         var("OPENAI_API_BASE").unwrap_or("https://openrouter.ai/api".to_string())
     });
+    log::debug!("API key loaded, base: {}", api_base);
     let force_openrouter = var("FORCE_OPENROUTER_MODE")
         .map(|v| v.to_lowercase() == "true" || v == "1")
         .unwrap_or(false);
+    log::debug!("Force OpenRouter mode: {}", force_openrouter);
     let data_path = PathBuf::from(var("DATA_PATH").unwrap_or(".".to_owned()));
+    log::debug!("Data path: {}", data_path.display());
     let mut database_path = data_path.clone();
     database_path.push("db.sqlite");
     let database_url = format!(
         "sqlite://{}?mode=rwc",
         database_path.display().to_string().replace('\\', "/")
     );
+    log::debug!("Database URL: {}", database_url);
     let mut blob_path = data_path.clone();
     blob_path.push("blobs.redb");
+    log::debug!("Blob path: {}", blob_path.display());
     let bind_addr = var("BIND_ADDR").unwrap_or(DEFAULT_BIND_ADDR.to_owned());
+    log::debug!("Bind address: {}", bind_addr);
 
     #[cfg(feature = "tracing")]
     let _db_span = info_span!("database_initialization").entered();
@@ -207,14 +215,17 @@ async fn main() {
     migration::migrate(&database_url)
         .await
         .expect("Migration failed");
+    log::debug!("Migration completed");
 
     let conn = Database::connect(database_url)
         .await
         .expect("Cannot connect to database");
+    log::debug!("Database connected");
 
     migration::Migrator::up(&conn, None)
         .await
         .expect("Cannot migrate database");
+    log::debug!("Database migrated");
 
     conn.execute(sea_orm::Statement::from_string(
         conn.get_database_backend(),
@@ -226,6 +237,7 @@ async fn main() {
     ))
     .await
     .expect("Failed to set pragmas");
+    log::debug!("Pragmas set");
 
     let key = SymmetricKey::from(
         &Config::find_by_id("paseto_key")
@@ -237,23 +249,27 @@ async fn main() {
             .value,
     )
     .expect("Cannot parse paseto key");
+    log::debug!("Paseto key loaded");
 
     let openrouter = Arc::new(openrouter::Openrouter::new(
         api_key,
         api_base,
         force_openrouter,
     ));
+    log::debug!("OpenRouter client created");
 
     let blob = Arc::new(
         BlobDB::new_from_path(blob_path)
             .await
             .expect("Cannot open blob db"),
     );
+    log::debug!("Blob DB opened");
 
     let chat = Arc::new(
         Context::new(conn.clone(), openrouter.clone(), blob.clone())
             .expect("Failed to create pipeline context"),
     );
+    log::debug!("Chat context created");
 
     let auth_header = var("TRUSTED_HEADER").ok();
 
