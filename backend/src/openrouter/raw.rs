@@ -56,6 +56,10 @@ fn detect_pdf(data: &[u8]) -> bool {
     infer::archive::is_pdf(data)
 }
 
+fn is_plain_text(data: &[u8]) -> bool {
+    !data.is_empty() && std::str::from_utf8(data).is_ok()
+}
+
 fn detect_video_format(data: &[u8]) -> Option<String> {
     if data.len() >= 12 && data[4..8] == *b"ftyp" {
         let brand = &data[8..12];
@@ -332,36 +336,41 @@ impl MessagePart {
             let format = detect_audio_format(data.as_ref());
             let embed_file = Base64EmbedFile::new(data, data_len).unwrap();
             vec![
-                Self::text(format!("Uploaded file: {}", name)),
+                Self::text(format!("\nUploaded file: {}", name)),
                 Self::input_audio(format, embed_file),
             ]
         } else if detect_pdf(data.as_ref()) {
             let embed_file =
                 Base64EmbedURL::new(data, data_len, "application/pdf".to_string()).unwrap();
             vec![
-                Self::text(format!("Uploaded file: {}", name)),
+                Self::text(format!("\nUploaded file: {}", name)),
                 Self::pdf(name, embed_file),
             ]
         } else if let Some(format) = detect_image_format(data.as_ref()) {
             let mime_type = format!("image/{}", format);
             let embed_file = Base64EmbedURL::new(data, data_len, mime_type).unwrap();
             vec![
-                Self::text(format!("Uploaded file: {}", name)),
+                Self::text(format!("\nUploaded file: {}", name)),
                 Self::image_data(embed_file),
             ]
         } else if let Some(format) = detect_video_format(data.as_ref()) {
             let mime_type = format!("video/{}", format);
             let embed_file = Base64EmbedURL::new(data, data_len, mime_type).unwrap();
             vec![
-                Self::text(format!("Uploaded file: {}", name)),
+                Self::text(format!("\nUploaded file: {}", name)),
                 Self::video_data(embed_file),
             ]
-        } else {
+        } else if is_plain_text(data.as_ref()) {
             vec![
-                Self::text(format!("Uploaded file: {}\n<content>\n", name)),
+                Self::text(format!("\nUploaded file: {}\n<content>\n", name)),
                 Self::text_file(PlainText::new(data)),
                 Self::text("\n</content>".to_string()),
             ]
+        } else {
+            vec![Self::text(format!(
+                "\nFail to parse uploaded file: {}\n",
+                name
+            ))]
         }
     }
 
