@@ -1,0 +1,9 @@
+{
+  "name": "llumen-promptfoo",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "type": "commonjs",
+  "devDependencies": {
+    "opencc-js": "^1.0.5"
+  }
+}

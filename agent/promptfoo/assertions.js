@@ -1,3 +1,5 @@
+const OpenCC = require('opencc-js');
+
 const TRADITIONAL_ONLY_CHARS = new Set(
   Array.from("體臺灣網開關於點數據設計這樣與應讓為務裡專業總結產業機會導覽標題優勢學習變電腦資源還報導證據願景觀點")
 );
@@ -36,6 +38,33 @@ const countSetChars = (text, set) => {
     }
   }
   return count;
+};
+
+const countCharDiffs = (left, right) => {
+  const leftChars = Array.from(left);
+  const rightChars = Array.from(right);
+  const maxLength = Math.max(leftChars.length, rightChars.length);
+  let count = 0;
+
+  for (let index = 0; index < maxLength; index += 1) {
+    if (leftChars[index] !== rightChars[index]) {
+      count += 1;
+    }
+  }
+
+  return count;
+};
+
+const convertChineseVariant = (text, targetLocale) => {
+  const locale = normalizeLocale(targetLocale);
+  if (locale === "zh-tw") {
+    return OpenCC.Converter({ from: 'cn', to: 'tw' })(text);
+  }
+  if (locale === "zh-cn") {
+    return OpenCC.Converter({ from: 'tw', to: 'cn' })(text);
+  }
+
+  return text;
 };
 
 const isRegionalIndicator = (char) => /\p{Regional_Indicator}/u.test(char);
@@ -193,6 +222,25 @@ function assertLanguageByScript(output, context) {
   return grade(detection.pass, detection.reason);
 }
 
+function assertChineseOpenccChangeLimit(output, context) {
+  const config = context?.config || {};
+  const expected = normalizeLocale(config.expected || context?.vars?.locale);
+  const maxChanges = Number(config.maxChanges || 3);
+  const text = asText(output);
+
+  if (expected !== "zh-cn" && expected !== "zh-tw") {
+    return grade(true, `Skipped OpenCC check for ${expected}.`);
+  }
+
+  const converted = convertChineseVariant(text, expected);
+  const changes = countCharDiffs(text, converted);
+
+  return grade(
+    changes <= maxChanges,
+    `OpenCC conversion to ${expected} changed ${changes} chars (max ${maxChanges}).`
+  );
+}
+
 function assertOfficialLlumenLinks(output) {
   const text = asText(output);
   const urls = text.match(URL_REGEX) || [];
@@ -315,6 +363,7 @@ function extractToolPromptOnly(output) {
 module.exports = {
   assertNoTaskTag,
   assertLanguageByScript,
+  assertChineseOpenccChangeLimit,
   assertOfficialLlumenLinks,
   assertToolName,
   assertNoToolCall,

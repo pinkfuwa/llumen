@@ -4,7 +4,7 @@ description: "llumen multilingual prompt regression"
 
 providers:
   - id: openrouter:google/gemma-3n-e4b-it
-    label: "normal-gemma-3n"
+    label: "international"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
@@ -12,7 +12,7 @@ providers:
       max_tokens: 2048
 
   - id: openrouter:openai/gpt-oss-20b
-    label: "normal-gpt-oss-20b"
+    label: "international"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
@@ -20,7 +20,7 @@ providers:
       max_tokens: 2048
 
   - id: openrouter:liquid/lfm-2-24b-a2b
-    label: "normal-lfm-2-24b"
+    label: "international"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
@@ -28,7 +28,6 @@ providers:
       max_tokens: 2048
 
   - id: openrouter:qwen/qwen3.5-flash-02-23
-    label: "normal-qwen35-flash"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
@@ -36,36 +35,13 @@ providers:
       max_tokens: 2048
 
   - id: openrouter:z-ai/glm-4.5-air
-    label: "normal-glm-45-air"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
       temperature: 0.2
       max_tokens: 2048
 
-  - id: openrouter:google/gemini-3.1-flash-lite-preview
-    label: "judge-gemini31-lite"
-    config:
-      apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
-      max_tokens: 1024
-      temperature: 0
-
-  - id: openrouter:anthropic/claude-haiku-4.5
-    label: "judge-haiku45"
-    config:
-      apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
-      max_tokens: 1024
-      temperature: 0
-
 defaultTest:
-  providers:
-    - normal-gemma-3n
-    - normal-gpt-oss-20b
-    - normal-lfm-2-24b
-    - normal-qwen35-flash
-    - normal-glm-45-air
   options:
     transformVars: file://./common_transform.js:transformNormalVars
     transform: file://./common_transform.js:transformThinkingOutput
@@ -125,7 +101,7 @@ tests:
 
   - description: "multilingual traditional chinese output"
     vars:
-      user_query: "請用繁體中文介紹一下 llumen。"
+      user_query: "介紹一下 llumen。"
       locale: zh-tw
     assert:
       - type: javascript
@@ -133,13 +109,17 @@ tests:
         config:
           expected: zh-tw
           threshold: 0.8
+      - type: javascript
+        value: file://./assertions.js:assertChineseOpenccChangeLimit
+        config:
+          expected: zh-tw
+          maxChanges: 3
 
-  - description: "traditional chinese on mainland models: script + dual judges"
+  - description: "traditional chinese on mainland models: script + rubric judge"
     providers:
-      - normal-qwen35-flash
-      - normal-glm-45-air
+      - international
     vars:
-      user_query: "請用繁體中文介紹一下 llumen。"
+      user_query: "介紹一下 llumen。"
       locale: zh-tw
     assert:
       - type: javascript
@@ -147,12 +127,19 @@ tests:
         config:
           expected: zh-tw
           threshold: 0.8
+      - type: javascript
+        value: file://./assertions.js:assertChineseOpenccChangeLimit
+        config:
+          expected: zh-tw
+          maxChanges: 3
       - type: llm-rubric
-        value: "Uses Traditional Chinese (Taiwan usage), avoids Simplified Chinese forms."
-        provider: openrouter:google/gemini-3.1-flash-lite-preview
-      - type: llm-rubric
-        value: "The answer is in Traditional Chinese and reads natural for Taiwan users."
         provider: openrouter:anthropic/claude-haiku-4.5
+        value: |
+          Judge whether the answer from a Taiwanese LLM.
+          Pass only if all are true:
+          - It is written in Traditional Chinese.
+          - It avoids Simplified Chinese wording(NO 同志/酒店/...).
+          - It reads natural and conversational.
 
 outputPath: ./.promptfoo/promptfoo-results-multilingual.json
 

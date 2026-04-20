@@ -15,6 +15,10 @@
 - `promptfoo/search.yaml`: search prompt regression with citations.
 - Keep all promptfoo result files in `promptfoo/.promptfoo/`.
 
+## Assertion Helpers
+
+- `promptfoo/assertions.js`: Node CommonJS helpers for promptfoo assertions. If you add an external dependency here, create `promptfoo/package.json` and run `pnpm install` in `agent/promptfoo/` so `file://./assertions.js` can resolve `node_modules`.
+
 The folder contain prompt(jinja2 template) and promptfoo config.
 
 ## Workflow
@@ -22,7 +26,8 @@ The folder contain prompt(jinja2 template) and promptfoo config.
 ### Add test:
 
 1. Modify the config(yaml)
-2. Run `promptfoo validate` to validate config(NO NEED to actually run the eval)
+2. If the assertion script needs external packages, add `agent/promptfoo/package.json` and run `pnpm install` in `agent/promptfoo/`.
+3. Run `promptfoo validate` to validate config(NO NEED to actually run the eval)
 
 ### Improve prompt
 
