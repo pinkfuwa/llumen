@@ -4,42 +4,36 @@ description: "llumen multilingual prompt regression"
 
 providers:
   - id: openrouter:google/gemma-3n-e4b-it
-    label: "international"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
-      temperature: 0.2
       max_tokens: 2048
 
   - id: openrouter:openai/gpt-oss-20b
-    label: "international"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
-      temperature: 0.2
       max_tokens: 2048
 
   - id: openrouter:liquid/lfm-2-24b-a2b
-    label: "international"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
-      temperature: 0.2
-      max_tokens: 2048
+      max_tokens: 4096
 
   - id: openrouter:qwen/qwen3.5-flash-02-23
+    label: "mainland"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
-      temperature: 0.2
-      max_tokens: 2048
+      max_tokens: 8192
 
   - id: openrouter:z-ai/glm-4.5-air
+    label: "mainland"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
-      temperature: 0.2
-      max_tokens: 2048
+      max_tokens: 8192
 
 defaultTest:
   options:
@@ -88,6 +82,17 @@ tests:
           expected: en
           threshold: 0.8
 
+  - description: "Proof three-gap theorem"
+    vars:
+      user_query: "Proof three-gap theorem"
+      locale: en
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertLanguageByScript
+        config:
+          expected: en
+          threshold: 0.8
+
   - description: "multilingual simplified chinese output"
     vars:
       user_query: "请用简体中文介绍一下 llumen。"
@@ -115,11 +120,93 @@ tests:
           expected: zh-tw
           maxChanges: 3
 
-  - description: "traditional chinese on mainland models: script + rubric judge"
+  - description: "multilingual traditional chinese output: proof three-gap theorem"
     providers:
-      - international
+      - mainland
     vars:
-      user_query: "介紹一下 llumen。"
+      user_query: "證明 three-gap theorem"
+      locale: zh-tw
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertLanguageByScript
+        config:
+          expected: zh-tw
+          threshold: 0.8
+      - type: javascript
+        value: file://./assertions.js:assertChineseOpenccChangeLimit
+        config:
+          expected: zh-tw
+          maxChanges: 3
+
+  - description: "multilingual traditional chinese output: peom creation"
+    vars:
+      user_query: "寫首詩看看!"
+      locale: zh-tw
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertLanguageByScript
+        config:
+          expected: zh-tw
+          threshold: 0.8
+      - type: javascript
+        value: file://./assertions.js:assertChineseOpenccChangeLimit
+        config:
+          expected: zh-tw
+          maxChanges: 2
+
+  - description: "multilingual traditional chinese output: Lagrange's Theorem"
+    providers:
+      - mainland
+    vars:
+      user_query: "證明 拉格朗日定理，之後在利用它證明費馬小定理"
+      locale: zh-tw
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertLanguageByScript
+        config:
+          expected: zh-tw
+          threshold: 0.8
+      - type: javascript
+        value: file://./assertions.js:assertChineseOpenccChangeLimit
+        config:
+          expected: zh-tw
+          maxChanges: 3
+
+  - description: "multilingual traditional chinese output: essey description creation"
+    providers:
+      - mainland
+    vars:
+      user_query: "標題：基於 Linux Namespace 與 FUSE 的沙箱\n```\n在使用 AI 寫程式時，由於需要給 AI 一個電腦環境...\n```\n 幫我寫小論文開頭"
+      locale: zh-tw
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertLanguageByScript
+        config:
+          expected: zh-tw
+          threshold: 0.8
+      - type: javascript
+        value: file://./assertions.js:assertChineseOpenccChangeLimit
+        config:
+          expected: zh-tw
+          maxChanges: 3
+
+  - description: "multilingual traditional chinese output: news creation"
+    providers:
+      - mainland
+    vars:
+      user_query: |
+        以下是台灣自來水公司於世界水資源日發佈的新聞稿，請提供3個標題的建議，另外修飾內容更適合用於媒體發佈，並且重寫最後一段結論。
+        新聞標題：世界水資源日，永續水資源
+        今日適逢 2026 年聯合國世界水資源日 (World Water Day)，台灣自來水公司（以下簡稱台水）積極響應聯合國今年宣傳活動主題——「水至四方，平等滋长」（Water for all, growing equally）。台水秉持著將安全水資源與環境衛生視為基本人權的核心價值，致力於消除供水不平權，並透過各項永續行動計畫，展現水資源作為推動社會公平與性別平等的關鍵力量。
+        落實用水平權：拼湊台灣尾的水路拼圖
+        台水長期致力於讓台灣各個角落都能享有「量足質優」的自來水。針對過去普及率較低的屏東地區，台水推動「台灣尾的水拼圖計畫」，將屏東自來水普及率從 2016 年的 49.39%，於 2024 年成功推升突破 70%（71.53%） 的重要里程碑。
+        台水強調，提升普及率不僅是落實國人的用水平權，更是促進民生基礎建設、公共衛生體系及產業發展的具體實踐。未來四年內，台水預計將屏東普及率推升至 90%，並持續朝向 100% 的目標邁進，確保偏遠地區、原住民族部落及弱勢族群皆能獲得安全且可負擔的飲用水，落實聯合國永續發展目標 SDG 6。
+        深耕社區共榮：老舊高地供水改善工程
+        為了不遺落任何一位用戶，台水亦針對全台老舊高地社區推動加壓受水設備改善計畫。這些社區過去常因管線老舊導致嚴重的漏水與高額分攤水費，直接影響居民的生活品質。
+        台水透過公私協力模式，結合政府補助與專業技術，協助社區汰換為高品質的延性鑄鐵管（DIP）與不鏽鋼波狀管（SSP），大幅降低漏水率。以基隆幸福華城社區為例，改善後住戶每期分攤水量從 42 度降至 0 度，顯著減輕了居民的經濟負擔，實現了供水的可負擔性與社會正義。此計畫的社會投資報酬率（SROI）高達 4.36，展現出每投入 1 元預算，能創造 4.36 元的整體社會效益。
+        水與平等：推動包容性的未來
+        2026 年的世界水日主題特別強調「性別平等」與「人權」。台水在推動供水計畫中，積極辦理地方宣導說明會，並深入社區聽取不同群體的意見。台水認同，若能讓女性在水事決策中擁有平等話語權，服務將更具包容性與永續性。
+        展望未來，台水將持續導入智慧監測系統與「水表 e 管家」服務，提升水資源管理效能。台水深信，只有確保「水至四方」，讓每一位公民都能平等地獲得安全水源，台灣的社會與環境才能實現真正的「平等滋長」
       locale: zh-tw
     assert:
       - type: javascript
@@ -139,7 +226,8 @@ tests:
           Pass only if all are true:
           - It is written in Traditional Chinese.
           - It avoids Simplified Chinese wording(NO 同志/酒店/...).
-          - It reads natural and conversational.
+          - It reads natural to a Taiwanese.
+          - It avoids propaganda-style wording(NO 共同繁榮/大XXX).
 
 outputPath: ./.promptfoo/promptfoo-results-multilingual.json
 
