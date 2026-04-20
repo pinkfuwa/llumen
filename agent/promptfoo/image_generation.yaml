@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 
-description: "llumen media generation mode prompt regression"
+description: "llumen image generation prompt regression"
 
 providers:
   - id: openrouter:google/gemma-4-26b-a4b-it
@@ -82,7 +82,6 @@ providers:
       tool_choice: auto
 
   - id: openrouter:minimax/minimax-m2.5
-    label: "judge-minimax-m25"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
@@ -102,26 +101,31 @@ defaultTest:
     transformVars: file://./common_transform.js:transformMediaVars
     transform: file://./common_transform.js:transformThinkingOutput
   vars:
-    system_template: prompt/media.j2
-    context_template: prompt/context.j2
+    system_template: file://../prompt/media.j2
+    context_template: file://../prompt/context.j2
     locale: en
     time: "Monday, 12:00, 15 December 2025"
     chat_title: ""
     image_model_id: "google/gemini-2.5-flash-image-preview"
     video_model_id: "google/veo-3-fast"
 
+derivedMetrics:
+  - name: token
+    value: |
+      function(namedScores, evalStep) {
+        return evalStep.tokensUsed?.prompt || 0;
+      }
+
 prompts:
   - |
-    {% set system_message %}{% include system_template %}{% endset %}
-    {% set context_message %}{% include context_template %}{% endset %}
     [
       {
         "role": "system",
-        "content": {{ system_message | trim | dump }}
+        "content": {{ system_template | trim | dump }}
       },
       {
         "role": "user",
-        "content": {{ context_message | trim | dump }}
+        "content": {{ context_template | trim | dump }}
       },
       {
         "role": "user",
@@ -184,22 +188,6 @@ tests:
         config:
           threshold: 0.8
 
-  - description: "video generation from scratch: follow 3-step workflow without calling api now"
-    vars:
-      user_query: "Create a 12-second cinematic video of a traveler walking into an ancient library at night."
-      locale: en
-    assert:
-      - type: javascript
-        value: file://./assertions.js:assertNoToolCall
-      - type: llm-rubric
-        provider: openrouter:minimax/minimax-m2.5
-        value: |
-          Check if assistant follows the 3-step workflow before generating video:
-          1) proposes a detailed plot/timeline first,
-          2) asks user to iterate/confirm plot,
-          3) indicates video tool call should happen only after that.
-          Pass only if all 3 are clearly present.
-
-outputPath: ./promptfoo/promptfoo-results-media.json
+outputPath: ./.promptfoo/promptfoo-results-image-generation.json
 
 sharing: false

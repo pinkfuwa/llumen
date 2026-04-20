@@ -1,0 +1,100 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+description: "llumen related prompt regression"
+
+providers:
+  - id: openrouter:google/gemma-3n-e4b-it
+    label: "normal-gemma-3n"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      temperature: 0.2
+      max_tokens: 2048
+
+  - id: openrouter:openai/gpt-oss-20b
+    label: "normal-gpt-oss-20b"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      temperature: 0.2
+      max_tokens: 2048
+
+  - id: openrouter:liquid/lfm-2-24b-a2b
+    label: "normal-lfm-2-24b"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      temperature: 0.2
+      max_tokens: 2048
+
+  - id: openrouter:qwen/qwen3.5-flash-02-23
+    label: "normal-qwen35-flash"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      temperature: 0.2
+      max_tokens: 2048
+
+  - id: openrouter:z-ai/glm-4.5-air
+    label: "normal-glm-45-air"
+    config:
+      apiBaseUrl: https://openrouter.ai/api/v1
+      apiKeyEnvar: API_KEY
+      temperature: 0.2
+      max_tokens: 2048
+
+defaultTest:
+  providers:
+    - normal-gemma-3n
+    - normal-gpt-oss-20b
+    - normal-lfm-2-24b
+    - normal-qwen35-flash
+    - normal-glm-45-air
+  options:
+    transformVars: file://./common_transform.js:transformNormalVars
+    transform: file://./common_transform.js:transformThinkingOutput
+  vars:
+    system_template: file://../prompt/normal.j2
+    context_template: file://../prompt/context.j2
+    locale: en
+    time: "Monday, 12:00, 15 December 2025"
+    chat_title: ""
+
+derivedMetrics:
+  - name: token
+    value: |
+      function(namedScores, evalStep) {
+        return evalStep.tokensUsed?.prompt || 0;
+      }
+
+prompts:
+  - |
+    [
+      {
+        "role": "system",
+        "content": {{ system_template | trim | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ context_template | trim | dump }}
+      },
+      {
+        "role": "user",
+        "content": {{ user_query | dump }}
+      }
+    ]
+
+tests:
+  - description: "llumen related: should use official links only"
+    vars:
+      user_query: "What is llumen and where is its source code and docs?"
+      locale: en
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertOfficialLlumenLinks
+      - type: contains
+        value: "github.com/pinkfuwa/llumen"
+
+outputPath: ./.promptfoo/promptfoo-results-llumen-related.json
+
+sharing: false

@@ -22,12 +22,19 @@ defaultTest:
     time: "2025-12-15T12:00:00Z"
     chat_title: "null"
 
+derivedMetrics:
+  - name: token
+    value: |
+      function(namedScores, evalStep) {
+        return evalStep.tokensUsed?.prompt || 0;
+      }
+
 prompts:
   - >
     [
       {
         "role": "system",
-        "content": {{ system_message | dump }}
+        "content": {{ system_message | trim | dump }}
       },
       {
         "role": "user",
@@ -72,6 +79,6 @@ tests:
           - "Hola"
           - "hola"
 
-outputPath: ./promptfoo/promptfoo-results-search.json
+outputPath: ./.promptfoo/promptfoo-results-search.json
 
 sharing: false

@@ -58,7 +58,6 @@ providers:
       temperature: 0.2
 
   - id: openrouter:google/gemini-3.1-flash-lite-preview
-    label: "title-gemini-3.1-flash-lite"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
@@ -67,7 +66,6 @@ providers:
       temperature: 0.2
 
   - id: openrouter:minimax/minimax-m2.5
-    label: "judge-minimax-m25"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
       apiKeyEnvar: API_KEY
@@ -87,16 +85,22 @@ defaultTest:
     transformVars: file://./common_transform.js:transformTitleVars
     transform: file://./common_transform.js:transformTitleOutput
   vars:
-    system_template: prompt/title_generation.j2
+    system_template: file://../prompt/title_generation.j2
     locale: en
+
+derivedMetrics:
+  - name: token
+    value: |
+      function(namedScores, evalStep) {
+        return evalStep.tokensUsed?.prompt || 0;
+      }
 
 prompts:
   - |
-    {% set system_message %}{% include system_template %}{% endset %}
     [
       {
         "role": "system",
-        "content": {{ system_message | trim | dump }}
+        "content": {{ system_template | trim | dump }}
       },
       {
         "role": "user",
@@ -172,6 +176,6 @@ tests:
           - Traditional Chinese (Taiwan usage)
           - semantically matches the conversation
 
-outputPath: ./promptfoo/promptfoo-results-title.json
+outputPath: ./.promptfoo/promptfoo-results-title.json
 
 sharing: false

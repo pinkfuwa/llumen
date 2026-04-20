@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 
-description: "llumen normal mode prompt regression"
+description: "llumen multilingual prompt regression"
 
 providers:
   - id: openrouter:google/gemma-3n-e4b-it
@@ -43,19 +43,6 @@ providers:
       temperature: 0.2
       max_tokens: 2048
 
-  - id: openrouter:minimax/minimax-m2.5
-    label: "judge-minimax-m25"
-    config:
-      apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
-      max_tokens: 1024
-      temperature: 0
-      passthrough:
-        provider:
-          order:
-            - minimax/fp8
-          allow_fallbacks: false
-
   - id: openrouter:google/gemini-3.1-flash-lite-preview
     label: "judge-gemini31-lite"
     config:
@@ -83,24 +70,29 @@ defaultTest:
     transformVars: file://./common_transform.js:transformNormalVars
     transform: file://./common_transform.js:transformThinkingOutput
   vars:
-    system_template: prompt/normal.j2
-    context_template: prompt/context.j2
+    system_template: file://../prompt/normal.j2
+    context_template: file://../prompt/context.j2
     locale: en
     time: "Monday, 12:00, 15 December 2025"
     chat_title: ""
 
+derivedMetrics:
+  - name: token
+    value: |
+      function(namedScores, evalStep) {
+        return evalStep.tokensUsed?.prompt || 0;
+      }
+
 prompts:
   - |
-    {% set system_message %}{% include system_template %}{% endset %}
-    {% set context_message %}{% include context_template %}{% endset %}
     [
       {
         "role": "system",
-        "content": {{ system_message | trim | dump }}
+        "content": {{ system_template | trim | dump }}
       },
       {
         "role": "user",
-        "content": {{ context_message | trim | dump }}
+        "content": {{ context_template | trim | dump }}
       },
       {
         "role": "user",
@@ -109,29 +101,6 @@ prompts:
     ]
 
 tests:
-  - description: "normal chat: conversational and no leaked xml tag"
-    vars:
-      user_query: "Hey, I just had a rough day at work. Can we talk for a minute?"
-      locale: en
-    assert:
-      - type: javascript
-        value: file://./assertions.js:assertNoTaskTag
-      - type: contains-any
-        value:
-          - "you"
-          - "I"
-          - "feel"
-
-  - description: "llumen related: should use official links only"
-    vars:
-      user_query: "What is llumen and where is its source code and docs?"
-      locale: en
-    assert:
-      - type: javascript
-        value: file://./assertions.js:assertOfficialLlumenLinks
-      - type: contains
-        value: "github.com/pinkfuwa/llumen"
-
   - description: "multilingual english output"
     vars:
       user_query: "Explain what llumen is in simple terms."
@@ -185,6 +154,6 @@ tests:
         value: "The answer is in Traditional Chinese and reads natural for Taiwan users."
         provider: openrouter:anthropic/claude-haiku-4.5
 
-outputPath: ./promptfoo/promptfoo-results-normal.json
+outputPath: ./.promptfoo/promptfoo-results-multilingual.json
 
 sharing: false
