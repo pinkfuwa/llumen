@@ -2,13 +2,14 @@
 	import { untrack } from 'svelte';
 	import Parser from './Parser.svelte';
 	import { parseMarkdown } from './worker/caller';
-	import { parseIncremental, type IncrementalState } from './incremental';
-	import type { ParseResult } from './parser/types';
+	import { parseIncremental, patchASTNodes, type IncrementalState } from './incremental';
+	import type { AstNode } from './parser/types';
 
 	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
 
-	let incrementalState: IncrementalState | null = $state(null);
-	let result: ParseResult | null = $state(null);
+	let incrementalState: Partial<IncrementalState> = $state({});
+	let children: { children: AstNode[] } = $state({ children: [] });
+	let nodes = $derived(children.children);
 
 	let throttleTimer: ReturnType<typeof setTimeout> | null = null;
 	const THROTTLE_MS = 100;
@@ -19,19 +20,13 @@
 		const currentState = untrack(() => incrementalState);
 
 		try {
-			const parseResult = parseIncremental(currentSource, currentState);
-			result = parseResult.result;
-			incrementalState = parseResult.state;
+			let result = parseIncremental(currentSource, currentState);
+			patchASTNodes(children, { children: result });
 		} catch (error) {
 			console.error('Incremental parse error:', error);
 			parseMarkdown(currentSource)
 				.then((r) => {
-					result = r;
-					incrementalState = {
-						prevSource: currentSource,
-						prevResult: r,
-						newContentStart: currentSource.length
-					};
+					children.children = r;
 				})
 				.catch((e) => console.error('Fallback parse error:', e));
 		}
@@ -39,24 +34,17 @@
 
 	async function doFullParse(currentSource: string) {
 		try {
-			result = await parseMarkdown(currentSource);
-			incrementalState = null;
+			children.children = await parseMarkdown(currentSource);
 		} catch (error) {
 			console.error('Parse error:', error);
-			result = null;
+			children.children = [];
 		}
 	}
 
 	$effect(() => {
 		pendingSource = source;
 
-		if (!incremental) {
-			if (throttleTimer != null) {
-				clearTimeout(throttleTimer);
-				throttleTimer = null;
-			}
-			doFullParse(source);
-		} else {
+		if (incremental) {
 			if (!throttleTimer) {
 				const runThrottle = () => {
 					const lastParsedSource = untrack(() => pendingSource);
@@ -73,18 +61,24 @@
 				};
 				throttleTimer = setTimeout(runThrottle, THROTTLE_MS);
 			}
+		} else {
+			incrementalState = {};
+
+			if (throttleTimer != null) {
+				clearTimeout(throttleTimer);
+				throttleTimer = null;
+			}
+			doFullParse(source);
 		}
 	});
 </script>
 
-{#if result == null}
-	<div class="space-y-2">
-		{#each source.split('\n') as line}
-			<p>{line}</p>
-		{/each}
+{#if nodes.length == 0}
+	<div class="space-y-2 whitespace-pre-wrap">
+		{source}
 	</div>
 {:else}
 	<div class="space-y-2">
-		<Parser nodes={result.nodes} />
+		<Parser {nodes} />
 	</div>
 {/if}
