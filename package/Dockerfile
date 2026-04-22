@@ -68,6 +68,7 @@ LABEL org.opencontainers.image.url="https://github.com/pinkfuwa/llumen"
 LABEL org.opencontainers.image.source="https://github.com/pinkfuwa/llumen"
 LABEL org.opencontainers.image.authors="eason0729, kaiyohugo"
 LABEL org.opencontainers.image.vendor="llumen"
+LABEL org.opencontainers.image.licenses="Modified MPL-2.0"
 
 WORKDIR /static
 WORKDIR /data
