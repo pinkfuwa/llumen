@@ -31,7 +31,8 @@
 		"katex": "^0.16.45",
 		"mermaid": "^11.14.0",
 		"runed": "^0.37.1",
-		"svelte-i18n": "^4.0.1"
+		"svelte-i18n": "^4.0.1",
+		"workbox-window": "^7.4.0"
 	},
 	"devDependencies": {
 		"@internationalized/date": "^3.12.0",

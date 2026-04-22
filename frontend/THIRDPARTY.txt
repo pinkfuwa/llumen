@@ -101,3 +101,9 @@ Repository: https://github.com/kaisermann/svelte-i18n
 Publisher: Christian Kaisermann
 Email: christian@kaisermann.me
 --------------------------------------------------------------------------------
+workbox-window@7.4.0
+
+License: MIT
+Repository: https://github.com/googlechrome/workbox
+Publisher: Google's Web DevRel Team and Google's Aurora Team
+--------------------------------------------------------------------------------
