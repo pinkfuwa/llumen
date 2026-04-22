@@ -15,6 +15,10 @@ export interface IncrementalParseResult {
 }
 
 export function parseIncremental(source: string, state: Partial<IncrementalState>): AstNode[] {
+	if (state == null) {
+		state = {};
+	}
+
 	if (state.prevResult == undefined || !source.startsWith(state.prevSource || '')) {
 		const result = parseSync(source);
 		state.prevSource = source;

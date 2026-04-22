@@ -51,23 +51,19 @@ describe.skipIf(fixtures.length === 0)('codegen: incremental parsing', () => {
 			it(`${fixture.name} (chunk set ${ci}): incremental matches full parse`, () => {
 				const chunks = fixture.chunks[ci];
 				let accumulated = '';
-				let state: IncrementalState | null = null;
+				let state: Partial<IncrementalState> = {};
 
 				for (const chunk of chunks) {
 					accumulated += chunk;
-					const result = parseIncremental(accumulated, state);
-					state = result.state;
+					parseIncremental(accumulated, state);
 				}
 
 				expect(accumulated).toBe(fixture.markdown);
 
 				const fullResult = parseSync(fixture.markdown);
-				expect(state).not.toBeNull();
-				const finalIncrementalResult = state!.prevResult;
+				const incrementalResult = parseIncremental(fixture.markdown, {});
 
-				expect(serializeTree(finalIncrementalResult.nodes)).toEqual(
-					serializeTree(fullResult.nodes)
-				);
+				expect(serializeTree(incrementalResult)).toEqual(serializeTree(fullResult.nodes));
 			});
 		}
 	}
@@ -75,30 +71,33 @@ describe.skipIf(fixtures.length === 0)('codegen: incremental parsing', () => {
 
 describe('incremental: basic scenarios', () => {
 	it('full reparse when source does not start with previous', () => {
-		const result1 = parseIncremental('# Hello', null);
-		const result2 = parseIncremental('## World', result1.state);
+		const state: Partial<IncrementalState> = {};
+		const result1 = parseIncremental('# Hello', state);
+		const result2 = parseIncremental('## World', state);
 
 		// Should have done a full reparse since "## World" doesn't start with "# Hello"
-		expect(result2.result.nodes).toHaveLength(1);
-		expect(result2.result.nodes[0].type).toBe(AstNodeType.Heading);
+		expect(result2).toHaveLength(1);
+		expect(result2[0].type).toBe(AstNodeType.Heading);
 	});
 
 	it('reuses state when only whitespace is appended', () => {
-		const result1 = parseIncremental('# Hello', null);
-		const result2 = parseIncremental('# Hello\n\n', result1.state);
+		const state: Partial<IncrementalState> = {};
+		const result1 = parseIncremental('# Hello', state);
+		const result2 = parseIncremental('# Hello\n\n', state);
 
 		// Same content, just whitespace — should reuse previous result
-		expect(result2.result.nodes).toHaveLength(result1.result.nodes.length);
+		expect(result2).toHaveLength(result1.length);
 	});
 
 	it('handles streaming append of new paragraph', () => {
+		const state: Partial<IncrementalState> = {};
 		const src1 = '# Title\n\nFirst paragraph.\n\n';
-		const result1 = parseIncremental(src1, null);
+		const result1 = parseIncremental(src1, state);
 
 		const src2 = src1 + 'Second paragraph.';
-		const result2 = parseIncremental(src2, result1.state);
+		const result2 = parseIncremental(src2, state);
 
-		const paragraphs = result2.result.nodes.filter((n) => n.type === AstNodeType.Paragraph);
+		const paragraphs = result2.filter((n) => n.type === AstNodeType.Paragraph);
 		expect(paragraphs.length).toBeGreaterThanOrEqual(2);
 	});
 });
