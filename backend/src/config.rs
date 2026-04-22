@@ -16,3 +16,6 @@ pub const TOKEN_EXPIRATION_SECS: u64 = 60 * 60 * 24 * 7;
 
 // Cache size of sqlite in byte: 32MiB
 pub const DB_CACHE_SIZE: usize = 1024 * 1024 * 32;
+
+// title generation temperature
+pub const TITLE_GENERATION_TEMPERATURE: f32 = 0.2;
