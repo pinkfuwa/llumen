@@ -228,8 +228,8 @@ impl ChatClient {
             .http_client
             .post(&self.chat_completion_endpoint)
             .bearer_auth(&self.api_key)
-            .header("HTTP-Referer", super::HTTP_REFERER)
-            .header("X-Title", super::X_TITLE)
+            .header(super::HTTP_REFERER, super::LLUMEN_URL)
+            .header(super::X_TITLE, super::LLUMEN_NAME)
             .header(http::header::CONTENT_TYPE, "application/json");
 
         if !self.is_custom_api {

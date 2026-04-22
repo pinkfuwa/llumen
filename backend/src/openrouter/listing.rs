@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use protocol::{OcrEngine, ReasoningEffort};
 
-use crate::openrouter::Capability;
+use crate::openrouter::{Capability, LLUMEN_NAME};
 
-use super::{raw, Error, HTTP_REFERER, X_TITLE};
+use super::{raw, Error};
 
 #[derive(Clone)]
 pub(super) struct ModelCaps {
@@ -282,8 +282,8 @@ impl ModelListing {
             .http_client
             .get(&self.models_endpoint)
             .bearer_auth(&self.api_key)
-            .header("HTTP-Referer", HTTP_REFERER)
-            .header("X-Title", X_TITLE)
+            .header(super::HTTP_REFERER, super::LLUMEN_URL)
+            .header(super::X_TITLE, super::LLUMEN_NAME)
             .send()
             .await?;
 
@@ -378,8 +378,8 @@ impl VideoModelListing {
             .http_client
             .get(&self.models_endpoint)
             .bearer_auth(&self.api_key)
-            .header("HTTP-Referer", HTTP_REFERER)
-            .header("X-Title", X_TITLE)
+            .header(super::HTTP_REFERER, super::LLUMEN_URL)
+            .header(super::X_TITLE, LLUMEN_NAME)
             .send()
             .await?;
 

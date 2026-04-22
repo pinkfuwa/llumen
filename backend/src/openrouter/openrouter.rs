@@ -7,7 +7,7 @@ use super::listing::{ModelListing, VideoModelListing};
 use super::message::Message;
 use super::raw;
 use super::video_gen::{VideoGenClient, VideoGenerationOption, VideoModelCapability};
-use super::{CompletionOption, Error, File, Model, StreamCompletion, HTTP_REFERER, X_TITLE};
+use super::{CompletionOption, Error, File, Model, StreamCompletion, LLUMEN_URL, LLUMEN_NAME};
 use http::header::CONTENT_TYPE;
 use stream_json::IntoSerializer;
 
@@ -241,8 +241,8 @@ impl Openrouter {
             .http_client
             .post(&self.embedding_endpoint)
             .bearer_auth(&self.api_key)
-            .header("HTTP-Referer", HTTP_REFERER)
-            .header("X-Title", X_TITLE)
+            .header(super::HTTP_REFERER, LLUMEN_URL)
+            .header(super::X_TITLE, LLUMEN_NAME)
             .header(CONTENT_TYPE, "application/json");
         if let Some(len) = content_length {
             req_builder = req_builder.header(http::header::CONTENT_LENGTH, len);

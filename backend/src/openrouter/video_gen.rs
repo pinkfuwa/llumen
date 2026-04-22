@@ -194,8 +194,8 @@ impl VideoGenClient {
             .http_client
             .post(&self.videos_endpoint)
             .bearer_auth(&self.api_key)
-            .header("HTTP-Referer", super::HTTP_REFERER)
-            .header("X-Title", super::X_TITLE)
+            .header(super::HTTP_REFERER, super::LLUMEN_URL)
+            .header(super::X_TITLE, super::LLUMEN_NAME)
             .header(http::header::CONTENT_TYPE, "application/json");
 
         if let Some(len) = content_length {
@@ -232,8 +232,8 @@ impl VideoGenClient {
                 .http_client
                 .get(polling_url)
                 .bearer_auth(&self.api_key)
-                .header("HTTP-Referer", super::HTTP_REFERER)
-                .header("X-Title", super::X_TITLE)
+                .header(super::HTTP_REFERER, super::LLUMEN_URL)
+                .header(super::X_TITLE, super::LLUMEN_NAME)
                 .send()
                 .await
                 .map_err(Error::Http)?;
@@ -285,8 +285,8 @@ impl VideoGenClient {
                 .http_client
                 .get(&url)
                 .bearer_auth(&self.api_key)
-                .header("HTTP-Referer", super::HTTP_REFERER)
-                .header("X-Title", super::X_TITLE)
+                .header(super::HTTP_REFERER, super::LLUMEN_URL)
+                .header(super::X_TITLE, super::LLUMEN_NAME)
                 .send()
                 .await
                 .map_err(Error::Http)?;

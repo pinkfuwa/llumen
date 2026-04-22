@@ -7,7 +7,7 @@ use eventsource_stream::{Event, Eventsource, EventStreamError};
 use stream_json::IntoSerializer;
 use tokio_stream::{Stream, StreamExt};
 
-use super::{HTTP_REFERER, X_TITLE, error::Error, raw, GeneratedImage};
+use super::{LLUMEN_URL, LLUMEN_NAME, error::Error, raw, GeneratedImage};
 
 #[derive(Default, Clone, Debug)]
 pub struct ToolCall {
@@ -102,8 +102,8 @@ impl StreamCompletion {
         let mut builder = http_client
             .post(endpoint)
             .bearer_auth(api_key)
-            .header("HTTP-Referer", HTTP_REFERER)
-            .header("X-Title", X_TITLE)
+            .header(super::HTTP_REFERER, LLUMEN_URL)
+            .header(super::X_TITLE, LLUMEN_NAME)
             .header(CONTENT_TYPE, "application/json");
 
         if !is_custom_api {

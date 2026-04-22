@@ -12,8 +12,10 @@ mod raw;
 mod stream;
 mod video_gen;
 
-pub static HTTP_REFERER: &str = "https://pinkfuwa.github.io/llumen/";
-pub static X_TITLE: &str = "llumen";
+pub static LLUMEN_URL: &str = "https://pinkfuwa.github.io/llumen/";
+pub static LLUMEN_NAME: &str = "llumen";
+pub const HTTP_REFERER: &str = "HTTP-Referer";
+pub const X_TITLE: &str = "X-OpenRouter-Title";
 
 pub use chat::{ChatCompletion, StructuredCompletion};
 pub use error::Error;
