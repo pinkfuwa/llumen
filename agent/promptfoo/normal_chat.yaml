@@ -7,7 +7,6 @@ providers:
     label: "normal-gemma-3n"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       temperature: 0.2
       max_tokens: 2048
 
@@ -15,7 +14,6 @@ providers:
     label: "normal-gpt-oss-20b"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       temperature: 0.2
       max_tokens: 2048
 
@@ -23,7 +21,6 @@ providers:
     label: "normal-lfm-2-24b"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       temperature: 0.2
       max_tokens: 2048
 
@@ -31,7 +28,6 @@ providers:
     label: "normal-qwen35-flash"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       temperature: 0.2
       max_tokens: 2048
 
@@ -39,7 +35,6 @@ providers:
     label: "normal-glm-45-air"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       temperature: 0.2
       max_tokens: 2048
 

@@ -7,7 +7,6 @@ providers:
     label: "media-gemma-4-26b"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       max_tokens: 2048
       temperature: 0.2
       tools: &media_tools
@@ -75,7 +74,6 @@ providers:
     label: "media-gemini31-lite"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       max_tokens: 2048
       temperature: 0.2
       tools: *media_tools
@@ -84,7 +82,6 @@ providers:
   - id: openrouter:minimax/minimax-m2.5
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       max_tokens: 1024
       temperature: 0
       passthrough:

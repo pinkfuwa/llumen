@@ -4,55 +4,43 @@ description: "llumen title generation prompt regression"
 
 providers:
   - id: openrouter:google/gemma-3n-e4b-it
-    label: "title-gemma-3n"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       showThinking: false
       max_tokens: 256
       temperature: 0.2
 
   - id: openrouter:openai/gpt-oss-20b
-    label: "title-gpt-oss-20b"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       showThinking: false
       max_tokens: 256
       temperature: 0.2
 
   - id: openrouter:liquid/lfm-2-24b-a2b
-    label: "title-lfm-2-24b"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       showThinking: false
       max_tokens: 256
       temperature: 0.2
 
   - id: openrouter:qwen/qwen3.5-flash-02-23
-    label: "title-qwen3.5-flash"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       showThinking: false
       max_tokens: 256
       temperature: 0.2
 
   - id: openrouter:z-ai/glm-4.5-air
-    label: "title-glm-4.5-air"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       showThinking: false
       max_tokens: 256
       temperature: 0.2
 
   - id: openrouter:google/gemma-4-26b-a4b-it
-    label: "title-gemma-4-26b"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       showThinking: false
       max_tokens: 256
       temperature: 0.2
@@ -60,7 +48,6 @@ providers:
   - id: openrouter:google/gemini-3.1-flash-lite-preview
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       showThinking: false
       max_tokens: 256
       temperature: 0.2
@@ -68,7 +55,6 @@ providers:
   - id: openrouter:minimax/minimax-m2.5
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       showThinking: false
       max_tokens: 1024
       temperature: 0
@@ -79,8 +65,6 @@ providers:
           allow_fallbacks: false
 
 defaultTest:
-  providers:
-    - title-gemma-3n
   options:
     transformVars: file://./common_transform.js:transformTitleVars
     transform: file://./common_transform.js:transformTitleOutput
@@ -167,14 +151,20 @@ tests:
         config:
           expected: zh-tw
           threshold: 0.8
-      - type: llm-rubric
-        provider: openrouter:minimax/minimax-m2.5
-        value: |
-          Judge this title:
-          - one emoji prefix
-          - concise and single-line
-          - Traditional Chinese (Taiwan usage)
-          - semantically matches the conversation
+
+  - description: "title generation traditional chinese with different language"
+    vars:
+      user_query: "How to write openocd config?"
+      agent_answer: 'Writing an OpenOCD configuration file can feel a bit intimidating at first, but it usually follows a very logical pattern. Instead of writing everything from scratch, the standard practice is to "stack" existing scripts for your debug probe and your target chip.'
+      locale: zh-tw
+    assert:
+      - type: javascript
+        value: file://./assertions.js:assertTitleFormat
+      - type: javascript
+        value: file://./assertions.js:assertLanguageByScript
+        config:
+          expected: zh-tw
+          threshold: 0.8
 
 outputPath: ./.promptfoo/promptfoo-results-title.json
 

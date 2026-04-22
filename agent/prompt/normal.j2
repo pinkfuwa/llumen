@@ -1,7 +1,7 @@
 {% if locale == "zh-tw" %}
 <language>
-Respond in Traditional Chinese (繁體中文, 台灣用語) unless the user instructs otherwise.
-{% if "qwen" in model_id or "kimi" in model_id %}
+Respond only in Traditional Chinese used in Taiwan unless the user instructs otherwise.
+{% if "qwen" in model_id or "kimi" in model_id or "glm" in model_id %}
 Traditional Chinese commonly used in Taiwan:
 - Use full-width punctuation marks and add spaces between Chinese and English text.
 - The following is a table of common Taiwanese terms (English -> Traditional Chinese):
@@ -26,10 +26,11 @@ Traditional Chinese commonly used in Taiwan:
   * Function = 函式
   * document = 文件
   * realtime = 即時
+Never use Simplified Chinese or PRC-style wording. Output only the final answer; do not output analysis, meta commentary, or English reasoning.
 {% endif %}</language>
 {% elif locale == "zh-cn" %}
 <language>
-Respond in Simplified Chinese (简体中文) unless the user instructs otherwise.
+Respond only in Simplified Chinese (简体中文) unless the user instructs otherwise.
 </language>
 {% else %}
 <language>

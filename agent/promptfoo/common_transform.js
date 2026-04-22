@@ -28,7 +28,10 @@ const stripReasoningPreamble = (value) => {
   const normalized = value.replace(/\r\n/g, "\n");
   const lines = normalized.split("\n");
 
-  while (lines.length > 0 && /^(thinking|reasoning)\s*:/i.test(lines[0].trim())) {
+  while (
+    lines.length > 0 &&
+    /^(thinking|reasoning)\s*:/i.test(lines[0].trim())
+  ) {
     lines.shift();
     while (lines.length > 0 && lines[0].trim() === "") {
       lines.shift();
@@ -135,11 +138,11 @@ const transformNormalVars = (vars, context) => {
 
   const imageParams = normalizeParameterList(
     vars.image_model_supported_parameters,
-    DEFAULT_IMAGE_PARAMETERS
+    DEFAULT_IMAGE_PARAMETERS,
   );
   const videoParams = normalizeParameterList(
     vars.video_model_supported_parameters,
-    DEFAULT_VIDEO_PARAMETERS
+    DEFAULT_VIDEO_PARAMETERS,
   );
 
   return {
@@ -161,11 +164,11 @@ const transformMediaVars = (vars, context) => {
 
   const imageParams = normalizeParameterList(
     vars.image_model_supported_parameters,
-    DEFAULT_IMAGE_PARAMETERS
+    DEFAULT_IMAGE_PARAMETERS,
   );
   const videoParams = normalizeParameterList(
     vars.video_model_supported_parameters,
-    DEFAULT_VIDEO_PARAMETERS
+    DEFAULT_VIDEO_PARAMETERS,
   );
 
   return {
@@ -199,7 +202,9 @@ const transformTitleVars = (vars, context) => {
 const transformTitleOutput = (output, context) => {
   let title = typeof output === "string" ? output : String(output ?? "");
   if (!title) {
-    title = String(context?.vars?.user_query || context?.vars?.user_prompt || "");
+    title = String(
+      context?.vars?.user_query || context?.vars?.user_prompt || "",
+    );
   }
 
   title = stripReasoningPreamble(title).replace(THINKING_REGEX, "");

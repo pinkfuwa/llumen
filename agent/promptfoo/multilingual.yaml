@@ -6,33 +6,28 @@ providers:
   - id: openrouter:google/gemma-3n-e4b-it
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       max_tokens: 2048
 
   - id: openrouter:openai/gpt-oss-20b
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       max_tokens: 2048
 
   - id: openrouter:liquid/lfm-2-24b-a2b
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       max_tokens: 4096
 
   - id: openrouter:qwen/qwen3.5-flash-02-23
     label: "mainland"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       max_tokens: 8192
 
   - id: openrouter:z-ai/glm-4.5-air
     label: "mainland"
     config:
       apiBaseUrl: https://openrouter.ai/api/v1
-      apiKeyEnvar: API_KEY
       max_tokens: 8192
 
 defaultTest:

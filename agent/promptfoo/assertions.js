@@ -1,11 +1,15 @@
-const OpenCC = require('opencc-js');
+const OpenCC = require("opencc-js");
 
 const TRADITIONAL_ONLY_CHARS = new Set(
-  Array.from("體臺灣網開關於點數據設計這樣與應讓為務裡專業總結產業機會導覽標題優勢學習變電腦資源還報導證據願景觀點")
+  Array.from(
+    "體臺灣網開關於點數據設計這樣與應讓為務裡專業總結產業機會導覽標題優勢學習變電腦資源還報導證據願景觀點",
+  ),
 );
 
 const SIMPLIFIED_ONLY_CHARS = new Set(
-  Array.from("体台湾网开关于点数据设计这样与应让为务里专业总结产业机会导览标题优势学习变电脑资源还报道证据愿景观点")
+  Array.from(
+    "体台湾网开关于点数据设计这样与应让为务里专业总结产业机会导览标题优势学习变电脑资源还报道证据愿景观点",
+  ),
 );
 
 const CJK_REGEX = /[\u3400-\u9fff]/g;
@@ -58,10 +62,10 @@ const countCharDiffs = (left, right) => {
 const convertChineseVariant = (text, targetLocale) => {
   const locale = normalizeLocale(targetLocale);
   if (locale === "zh-tw") {
-    return OpenCC.Converter({ from: 'cn', to: 'tw' })(text);
+    return OpenCC.Converter({ from: "cn", to: "tw" })(text);
   }
   if (locale === "zh-cn") {
-    return OpenCC.Converter({ from: 'tw', to: 'cn' })(text);
+    return OpenCC.Converter({ from: "tw", to: "cn" })(text);
   }
 
   return text;
@@ -209,7 +213,10 @@ const detectLanguageRatio = (text, expected, threshold) => {
 function assertNoTaskTag(output) {
   const text = asText(output);
   const hasTaskTag = /<\/?task>/i.test(text);
-  return grade(!hasTaskTag, hasTaskTag ? "Found <task> tag." : "No <task> tag.");
+  return grade(
+    !hasTaskTag,
+    hasTaskTag ? "Found <task> tag." : "No <task> tag.",
+  );
 }
 
 function assertLanguageByScript(output, context) {
@@ -237,7 +244,7 @@ function assertChineseOpenccChangeLimit(output, context) {
 
   return grade(
     changes <= maxChanges,
-    `OpenCC conversion to ${expected} changed ${changes} chars (max ${maxChanges}).`
+    `OpenCC conversion to ${expected} changed ${changes} chars (max ${maxChanges}).`,
   );
 }
 
@@ -289,13 +296,16 @@ function assertToolName(output, context) {
   const firstName = toolCalls[0]?.function?.name || toolCalls[0]?.name || "";
   return grade(
     firstName === expectedName,
-    `Tool name=${firstName || "<empty>"}, expected=${expectedName}`
+    `Tool name=${firstName || "<empty>"}, expected=${expectedName}`,
   );
 }
 
 function assertNoToolCall(output) {
   const toolCalls = parseToolCalls(output);
-  return grade(toolCalls.length === 0, toolCalls.length === 0 ? "No tool call." : "Unexpected tool call.");
+  return grade(
+    toolCalls.length === 0,
+    toolCalls.length === 0 ? "No tool call." : "Unexpected tool call.",
+  );
 }
 
 function assertMediaPromptLanguage(output, context) {
@@ -313,7 +323,10 @@ function assertMediaPromptLanguage(output, context) {
   const latinRatio = latinCount / denominator;
 
   if (latinRatio < threshold) {
-    return grade(false, `Prompt is not mostly English. ratio=${latinRatio.toFixed(2)}`);
+    return grade(
+      false,
+      `Prompt is not mostly English. ratio=${latinRatio.toFixed(2)}`,
+    );
   }
 
   if (cjkCount > 0 && (locale === "zh-cn" || locale === "zh-tw")) {
@@ -323,13 +336,20 @@ function assertMediaPromptLanguage(output, context) {
     }
   }
 
-  return grade(true, `Prompt language check passed. English ratio=${latinRatio.toFixed(2)}`);
+  return grade(
+    true,
+    `Prompt language check passed. English ratio=${latinRatio.toFixed(2)}`,
+  );
 }
 
 function assertTitleFormat(output) {
   const text = asText(output).trim();
   if (!text) {
     return grade(false, "Title is empty.");
+  }
+
+  if (text.includes("``")) {
+    return grade(false, "Title contain codeblock");
   }
 
   if (text.includes("\n")) {
@@ -343,7 +363,9 @@ function assertTitleFormat(output) {
 
   const hasSingleEmojiPrefix =
     (/\p{Extended_Pictographic}/u.test(first) && second === " ") ||
-    (isRegionalIndicator(first) && isRegionalIndicator(second) && third === " ");
+    (isRegionalIndicator(first) &&
+      isRegionalIndicator(second) &&
+      third === " ");
 
   if (!hasSingleEmojiPrefix) {
     return grade(false, "Title must start with one emoji and a space.");
