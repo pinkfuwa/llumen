@@ -123,12 +123,11 @@ impl ChatClient {
         let mut plugins = Vec::new();
         let mut modalities = Vec::new();
 
-        let web_search_options = if option.insert_web_search_context && !self.is_custom_api {
-            Some(raw::WebSearchOptions {
+        let web_search_options = match option.insert_web_search_context && self.is_custom_api {
+            true => None,
+            false => Some(raw::WebSearchOptions {
                 search_context_size: "medium".to_string(),
-            })
-        } else {
-            None
+            }),
         };
 
         if !self.is_custom_api {
