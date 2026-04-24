@@ -18,9 +18,6 @@ export default defineConfig({
 	worker: {
 		format: 'es'
 	},
-	esbuild: {
-		legalComments: 'external'
-	},
 	server: {
 		allowedHosts: ['.trycloudflare.com'] // allows example.com, foo.example.com, etc.
 	}
