@@ -3,6 +3,7 @@
 		"account": {
 			"general": "General",
 			"password": "Password",
+			"confirm_password": "Confirm Password",
 			"error_sync_preference": "Error syncing preference",
 			"error_updating_password": "Error updating password",
 			"enter_new_password": "Enter new password"
@@ -13,7 +14,8 @@
 			"user_created": "User {username} created",
 			"type_password_for_user": "Type password for {username}",
 			"user": "User",
-			"created": "created"
+			"created": "created",
+			"error_creating_user": "Error creating user"
 		},
 		"title": "settings",
 		"setting": "Setting",
@@ -23,6 +25,7 @@
 		"disable": "Disable",
 		"enable": "Enable",
 		"change_password": "Change Password",
+		"confirm": "Confirm",
 		"account_settings": "Account Settings",
 		"admin_settings": "Admin Settings",
 		"logout": "Logout",

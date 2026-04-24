@@ -3,6 +3,7 @@
 		"account": {
 			"general": "通用",
 			"password": "密码",
+			"confirm_password": "确认密码",
 			"error_sync_preference": "同步偏好设置时发生错误",
 			"error_updating_password": "更新密码时发生错误",
 			"enter_new_password": "输入新密码"
@@ -13,7 +14,8 @@
 			"user_created": "已创建用户 {username}",
 			"type_password_for_user": "为 {username} 输入密码",
 			"user": "用户",
-			"created": "已创建"
+			"created": "已创建",
+			"error_creating_user": "创建用户时发生错误"
 		},
 		"title": "设置",
 		"setting": "设置",
@@ -23,6 +25,7 @@
 		"disable": "关闭",
 		"enable": "启用",
 		"change_password": "更改密码",
+		"confirm": "确认",
 		"account_settings": "账号设置",
 		"admin_settings": "管理员设置",
 		"logout": "登出",

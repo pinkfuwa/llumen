@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { ChevronDown } from '@lucide/svelte';
 	import { Select } from 'bits-ui';
-	import { cubicOut } from 'svelte/easing';
 	import type { ClassValue } from 'svelte/elements';
 
 	let {
@@ -31,16 +30,6 @@
 		}
 		return fallback;
 	});
-
-	function autoScrollDelay(tick: number) {
-		const maxDelay = 200;
-		const minDelay = 25;
-		const steps = 30;
-
-		const progress = Math.min(tick / steps, 1);
-		// Use the cubicOut easing function from svelte/easing
-		return maxDelay - (maxDelay - minDelay) * cubicOut(progress);
-	}
 </script>
 
 <Select.Root

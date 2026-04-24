@@ -88,14 +88,14 @@
 						</button>
 					</div>
 				</Tabs.List>
-				<div class="h-full w-full min-w-0 flex-1 justify-center p-3">
-					<Tabs.Content value="account">
+				<div class="flex h-full w-full min-w-0 flex-1 flex-col justify-center overflow-hidden p-3">
+					<Tabs.Content value="account" class="flex h-full flex-col overflow-auto">
 						<Dialog.Title class="pb-6 text-center text-xl">
 							{$_('setting.account_settings')}
 						</Dialog.Title>
 						<Account />
 					</Tabs.Content>
-					<Tabs.Content value="admin">
+					<Tabs.Content value="admin" class="flex h-full flex-col overflow-auto">
 						<Dialog.Title class="pb-6 text-center text-xl">
 							{$_('setting.admin_settings')}
 						</Dialog.Title>
