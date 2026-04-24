@@ -10,6 +10,7 @@ use base64::engine::Engine;
 pub struct File {
     pub name: String,
     pub data: BlobReader,
+    pub mime_type: Option<String>,
 }
 
 fn file_to_parts(

@@ -84,6 +84,7 @@ pub fn token_to_sse(token: Token) -> Option<SseResp> {
 pub fn history_to_openrouter(
     history: &[message::Model],
     blob: &crate::utils::blob::BlobDB,
+    file_mime_types: &[(i32, Option<String>)],
 ) -> Vec<openrouter::Message> {
     let mut messages = Vec::new();
 
@@ -97,9 +98,14 @@ pub fn history_to_openrouter(
                         .iter()
                         .filter_map(|f| {
                             let reader = blob.get(f.id)?;
+                            let mime_type = file_mime_types
+                                .iter()
+                                .find(|(existing_id, _)| *existing_id == f.id)
+                                .and_then(|(_, mime_type)| mime_type.clone());
                             Some(openrouter::File {
                                 name: f.name.clone(),
                                 data: reader.into(),
+                                mime_type,
                             })
                         })
                         .collect();

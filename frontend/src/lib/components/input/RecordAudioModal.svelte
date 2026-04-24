@@ -15,30 +15,46 @@
 	let recordingTime = $state(0);
 	let recordingInterval: number | null = null;
 	let shouldSaveRecording = false;
+	let recordingError = $state('');
+
+	const supportedAudioMimeTypes = [
+		'audio/mp4;codecs=mp4a.40.2',
+		'audio/mp4',
+		'audio/aac',
+		'audio/mpeg',
+		'audio/ogg;codecs=opus',
+		'audio/ogg',
+		'audio/wav'
+	];
 
 	function getSupportedAudioMimeType(): string {
-		const types = [
-			'audio/webm;codecs=opus',
-			'audio/webm',
-			'audio/ogg;codecs=opus',
-			'audio/ogg;codecs=vorbis',
-			'audio/ogg',
-			'audio/mp4',
-			'audio/aac',
-			'audio/mpeg',
-			'audio/x-m4a',
-			'audio/m4a',
-			'audio/flac',
-			'audio/wav'
-		];
-
-		for (const type of types) {
+		for (const type of supportedAudioMimeTypes) {
 			if (MediaRecorder.isTypeSupported(type)) {
 				return type;
 			}
 		}
 
-		return 'audio/webm';
+		return '';
+	}
+
+	function getAudioFileExtension(mimeType: string): string {
+		const rawType = mimeType.split('/')[1]?.split(';')[0] ?? '';
+
+		switch (rawType) {
+			case 'mp4':
+			case 'aac':
+			case 'x-m4a':
+			case 'm4a':
+				return 'm4a';
+			case 'mpeg':
+				return 'mp3';
+			case 'ogg':
+				return 'ogg';
+			case 'wav':
+				return 'wav';
+			default:
+				return rawType || 'm4a';
+		}
 	}
 
 	function formatTime(seconds: number): string {
@@ -64,10 +80,18 @@
 
 	async function startRecording() {
 		try {
+			recordingError = '';
 			shouldSaveRecording = false;
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			const mimeType = getSupportedAudioMimeType();
-			mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+			if (!mimeType) {
+				stream.getTracks().forEach((track) => track.stop());
+				recordingError =
+					'This browser only supports audio recording formats llumen cannot upload yet. Please use a browser that supports audio/mp4, audio/aac, audio/mpeg, audio/ogg, or audio/wav.';
+				return;
+			}
+
+			mediaRecorder = new MediaRecorder(stream, { mimeType });
 			audioChunks = [];
 
 			mediaRecorder.ondataavailable = (event) => {
@@ -82,19 +106,7 @@
 				}
 
 				const audioBlob = new Blob(audioChunks, { type: mimeType });
-				const extMap: Record<string, string> = {
-					mp4: 'm4a',
-					aac: 'm4a',
-					'x-m4a': 'm4a',
-					m4a: 'm4a',
-					mpeg: 'mp3',
-					flac: 'flac',
-					webm: 'webm',
-					ogg: 'ogg',
-					wav: 'wav'
-				};
-				const rawExt = mimeType.split('/')[1]?.split(';')[0] ?? 'webm';
-				const ext = extMap[rawExt] ?? rawExt;
+				const ext = getAudioFileExtension(mimeType);
 				const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 				const audioFile = new File([audioBlob], `recording-${timestamp}.${ext}`, {
 					type: mimeType
@@ -113,6 +125,7 @@
 			}, 1000) as unknown as number;
 		} catch (error) {
 			console.error('Failed to start recording:', error);
+			recordingError = 'Failed to start audio recording.';
 		}
 	}
 
@@ -143,6 +156,11 @@
 			<p>
 				{$_('chat.record_audio_dialog.description')}
 			</p>
+			{#if recordingError}
+				<p class="border-warning/40 bg-warning/10 text-warning rounded-md border px-3 py-2 text-sm">
+					{recordingError}
+				</p>
+			{/if}
 			{#if isRecording}
 				<div class="flex flex-col items-center gap-4 py-6">
 					<div

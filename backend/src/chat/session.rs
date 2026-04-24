@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use anyhow::{Context as _, Result};
 use ::entity::{chat, message, prelude::*, user};
+use ::entity::file;
 use ::entity::model as entity_model;
 use futures_util::TryStreamExt;
 use protocol::*;
@@ -42,6 +43,7 @@ pub struct CompletionSession {
     pub chat: chat::Model,
     pub message: message::Model,
     pub(super) history: Vec<message::Model>,
+    file_mime_types: Vec<(i32, Option<String>)>,
     cost: f32,
     token_count: i32,
     publisher: super::channel::Publisher<Token>,
@@ -49,6 +51,70 @@ pub struct CompletionSession {
 }
 
 impl CompletionSession {
+    fn collect_history_file_ids(history: &[message::Model]) -> Vec<i32> {
+        let mut file_ids = Vec::new();
+
+        for record in history {
+            match &record.inner {
+                MessageInner::User { files, .. } => {
+                    file_ids.extend(files.iter().map(|file| file.id));
+                }
+                MessageInner::Assistant(chunks) => {
+                    for chunk in chunks {
+                        if let AssistantChunk::ToolResult { files, .. } = chunk {
+                            file_ids.extend(files.iter().map(|file| file.id));
+                        }
+                    }
+                }
+            }
+        }
+
+        file_ids.sort_unstable();
+        file_ids.dedup();
+        file_ids
+    }
+
+    async fn load_history_file_mime_types(
+        db: &DatabaseConnection,
+        history: &[message::Model],
+    ) -> Result<Vec<(i32, Option<String>)>> {
+        let file_ids = Self::collect_history_file_ids(history);
+        if file_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let records = file::Entity::find()
+            .select_only()
+            .column(file::Column::Id)
+            .column(file::Column::MimeType)
+            .filter(file::Column::Id.is_in(file_ids))
+            .into_tuple::<(i32, Option<String>)>()
+            .all(db)
+            .await?;
+
+        Ok(records)
+    }
+
+    fn set_file_mime_type(&mut self, file_id: i32, mime_type: Option<String>) {
+        if let Some((_, existing_mime_type)) = self
+            .file_mime_types
+            .iter_mut()
+            .find(|(existing_id, _)| *existing_id == file_id)
+        {
+            *existing_mime_type = mime_type;
+            return;
+        }
+
+        self.file_mime_types.push((file_id, mime_type));
+    }
+
+    pub fn file_mime_type(&self, file_id: i32) -> Option<&str> {
+        self.file_mime_types
+            .iter()
+            .find(|(existing_id, _)| *existing_id == file_id)
+            .and_then(|(_, mime_type)| mime_type.as_deref())
+    }
+
     /// Loads user, chat, model, and history from the database.
     pub async fn new(
         ctx: Arc<Context>,
@@ -87,6 +153,8 @@ impl CompletionSession {
             .order_by_asc(message::Column::Id)
             .all(db)
             .await?;
+
+        let file_mime_types = Self::load_history_file_mime_types(db, &history).await?;
 
         // Create a placeholder assistant message that strategies will populate.
         let new_msg = message::ActiveModel {
@@ -134,6 +202,7 @@ impl CompletionSession {
             chat,
             message,
             history,
+            file_mime_types,
             cost: 0.0,
             token_count: 0,
             publisher,
@@ -192,7 +261,8 @@ impl CompletionSession {
         let mut messages = vec![openrouter::Message::System(system_prompt)];
 
         // 2. Previous messages (from DB → openrouter format)
-        let history_msgs = converter::history_to_openrouter(&self.history, &ctx.blob);
+        let history_msgs =
+            converter::history_to_openrouter(&self.history, &ctx.blob, &self.file_mime_types);
         messages.extend(history_msgs);
 
         // 3. Context injection as USER message BEFORE the last user query
@@ -443,7 +513,7 @@ impl CompletionSession {
         Some(file_id)
     }
 
-    pub async fn store_blob_file(&self, img: &openrouter::GeneratedImage) -> Result<i32> {
+    pub async fn store_blob_file(&mut self, img: &openrouter::GeneratedImage) -> Result<i32> {
         let size = img.data.len();
 
         use ::entity::file;
@@ -462,10 +532,14 @@ impl CompletionSession {
 
         let byte_stream = tokio_stream::iter(vec![bytes::Bytes::from(img.data.clone())]);
         self.ctx.blob.insert(file_id, size, byte_stream).await?;
+        self.set_file_mime_type(file_id, Some(img.mime_type.clone()));
         Ok(file_id)
     }
 
-    pub async fn store_blob_video(&self, video: &mut openrouter::GeneratedVideo) -> Result<i32> {
+    pub async fn store_blob_video(
+        &mut self,
+        video: &mut openrouter::GeneratedVideo,
+    ) -> Result<i32> {
         let mime_type = video
             .mime_type
             .clone()
@@ -475,7 +549,7 @@ impl CompletionSession {
         let file_record = file::ActiveModel {
             chat_id: Set(Some(self.chat.id)),
             owner_id: Set(None),
-            mime_type: Set(Some(mime_type)),
+            mime_type: Set(Some(mime_type.clone())),
             valid_until: Set(None),
             ..Default::default()
         };
@@ -575,6 +649,8 @@ impl CompletionSession {
             }
             return Err(error);
         }
+
+        self.set_file_mime_type(file_id, Some(mime_type));
 
         Ok(file_id)
     }

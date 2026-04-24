@@ -255,6 +255,7 @@ async fn execute_generate_image(
             Some(reader) => Some(openrouter::File {
                 name: file_meta.name,
                 data: reader.into(),
+                mime_type: session.file_mime_type(file_meta.id).map(str::to_string),
             }),
             None => {
                 missing_files.push(file_meta.name);
@@ -355,6 +356,7 @@ async fn execute_generate_video(
             Some(reader) => Some(openrouter::File {
                 name: file_meta.name,
                 data: reader.into(),
+                mime_type: session.file_mime_type(file_meta.id).map(str::to_string),
             }),
             None => {
                 missing_files.push(file_meta.name);

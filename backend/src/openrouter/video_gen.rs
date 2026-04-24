@@ -153,7 +153,11 @@ impl VideoGenClient {
     }
 
     fn map_reference_file(file: File) -> Result<raw::VideoInputReference, Error> {
-        let File { name: _, data } = file;
+        let File {
+            name: _,
+            data,
+            mime_type: _,
+        } = file;
         let data_len = data.len();
 
         if let Some(mime_type) = Self::detect_image_mime_type(data.as_ref()) {

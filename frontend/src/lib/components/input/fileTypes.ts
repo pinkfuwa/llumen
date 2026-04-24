@@ -23,7 +23,7 @@ const IMAGE_TYPES = [
 	'heif'
 ];
 
-const AUDIO_TYPES = ['audio/*'];
+const AUDIO_TYPES = ['audio/*', 'm4a', 'ogg'];
 
 const VIDEO_TYPES = ['mp4', 'mpeg', 'mov', 'webm'];
 

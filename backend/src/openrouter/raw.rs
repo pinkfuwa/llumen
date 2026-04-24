@@ -11,26 +11,70 @@ use stream_json::serializers::PlainText;
 
 use crate::utils::blob::BlobReader;
 
-fn detect_audio_format(data: &[u8]) -> String {
-    match data {
-        [0x1A, 0x45, 0xDF, 0xA3, ..] => "webm".to_string(),
-        [0x4F, 0x67, 0x67, 0x53, ..] => "ogg".to_string(),
-        [0x49, 0x44, 0x33, ..] => "mp3".to_string(),
-        [0xFF, 0xFB, ..] | [0xFF, 0xF3, ..] | [0xFF, 0xFA, ..] => "mp3".to_string(),
-        _ => if infer::audio::is_wav(data) {
-            "wav"
-        } else if infer::audio::is_flac(data) {
-            "flac"
-        } else if infer::audio::is_aac(data) {
-            "aac"
-        } else if infer::audio::is_m4a(data) {
-            "m4a"
-        } else if infer::audio::is_aiff(data) {
-            "aiff"
-        } else {
-            "opus"
+fn file_extension(name: &str) -> Option<&str> {
+    name.rsplit_once('.')
+        .map(|(_, extension)| extension)
+        .filter(|extension| !extension.is_empty())
+}
+
+fn parse_audio_format_from_mime(mime_type: &str) -> Option<&'static str> {
+    match mime_type {
+        "audio/wav" | "audio/x-wav" => Some("wav"),
+        "audio/mpeg" | "audio/mp3" => Some("mp3"),
+        "audio/aiff" | "audio/x-aiff" => Some("aiff"),
+        "audio/aac" => Some("aac"),
+        "audio/ogg" => Some("ogg"),
+        "audio/flac" | "audio/x-flac" => Some("flac"),
+        "audio/mp4" | "audio/x-m4a" | "audio/m4a" => Some("m4a"),
+        _ => None,
+    }
+}
+
+fn detect_audio_format(data: &[u8], mime_type: Option<&str>, name: &str) -> Option<String> {
+    if let Some(mime_type) = mime_type {
+        if let Some(format) = parse_audio_format_from_mime(mime_type) {
+            return Some(format.to_string());
         }
-        .to_string(),
+    }
+
+    // `infer` follows strict container definitions.
+    // For audio-only MPEG-4, many browsers report `audio/mp4` while bytes still
+    // look like a generic MP4 container. In those cases we use MIME type first.
+    if data.starts_with(&[0x1A, 0x45, 0xDF, 0xA3]) {
+        return None;
+    }
+    if data.starts_with(&[0x4F, 0x67, 0x67, 0x53]) {
+        return Some("ogg".to_string());
+    }
+    if data.starts_with(&[0x49, 0x44, 0x33])
+        || data.starts_with(&[0xFF, 0xFB])
+        || data.starts_with(&[0xFF, 0xF3])
+        || data.starts_with(&[0xFF, 0xFA])
+    {
+        return Some("mp3".to_string());
+    }
+
+    if infer::audio::is_wav(data) {
+        Some("wav".to_string())
+    } else if infer::audio::is_flac(data) {
+        Some("flac".to_string())
+    } else if infer::audio::is_aac(data) {
+        Some("aac".to_string())
+    } else if infer::audio::is_m4a(data) {
+        Some("m4a".to_string())
+    } else if infer::audio::is_aiff(data) {
+        Some("aiff".to_string())
+    } else {
+        match file_extension(name) {
+            Some("wav") => Some("wav".to_string()),
+            Some("mp3") => Some("mp3".to_string()),
+            Some("aiff") | Some("aif") => Some("aiff".to_string()),
+            Some("aac") => Some("aac".to_string()),
+            Some("ogg") => Some("ogg".to_string()),
+            Some("flac") => Some("flac".to_string()),
+            Some("m4a") => Some("m4a".to_string()),
+            _ => None,
+        }
     }
 }
 
@@ -60,7 +104,23 @@ fn is_plain_text(data: &[u8]) -> bool {
     !data.is_empty() && std::str::from_utf8(data).is_ok()
 }
 
-fn detect_video_format(data: &[u8]) -> Option<String> {
+fn parse_video_format_from_mime(mime_type: &str) -> Option<&'static str> {
+    match mime_type {
+        "video/mp4" => Some("mp4"),
+        "video/quicktime" => Some("mov"),
+        "video/mpeg" => Some("mpeg"),
+        "video/webm" => Some("webm"),
+        _ => None,
+    }
+}
+
+fn detect_video_format(data: &[u8], mime_type: Option<&str>, name: &str) -> Option<String> {
+    if let Some(mime_type) = mime_type {
+        if let Some(format) = parse_video_format_from_mime(mime_type) {
+            return Some(format.to_string());
+        }
+    }
+
     if data.len() >= 12 && data[4..8] == *b"ftyp" {
         let brand = &data[8..12];
         if brand.starts_with(b"qt") {
@@ -76,7 +136,13 @@ fn detect_video_format(data: &[u8]) -> Option<String> {
     } else if data.starts_with(&[0x1A, 0x45, 0xDF, 0xA3]) {
         Some("webm".to_string())
     } else {
-        None
+        match file_extension(name) {
+            Some("mov") => Some("mov".to_string()),
+            Some("mp4") => Some("mp4".to_string()),
+            Some("mpeg") | Some("mpg") => Some("mpeg".to_string()),
+            Some("webm") => Some("webm".to_string()),
+            _ => None,
+        }
     }
 }
 
@@ -328,17 +394,31 @@ impl MessagePart {
     }
 
     pub fn from_file(file: super::message::File) -> Vec<Self> {
-        let super::message::File { name, data } = file;
+        let super::message::File {
+            name,
+            data,
+            mime_type,
+        } = file;
+
+        let normalized_mime_type = mime_type.as_deref().map(str::to_ascii_lowercase);
+        let mime_type = normalized_mime_type.as_deref();
 
         let data_len = data.len();
 
-        if infer::is_audio(data.as_ref()) {
-            let format = detect_audio_format(data.as_ref());
+        if let Some(format) = detect_audio_format(data.as_ref(), mime_type, &name) {
             let embed_file = Base64EmbedFile::new(data, data_len).unwrap();
             vec![
                 Self::text(format!("\nUploaded file: {}", name)),
                 Self::input_audio(format, embed_file),
             ]
+        } else if mime_type
+            .map(|value| value.starts_with("audio/"))
+            .unwrap_or(false)
+        {
+            vec![Self::text(format!(
+                "\nUploaded file: {}\nUnsupported audio format for OpenRouter. Try wav, mp3, ogg, flac, aac, or m4a.\n",
+                name
+            ))]
         } else if detect_pdf(data.as_ref()) {
             let embed_file =
                 Base64EmbedURL::new(data, data_len, "application/pdf".to_string()).unwrap();
@@ -353,7 +433,7 @@ impl MessagePart {
                 Self::text(format!("\nUploaded file: {}", name)),
                 Self::image_data(embed_file),
             ]
-        } else if let Some(format) = detect_video_format(data.as_ref()) {
+        } else if let Some(format) = detect_video_format(data.as_ref(), mime_type, &name) {
             let mime_type = format!("video/{}", format);
             let embed_file = Base64EmbedURL::new(data, data_len, mime_type).unwrap();
             vec![
