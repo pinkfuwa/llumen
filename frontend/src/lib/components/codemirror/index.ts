@@ -40,10 +40,6 @@ export default function useCodeMirror(option: {
 			padding: '0.25rem 0 !important',
 			fontSize: '0.95rem !important',
 			zIndex: '1000 !important',
-			position: 'relative !important',
-			top: '100% !important',
-			left: '0 !important',
-			right: '0 !important',
 			fontFamily:
 				'var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace) !important',
 			overflowX: 'hidden !important'
