@@ -277,13 +277,10 @@ dependencies = [
  "futures-util",
  "getrandom 0.3.4",
  "html2text",
- "html5ever 0.35.0",
  "http",
  "image",
  "infer",
- "ipnetwork",
  "log",
- "log_err",
  "migration",
  "mimalloc",
  "minijinja",
@@ -291,7 +288,6 @@ dependencies = [
  "pasetors",
  "protocol",
  "redb",
- "regex",
  "reqwest",
  "rust-argon2",
  "rust-embed-for-web",
@@ -2064,12 +2060,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d98f6fed1fde3f8c21bc40a1abb88dd75e67924f9cffc3ef95607bad8017f8e2"
 
 [[package]]
-name = "ipnetwork"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf370abdafd54d13e54a620e8c3e1145f28e46cc9d704bc6d94414559df41763"
-
-[[package]]
 name = "iri-string"
 version = "0.7.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2238,15 +2228,6 @@ name = "log"
 version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
-
-[[package]]
-name = "log_err"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2829e80508da18227e53a791bbe19018306f3f400bba439bc9959e9faa860f7"
-dependencies = [
- "log",
-]
 
 [[package]]
 name = "lru"
