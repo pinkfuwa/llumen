@@ -1,3 +1,5 @@
+#![cfg(feature = "deep-research")]
+
 //! Main Lua runner implementation with tree-based state caching.
 
 use super::{ExecutionResult, LuaRunnerConfig, LuaRunnerError, Result};

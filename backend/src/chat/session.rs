@@ -255,7 +255,16 @@ impl CompletionSession {
                 &image_model_supported_parameters,
                 &video_model_supported_parameters,
             )?,
+            #[cfg(feature = "deep-research")]
             ModeKind::Research => ctx.prompt.render_coordinator(locale)?,
+            #[cfg(not(feature = "deep-research"))]
+            ModeKind::Research => ctx.prompt.render_normal(
+                locale,
+                &self.model.config.display_name,
+                model_id,
+                "",
+                &model_supported_parameters,
+            )?,
         };
 
         let mut messages = vec![openrouter::Message::System(system_prompt)];

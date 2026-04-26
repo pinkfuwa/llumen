@@ -5,13 +5,16 @@ use std::sync::Arc;
 // TODO: make duckduckgo(web_search) tool stateful(reuse same reqwest client
 // with flyweight)
 pub(crate) mod crawl;
+#[cfg(feature = "deep-research")]
 pub(crate) mod lua;
 pub(crate) mod media;
 #[allow(unused)]
+#[cfg(feature = "deep-research")]
 pub(crate) mod runner;
 pub(crate) mod web_search;
 
 pub(crate) use crawl::{CrawlTool, get_crawl_tool_def};
+#[cfg(feature = "deep-research")]
 pub(crate) use lua::{LuaReplTool, get_lua_repl_def};
 pub(crate) use media::{get_generate_image_tool_def, get_generate_video_tool_def};
 pub(crate) use web_search::{WebSearchTool, get_web_search_tool_def};
@@ -28,6 +31,7 @@ pub(crate) use web_search::{WebSearchTool, get_web_search_tool_def};
 pub struct Tools {
     pub(crate) web_search: Arc<WebSearchTool>,
     pub(crate) crawl: Arc<CrawlTool>,
+    #[cfg(feature = "deep-research")]
     pub(crate) lua_repl: Arc<LuaReplTool>,
 }
 
@@ -37,6 +41,7 @@ impl Tools {
         Self {
             web_search: Arc::new(WebSearchTool::new()),
             crawl: Arc::new(CrawlTool::new()),
+            #[cfg(feature = "deep-research")]
             lua_repl: Arc::new(LuaReplTool::new()),
         }
     }
@@ -60,12 +65,18 @@ impl Tools {
     ///
     /// Always includes crawl, optionally includes web_search if need_search is
     /// true.
+    #[cfg(feature = "deep-research")]
     pub fn for_deep_mode(&self, need_search: bool) -> Vec<crate::openrouter::Tool> {
         let mut tools = vec![get_crawl_tool_def()];
         if need_search {
             tools.push(get_web_search_tool_def());
         }
         tools
+    }
+
+    #[cfg(not(feature = "deep-research"))]
+    pub fn for_deep_mode(&self, _need_search: bool) -> Vec<crate::openrouter::Tool> {
+        vec![]
     }
 
     pub fn for_media_mode(
@@ -82,6 +93,7 @@ impl Tools {
         tools
     }
 
+    #[cfg(feature = "deep-research")]
     /// Returns the handoff tool for the coordinator to trigger deep research.
     pub fn get_deep_research_def(&self) -> crate::openrouter::Tool {
         crate::openrouter::Tool {

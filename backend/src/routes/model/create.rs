@@ -54,7 +54,7 @@ pub async fn route(
                 audio_input: caps.audio,
                 video_input: caps.video_input,
                 other_file_input: caps.ocr != OcrEngine::Disabled,
-                tool: caps.toolcall,
+                tool: cfg!(feature = "deep-research") && caps.toolcall,
                 display_name: config.display_name,
             }))
         }

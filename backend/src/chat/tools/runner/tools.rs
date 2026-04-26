@@ -1,3 +1,5 @@
+#![cfg(feature = "deep-research")]
+
 //! Tools and utilities for Lua code execution including SQLite, HTTP, and CSV
 //! support.
 

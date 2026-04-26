@@ -1,3 +1,5 @@
+#![cfg(feature = "deep-research")]
+
 //! Error types for the Lua runner.
 
 use std::fmt;

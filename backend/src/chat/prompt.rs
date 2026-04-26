@@ -15,6 +15,7 @@ use time::macros::format_description;
 struct PromptAssets;
 
 fn load_template(name: &str) -> Result<String> {
+    // FIXME: remove deep-research prompt if not enabled
     let file =
         PromptAssets::get(name).with_context(|| format!("prompt template not found: {name}"))?;
     let bytes = file.data();
@@ -38,7 +39,18 @@ impl Prompt {
     pub fn new() -> Result<Self> {
         let mut env = Environment::new();
 
-        let templates = [
+        #[cfg(not(feature = "deep-research"))]
+        let templates = vec![
+            ("normal", "normal.j2"),
+            ("search", "search.j2"),
+            ("media", "media.j2"),
+            ("coordinator", "coordinator.j2"),
+            ("context", "context.j2"),
+            ("title_generation", "title_generation.j2"),
+        ];
+
+        #[cfg(feature = "deep-research")]
+        let templates = vec![
             ("normal", "normal.j2"),
             ("search", "search.j2"),
             ("media", "media.j2"),
@@ -155,11 +167,10 @@ impl Prompt {
         let tmpl = self.env.get_template("title_generation")?;
         Ok(tmpl.render(minijinja::context! { locale })?)
     }
+}
 
-    // ------------------------------------------------------------------
-    // Deep Research mode
-    // ------------------------------------------------------------------
-
+#[cfg(feature = "deep-research")]
+impl Prompt {
     pub fn render_coordinator(&self, _locale: &str) -> Result<String> {
         let tmpl = self.env.get_template("deep/coordinator")?;
         Ok(tmpl.render(minijinja::context! { time => current_time() })?)

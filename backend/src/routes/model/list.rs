@@ -63,10 +63,11 @@ pub async fn route(
                 OcrEngine::Mistral | OcrEngine::Text | OcrEngine::Cloudflare
             ),
             native_file_input: caps.ocr == OcrEngine::Native,
-            tool: caps.toolcall,
+            tool: cfg!(feature = "deep-research") && caps.toolcall,
             media_gen: config.media_gen.image_model.is_some()
                 || config.media_gen.video_model.is_some(),
-            media_mode_supported: caps.toolcall
+            media_mode_supported: cfg!(feature = "deep-research")
+                && caps.toolcall
                 && (config.media_gen.image_model.is_some()
                     || config.media_gen.video_model.is_some()),
             display_name: config.display_name,

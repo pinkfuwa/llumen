@@ -1,5 +1,7 @@
 //! Deep Research mode – coordinator triggers deep agent via tool call.
 
+#![cfg(feature = "deep-research")]
+
 use anyhow::Result;
 use std::sync::Arc;
 use tokio_stream::StreamExt;

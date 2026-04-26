@@ -1,3 +1,5 @@
+#![cfg(feature = "deep-research")]
+
 use std::sync::Arc;
 
 use anyhow::{Result, bail};

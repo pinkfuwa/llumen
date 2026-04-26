@@ -1,3 +1,5 @@
+#![cfg(feature = "deep-research")]
+
 //! # Lua Code Runner with Tree-Based State Caching
 //!
 //! This crate provides a safe and extensible interface for executing Lua code

@@ -1,3 +1,5 @@
+#![cfg(feature = "deep-research")]
+
 use super::runner;
 use anyhow::Result;
 use std::sync::Arc;

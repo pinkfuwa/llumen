@@ -20,7 +20,7 @@
 //!
 //! 2. **Chat Pipeline (chat/context.rs)**: Manages LLM completion requests,
 //!    handles streaming responses, and coordinates between multiple chat modes
-//!    (normal, search, deep research).
+//!    (normal, search, deep research when enabled).
 //!
 //! 3. **API Routes**: Organized into modules for chat, user, message, model,
 //!    file, and auth operations. Each route validates requests and interacts

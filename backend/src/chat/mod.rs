@@ -12,6 +12,7 @@ mod stream_buffer;
 mod token;
 mod tools;
 
+#[cfg(feature = "deep-research")]
 mod deep_research;
 
 pub(crate) use context::Context;

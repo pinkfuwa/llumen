@@ -1,3 +1,5 @@
+#![cfg(feature = "deep-research")]
+
 //! Configuration options for the Lua runner.
 
 use super::{DEFAULT_INSTRUCTION_LIMIT, DEFAULT_MEMORY_LIMIT};
