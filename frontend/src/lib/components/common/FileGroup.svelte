@@ -1,24 +1,17 @@
 <script lang="ts">
 	let {
-		files = $bindable([] as Array<{ name: string; id?: number }>),
+		files = $bindable([] as Array<{ name: string; type?: string; id?: number }>),
 		deletable = false,
-		extensions = []
+		mimes = []
 	}: {
-		files: Array<{ name: string; id?: number }>;
+		files: Array<{ name: string; type?: string; id?: number }>;
 		deletable?: boolean;
-		extensions?: string[];
+		mimes?: string[];
 	} = $props();
 
 	import { ArrowDownToLine, X, AlertTriangle } from '@lucide/svelte';
 	import { download } from '$lib/api/files.svelte';
-
-	function isFileSupported(fileName: string): boolean {
-		if (extensions.length === 0) return true;
-
-		const lowerFileName = fileName.toLowerCase();
-
-		return extensions.some((ext) => lowerFileName.endsWith(ext));
-	}
+	import { isMimeSupported } from '../input/fileTypes';
 
 	async function downloadFile(fileId: number, fileName: string) {
 		let url = await download(fileId);
@@ -43,7 +36,7 @@
 				class="my-auto mr-2 shrink-0 rounded-md p-1 duration-150 hover:bg-primary hover:text-text-hover focus:ring-4 focus:ring-outline focus:outline-none"
 			>
 				{#if deletable}
-					{#if isFileSupported(file.name)}
+					{#if file.type && isMimeSupported(file.type, mimes)}
 						<X
 							class="h-7 w-7"
 							onclick={() => {

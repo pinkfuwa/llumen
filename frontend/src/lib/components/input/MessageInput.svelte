@@ -61,7 +61,7 @@
 		uselessFn(modelId);
 		return models?.list.find((x) => x.id.toString() == modelId);
 	});
-	let extensions = $derived(getSupportedFileExtensions(selectModelCap));
+	let mimes = $derived(getSupportedFileExtensions(selectModelCap));
 	let modeRequiresToolSupport = $derived(
 		mode !== Mode.Normal && mode !== Mode.Media && !selectModelCap?.tool
 	);
@@ -73,7 +73,7 @@
 	});
 
 	function handleNewFiles(newFiles: File[]) {
-		const { supported, unsupported } = separateFiles(newFiles, extensions);
+		const { supported, unsupported } = separateFiles(newFiles, mimes);
 
 		if (unsupported.length > 0) {
 			pendingFiles = supported;
@@ -150,6 +150,8 @@
 			onsubmit();
 		}
 	}
+
+	$inspect('files', files);
 </script>
 
 <Confirm
@@ -182,7 +184,7 @@
 	{/if}
 	{#if files.length != 0}
 		<div class="mb-2 max-h-[60vh] overflow-y-auto border-b border-outline pb-2">
-			<FileGroup {files} {extensions} deletable />
+			<FileGroup {files} {mimes} deletable />
 		</div>
 	{/if}
 	<div class="flex flex-row items-center justify-between space-x-2 pr-2">

@@ -82,27 +82,25 @@ export function getSupportedFileExtensions(capability?: CapabilityFileType): str
 	return parts;
 }
 
-export function getAllFileExtensions(): string[] {
+export function getAllFileMimes(): string[] {
 	return [...LITERAL_TYPES, ...IMAGE_TYPES, ...AUDIO_TYPES, ...VIDEO_TYPES, ...NATIVE_TYPES];
 }
 
-export function isFileSupported(fileName: string, extensions: string[]): boolean {
-	if (extensions.length === 0) return true;
+export function isMimeSupported(mime: string, mimes: string[]): boolean {
+	if (mimes.length === 0) return false;
 
-	const lowerFileName = fileName.toLowerCase();
-
-	return extensions.some((ext) => {
-		if (ext.endsWith('/*')) {
-			// Handle MIME type patterns like 'audio/*'
-			return false; // Will be checked by MIME type separately
+	return mimes.some((matcher) => {
+		if (matcher.endsWith('/*')) {
+			let category = matcher.slice(0, -2);
+			return mime.includes(category);
 		}
-		return lowerFileName.endsWith('.' + ext);
+		return mime.includes(matcher);
 	});
 }
 
 export function separateFiles(
 	files: File[],
-	extensions: string[]
+	mimes: string[]
 ): {
 	supported: File[];
 	unsupported: File[];
@@ -111,7 +109,7 @@ export function separateFiles(
 	const unsupported: File[] = [];
 
 	for (const file of files) {
-		if (isFileSupported(file.name, extensions)) {
+		if (isMimeSupported(file.type, mimes)) {
 			supported.push(file);
 		} else {
 			unsupported.push(file);
