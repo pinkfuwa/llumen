@@ -23,11 +23,12 @@ fn load_template(name: &str) -> Result<String> {
 }
 
 pub(crate) const TIME_FORMAT: &[time::format_description::BorrowedFormatItem<'static>] =
-    format_description!("[weekday], [hour]:[minute], [day] [month repr:long] [year]");
+    format_description!("[weekday], [day] [month repr:long] [year]");
 
 fn current_time() -> String {
-    time::OffsetDateTime::now_utc()
-        .format(TIME_FORMAT)
+    time::OffsetDateTime::now_local()
+        .map(|dt| dt.format(TIME_FORMAT))
+        .unwrap_or_else(|_| time::OffsetDateTime::now_utc().format(TIME_FORMAT))
         .unwrap_or_default()
 }
 

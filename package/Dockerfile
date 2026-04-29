@@ -55,8 +55,8 @@ RUN --mount=type=cache,id=target,target=/compiler/target \
 
 FROM debian:trixie-slim AS ca
 RUN apt update -y \
-    && apt install -y ca-certificates
-RUN update-ca-certificates
+    && apt install -y ca-certificates tzdata \
+    && update-ca-certificates
 
 FROM scratch
 
@@ -75,6 +75,7 @@ WORKDIR /data
 WORKDIR /
 
 COPY --from=ca /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=ca /etc/localtime /etc/localtime
 COPY --from=backend-builder /app/${TARGETPLATFORM} /backend
 
 ENV DATA_PATH="/data"

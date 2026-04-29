@@ -283,8 +283,9 @@ impl CompletionSession {
             .latest_user_message()
             .map(|m| m.to_lowercase().contains("llumen"))
             .unwrap_or(false);
-        let time_str = time::OffsetDateTime::now_utc()
-            .format(super::prompt::TIME_FORMAT)
+        let time_str = time::OffsetDateTime::now_local()
+            .map(|dt| dt.format(super::prompt::TIME_FORMAT))
+            .unwrap_or_else(|_| time::OffsetDateTime::now_utc().format(super::prompt::TIME_FORMAT))
             .unwrap_or_default();
         let context_prompt =
             ctx.prompt
