@@ -59,7 +59,7 @@ use anyhow::Context as _;
 use axum::{Router, middleware};
 use chat::Context;
 use config::{DB_BUSY_TIMEOUT_MS, DEFAULT_BIND_ADDR, DB_CACHE_SIZE};
-use dotenv::var;
+use dotenvy::var;
 use entity::prelude::*;
 
 use migration::MigratorTrait;
@@ -178,7 +178,7 @@ fn setup_panic_handler() {
 async fn main() {
     setup_panic_handler();
 
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     crate::utils::logger::init();
 

@@ -1,6 +1,6 @@
 use std::{io::IsTerminal, io::Write, panic, str::FromStr, sync::Arc};
 
-use dotenv::var;
+use dotenvy::var;
 use flexi_logger::{DeferredNow, LogSpecification, Logger};
 use log::LevelFilter;
 

@@ -3,10 +3,10 @@
 This file contains license information for all third-party dependencies used in the frontend.
 Generated from package.json and pnpm-lock.yaml.
 --------------------------------------------------------------------------------
-@codemirror/autocomplete@6.20.1
+@codemirror/autocomplete@6.20.2
 
 License: MIT
-Repository: https://github.com/codemirror/autocomplete
+Repository: git+https://code.haverbeke.berlin/codemirror/autocomplete
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
@@ -38,10 +38,10 @@ Repository: https://github.com/codemirror/state
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
-@codemirror/view@6.41.0
+@codemirror/view@6.42.1
 
 License: MIT
-Repository: https://github.com/codemirror/view
+Repository: git+https://code.haverbeke.berlin/codemirror/view
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ Email: marijn@haverbeke.berlin
 License: MIT
 Repository: https://github.com/sveltejs/kit
 --------------------------------------------------------------------------------
-bits-ui@2.17.3
+bits-ui@2.18.1
 
 License: MIT
 Repository: https://github.com/huntabyte/bits-ui
@@ -78,12 +78,12 @@ Repository: https://github.com/lukeed/fetch-event-stream
 Publisher: Luke Edwards
 Email: luke@lukeed.com
 --------------------------------------------------------------------------------
-katex@0.16.45
+katex@0.16.46
 
 License: MIT
 Repository: https://github.com/KaTeX/KaTeX
 --------------------------------------------------------------------------------
-mermaid@11.14.0
+mermaid@11.15.0
 
 License: MIT
 Repository: https://github.com/mermaid-js/mermaid
@@ -101,7 +101,7 @@ Repository: https://github.com/kaisermann/svelte-i18n
 Publisher: Christian Kaisermann
 Email: christian@kaisermann.me
 --------------------------------------------------------------------------------
-workbox-window@7.4.0
+workbox-window@7.4.1
 
 License: MIT
 Repository: https://github.com/googlechrome/workbox

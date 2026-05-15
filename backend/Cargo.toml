@@ -20,7 +20,7 @@ incremental = false
 members = [".", "entity", "migration", "protocol", "xtask"]
 
 [dependencies]
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 pasetors = "0.7.7"
 serde_json = "1.0.141"
 typeshare = "1.0.4"
@@ -40,7 +40,7 @@ redb = "3.1.0"
 bytes = "1.10.1"
 mimalloc = "0.1.48"
 html2text = "0.13.1"
-scraper = "0.24.0"
+scraper = "0.27.0"
 csv = "1.4.0"
 infer = "0.19.0"
 webp = "0.3.1"
