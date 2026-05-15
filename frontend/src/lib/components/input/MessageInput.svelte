@@ -62,12 +62,13 @@
 		return models?.list.find((x) => x.id.toString() == modelId);
 	});
 	let mimes = $derived(getSupportedFileExtensions(selectModelCap));
-	let modeRequiresToolSupport = $derived(
-		mode !== Mode.Normal && mode !== Mode.Media && !selectModelCap?.tool
-	);
 
 	$effect(() => {
-		if (!selectModelCap?.tool && mode !== Mode.Normal && mode !== Mode.Media) {
+		if (!selectModelCap) return;
+		if (mode == Mode.Research && !selectModelCap.deep_research) {
+			mode = Mode.Normal;
+		}
+		if (mode == Mode.Media && !selectModelCap.media_gen) {
 			mode = Mode.Normal;
 		}
 	});

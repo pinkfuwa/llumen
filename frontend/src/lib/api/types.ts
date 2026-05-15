@@ -379,9 +379,8 @@ export interface ModelList {
 	audio_input: boolean;
 	video_input: boolean;
 	native_file_input: boolean;
-	tool: boolean;
+	deep_research: boolean;
 	media_gen: boolean;
-	media_mode_supported: boolean;
 }
 
 export interface ModelListReq {}

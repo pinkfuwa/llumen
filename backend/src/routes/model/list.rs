@@ -25,9 +25,8 @@ pub struct ModelList {
     pub audio_input: bool,
     pub video_input: bool,
     pub native_file_input: bool,
-    pub tool: bool,
+    pub deep_research: bool,
     pub media_gen: bool,
-    pub media_mode_supported: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -63,13 +62,10 @@ pub async fn route(
                 OcrEngine::Mistral | OcrEngine::Text | OcrEngine::Cloudflare
             ),
             native_file_input: caps.ocr == OcrEngine::Native,
-            tool: cfg!(feature = "deep-research") && caps.toolcall,
-            media_gen: config.media_gen.image_model.is_some()
-                || config.media_gen.video_model.is_some(),
-            media_mode_supported: cfg!(feature = "deep-research")
-                && caps.toolcall
-                && (config.media_gen.image_model.is_some()
-                    || config.media_gen.video_model.is_some()),
+            media_gen: (config.media_gen.image_model.is_some()
+                || config.media_gen.video_model.is_some())
+                && caps.toolcall,
+            deep_research: cfg!(feature = "deep-research") && caps.toolcall,
             display_name: config.display_name,
         });
     }
