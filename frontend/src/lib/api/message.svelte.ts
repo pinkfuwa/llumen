@@ -534,8 +534,9 @@ export function updateMessage(): RawMutationResult<
 					id: param.msgId
 				});
 
-				const firstOldIdx = messages.findIndex((x) => x.id < param.msgId);
+				const firstOldIdx = messages.findIndex((x) => x.id <= param.msgId);
 				if (firstOldIdx >= 0) messages.splice(firstOldIdx);
+				messages = messages.filter((x) => !x.stream);
 
 				await create(param, resolve);
 			});
