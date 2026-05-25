@@ -1,5 +1,5 @@
 use super::option::Tool;
-use protocol::{OcrEngine, ReasoningEffort, ReasoningOption};
+use protocol::{OcrEngine, ReasoningEffort, ReasoningOption, WebTool};
 
 #[derive(Clone, Default)]
 pub struct Capability {
@@ -13,6 +13,7 @@ pub struct Capability {
     pub audio: bool,
     pub reasoning: bool,
     pub reasoning_effort: ReasoningEffort,
+    pub web: WebTool,
 }
 
 #[derive(Clone, Default)]
@@ -27,6 +28,7 @@ pub struct MaybeCapability {
     pub audio: Option<bool>,
     pub reasoning: Option<bool>,
     pub reasoning_effort: Option<ReasoningEffort>,
+    pub web: Option<WebTool>,
 }
 
 impl From<ReasoningOption> for MaybeCapability {
@@ -46,7 +48,7 @@ pub struct Model {
     pub repeat_penalty: Option<f32>,
     pub top_k: Option<i32>,
     pub top_p: Option<f32>,
-    // capabilities override
+    // capabilities **override**
     pub capability: MaybeCapability,
 }
 

@@ -3,7 +3,9 @@ import { get, writable, type Readable } from 'svelte/store';
 
 // Constants for TOML completion
 export const TOP_LEVEL_FIELDS = ['model_id', 'display_name'];
-export const CAPABILITY_FIELDS = ['image', 'audio', 'video', 'ocr', 'tool', 'json', 'reasoning'];
+export const CAPABILITY_FIELDS = ['image', 'audio', 'video', 'ocr', 'tool', 'json', 'reasoning', 'web'];
+
+export const WEB_OPTIONS = ['openrouter', 'native', 'built-in', 'disabled'];
 export const PARAMETER_FIELDS = ['temperature', 'repeat_penalty', 'top_k', 'top_p'];
 export const MEDIA_GEN_FIELDS = ['image_model', 'video_model'];
 export const TOML_TABLE_HEADERS = ['[capability]', '[parameter]', '[media_gen]'];
@@ -15,7 +17,8 @@ const MODEL_ID_FIELDS = new Set(['model_id', 'image_model', 'video_model']);
 const BOOLEAN_FIELDS = new Set(['image', 'audio', 'video', 'tool', 'json']);
 const STRING_VALUE_FIELDS = new Map([
 	['ocr', OCR_FIELD_VALUES],
-	['reasoning', REASONING_FIELD_VALUES]
+	['reasoning', REASONING_FIELD_VALUES],
+	['web', WEB_OPTIONS]
 ]);
 
 // Model IDs getter - will be set by the Svelte component

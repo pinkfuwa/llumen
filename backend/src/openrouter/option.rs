@@ -24,7 +24,7 @@ impl ReasoningEffort {
 
 #[derive(Clone, Default)]
 pub struct CompletionOption {
-    pub insert_web_search_context: bool,
+    pub web_plugin_search: bool,
     pub image_generation: bool,
     pub max_tokens: Option<i32>,
     pub reasoning_effort: ReasoningEffort,
@@ -49,7 +49,7 @@ impl CompletionOption {
 
 #[derive(Default)]
 pub struct OptionBuilder {
-    insert_web_search_context: bool,
+    web_plugin_search: bool,
     image_generation: bool,
     max_tokens: Option<i32>,
     reasoning_effort: ReasoningEffort,
@@ -61,7 +61,7 @@ pub struct OptionBuilder {
 
 impl OptionBuilder {
     pub fn web_search(mut self, enable: bool) -> Self {
-        self.insert_web_search_context = enable;
+        self.web_plugin_search = enable;
         self
     }
 
@@ -109,7 +109,7 @@ impl OptionBuilder {
 
     pub fn build(self) -> CompletionOption {
         CompletionOption {
-            insert_web_search_context: self.insert_web_search_context,
+            web_plugin_search: self.web_plugin_search,
             image_generation: self.image_generation,
             max_tokens: self.max_tokens,
             reasoning_effort: self.reasoning_effort,
@@ -132,11 +132,12 @@ impl From<Tool> for raw::Tool {
     fn from(tool: Tool) -> Self {
         raw::Tool {
             r#type: "function".to_string(),
-            function: raw::FunctionTool {
+            function: Some(raw::FunctionTool {
                 name: tool.name,
                 description: tool.description,
                 parameters: tool.schema,
-            },
+            }),
+            parameters: None,
         }
     }
 }

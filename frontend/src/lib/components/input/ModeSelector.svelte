@@ -20,6 +20,7 @@
 
 	const deepResearchDisabled = $derived(!modelCap?.deep_research);
 	const mediaDisabled = $derived(!modelCap?.media_gen);
+	const searchDisabled = $derived(!modelCap?.search_enabled);
 </script>
 
 <div class="pt-1">
@@ -28,6 +29,8 @@
 		<DropdownMenu.Item
 			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover data-disabled:opacity-50 ${isActive(Mode.Search) ? 'bg-primary text-text-hover' : ''}`}
 			onSelect={() => setMode(Mode.Search)}
+			disabled={searchDisabled}
+			aria-disabled={searchDisabled}
 			data-active={isActive(Mode.Search) ? 'true' : 'false'}
 		>
 			<SearchCode class="size-4" />

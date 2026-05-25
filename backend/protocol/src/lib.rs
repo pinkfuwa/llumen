@@ -403,6 +403,30 @@ impl<'de> Deserialize<'de> for OcrEngine {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+pub enum WebTool {
+    #[default]
+    Disabled,
+    OpenRouter,
+    Native,
+}
+
+impl<'de> Deserialize<'de> for WebTool {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        let lower = s.to_lowercase();
+        Ok(match lower.as_str() {
+            "openrouter" => WebTool::OpenRouter,
+            "native" | "built-in" | "builtin" => WebTool::Native,
+            "disabled" | "none" | "false" | "off" | "no" => WebTool::Disabled,
+            _ => WebTool::Disabled,
+        })
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Default, Serialize, PartialEq)]
 pub struct ModelCapability {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -419,6 +443,8 @@ pub struct ModelCapability {
     pub json: Option<bool>,
     #[serde(default, deserialize_with = "deserialize_reasoning_option")]
     pub reasoning: Option<ReasoningOption>,
+    #[serde(default)]
+    pub web: Option<WebTool>,
 }
 
 fn deserialize_reasoning_option<'de, D>(

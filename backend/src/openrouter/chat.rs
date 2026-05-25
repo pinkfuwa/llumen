@@ -73,6 +73,22 @@ impl ChatClient {
             })
     }
 
+    fn effective_web(
+        cap: &Capability,
+        model_cap: &MaybeCapability,
+        is_custom: bool,
+    ) -> protocol::WebTool {
+        if cap.web == protocol::WebTool::Disabled && model_cap.web.is_none() {
+            if is_custom {
+                protocol::WebTool::Native
+            } else {
+                protocol::WebTool::OpenRouter
+            }
+        } else {
+            cap.web
+        }
+    }
+
     fn merge_capability(base: Capability, overrides: MaybeCapability) -> Capability {
         macro_rules! merge {
             ($field:ident) => {
@@ -94,6 +110,7 @@ impl ChatClient {
             audio: merge!(audio),
             reasoning: merge!(reasoning),
             reasoning_effort: merge!(reasoning_effort),
+            web: merge!(web),
         }
     }
 
@@ -119,16 +136,12 @@ impl ChatClient {
         }
 
         let capability = self.resolve_capability(listing, &model).await;
+        let effective_web = Self::effective_web(&capability, &model.capability, self.is_custom_api);
 
         let mut plugins = Vec::new();
         let mut modalities = Vec::new();
 
-        let web_search_options = match option.insert_web_search_context && self.is_custom_api {
-            true => None,
-            false => Some(raw::WebSearchOptions {
-                search_context_size: "medium".to_string(),
-            }),
-        };
+        let use_native_web = effective_web == protocol::WebTool::Native;
 
         if !self.is_custom_api {
             match capability.ocr {
@@ -139,7 +152,7 @@ impl ChatClient {
                 protocol::OcrEngine::Disabled => {}
             }
 
-            if option.insert_web_search_context {
+            if option.web_plugin_search && use_native_web {
                 log::debug!("inserting web search context");
                 plugins.push(raw::Plugin::web());
             }
@@ -182,7 +195,21 @@ impl ChatClient {
         let mut tools = Vec::new();
 
         if capability.toolcall {
-            tools.extend(option.tools.into_iter().map(Into::into));
+            if effective_web == protocol::WebTool::OpenRouter {
+                for tool in option.tools.into_iter() {
+                    let skip = tool.name == "web_search_tool" || tool.name == "crawl_tool";
+                    if !skip {
+                        tools.push(raw::Tool::from(tool));
+                    }
+                }
+            } else {
+                tools.extend(option.tools.into_iter().map(Into::into));
+            }
+        }
+
+        if effective_web == protocol::WebTool::OpenRouter {
+            tools.push(raw::Tool::server_web_search());
+            tools.push(raw::Tool::server_web_fetch());
         }
 
         let request = raw::CompletionReq {
@@ -199,7 +226,6 @@ impl ChatClient {
             max_tokens: option.max_tokens,
             tools,
             plugins,
-            web_search_options,
             usage,
             reasoning,
             modalities,

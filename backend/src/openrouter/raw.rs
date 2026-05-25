@@ -213,8 +213,6 @@ pub struct CompletionReq {
     #[stream(skip_serialize_if = "Vec::is_empty")]
     pub plugins: Vec<Plugin>,
     #[stream(skip_serialize_if = "Option::is_none")]
-    pub web_search_options: Option<WebSearchOptions>,
-    #[stream(skip_serialize_if = "Option::is_none")]
     pub usage: Option<UsageReq>,
     #[stream(skip_serialize_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
@@ -314,12 +312,6 @@ impl Plugin {
 }
 
 #[derive(Serialize, stream_json::IntoSerializer)]
-pub struct WebSearchOptions {
-    #[stream(rename = "search_context_size")]
-    pub search_context_size: String,
-}
-
-#[derive(Serialize, stream_json::IntoSerializer)]
 pub struct PdfPlugin {
     pub engine: String,
 }
@@ -327,7 +319,28 @@ pub struct PdfPlugin {
 #[derive(Serialize, stream_json::IntoSerializer)]
 pub struct Tool {
     pub r#type: String,
-    pub function: FunctionTool,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub function: Option<FunctionTool>,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+}
+
+impl Tool {
+    pub fn server_web_search() -> Self {
+        Self {
+            r#type: "openrouter:web_search".to_string(),
+            function: None,
+            parameters: None,
+        }
+    }
+
+    pub fn server_web_fetch() -> Self {
+        Self {
+            r#type: "openrouter:web_fetch".to_string(),
+            function: None,
+            parameters: None,
+        }
+    }
 }
 
 #[derive(Serialize, stream_json::IntoSerializer)]

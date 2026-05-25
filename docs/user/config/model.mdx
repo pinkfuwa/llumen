@@ -38,6 +38,7 @@ ocr = "Mistral"
 tool = true
 json = true
 reasoning = "high"  # Enable with high effort (options: true/false/low/medium/high/none/auto)
+web = "openrouter"  # Use OpenRouter server tools for web search/fetch
 
 [parameter]
 temperature = 0.7
@@ -90,6 +91,39 @@ All options are case-insensitive. You can use any naming convention:
 - When set to true: search/deep research mode will be enable. 
 - When set to false: normal mode only.
 - When not set: Llumen will guess its support
+
+### Web
+
+Controls web search and page-fetch capabilities (used in Search mode).
+
+```toml
+[capability]
+web = "openrouter"   # Use OpenRouter's server-side web tools
+web = "native"       # Use llumen's built-in tools (DuckDuckGo + crawl)
+web = "built-in"     # Alias for "native"
+web = "disabled"     # Disable web capabilities
+# not set            # Auto: "openrouter" on OpenRouter, "native" on custom APIs
+```
+
+**Values (case-insensitive):**
+
+| Value | Meaning |
+|---|---|
+| `"openrouter"` | Use `openrouter:web_search` and `openrouter:web_fetch` server tools. The model decides when to search/fetch — OpenRouter executes the tool and returns results with `url_citation` annotations. Requires tool support. |
+| `"native"` / `"built-in"` | Use llumen's built-in DuckDuckGo search and crawl tools. |
+| `"disabled"` / `"none"` / `"false"` | Disable web capabilities. Search mode is hidden in the UI. |
+
+**Default (not set):**
+- On OpenRouter API: defaults to `"openrouter"` (server tools).
+- On custom API: defaults to `"native"` (built-in tools).
+
+**Conflict behavior:**
+- When `web = "openrouter"`, llumen's built-in `web_search_tool` and `crawl_tool` are excluded from the request to avoid conflicts.
+- When `web = "disabled"`, Search mode is grayed out in the frontend and resets to Normal if currently active.
+
+<Note>
+  `web` is a string field. Use quotes around the value (e.g. `web = "openrouter"`).
+</Note>
 
 ### Reasoning
 

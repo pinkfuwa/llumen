@@ -185,7 +185,6 @@ impl ImageGenClient {
             max_tokens: None,
             tools: Vec::new(),
             plugins: Vec::new(),
-            web_search_options: None,
             usage: Some(raw::UsageReq { include: true }),
             response_format: None,
             reasoning: raw::Reasoning::default(),

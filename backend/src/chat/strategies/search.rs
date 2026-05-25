@@ -1,4 +1,6 @@
 //! Search chat mode – web_search + crawl tools with tool-call loop.
+//! On OpenRouter with server tools, the tool-call loop naturally exits
+//! after one round since server tool execution is transparent.
 
 use anyhow::Result;
 use protocol::AssistantChunk;

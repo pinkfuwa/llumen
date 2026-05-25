@@ -65,6 +65,9 @@
 		if (mode == Mode.Media && !selectModelCap.media_gen) {
 			mode = Mode.Normal;
 		}
+		if (mode == Mode.Search && !selectModelCap.search_enabled) {
+			mode = Mode.Normal;
+		}
 	});
 
 	function handleNewFiles(newFiles: File[]) {

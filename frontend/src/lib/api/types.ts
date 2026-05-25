@@ -381,6 +381,7 @@ export interface ModelList {
 	native_file_input: boolean;
 	deep_research: boolean;
 	media_gen: boolean;
+	search_enabled: boolean;
 }
 
 export interface ModelListReq {}
