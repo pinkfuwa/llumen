@@ -89,13 +89,13 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
         let stream = ordered_stream.into_inner();
         let mut result = stream.get_result();
         session.update_usage(result.usage.cost as f32, result.usage.token as i32);
-        session.apply_stream_result(&result).await;
-
         let tool_calls = std::mem::take(&mut result.toolcalls);
         let assistant_text = result.get_text();
 
         let chunks = openrouter_stream_to_assitant_chunk(&result.responses);
         session.extend_chunks(chunks);
+
+        session.apply_stream_result(&result).await;
 
         if tool_calls.is_empty() {
             break;

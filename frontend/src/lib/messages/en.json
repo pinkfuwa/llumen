@@ -71,6 +71,7 @@
 		"stop_first": "stop the current responding to type new message.",
 		"default_title": "New Chat",
 		"reasoning": "Show reasoning steps",
+		"sources": "Sources",
 		"upload_file": "Upload File",
 		"loading_image": "Loading image...",
 		"failed_load_image": "Failed to load image",

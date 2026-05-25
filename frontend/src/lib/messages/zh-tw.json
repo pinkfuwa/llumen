@@ -71,6 +71,7 @@
 		"stop_first": "暫停目前的對話以輸入訊息",
 		"default_title": "新聊天室",
 		"reasoning": "顯示推理過程",
+		"sources": "來源",
 		"upload_file": "上傳檔案",
 		"loading_image": "載入圖片中...",
 		"failed_load_image": "無法載入圖片",

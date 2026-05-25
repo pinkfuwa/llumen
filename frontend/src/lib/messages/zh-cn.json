@@ -71,6 +71,7 @@
 		"stop_first": "暂停当前的对话以输入消息",
 		"default_title": "新聊天室",
 		"reasoning": "显示推理过程",
+		"sources": "来源",
 		"upload_file": "上传文件",
 		"loading_image": "加载图片中...",
 		"failed_load_image": "无法加载图片",
