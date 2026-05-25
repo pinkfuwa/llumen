@@ -15,10 +15,6 @@
 	import { getSupportedFileExtensions, separateFiles } from './fileTypes';
 	import Confirm from './Confirm.svelte';
 	import UnsupportedFilesModal from './UnsupportedFilesModal.svelte';
-	import { compressImage, isImageFile } from '$lib/imageCompressor.svelte';
-
-	const COMPRESS_SIZE_THRESHOLD = 2.5 * 1024 * 1024;
-
 	let {
 		mode = $bindable(Mode.Normal),
 		files = $bindable([]),
@@ -39,7 +35,6 @@
 		large?: boolean;
 	} = $props();
 
-	// True keeps the textarea editor active; false shows markdown preview.
 	let isEditing = $state(true);
 	let showConfirm = $state(false);
 	let pendingNavigationUrl: string | null = $state(null);
@@ -48,7 +43,6 @@
 	let pendingUnsupportedFiles: File[] = $state([]);
 
 	let container = $state<HTMLElement | null>();
-	let compressingFiles = $state<Map<File, Promise<File>>>(new Map());
 
 	const models = $derived(getModels());
 
@@ -98,22 +92,6 @@
 		pendingFiles = [];
 		pendingUnsupportedFiles = [];
 	}
-
-	$effect(() => {
-		for (const file of files) {
-			if (isImageFile(file) && file.size > COMPRESS_SIZE_THRESHOLD && !compressingFiles.has(file)) {
-				const promise = compressImage(file, { quality: 0.8 });
-				compressingFiles.set(file, promise);
-				promise.then((compressed) => {
-					const index = files.findIndex((x) => x === file);
-					if (index !== -1) {
-						files[index] = compressed;
-					}
-					compressingFiles.delete(file);
-				});
-			}
-		}
-	});
 
 	const dropZone = createDropZone(() => container, {
 		onDrop(newFiles: File[] | null) {

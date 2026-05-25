@@ -5,10 +5,9 @@
 	import Hallucination from '$lib/components/common/Hallucination.svelte';
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
-	import { haltCompletion, useRoomQueryEffect, getCurrentRoom, getMessages } from '$lib/api';
-	import { createUploadEffect } from '$lib/api/files.svelte';
+	import { haltCompletion, useRoomQueryEffect, getCurrentRoom, getMessages, createMessage, getStream } from '$lib/api';
+	import { createUploadPipeline } from '$lib/api/files.svelte';
 	import Scroll from '$lib/ui/Scroll.svelte';
-	import { createMessage, getStream } from '$lib/api';
 	import { untrack } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 
@@ -45,7 +44,7 @@
 		});
 	});
 
-	const ensureUploaded = createUploadEffect(() => files);
+	const ensureUploaded = createUploadPipeline(() => files);
 
 	let stream = $derived(getStream().stream);
 </script>

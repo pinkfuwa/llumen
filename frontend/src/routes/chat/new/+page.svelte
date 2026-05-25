@@ -7,7 +7,7 @@
 	import { ChatMode as Mode } from '$lib/api/types';
 	import { page } from '$app/state';
 	import { PersistedState } from 'runed';
-	import { createUploadEffect } from '$lib/api';
+	import { createUploadPipeline } from '$lib/api';
 
 	let { mutate } = createRoom();
 
@@ -16,7 +16,7 @@
 	let files = $state([]);
 	let mode = $state(Mode.Normal);
 
-	const ensureUploaded = createUploadEffect(() => files);
+	const ensureUploaded = createUploadPipeline(() => files);
 
 	$effect(() => {
 		const param = page.url.searchParams;

@@ -12,7 +12,7 @@
 	}
 </script>
 
-<span class="inline-block p-1 align-middle">
+<span class="inline-block max-w-full p-1 align-middle">
 	<button
 		type="button"
 		class="inline-block max-w-full cursor-pointer overflow-x-auto align-middle select-none hover:opacity-80"

@@ -26,7 +26,7 @@ export {
 	download,
 	downloadCompressed,
 	uploadFiles,
-	createUploadEffect
+	createUploadPipeline
 } from './files.svelte';
 
 // Message

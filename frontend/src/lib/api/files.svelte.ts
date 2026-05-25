@@ -1,9 +1,11 @@
 import { RawAPIFetch, APIFetch } from './state/errorHandle';
 import type { FileUploadResp, FileRefreshReq, FileRefreshResp } from './types';
+import { compressImage, isImageFile } from '$lib/image';
 import { dispatchError } from '$lib/error';
 import { untrack } from 'svelte';
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // backend limit body size at 128 MB, body size!=file size
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+const COMPRESS_SIZE_THRESHOLD = 2.5 * 1024 * 1024;
 
 export async function upload(file: File, signal?: AbortSignal): Promise<number | null> {
 	const formData = new FormData();
@@ -71,9 +73,6 @@ export async function downloadCompressed(id: number): Promise<string | undefined
 	return URL.createObjectURL(blob);
 }
 
-/**
- * Upload multiple files and return their metadata
- */
 export async function uploadFiles(
 	files: File[],
 	signal?: AbortSignal
@@ -90,102 +89,85 @@ export async function uploadFiles(
 	return results;
 }
 
-/**
- * Create an upload effect that manages file uploads reactively.
- * Returns an async function that ensures all uploads are complete before resolving.
- *
- * @param fileGetter - Function that returns the current list of files to upload
- * @returns An async function that uploads all files and returns their metadata
- *
- * @example
- * ```ts
- * let files = $state<File[]>([]);
- * const ensureUploaded = createUploadEffect(() => files);
- *
- * async function submit() {
- *   const uploadedFiles = await ensureUploaded();
- *   // use uploadedFiles...
- * }
- * ```
- */
-export function createUploadEffect(
+function fileKey(file: File): string {
+	return `${file.name}-${file.size}`;
+}
+
+interface PendingEntry {
+	prepare: Promise<File>;
+	upload: Promise<number | null>;
+	controller: AbortController;
+	file: File;
+}
+
+export function createUploadPipeline(
 	fileGetter: () => File[]
 ): () => Promise<{ name: string; id: number }[]> {
-	let uploads = $state<Map<string, { promise: Promise<number | null>; file: File }>>(new Map());
-	let abortController = new AbortController();
+	let pending = $state<Map<string, PendingEntry>>(new Map());
 
-	// Track which files need to be uploaded
 	$effect(() => {
 		const currentFiles = fileGetter();
 
-		// Create a set of current file keys
-		const currentKeys = new Set(
-			currentFiles.map((f) => {
-				try {
-					return `${f.name}-${f.size}`;
-				} catch {
-					return '';
-				}
-			})
-		);
+		const currentKeys = new Set(currentFiles.map(fileKey));
 
-		// Remove uploads that are no longer in the file list
-		// Use untrack to avoid creating a dependency on uploads (prevent infinite loop)
-		const newUploads = new Map(untrack(() => uploads));
-		for (const [key] of untrack(() => uploads)) {
+		const next = new Map(untrack(() => pending));
+		for (const [key, entry] of untrack(() => pending)) {
 			if (!currentKeys.has(key)) {
-				newUploads.delete(key);
+				next.delete(key);
+				entry.controller.abort();
 			}
 		}
 
-		// Add new uploads
 		for (const file of currentFiles) {
-			let key: string;
-			try {
-				key = `${file.name}-${file.size}`;
-			} catch {
-				continue;
-			}
+			const key = fileKey(file);
+			if (next.has(key)) continue;
 
-			if (!newUploads.has(key)) {
-				newUploads.set(key, {
-					promise: upload(file, abortController.signal),
-					file
-				});
-			}
+			const controller = new AbortController();
+
+			const prepare: Promise<File> = isImageFile(file) && file.size > COMPRESS_SIZE_THRESHOLD
+				? compressImage(file, { quality: 0.8 }).catch(() => file).then((f) => {
+						controller.signal.throwIfAborted();
+						return f;
+					})
+				: Promise.resolve(file);
+
+			const uploadP = prepare.then((f) => upload(f, controller.signal));
+
+			next.set(key, { prepare, upload: uploadP, controller, file });
 		}
 
-		uploads = newUploads;
+		pending = next;
 	});
 
-	// Cleanup on component unmount
 	$effect(() => {
 		return () => {
-			abortController.abort();
+			for (const [, entry] of untrack(() => pending)) {
+				entry.controller.abort();
+			}
 		};
 	});
 
-	return async function ensureUploaded(): Promise<{ name: string; id: number }[]> {
+	return async function ensureReady(): Promise<{ name: string; id: number }[]> {
 		const currentFiles = untrack(() => fileGetter());
 		const results: { name: string; id: number }[] = [];
 
 		for (const file of currentFiles) {
-			let key: string;
-			try {
-				key = `${file.name}-${file.size}`;
-			} catch {
-				continue;
-			}
+			const entry = untrack(() => pending.get(fileKey(file)));
+			if (!entry) continue;
 
-			const upload = untrack(() => uploads.get(key));
-			if (upload) {
-				const id = await upload.promise;
-				if (id !== null) {
-					results.push({ name: file.name, id });
-				}
+			const prepared = await entry.prepare;
+			const id = await entry.upload;
+			if (id !== null) {
+				results.push({ name: prepared.name, id });
 			}
 		}
 
 		return results;
 	};
+}
+
+export function createUploadEffect(
+	fileGetter: () => File[]
+): () => Promise<{ name: string; id: number }[]> {
+	return createUploadPipeline(fileGetter);
 }
