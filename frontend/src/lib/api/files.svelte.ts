@@ -124,12 +124,15 @@ export function createUploadPipeline(
 
 			const controller = new AbortController();
 
-			const prepare: Promise<File> = isImageFile(file) && file.size > COMPRESS_SIZE_THRESHOLD
-				? compressImage(file, { quality: 0.8 }).catch(() => file).then((f) => {
-						controller.signal.throwIfAborted();
-						return f;
-					})
-				: Promise.resolve(file);
+			const prepare: Promise<File> =
+				isImageFile(file) && file.size > COMPRESS_SIZE_THRESHOLD
+					? compressImage(file, { quality: 0.8 })
+							.catch(() => file)
+							.then((f) => {
+								controller.signal.throwIfAborted();
+								return f;
+							})
+					: Promise.resolve(file);
 
 			const uploadP = prepare.then((f) => upload(f, controller.signal));
 

@@ -3,7 +3,16 @@ import { get, writable, type Readable } from 'svelte/store';
 
 // Constants for TOML completion
 export const TOP_LEVEL_FIELDS = ['model_id', 'display_name'];
-export const CAPABILITY_FIELDS = ['image', 'audio', 'video', 'ocr', 'tool', 'json', 'reasoning', 'web'];
+export const CAPABILITY_FIELDS = [
+	'image',
+	'audio',
+	'video',
+	'ocr',
+	'tool',
+	'json',
+	'reasoning',
+	'web'
+];
 
 export const WEB_OPTIONS = ['openrouter', 'native', 'built-in', 'disabled'];
 export const PARAMETER_FIELDS = ['temperature', 'repeat_penalty', 'top_k', 'top_p'];

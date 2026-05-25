@@ -4,10 +4,8 @@
 	import { Collapsible } from 'bits-ui';
 	import type { UrlCitation } from '$lib/api/types';
 
-	let {
-		citations,
-		open = $bindable(false)
-	}: { citations: UrlCitation[]; open?: boolean } = $props();
+	let { citations, open = $bindable(false) }: { citations: UrlCitation[]; open?: boolean } =
+		$props();
 
 	const titleFromUrl = (url: string) => {
 		try {

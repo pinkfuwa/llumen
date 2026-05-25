@@ -5,7 +5,14 @@
 	import Hallucination from '$lib/components/common/Hallucination.svelte';
 	import { _ } from 'svelte-i18n';
 	import { ChatMode as Mode } from '$lib/api/types';
-	import { haltCompletion, useRoomQueryEffect, getCurrentRoom, getMessages, createMessage, getStream } from '$lib/api';
+	import {
+		haltCompletion,
+		useRoomQueryEffect,
+		getCurrentRoom,
+		getMessages,
+		createMessage,
+		getStream
+	} from '$lib/api';
 	import { createUploadPipeline } from '$lib/api/files.svelte';
 	import Scroll from '$lib/ui/Scroll.svelte';
 	import { untrack } from 'svelte';

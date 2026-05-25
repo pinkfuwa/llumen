@@ -4,7 +4,9 @@
 	import { Collapsible } from 'bits-ui';
 	let { content, open = $bindable(false) }: { content: string; open?: boolean } = $props();
 
+	// svelte-ignore state_referenced_locally
 	let lines = $state(content.split('\n'));
+	// svelte-ignore state_referenced_locally
 	let prefix = $state(content);
 
 	$effect(() => {
