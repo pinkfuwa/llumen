@@ -303,12 +303,6 @@ impl Plugin {
             }),
         }
     }
-    pub fn web() -> Self {
-        Self {
-            id: "web".to_string(),
-            pdf: None,
-        }
-    }
 }
 
 #[derive(Serialize, stream_json::IntoSerializer)]

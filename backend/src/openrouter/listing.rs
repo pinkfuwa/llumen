@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use protocol::{OcrEngine, ReasoningEffort, WebTool};
+use protocol::{OcrEngine, ReasoningEffort};
 
 use crate::openrouter::{Capability, LLUMEN_NAME};
 
@@ -37,7 +37,6 @@ impl From<ModelCaps> for Capability {
             audio: value.audio,
             reasoning: value.reasoning,
             reasoning_effort: ReasoningEffort::Auto,
-            web: WebTool::Disabled,
         }
     }
 }

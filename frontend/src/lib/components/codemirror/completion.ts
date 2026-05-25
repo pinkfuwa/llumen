@@ -14,7 +14,7 @@ export const CAPABILITY_FIELDS = [
 	'web'
 ];
 
-export const WEB_OPTIONS = ['openrouter', 'native', 'built-in', 'disabled'];
+export const WEB_OPTIONS = ['openrouter', 'native', 'builtIn', 'disabled'];
 export const PARAMETER_FIELDS = ['temperature', 'repeat_penalty', 'top_k', 'top_p'];
 export const MEDIA_GEN_FIELDS = ['image_model', 'video_model'];
 export const TOML_TABLE_HEADERS = ['[capability]', '[parameter]', '[media_gen]'];

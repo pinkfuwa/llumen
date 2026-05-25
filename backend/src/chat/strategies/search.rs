@@ -15,11 +15,17 @@ use crate::openrouter::{self, StreamWithOrderedTokens};
 
 pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<()> {
     let tools = ctx.tools.for_search_mode();
-    let option = openrouter::CompletionOption::builder()
-        .web_search(true)
-        .tools(&tools)
-        .session_id(session.chat.id.to_string())
-        .build();
+
+    let option = {
+        let builder =
+            openrouter::CompletionOption::builder().session_id(session.chat.id.to_string());
+        match ctx.openrouter.is_custom_api() {
+            true => builder.tools(&tools),
+            false => builder.web_search(true),
+        }
+        .build()
+    };
+
     let mut messages = session.assemble_messages(ctx, option.clone())?;
 
     loop {

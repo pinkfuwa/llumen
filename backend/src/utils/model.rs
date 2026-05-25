@@ -16,7 +16,6 @@ impl From<ModelConfig> for openrouter::Model {
             audio: value.capability.audio,
             reasoning: value.capability.reasoning.map(|r| r.is_enabled()),
             reasoning_effort: value.capability.reasoning.map(|r| r.effort()),
-            web: value.capability.web,
         };
 
         openrouter::Model {
