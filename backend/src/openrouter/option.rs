@@ -137,7 +137,6 @@ impl From<Tool> for raw::Tool {
                 description: tool.description,
                 parameters: tool.schema,
             }),
-            parameters: None,
         }
     }
 }

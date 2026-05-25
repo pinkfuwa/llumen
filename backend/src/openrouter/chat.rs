@@ -171,6 +171,11 @@ impl ChatClient {
 
         if capability.toolcall {
             tools.extend(option.tools.into_iter().map(Into::into));
+
+            if option.web_plugin_search {
+                tools.push(raw::Tool::server_web_search());
+                tools.push(raw::Tool::server_web_fetch());
+            }
         }
 
         let request = raw::CompletionReq {
