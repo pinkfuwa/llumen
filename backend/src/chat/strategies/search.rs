@@ -13,7 +13,7 @@ use crate::chat::token::Token;
 use crate::chat::Context;
 use crate::openrouter::{self, StreamWithOrderedTokens};
 
-pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<()> {
+pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<bool> {
     let tools = ctx.tools.for_search_mode();
 
     let option = {
@@ -43,7 +43,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
             .await?;
 
         if matches!(halt, StreamEndReason::Halt) {
-            return Ok(());
+            return Ok(true);
         }
 
         // Get the inner stream back to access the result
@@ -117,7 +117,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
         }
     }
 
-    Ok(())
+    Ok(false)
 }
 
 async fn execute_tool(ctx: &Context, name: &str, args: &str) -> String {

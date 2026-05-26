@@ -54,12 +54,12 @@ fn parse_aspect_ratio(value: &str) -> Option<AspectRatio> {
     }
 }
 
-pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<()> {
+pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<bool> {
     if session.model.config.media_gen.image_model.is_none()
         && session.model.config.media_gen.video_model.is_none()
     {
         session.add_error("Media generation is disabled for this model config.".to_string());
-        return Ok(());
+        return Ok(false);
     }
 
     let tools = ctx.tools.for_media_mode(&session.model.config.media_gen);
@@ -83,7 +83,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
             .await?;
 
         if matches!(halt, StreamEndReason::Halt) {
-            return Ok(());
+            return Ok(true);
         }
 
         let stream = ordered_stream.into_inner();
@@ -150,7 +150,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
         }
     }
 
-    Ok(())
+    Ok(false)
 }
 
 async fn execute_tool(

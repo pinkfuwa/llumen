@@ -9,7 +9,7 @@ use crate::chat::session::CompletionSession;
 use crate::chat::Context;
 use crate::openrouter;
 
-pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<()> {
+pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<bool> {
     let messages = session.assemble_messages(ctx, openrouter::CompletionOption::default())?;
 
     let model = session.openrouter_model();
@@ -35,9 +35,5 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<(
     // Persist annotations / reasoning details / images
     session.apply_stream_result(&result).await;
 
-    if matches!(halt, StreamEndReason::Halt) {
-        return Ok(());
-    }
-
-    Ok(())
+    Ok(matches!(halt, StreamEndReason::Halt))
 }

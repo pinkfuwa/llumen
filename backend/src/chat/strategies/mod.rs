@@ -52,11 +52,13 @@ impl From<crate::utils::chat::ChatMode> for Strategy {
 }
 
 /// Dispatches a strategy, running the appropriate completion pipeline.
+///
+/// Return true if halted by user.
 pub async fn dispatch(
     ctx: Arc<Context>,
     strategy: Strategy,
     session: &mut CompletionSession,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<bool> {
     match strategy {
         Strategy::Normal => normal::execute(&ctx, session).await,
         Strategy::Search => search::execute(&ctx, session).await,

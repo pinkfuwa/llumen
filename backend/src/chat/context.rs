@@ -87,6 +87,11 @@ impl Context {
         let msg_id = session.message.id;
         log::debug!("session started: msg_id={}", msg_id);
 
+        // Sync model/mode to chat
+        if let Err(e) = session.sync_chat_model().await {
+            log::error!("model sync error: {e:#}");
+        }
+
         // Emit Start token
         let user_msg_id = session.history.last().map(|m| m.id).unwrap_or(0);
         session.add_token(Token::Start {
@@ -95,19 +100,17 @@ impl Context {
         });
 
         // Run the selected strategy
-        if let Err(e) = strategies::dispatch(self.clone(), strategy, &mut session).await {
-            log::error!("completion error: {e:#}");
-            session.add_error(format!("{e}"));
-        }
-
-        // Sync model/mode to chat
-        if let Err(e) = session.sync_chat_model().await {
-            log::error!("model sync error: {e:#}");
-        }
-
-        // Generate title if this is a new chat
-        if let Err(e) = session.try_generate_title().await {
-            log::error!("title generation error: {e:#}");
+        match strategies::dispatch(self.clone(), strategy, &mut session).await {
+            Ok(true) => {}
+            Ok(false) => {
+                if let Err(e) = session.try_generate_title().await {
+                    log::error!("title generation error: {e:#}");
+                }
+            }
+            Err(e) => {
+                log::error!("completion error: {e:#}");
+                session.add_error(format!("{e}"));
+            }
         }
 
         // Persist
