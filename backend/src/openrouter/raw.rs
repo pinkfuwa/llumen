@@ -91,8 +91,35 @@ fn detect_image_format(data: &[u8]) -> Option<String> {
         Some("bmp".to_string())
     } else if infer::image::is_ico(data) {
         Some("ico".to_string())
+    } else if is_svg(data) {
+        Some("svg+xml".to_string())
     } else {
         None
+    }
+}
+
+pub fn is_svg(data: &[u8]) -> bool {
+    let data = skip_bom(data);
+
+    let prefix = strip_ascii_whitespace(data);
+    prefix.starts_with(b"<?xml") || prefix.starts_with(b"<svg") || prefix.starts_with(b"<SVG")
+}
+
+fn skip_bom(data: &[u8]) -> &[u8] {
+    if data.len() >= 3 && data[..3] == [0xEF, 0xBB, 0xBF] {
+        &data[3..]
+    } else {
+        data
+    }
+}
+
+fn strip_ascii_whitespace(data: &[u8]) -> &[u8] {
+    let first_non_ws = data
+        .iter()
+        .position(|&b| b != b' ' && b != b'\t' && b != b'\n' && b != b'\r');
+    match first_non_ws {
+        Some(pos) => &data[pos..],
+        None => data,
     }
 }
 

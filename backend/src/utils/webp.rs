@@ -12,6 +12,10 @@ pub async fn image_to_webp(
     image: &[u8],
     width: u32,
 ) -> anyhow::Result<Vec<u8>> {
+    if *mime_type == "image/svg+xml" {
+        return Ok(image.to_vec());
+    }
+
     let image_data = image.to_vec();
     let original_mime = mime_type.clone();
 

@@ -127,6 +127,8 @@ impl VideoGenClient {
             Some("image/bmp")
         } else if infer::image::is_ico(data) {
             Some("image/x-icon")
+        } else if crate::openrouter::raw::is_svg(data) {
+            Some("image/svg+xml")
         } else {
             None
         }
