@@ -2,7 +2,7 @@ import type { CompletionContext, CompletionResult } from '@codemirror/autocomple
 import { get, writable, type Readable } from 'svelte/store';
 
 // Constants for TOML completion
-export const TOP_LEVEL_FIELDS = ['model_id', 'display_name'];
+export const TOP_LEVEL_FIELDS = ['model_id', 'display_name', 'task_model_id'];
 export const CAPABILITY_FIELDS = [
 	'image',
 	'audio',
@@ -22,7 +22,7 @@ export const TOML_TABLE_HEADERS = ['[capability]', '[parameter]', '[media_gen]']
 const BOOLEAN_FIELD_VALUES = ['true', 'false'];
 const OCR_FIELD_VALUES = ['native', 'text', 'mistral', 'cloudflare', 'disabled'];
 const REASONING_FIELD_VALUES = ['true', 'false', 'low', 'medium', 'high', 'none', 'auto'];
-const MODEL_ID_FIELDS = new Set(['model_id', 'image_model', 'video_model']);
+const MODEL_ID_FIELDS = new Set(['model_id', 'image_model', 'video_model', 'task_model_id']);
 const BOOLEAN_FIELDS = new Set(['image', 'audio', 'video', 'tool', 'json']);
 const STRING_VALUE_FIELDS = new Map([
 	['ocr', OCR_FIELD_VALUES],

@@ -132,7 +132,7 @@ impl ChatClient {
                 protocol::OcrEngine::Disabled => {}
             }
 
-            if capability.image_output {
+            if capability.image_output && option.image_generation {
                 modalities.push("image".to_string());
             }
 

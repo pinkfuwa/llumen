@@ -16,6 +16,7 @@ pub async fn execute(ctx: &Context, session: &mut CompletionSession) -> Result<b
 
     let option = openrouter::CompletionOption::builder()
         .session_id(session.chat.id.to_string())
+        .image_generation(true)
         .build();
 
     let mut stream: openrouter::StreamCompletion =

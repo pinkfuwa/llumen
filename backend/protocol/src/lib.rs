@@ -448,6 +448,8 @@ pub struct ModelConfig {
     pub display_name: String,
     pub model_id: String,
     #[serde(default)]
+    pub task_model_id: Option<String>,
+    #[serde(default)]
     pub capability: ModelCapability,
     #[serde(default)]
     pub parameter: ModelParameter,

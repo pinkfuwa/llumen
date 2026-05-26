@@ -823,7 +823,10 @@ impl CompletionSession {
             ),
         ];
 
-        let model = self.openrouter_model();
+        let mut model = self.openrouter_model();
+        if let Some(ref task_model_id) = self.model.config.task_model_id {
+            model.id.clone_from(task_model_id);
+        }
         let option = openrouter::CompletionOption::builder()
             .max_reasoning_tokens(512)
             .temperature(TITLE_GENERATION_TEMPERATURE)

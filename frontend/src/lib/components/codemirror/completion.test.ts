@@ -75,6 +75,16 @@ describe('TOML Completion', () => {
 		expect(completionLabels(result)).toContain('openai/gpt-4-turbo-preview');
 	});
 
+	it('completes provider/model ids for task_model_id', () => {
+		const result = getCompletions('task_model_id = "anth|"');
+		expect(completionLabels(result)).toContain('anthropic');
+	});
+
+	it('completes full model ids after provider slash for task_model_id', () => {
+		const result = getCompletions('task_model_id = "anthropic/|"');
+		expect(completionLabels(result)).toContain('anthropic/claude-3-5-sonnet-20241022');
+	});
+
 	it('completes booleans for capability fields', () => {
 		const result = getCompletions('[capability]\nimage = t|');
 		expect(completionLabels(result)).toEqual(expect.arrayContaining(['true']));

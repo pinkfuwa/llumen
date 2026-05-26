@@ -47,6 +47,18 @@ top_k = 40
 repeat_penalty = 1.1
 ```
 
+### Task Model
+
+You can optionally specify a separate model for internal tasks like title generation. This lets you use a cheaper/faster model for tasks while keeping the primary model for conversations.
+
+```toml
+display_name = "Claude 4.5 Sonnet"
+model_id = "anthropic/claude-4.5-sonnet"
+task_model_id = "openai/gpt-4o-mini"  # Cheaper model for title generation
+```
+
+When `task_model_id` is omitted, the primary model is used for all tasks.
+
 ## Model Capabilities
 
 Configure what features the model supports, image generation are always auto-detect(openrouter only).
