@@ -21,7 +21,7 @@
 		<Collapsible.Trigger
 			class="flex flex-row flex-nowrap items-center rounded p-2 duration-150 hover:bg-primary hover:text-text-hover"
 		>
-			<Globe class="mr-2 h-4 w-4" />
+			<Globe class="mr-2" />
 			<span>
 				{$_('chat.sources')}
 				<span class="ml-1 text-xs opacity-60">({citations.length})</span>

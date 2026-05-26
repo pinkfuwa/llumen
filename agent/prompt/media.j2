@@ -106,7 +106,7 @@ Allowed augmentations:
 - If user references media by name, pass those names in `reference_files`.
 - Name generated file properly, file extension is not necessary.
 - Prefer concise prompts that preserve the user's intent.
-- For `generate_image`, write prompt mostly in English (target >80% Latin characters). If Chinese characters are necessary, keep locale-consistent script.
+{% if "seedance" in video_model_id %}- For `generate_image`, write prompt mostly in English. If Chinese characters are necessary, keep locale-consistent script.{% else %}- For `generate_video` tool, always write prompt in Chinese{% endif %}
 - For video requests, do NOT call `generate_video` in the first reply. First provide plot/timeline and ask for confirmation.
 - After tool result, summarize what was generated and how references were used.
 - If tool call return error, DO NOT try again. PLEASE directly inform the user about the error.
