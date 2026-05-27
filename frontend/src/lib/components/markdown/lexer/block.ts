@@ -437,7 +437,16 @@ function lexTableRow(
 				continue;
 			}
 			// Only enter LaTeX mode if there's a matching closing $ on same line
-			if (line.indexOf('$', i + 1) !== -1) {
+			const dollarEnd = line.indexOf('$', i + 1);
+			if (dollarEnd !== -1) {
+				// If the content between $ signs contains a | and the $
+				// is not immediately followed by | (absolute-value pattern $|…|$),
+				// the | is likely a cell separator, not LaTeX content.
+				const between = line.substring(i + 1, dollarEnd);
+				if (line[i + 1] !== '|' && between.includes('|')) {
+					i++;
+					continue;
+				}
 				latexDepth++;
 			}
 			i++;
