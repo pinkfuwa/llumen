@@ -105,9 +105,7 @@ describe('pushMessage', () => {
 	});
 
 	it('appends at end when new message has lowest id', () => {
-		const msgs: Message[] = [
-			{ id: 50, inner: { t: 'assistant', c: null } }
-		];
+		const msgs: Message[] = [{ id: 50, inner: { t: 'assistant', c: null } }];
 		pushMessage(msgs, { id: 25, inner: { t: 'user', c: null } });
 		expect(msgs).toEqual([
 			{ id: 50, inner: { t: 'assistant', c: null } },
@@ -169,9 +167,7 @@ describe('cleanupMessages (remove id >= msgId)', () => {
 			{ id: 350, inner: { t: 'user', c: [] } }
 		];
 		cleanupMessages(msgs, 400);
-		expect(msgs).toEqual([
-			{ id: 350, inner: { t: 'user', c: [] } }
-		]);
+		expect(msgs).toEqual([{ id: 350, inner: { t: 'user', c: [] } }]);
 	});
 
 	it('deletes a message at end of array: removes it and all higher ids', () => {
@@ -191,9 +187,7 @@ describe('cleanupMessages (remove id >= msgId)', () => {
 			{ id: 100, inner: { t: 'assistant', c: [] } }
 		];
 		cleanupMessages(msgs, 150);
-		expect(msgs).toEqual([
-			{ id: 100, inner: { t: 'assistant', c: [] } }
-		]);
+		expect(msgs).toEqual([{ id: 100, inner: { t: 'assistant', c: [] } }]);
 	});
 
 	it('empty array is a no-op', () => {
