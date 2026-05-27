@@ -517,7 +517,9 @@ export function deleteMessage(): MutationResult<MessageDeleteReq, MessageDeleteR
 	return createMutation({
 		path: 'message/delete',
 		onSuccess: (data, param) => {
-			messages = messages.filter((x) => x.id < param.id);
+			const firstKeepIdx = messages.findIndex((x) => x.id < param.id);
+			if (firstKeepIdx === -1) messages.splice(0);
+			else messages.splice(0, firstKeepIdx);
 		}
 	});
 }
@@ -534,9 +536,9 @@ export function updateMessage(): RawMutationResult<
 					id: param.msgId
 				});
 
-				const firstOldIdx = messages.findIndex((x) => x.id <= param.msgId);
-				if (firstOldIdx >= 0) messages.splice(firstOldIdx);
-				messages = messages.filter((x) => !x.stream);
+				const firstKeepIdx = messages.findIndex((x) => x.id < param.msgId);
+				if (firstKeepIdx === -1) messages.splice(0);
+				else messages.splice(0, firstKeepIdx);
 
 				await create(param, resolve);
 			});

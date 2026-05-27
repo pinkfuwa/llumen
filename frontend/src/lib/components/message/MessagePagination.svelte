@@ -19,49 +19,47 @@
 	useSSEEffect(() => chatId);
 </script>
 
-{#each getMessages().messages as msg}
-	{#key msg.id}
-		{@const streaming = msg.stream}
-		{#if msg.inner.t == 'user'}
-			{@const content = msg.inner.c.text}
-			{@const files = msg.inner.c.files}
-			<User
-				{content}
-				{files}
-				messageId={msg.id}
-				onupdate={(text, updatedFiles) => {
-					if (room == undefined) return;
-					if (room.model_id == undefined) dispatchError('internal', $_('error.select_model_first'));
-					else
-						mutate({
-							chat_id: chatId,
-							model_id: room.model_id,
-							mode: room.mode,
-							text,
-							files: updatedFiles,
-							msgId: msg.id
-						});
-				}}
-			/>
-		{:else if msg.inner.t == 'assistant'}
-			{@const chunks = msg.inner.c}
-			<ResponseBox>
-				<Chunks {chunks} {streaming} />
+{#each getMessages().messages as msg (msg.id)}
+	{@const streaming = msg.stream}
+	{#if msg.inner.t == 'user'}
+		{@const content = msg.inner.c.text}
+		{@const files = msg.inner.c.files}
+		<User
+			{content}
+			{files}
+			messageId={msg.id}
+			onupdate={(text, updatedFiles) => {
+				if (room == undefined) return;
+				if (room.model_id == undefined) dispatchError('internal', $_('error.select_model_first'));
+				else
+					mutate({
+						chat_id: chatId,
+						model_id: room.model_id,
+						mode: room.mode,
+						text,
+						files: updatedFiles,
+						msgId: msg.id
+					});
+			}}
+		/>
+	{:else if msg.inner.t == 'assistant'}
+		{@const chunks = msg.inner.c}
+		<ResponseBox>
+			<Chunks {chunks} {streaming} />
 
-				{#if streaming}
-					<div class="space-y-4">
-						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
-						<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
-					</div>
-				{:else}
-					{@const text = chunks
-						.filter((x) => x.t == 'text')
-						.map((x) => x.c)
-						.join('\n')
-						.trim()}
-					<ResponseEdit content={text} token={msg.token_count} cost={msg.price} />
-				{/if}
-			</ResponseBox>
-		{/if}
-	{/key}
+			{#if streaming}
+				<div class="space-y-4">
+					<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+					<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+				</div>
+			{:else}
+				{@const text = chunks
+					.filter((x) => x.t == 'text')
+					.map((x) => x.c)
+					.join('\n')
+					.trim()}
+				<ResponseEdit content={text} token={msg.token_count} cost={msg.price} />
+			{/if}
+		</ResponseBox>
+	{/if}
 {/each}
