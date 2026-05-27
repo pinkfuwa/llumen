@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use protocol::{OcrEngine, ReasoningEffort};
 
-use crate::openrouter::{Capability, LLUMEN_NAME};
+use crate::openrouter::Capability;
 
 use super::{raw, Error};
 
@@ -282,8 +282,7 @@ impl ModelListing {
             .http_client
             .get(&self.models_endpoint)
             .bearer_auth(&self.api_key)
-            .header(super::HTTP_REFERER, super::LLUMEN_URL)
-            .header(super::X_TITLE, super::LLUMEN_NAME)
+            .headers(super::OPENROUTER_HEADERS.clone())
             .send()
             .await?;
 
@@ -378,8 +377,7 @@ impl VideoModelListing {
             .http_client
             .get(&self.models_endpoint)
             .bearer_auth(&self.api_key)
-            .header(super::HTTP_REFERER, super::LLUMEN_URL)
-            .header(super::X_TITLE, LLUMEN_NAME)
+            .headers(super::OPENROUTER_HEADERS.clone())
             .send()
             .await?;
 

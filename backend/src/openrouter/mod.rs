@@ -1,3 +1,7 @@
+use std::sync::LazyLock;
+
+use reqwest::header::{HeaderMap, HeaderValue};
+
 mod annotation;
 mod chat;
 mod error;
@@ -12,10 +16,22 @@ mod raw;
 mod stream;
 mod video_gen;
 
-pub static LLUMEN_URL: &str = "https://pinkfuwa.github.io/llumen/";
-pub static LLUMEN_NAME: &str = "llumen";
-pub const HTTP_REFERER: &str = "HTTP-Referer";
-pub const X_TITLE: &str = "X-OpenRouter-Title";
+pub static OPENROUTER_HEADERS: LazyLock<HeaderMap> = LazyLock::new(|| {
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        reqwest::header::HeaderName::from_static("HTTP-Referer"),
+        HeaderValue::from_static("https://pinkfuwa.github.io/llumen/"),
+    );
+    headers.insert(
+        reqwest::header::HeaderName::from_static("X-OpenRouter-Title"),
+        HeaderValue::from_static("llumen"),
+    );
+    headers.insert(
+        reqwest::header::HeaderName::from_static("x-OpenRouter-Categories"),
+        HeaderValue::from_static("general-chat"),
+    );
+    headers
+});
 
 pub use chat::{ChatCompletion, StructuredCompletion};
 pub use error::Error;
