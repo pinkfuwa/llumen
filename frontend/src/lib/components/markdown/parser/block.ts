@@ -502,26 +502,28 @@ function buildTableCells(lineTokens: LexToken[]): TableCellNode[] {
 	// Split on TablePipe tokens
 	let cellTokens: LexToken[] = [];
 	let cellStart = lineTokens.length > 0 ? lineTokens[0].start : 0;
+	let hasOpenedCell = false;
 
 	for (const token of lineTokens) {
 		if (token.kind === LexTokenKind.TablePipe) {
-			// If we have content, build a cell
-			if (cellTokens.length > 0) {
+			if (hasOpenedCell) {
 				const textContent = cellTokens
 					.map((t) => t.value)
 					.join('')
 					.trim();
 				const cellEnd = token.start;
-				if (textContent.length > 0) {
-					const children = buildInlineAst(textContent, cellTokens[0].start);
-					cells.push({
-						type: AstNodeType.TableCell,
-						start: cellStart,
-						end: cellEnd,
-						children
-					});
-				}
+				const children =
+					textContent.length > 0
+						? buildInlineAst(textContent, cellTokens.length > 0 ? cellTokens[0].start : cellStart)
+						: [];
+				cells.push({
+					type: AstNodeType.TableCell,
+					start: cellStart,
+					end: cellEnd,
+					children
+				});
 			}
+			hasOpenedCell = true;
 			cellTokens = [];
 			cellStart = token.end;
 		} else {

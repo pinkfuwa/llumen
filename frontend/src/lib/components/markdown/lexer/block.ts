@@ -436,7 +436,10 @@ function lexTableRow(
 				i += 2;
 				continue;
 			}
-			latexDepth++;
+			// Only enter LaTeX mode if there's a matching closing $ on same line
+			if (line.indexOf('$', i + 1) !== -1) {
+				latexDepth++;
+			}
 			i++;
 			continue;
 		}
