@@ -19,15 +19,15 @@ mod video_gen;
 pub static OPENROUTER_HEADERS: LazyLock<HeaderMap> = LazyLock::new(|| {
     let mut headers = HeaderMap::new();
     headers.insert(
-        reqwest::header::HeaderName::from_static("HTTP-Referer"),
+        reqwest::header::HeaderName::from_static("http-referer"),
         HeaderValue::from_static("https://pinkfuwa.github.io/llumen/"),
     );
     headers.insert(
-        reqwest::header::HeaderName::from_static("X-OpenRouter-Title"),
+        reqwest::header::HeaderName::from_static("x-openrouter-title"),
         HeaderValue::from_static("llumen"),
     );
     headers.insert(
-        reqwest::header::HeaderName::from_static("x-OpenRouter-Categories"),
+        reqwest::header::HeaderName::from_static("x-openrouter-categories"),
         HeaderValue::from_static("general-chat"),
     );
     headers
