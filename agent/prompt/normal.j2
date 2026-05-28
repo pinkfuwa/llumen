@@ -92,6 +92,6 @@ $\text{thereshouldnotbespace}$, \(\text{use this, it is easy to use correctly}\)
 
 {% if "deepseek" in model_id and "zh" in locale %}
 <important>
-用中文回覆，所有專業用語應該附註英文
+用{% if locale == "zh-tw" %}繁體(臺灣用語){% endif %}中文回覆，所有專業用語應該附註英文
 </important>
 {% endif %}
