@@ -12,13 +12,13 @@ import { minimalSetup } from 'codemirror';
 import { setModelIds, tomlCompletion } from './completion';
 
 export default function useCodeMirror(option: {
-	isLightTheme: boolean;
+	darkTheme: boolean;
 	value: Writable<string>;
 	element: Readable<HTMLDivElement>;
 	onDestroy: (callback: () => void) => void;
 	modelIds: Readable<string[]>;
 }) {
-	const { isLightTheme, value, element, onDestroy, modelIds } = option;
+	const { darkTheme, value, element, onDestroy, modelIds } = option;
 
 	const div = get(element);
 
@@ -82,7 +82,7 @@ export default function useCodeMirror(option: {
 				}
 			]),
 			StreamLanguage.define(toml),
-			isLightTheme ? githubLight : githubDark,
+			darkTheme ? githubDark : githubLight,
 			onUpdate,
 			autocompleteTheme,
 			autocompletion({ override: [tomlCompletion] })

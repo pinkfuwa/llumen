@@ -30,7 +30,7 @@
 	{#each data as entry}
 		<RadioGroup.Item
 			value={entry.value}
-			class="text-primary cursor-pointer rounded-lg p-2 text-left duration-150 not-disabled:hover:bg-accent not-disabled:hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 data-[state=checked]:bg-accent"
+			class="cursor-pointer rounded-lg p-2 text-left text-primary duration-150 not-disabled:hover:bg-accent not-disabled:hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 data-[state=checked]:bg-accent"
 			onclick={onchange}>{entry.label}</RadioGroup.Item
 		>
 	{/each}

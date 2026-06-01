@@ -33,7 +33,7 @@
 			class="group flex min-h-10 flex-row rounded-md border border-outline bg-surface-overlay p-3 hover:bg-accent"
 		>
 			<div
-				class="hover:text-inverse my-auto mr-2 shrink-0 rounded-md p-1 duration-150 hover:bg-accent focus:ring-4 focus:ring-outline focus:outline-none"
+				class="my-auto mr-2 shrink-0 rounded-md p-1 duration-150 hover:bg-accent hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none"
 			>
 				{#if deletable}
 					{#if file.type && isMimeSupported(file.type, mimes)}

@@ -38,7 +38,7 @@
 	<div
 		class="fixed right-0 bottom-0 m-4 rounded border border-outline bg-input-bg p-3 shadow-surface-base"
 	>
-		<div class="text-primary pb-2">
+		<div class="pb-2 text-primary">
 			{#if $offlineReady}
 				<span> {$_('pwa.offline_ready')} </span>
 			{:else}

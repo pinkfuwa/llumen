@@ -171,7 +171,7 @@
 					<div class="font-mono text-2xl font-semibold">
 						{formatTime(recordingTime)}
 					</div>
-					<p class="text-primary/60 text-sm">
+					<p class="text-sm text-primary/60">
 						{$_('chat.record_audio_dialog.recording')}
 					</p>
 				</div>
@@ -183,7 +183,7 @@
 					>
 						<Mic class="size-8" />
 					</button>
-					<p class="text-primary/60 text-sm">
+					<p class="text-sm text-primary/60">
 						{$_('chat.record_audio_dialog.click_to_start')}
 					</p>
 				</div>

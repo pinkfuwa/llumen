@@ -1,4 +1,4 @@
-import { derived, get, writable } from 'svelte/store';
+import { derived, get, type Readable } from 'svelte/store';
 import { APIFetch } from '../api/state/errorHandle';
 import type {
 	UserReadReq,
@@ -8,54 +8,53 @@ import type {
 	UserUpdateReq
 } from '../api/types';
 import { setLocale } from './i18n';
-import { localState, token } from '../store';
-import { setTheme, type Theme } from './theme';
+import { localState, syncState, token } from '../store';
+import type { Theme } from './theme';
+import { setTheme } from './theme';
 import { onDestroy } from 'svelte';
-import { isLightTheme as isLightThemeFn } from './theme';
 
-// TODO: remove and just read user query
-function getRemotePreference() {
-	return APIFetch<UserReadResp, UserReadReq>('user/read', {});
-}
-
-function setRemotePreference(preference: UserPreference) {
-	return APIFetch<UserUpdateResp, UserUpdateReq>('user/update', { preference });
-}
+export { propToRune } from './mutate.svelte';
 
 function defaultPreference(): Required<UserPreference> {
+	const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 	return {
+		theme: { name: 'llumen', dark, pattern: false },
 		locale: navigator.language.includes('zh') ? 'zh-tw' : 'en',
-		theme:
-			window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-				? 'dark-pattern'
-				: 'light',
 		submit_on_enter: 'true'
 	};
 }
 
-export const preference = localState<Required<UserPreference>>('preference', defaultPreference());
-
-export function updatePreference(newPreference: Partial<UserPreference>) {
-	preference.update((prev) => ({ ...prev, ...newPreference }));
-}
-
-async function initWithRemote() {
-	const remote = await getRemotePreference();
-	if (remote == undefined) return;
-
-	updatePreference(remote.preference);
-
-	await setRemotePreference(get(preference));
-}
+export const preference = syncState(
+	'preference',
+	defaultPreference(),
+	{
+		upload: async (preference) => {
+			await APIFetch<UserUpdateResp, UserUpdateReq>('user/update', { preference });
+		},
+		download: () =>
+			new Promise((resolve) => {
+				let unsubscribe = token.subscribe((token) => {
+					if (token) {
+						APIFetch<UserReadResp, UserReadReq>('user/read', {}).then((remote) => {
+							if (!remote) return;
+							resolve(remote.preference as Required<UserPreference>);
+							unsubscribe();
+						});
+					}
+				});
+			})
+	},
+	(data) => {
+		if (typeof data.theme === 'string') return false;
+		return true;
+	}
+);
 
 export async function init() {
 	const unsubscribers = [
 		preference.subscribe((value) => {
 			setTheme(value.theme as Theme);
 			setLocale(value.locale as any);
-		}),
-		token.subscribe(async (value) => {
-			if (value) await initWithRemote();
 		})
 	];
 	onDestroy(() => unsubscribers.forEach((un) => un()));
@@ -63,10 +62,8 @@ export async function init() {
 
 export const submitOnEnter = derived(preference, (x) => x.submit_on_enter);
 
-export const theme = derived(preference, (x) => x.theme);
-
 export const locale = derived(preference, (x) => x.locale);
 
-export const isLightTheme = derived(theme, (x) => isLightThemeFn(x as any));
+export const theme: Readable<Theme> = derived(preference, (x) => x.theme as Theme);
 
 export const lastModel = localState<number | null>('lastModel', null);

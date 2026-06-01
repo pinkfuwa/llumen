@@ -1,13 +1,27 @@
-[data-theme='dracula'] {
+[data-theme='dracula'][data-dark='false'] {
+	--color-surface-base: #fffbeb;
+	--color-surface-panel: #f2efe0;
+	--color-surface-overlay: #efeddc;
+	--color-surface-pattern: #cfcfde;
+	--color-accent: #644ac9;
+	--color-accent-soft: #6c664b;
+	--color-primary: #1f1f1f;
+	--color-inverse: #fffbeb;
+	--color-input-bg: #e2deca;
+	--color-outline: #cfcfde;
+	--color-code-bg: #e2deca;
+}
+
+[data-theme='dracula'][data-dark='true'] {
 	--color-surface-base: #282a36;
-	--color-surface-panel: #44475a;
-	--color-surface-overlay: #44475a;
-	--color-surface-pattern: #343746;
+	--color-surface-panel: #2d2f3e;
+	--color-surface-overlay: #343746;
+	--color-surface-pattern: #44475a;
 	--color-accent: #bd93f9;
 	--color-accent-soft: #6272a4;
 	--color-primary: #f8f8f2;
 	--color-inverse: #282a36;
-	--color-input-bg: #44475a;
-	--color-outline: #6272a4;
-	--color-code-bg: #44475a;
+	--color-input-bg: #21222c;
+	--color-outline: #44475a;
+	--color-code-bg: #21222c;
 }

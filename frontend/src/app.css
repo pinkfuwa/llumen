@@ -1,14 +1,10 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import './lib/style/palette.css';
-@import './lib/style/palettes/light.css';
-@import './lib/style/palettes/light-pattern.css';
-@import './lib/style/palettes/dark.css';
-@import './lib/style/palettes/blue.css';
-@import './lib/style/palettes/solarized-light.css';
-@import './lib/style/palettes/solarized-dark.css';
+@import './lib/style/palettes/llumen.css';
 @import './lib/style/palettes/dracula.css';
-@import './lib/style/palettes/nord.css';
+@import './lib/style/palettes/flexoki.css';
+@import './lib/style/palettes/vitesse.css';
 
 html {
 	background: var(--color-surface-base);
@@ -20,8 +16,7 @@ html {
 	isolation: isolate;
 }
 
-[data-theme='light-pattern'] .bg-chat::before,
-[data-theme='dark-pattern'] .bg-chat::before {
+[data-pattern='true'] .bg-chat::before {
 	content: '';
 	position: absolute;
 	inset: 0;

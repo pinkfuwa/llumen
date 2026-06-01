@@ -497,7 +497,7 @@ export interface UserListResp {
 }
 
 export interface UserPreference {
-	theme?: string;
+	theme?: Value;
 	locale?: string;
 	submit_on_enter?: string;
 }

@@ -17,16 +17,12 @@ worker.addEventListener('message', (event: MessageEvent<ShikiWorkerResponse>) =>
 	}
 });
 
-export async function highlight(
-	code: string,
-	lang: string,
-	theme: 'light' | 'dark'
-): Promise<string> {
+export async function highlight(code: string, lang: string, dark: boolean): Promise<string> {
 	await semphore.acquire();
 
 	let { html, error } = await new Promise<ShikiWorkerResponse>((resolve) => {
 		renderCallback = resolve;
-		const request: ShikiWorkerRequest = { code, lang, theme };
+		const request: ShikiWorkerRequest = { code, lang, dark };
 		worker.postMessage(request);
 	});
 

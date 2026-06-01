@@ -26,7 +26,7 @@
 
 <Collapsible.Root class="md:hidden">
 	<Collapsible.Trigger
-		class="hover:text-inverse flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent"
+		class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent hover:text-inverse"
 	>
 		<span>{title}</span>
 		<ChevronDown />

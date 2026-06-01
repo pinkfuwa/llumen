@@ -36,7 +36,7 @@
 <div class="flex h-full flex-col gap-2 overflow-auto">
 	<Collapsible.Root class="md:hidden">
 		<Collapsible.Trigger
-			class="hover:text-inverse flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent"
+			class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent hover:text-inverse"
 		>
 			<span>{$_('setting.admin.create')}</span>
 			<ChevronDown />
@@ -146,7 +146,7 @@
 		</div>
 		<Collapsible.Root class="md:hidden">
 			<Collapsible.Trigger
-				class="hover:text-inverse flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent"
+				class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent hover:text-inverse"
 			>
 				<h3>{$_('setting.admin.users')}</h3>
 				<ChevronDown />

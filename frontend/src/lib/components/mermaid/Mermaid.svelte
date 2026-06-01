@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { render } from './mermaid';
-	import { isLightTheme } from '$lib/preference';
+	import { theme } from '$lib/preference';
 	import Code from '../shiki/Code.svelte';
+	import { derived } from 'svelte/store';
 
 	let { text = '', closed = false } = $props<{ text?: string; closed?: boolean }>();
 
@@ -9,7 +10,7 @@
 	let error = $state<string | null>(null);
 	let rendering = $state(false);
 
-	const isDark = $derived(!$isLightTheme);
+	const dark = derived(theme, (x) => x.dark);
 
 	$effect(() => {
 		if (!closed || !text) {
@@ -40,7 +41,7 @@
 	<Code {text} />
 {:else if svg}
 	<div
-		class="mermaid border-radius-md flex justify-center overflow-x-auto rounded-md border border-outline bg-white p-4 {isDark
+		class="mermaid border-radius-md flex justify-center overflow-x-auto rounded-md border border-outline bg-white p-4 {$theme.dark
 			? 'dark:bg-neutral-900'
 			: ''}"
 	>

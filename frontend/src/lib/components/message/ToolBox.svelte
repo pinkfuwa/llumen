@@ -15,13 +15,13 @@
 	<Accordion.Item>
 		<Accordion.Header>
 			<Accordion.Trigger
-				class="hover:text-inverse flex flex-row flex-nowrap items-center rounded p-2 duration-150 hover:bg-accent"
+				class="flex flex-row flex-nowrap items-center rounded p-2 duration-150 hover:bg-accent hover:text-inverse"
 			>
 				<ToolCase class="mr-2" />
 				{#if !open}
 					<span class="mr-1"> {$_('chat.calling')} </span>
 				{/if}
-				<span class="text-inverse rounded-md bg-accent px-2 py-[2px]">
+				<span class="rounded-md bg-accent px-2 py-[2px] text-inverse">
 					{displayName}
 				</span>
 			</Accordion.Trigger>

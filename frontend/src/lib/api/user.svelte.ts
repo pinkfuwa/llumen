@@ -1,4 +1,3 @@
-import { updatePreference } from '$lib/preference';
 import { createQueryEffect, createMutation, type MutationResult } from './state';
 
 import type {
@@ -82,10 +81,7 @@ export function createUser(): MutationResult<UserCreateReq, UserCreateResp> {
 
 export function updateUser(): MutationResult<UserUpdateReq, UserUpdateResp> {
 	return createMutation({
-		path: 'user/update',
-		onSuccess(data, param) {
-			if (param.preference) updatePreference(param.preference);
-		}
+		path: 'user/update'
 	});
 }
 

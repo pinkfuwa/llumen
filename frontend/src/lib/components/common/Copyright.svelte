@@ -4,7 +4,7 @@
 
 <div class="relative select-none">
 	<footer
-		class="text-primary/60 absolute bottom-1 z-10 flex w-full items-center justify-center text-sm"
+		class="absolute bottom-1 z-10 flex w-full items-center justify-center text-sm text-primary/60"
 	>
 		<a
 			href="https://github.com/pinkfuwa/llumen"

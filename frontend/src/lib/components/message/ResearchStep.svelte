@@ -19,7 +19,7 @@
 
 <Collapsible.Root bind:open>
 	<Collapsible.Trigger
-		class="hover:text-inverse flex flex-row flex-nowrap rounded p-1 duration-150 hover:bg-accent"
+		class="flex flex-row flex-nowrap rounded p-1 duration-150 hover:bg-accent hover:text-inverse"
 	>
 		{#if step.kind == StepKind.Code}
 			<ChartSpline class="mr-2" />

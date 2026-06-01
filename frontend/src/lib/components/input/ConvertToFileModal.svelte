@@ -58,7 +58,7 @@
 					placeholder="message.md"
 					class="w-full rounded-md border border-outline bg-surface-panel px-3 py-2 focus:ring-2 focus:ring-accent focus:outline-hidden"
 				/>
-				<p class="text-primary/60 mt-1 text-sm">
+				<p class="mt-1 text-sm text-primary/60">
 					{$_('chat.convert_to_file.file_hint')}
 				</p>
 			</div>

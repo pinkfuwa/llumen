@@ -1,20 +1,14 @@
-export type Theme =
-	| 'light'
-	| 'light-pattern'
-	| 'dark'
-	| 'dark-pattern'
-	| 'blue'
-	| 'solarized-light'
-	| 'solarized-dark'
-	| 'dracula'
-	| 'nord';
-
-export function isLightTheme(theme: Theme) {
-	return theme == 'light' || theme == 'light-pattern' || theme == 'solarized-light';
-}
+export type Theme = {
+	name: string;
+	dark: boolean;
+	pattern: boolean;
+};
 
 export function setTheme(theme: Theme) {
-	document.documentElement.setAttribute('data-theme', theme);
+	const { name, dark, pattern } = theme;
+	document.documentElement.setAttribute('data-theme', name);
+	document.documentElement.setAttribute('data-dark', dark ? 'true' : 'false');
+	document.documentElement.setAttribute('data-pattern', pattern ? 'true' : 'false');
 
 	requestAnimationFrame(() => {
 		const meta = document.querySelector('meta[name="theme-color"]')!;

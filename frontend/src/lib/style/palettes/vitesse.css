@@ -1,0 +1,27 @@
+[data-theme='vitesse'][data-dark='false'] {
+	--color-surface-base: #ffffff;
+	--color-surface-panel: #f8f8f8;
+	--color-surface-overlay: #efefef;
+	--color-surface-pattern: #e8e8e8;
+	--color-accent: #4d9375;
+	--color-accent-soft: #999999;
+	--color-primary: #393a34;
+	--color-inverse: #ffffff;
+	--color-input-bg: #f8f8f8;
+	--color-outline: #e8e8e8;
+	--color-code-bg: #f8f8f8;
+}
+
+[data-theme='vitesse'][data-dark='true'] {
+	--color-surface-base: #121212;
+	--color-surface-panel: #181818;
+	--color-surface-overlay: #1a1a1a;
+	--color-surface-pattern: #252525;
+	--color-accent: #4d9375;
+	--color-accent-soft: #666666;
+	--color-primary: #dbd7ca;
+	--color-inverse: #121212;
+	--color-input-bg: #181818;
+	--color-outline: #252525;
+	--color-code-bg: #181818;
+}

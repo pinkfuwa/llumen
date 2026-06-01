@@ -10,7 +10,7 @@ let highlighter = await createHighlighter({
 const loaded = new Set<string>();
 
 self.onmessage = async (event: MessageEvent<ShikiWorkerRequest>) => {
-	const { code, lang, theme } = event.data;
+	const { code, lang, dark } = event.data;
 
 	try {
 		if (!loaded.has(lang)) {
@@ -20,7 +20,7 @@ self.onmessage = async (event: MessageEvent<ShikiWorkerRequest>) => {
 
 		const html = highlighter.codeToHtml(code, {
 			lang: lang as BundledLanguage,
-			theme: (theme === 'light' ? 'github-light' : 'github-dark') as BundledTheme
+			theme: (dark ? 'github-dark' : 'github-light') as BundledTheme
 		});
 
 		self.postMessage({ html });

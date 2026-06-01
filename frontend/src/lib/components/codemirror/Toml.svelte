@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { isLightTheme } from '$lib/preference';
+	import { theme } from '$lib/preference';
 	import { onDestroy } from 'svelte';
 	import { derived, get, toStore, writable } from 'svelte/store';
 	import { useModelIdsQueryEffect, getModelIds } from '$lib/api/model.svelte';
@@ -20,10 +20,12 @@
 	let callback: () => void | undefined;
 	let loaded = $state(false);
 
+	const darkTheme = derived(theme, (x) => x.dark);
+
 	useCodeMirrorPromise.then((useCodeMirror) => {
 		const modelIdsStore = toStore(() => getModelIds()?.ids ?? []);
 		useCodeMirror.default({
-			isLightTheme: get(isLightTheme),
+			darkTheme: get(darkTheme),
 			value: valWritable,
 			element: toStore(() => div!),
 			onDestroy: (x) => (callback = x),
@@ -42,7 +44,7 @@
 		return unsubscriber;
 	});
 
-	let themeStyle = $isLightTheme
+	let themeStyle = get(darkTheme)
 		? 'background-color:#fff;color:#24292e'
 		: 'background-color:#24292e;color:#e1e4e8';
 </script>

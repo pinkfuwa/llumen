@@ -11,7 +11,7 @@
 	<div class="group/usage relative flex space-x-1">
 		{#if showUsage}
 			<CircleDollarSign
-				class="group-hover/usage:text-inverse h-10 w-10 rounded-lg p-2  duration-150 group-hover/usage:bg-accent"
+				class="h-10 w-10 rounded-lg p-2 duration-150  group-hover/usage:bg-accent group-hover/usage:text-inverse"
 			/>
 
 			<div
@@ -25,7 +25,7 @@
 	</div>
 	<button onclick={() => copy(content)} aria-label="copy response">
 		<ClipboardCopy
-			class="hover:text-inverse h-10 w-10 rounded-lg p-2 duration-150 hover:bg-accent"
+			class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-accent hover:text-inverse"
 		/>
 	</button>
 </div>

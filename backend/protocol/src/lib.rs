@@ -366,7 +366,7 @@ impl MessageInner {
 #[typeshare]
 pub struct UserPreference {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub theme: Option<String>,
+    pub theme: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>,
     // Valid value for it should "true" or "false"

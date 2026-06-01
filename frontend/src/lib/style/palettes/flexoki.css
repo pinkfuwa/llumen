@@ -1,0 +1,27 @@
+[data-theme='flexoki'][data-dark='false'] {
+	--color-surface-base: #fffcf0;
+	--color-surface-panel: #f2f0e5;
+	--color-surface-overlay: #e6e4d9;
+	--color-surface-pattern: #dad8ce;
+	--color-accent: #af3029;
+	--color-accent-soft: #da702c;
+	--color-primary: #100f0f;
+	--color-inverse: #fffcf0;
+	--color-input-bg: #f2f0e5;
+	--color-outline: #cecdc3;
+	--color-code-bg: #f2f0e5;
+}
+
+[data-theme='flexoki'][data-dark='true'] {
+	--color-surface-base: #100f0f;
+	--color-surface-panel: #1c1b1a;
+	--color-surface-overlay: #282726;
+	--color-surface-pattern: #343331;
+	--color-accent: #d14d41;
+	--color-accent-soft: #da702c;
+	--color-primary: #fffcf0;
+	--color-inverse: #100f0f;
+	--color-input-bg: #282726;
+	--color-outline: #403e3c;
+	--color-code-bg: #1c1b1a;
+}
