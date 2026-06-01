@@ -4,11 +4,14 @@
 	import { fade } from 'svelte/transition';
 
 	let error = useError();
+
+	const errorStyle =
+		'fixed top-0 right-0 z-50 m-3 rounded-md border border-border bg-card px-3 py-2 text-left';
 </script>
 
 {#if $error != null}
 	<button
-		class="fixed top-0 right-0 z-50 m-3 rounded-md border border-outline bg-surface-panel px-3 py-2 text-left"
+		class={errorStyle}
 		in:fade={{ duration: 150 }}
 		out:fade={{ duration: 150 }}
 		onmouseleave={dismissError}

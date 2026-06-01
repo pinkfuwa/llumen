@@ -18,7 +18,7 @@
 </script>
 
 <form
-	class="mb-4 items-center justify-between space-x-2 border-b border-outline pb-2 text-lg"
+	class="mb-4 items-center justify-between space-x-2 border-b border-border pb-2 text-lg"
 	onsubmit={() => {
 		if (matched) onsubmit(password);
 		else {
@@ -35,20 +35,23 @@
 		<div class="w-full">
 			<input
 				type="password"
-				class="mb-1 w-full rounded-md border border-outline p-1"
+				class="mb-1 w-full rounded-md border border-border p-1"
 				bind:value={password}
 			/>
 			<input
 				type="password"
-				class="w-full rounded-md border border-outline p-1"
+				class="w-full rounded-md border border-border p-1"
 				bind:value={passwordCheck}
 			/>
 		</div>
-		<button class="mx-1 rounded-md p-1 hover:bg-accent{matched ? '' : ' hidden'}" type="submit">
+		<button
+			class="mx-1 rounded-md p-1 hover:bg-interactive-hover{matched ? '' : ' hidden'}"
+			type="submit"
+		>
 			<CheckLine />
 		</button>
 		{#if !matched}
-			<button class="mx-1 rounded-md p-1 hover:bg-accent" onclick={oncancal}>
+			<button class="mx-1 rounded-md p-1 hover:bg-interactive-hover" onclick={oncancal}>
 				<X />
 			</button>
 		{/if}

@@ -21,6 +21,14 @@
 		onchange?: () => void;
 	} = $props();
 
+	const triggerStyle =
+		'inline-flex h-full items-center justify-between rounded-lg border border-border px-3 text-center text-nowrap text-foreground duration-150 not-disabled:cursor-pointer not-disabled:hover:bg-interactive-hover focus:ring-4 focus:ring-ring focus:outline-none disabled:cursor-not-allowed';
+	const contentStyle =
+		'z-20 max-h-48 rounded-xl border border-border bg-popover text-popover-foreground outline-hidden select-none data-[side=bottom]:translate-y-1 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:-translate-y-1 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95';
+	const itemStyle =
+		'flex h-10 w-full items-center px-2 py-3 text-sm outline-hidden duration-150 select-none not-disabled:cursor-pointer not-disabled:hover:bg-interactive-hover disabled:opacity-50';
+	const indicatorStyle = 'ml-auto h-1 w-1 bg-primary';
+
 	const selectedLabel = $derived.by(() => {
 		if (selected) {
 			let item = data.find((data) => data.value == selected);
@@ -41,10 +49,7 @@
 	items={data}
 	{disabled}
 >
-	<Select.Trigger
-		class="inline-flex h-full items-center justify-between rounded-lg border border-outline px-3 text-center text-nowrap text-primary duration-150 not-disabled:cursor-pointer not-disabled:hover:bg-accent not-disabled:hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed {className}"
-		{disabled}
-	>
+	<Select.Trigger class={`${triggerStyle} ${className}`} {disabled}>
 		<span class="flex min-w-0 grow justify-start truncate">
 			{selectedLabel}
 		</span>
@@ -54,14 +59,11 @@
 		{/if}
 	</Select.Trigger>
 	<Select.Portal>
-		<Select.Content
-			class="z-20 max-h-48 rounded-xl border border-outline bg-input-bg text-primary outline-hidden select-none data-[side=bottom]:translate-y-1 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:-translate-y-1 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 {popupClass} "
-			sideOffset={10}
-		>
+		<Select.Content class={`${contentStyle} ${popupClass}`} sideOffset={10}>
 			<Select.Viewport class="rounded-xl bg-clip-padding">
 				{#each data as row, i}
 					<Select.Item
-						class="flex h-10 w-full items-center px-2 py-3 text-sm outline-hidden duration-150 select-none not-disabled:cursor-pointer not-disabled:hover:bg-accent not-disabled:hover:text-inverse disabled:opacity-50"
+						class={itemStyle}
 						value={row.value}
 						label={row.label}
 						disabled={row.disabled}
@@ -69,7 +71,7 @@
 						{#snippet children({ selected })}
 							{row.label}
 							{#if selected}
-								<div class="ml-auto h-1 w-1 bg-amber-200"></div>
+								<div class={indicatorStyle}></div>
 							{/if}
 						{/snippet}
 					</Select.Item>

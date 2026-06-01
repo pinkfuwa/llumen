@@ -8,18 +8,19 @@
 		text,
 		...restProps
 	}: Tooltip.TriggerProps & { text: string; children: Snippet } = $props();
+
+	const triggerStyle =
+		'cursor-pointer rounded-lg text-center text-foreground duration-150 not-disabled:hover:bg-interactive-hover focus:ring-4 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+	const panelStyle = 'rounded-md border border-border bg-popover p-2 text-popover-foreground';
 </script>
 
 <Tooltip.Provider>
 	<Tooltip.Root delayDuration={200}>
-		<Tooltip.Trigger
-			{...restProps}
-			class={`cursor-pointer rounded-lg text-center text-primary duration-150 not-disabled:hover:bg-accent not-disabled:hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
-		>
+		<Tooltip.Trigger {...restProps} class={`${triggerStyle} ${className}`}>
 			{@render children()}
 		</Tooltip.Trigger>
 		<Tooltip.Content sideOffset={6}>
-			<div class="rounded-md border border-outline bg-surface-overlay p-2 text-primary">
+			<div class={panelStyle}>
 				{text}
 			</div>
 		</Tooltip.Content>

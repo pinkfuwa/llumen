@@ -7,6 +7,9 @@
 	import { updateUser } from '$lib/api/user.svelte';
 	import { token } from '$lib/store';
 
+	const triggerStyle =
+		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
+
 	let { mutate, isError } = updateUser();
 
 	let open = $state(false);
@@ -28,18 +31,18 @@
 	}
 </script>
 
-<div class="mb-4 hidden items-center justify-between border-b border-outline pb-2 text-lg md:flex">
+<div class="mb-4 hidden items-center justify-between border-b border-border pb-2 text-lg md:flex">
 	<span>{$_('setting.change_password')}: </span>
 	<div class="flex items-center gap-2">
 		<input
 			type="password"
-			class="w-36 rounded-md border border-outline p-1"
+			class="w-36 rounded-md border border-border p-1"
 			placeholder={$_('setting.account.password')}
 			bind:value={password}
 		/>
 		<input
 			type="password"
-			class="w-36 rounded-md border border-outline p-1"
+			class="w-36 rounded-md border border-border p-1"
 			placeholder={$_('setting.account.confirm_password')}
 			bind:value={passwordCheck}
 		/>
@@ -50,14 +53,12 @@
 </div>
 
 <Collapsible.Root bind:open class="md:hidden">
-	<Collapsible.Trigger
-		class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent hover:text-inverse"
-	>
+	<Collapsible.Trigger class={triggerStyle}>
 		<span>{$_('setting.change_password')}</span>
 		<ChevronDown />
 	</Collapsible.Trigger>
 	<Collapsible.Content
-		class="flex flex-col border-b border-outline px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
+		class="flex flex-col border-b border-border px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
 		{#if isError()}
 			<Warning>{$_('setting.account.error_updating_password')}</Warning>
@@ -65,13 +66,13 @@
 		<div class="mb-2 flex flex-col gap-2">
 			<input
 				type="password"
-				class="w-full rounded-md border border-outline p-2"
+				class="w-full rounded-md border border-border p-2"
 				placeholder={$_('setting.account.password')}
 				bind:value={password}
 			/>
 			<input
 				type="password"
-				class="w-full rounded-md border border-outline p-2"
+				class="w-full rounded-md border border-border p-2"
 				placeholder={$_('setting.account.confirm_password')}
 				bind:value={passwordCheck}
 			/>

@@ -12,6 +12,9 @@
 
 	const dark = derived(theme, (x) => x.dark);
 
+	const mermaidStyle =
+		'mermaid border-radius-md flex justify-center overflow-x-auto rounded-md border border-border bg-white p-4';
+
 	$effect(() => {
 		if (!closed || !text) {
 			svg = null;
@@ -40,11 +43,7 @@
 {:else if error}
 	<Code {text} />
 {:else if svg}
-	<div
-		class="mermaid border-radius-md flex justify-center overflow-x-auto rounded-md border border-outline bg-white p-4 {$theme.dark
-			? 'dark:bg-neutral-900'
-			: ''}"
-	>
+	<div class="{mermaidStyle} {$theme.dark ? 'dark:bg-neutral-900' : ''}">
 		{@html svg}
 	</div>
 {/if}

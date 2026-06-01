@@ -1,17 +1,17 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import './lib/style/palette.css';
+@import './lib/style/tokens.css';
 @import './lib/style/palettes/llumen.css';
 @import './lib/style/palettes/dracula.css';
 @import './lib/style/palettes/flexoki.css';
 @import './lib/style/palettes/vitesse.css';
 
 html {
-	background: var(--color-surface-base);
+	background: var(--surface-background);
 }
 
 .bg-chat {
-	background-color: var(--color-surface-base);
+	background-color: var(--surface-background);
 	position: relative;
 	isolation: isolate;
 }
@@ -23,7 +23,7 @@ html {
 	z-index: -1;
 	pointer-events: none;
 
-	background-color: var(--color-surface-pattern);
+	background-color: var(--muted);
 
 	-webkit-mask-image: url('/chat-bg.webp');
 	mask-image: url('/chat-bg.webp');

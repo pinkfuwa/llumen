@@ -3,6 +3,7 @@
 	import { download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
+	import InteractiveRow from '$lib/ui/InteractiveRow.svelte';
 
 	let { id, name }: { id: number; name?: string } = $props();
 
@@ -46,7 +47,7 @@
 </script>
 
 {#if error}
-	<div class="border-border my-2 flex justify-center rounded-lg border p-4">
+	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
 		{$_('chat.failed_load_video')}
 	</div>
 {:else if src}
@@ -56,7 +57,7 @@
 				{src}
 				controls
 				preload="metadata"
-				class="border-border h-auto max-h-[min(30rem,85vw,70vh)] w-full rounded-lg border"
+				class="h-auto max-h-[min(30rem,85vw,70vh)] w-full rounded-lg border border-border"
 			>
 				<track kind="captions" />
 			</video>
@@ -65,18 +66,19 @@
 					{name}
 				</div>
 			{/if}
-			<button
+			<InteractiveRow
 				onclick={downloadVideo}
-				disabled={isDownloading}
 				aria-label="download video"
-				class="visible absolute top-2 right-2 rounded-lg bg-accent-soft p-2 duration-150 hover:bg-accent hover:text-inverse disabled:opacity-50 md:invisible md:group-hover:visible"
+				class="visible absolute top-2 right-2 rounded-lg bg-muted p-2 md:invisible md:group-hover:visible{isDownloading
+					? ' opacity-50'
+					: ''}"
 			>
 				<Download class="h-5 w-5" />
-			</button>
+			</InteractiveRow>
 		</div>
 	</div>
 {:else}
-	<div class="border-border my-2 flex justify-center rounded-lg border p-4">
+	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
 		{$_('chat.loading_video')}
 	</div>
 {/if}

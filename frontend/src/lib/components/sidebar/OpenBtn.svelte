@@ -7,7 +7,7 @@
 </script>
 
 <div
-	class="fixed top-5 left-5 z-100 data-[state=open]:hidden"
+	class="fixed top-5 left-5 z-100 bg-card data-[state=open]:hidden"
 	in:blur={{ duration: 180 }}
 	data-state={open ? 'open' : 'close'}
 >
@@ -15,7 +15,7 @@
 		onclick={() => {
 			open = !open;
 		}}
-		class={`bg-surface-panel p-3 ${className}`}
+		class={`bg-card p-3 ${className}`}
 	>
 		<ArrowRight />
 	</Button>

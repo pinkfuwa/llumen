@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '$lib/ui/Button.svelte';
+	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
 	import { _ } from 'svelte-i18n';
 
@@ -29,17 +31,11 @@
 	onClose={handleConfirm}
 >
 	{#snippet footer()}
-		<button
-			onclick={handleCancel}
-			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
+		<Button class="px-4 py-2" onclick={handleCancel}>
 			{$_('chat.confirm.cancel')}
-		</button>
-		<button
-			onclick={handleConfirm}
-			class="rounded-md border border-outline bg-accent px-4 py-2 transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
+		</Button>
+		<DangerButton onclick={handleConfirm}>
 			{$_('chat.confirm.confirm')}
-		</button>
+		</DangerButton>
 	{/snippet}
 </Modal>

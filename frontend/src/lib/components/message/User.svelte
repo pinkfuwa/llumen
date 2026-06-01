@@ -53,6 +53,9 @@
 
 	const { mutate: removeMessage } = deleteMessage();
 
+	const messageStyle =
+		'rounded-md bg-muted p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]';
+
 	let virtualKeyboard = $state(false);
 	if ('virtualKeyboard' in navigator) {
 		navigator.virtualKeyboard.overlaysContent = true;
@@ -72,13 +75,10 @@
 
 <div class="group/files mt-4 w-full px-[5vw] lg:px-20 2xl:px-36">
 	<div class="flex justify-end">
-		<div
-			class="rounded-md bg-accent-soft p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]"
-			data-state={isEditing ? 'edit' : 'text'}
-		>
+		<div class={messageStyle} data-state={isEditing ? 'edit' : 'text'}>
 			{#if files.length != 0}
 				{@const separator = isEditing || content.trim().length > 0}
-				<div class="mb-2 overflow-auto{separator ? ' border-b border-outline pb-2' : ''}">
+				<div class="mb-2 overflow-auto{separator ? ' border-b border-border pb-2' : ''}">
 					{#if isEditing}
 						<FileGroup bind:files={editFiles} deletable={true} />
 					{:else}

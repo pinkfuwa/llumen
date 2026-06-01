@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { Trash2, OctagonX } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
+	import InteractiveRow from '$lib/ui/InteractiveRow.svelte';
+	import Button from '$lib/ui/Button.svelte';
 
 	let {
 		name = $bindable($_('chat.default_title')),
@@ -23,9 +25,9 @@
 	{/if}
 </svelte:head>
 
-<div
-	class="group flex items-center rounded-sm text-base duration-150 hover:bg-accent"
-	class:bg-accent={selected}
+<InteractiveRow
+	class="group flex items-center rounded-sm text-base"
+	{selected}
 	onmouseleave={() => {
 		checked = false;
 	}}
@@ -45,8 +47,9 @@
 			{name}
 		</a>
 	{/if}
-	<button
-		class="mr-1 h-6 w-6 shrink-0 p-[0.15rem] group-hover:block md:hidden"
+	<Button
+		class="mr-1 h-6 w-6 shrink-0 p-[0.15rem] text-foreground group-hover:block md:hidden"
+		borderless
 		onclick={() => {
 			if (!checked) checked = true;
 			else ondelete();
@@ -57,5 +60,5 @@
 		{:else}
 			<Trash2 class="h-full w-full" />
 		{/if}
-	</button>
-</div>
+	</Button>
+</InteractiveRow>

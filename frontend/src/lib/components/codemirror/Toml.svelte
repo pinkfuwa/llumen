@@ -49,7 +49,7 @@
 		: 'background-color:#24292e;color:#e1e4e8';
 </script>
 
-<div class="border-radius-md h-full w-full rounded-md border border-outline p-2" style={themeStyle}>
+<div class="border-radius-md h-full w-full rounded-md border border-border p-2" style={themeStyle}>
 	{#if !loaded}
 		<div class="h-full p-1.5 font-mono">{$_('common.loading_editor')}</div>
 	{/if}

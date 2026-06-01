@@ -73,7 +73,7 @@
 	{/snippet}
 	{#snippet children()}
 		<DropdownMenu.Item
-			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-accent hover:text-inverse"
+			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover"
 			onSelect={openFileDialog}
 		>
 			<Upload class="size-4" />
@@ -81,7 +81,7 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-accent hover:text-inverse aria-disabled:text-primary aria-disabled:opacity-50"
+			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover aria-disabled:text-foreground aria-disabled:opacity-50"
 			onSelect={openRecordDialog}
 			disabled={!modelCap?.audio_input}
 			data-disabled={!modelCap?.audio_input ? 'true' : 'false'}
@@ -91,7 +91,7 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-accent hover:text-inverse aria-disabled:text-primary aria-disabled:opacity-50"
+			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover aria-disabled:text-foreground aria-disabled:opacity-50"
 			onSelect={openConvertDialog}
 			disabled={content.trim().length === 0}
 			data-disabled={content.trim().length === 0 ? 'true' : 'false'}

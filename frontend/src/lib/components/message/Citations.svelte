@@ -7,6 +7,11 @@
 	let { citations, open = $bindable(false) }: { citations: UrlCitation[]; open?: boolean } =
 		$props();
 
+	const triggerStyle =
+		'flex flex-row flex-nowrap items-center rounded p-2 cursor-pointer duration-150 hover:bg-interactive-hover';
+	const linkStyle =
+		'flex flex-row items-center gap-2.5 rounded-lg border border-border p-2.5 cursor-pointer duration-150 hover:bg-interactive-hover';
+
 	const titleFromUrl = (url: string) => {
 		try {
 			return new URL(url).hostname;
@@ -18,9 +23,7 @@
 
 {#if citations.length}
 	<Collapsible.Root bind:open>
-		<Collapsible.Trigger
-			class="flex flex-row flex-nowrap items-center rounded p-2 duration-150 hover:bg-accent hover:text-inverse"
-		>
+		<Collapsible.Trigger class={triggerStyle}>
 			<Globe class="mr-2" />
 			<span>
 				{$_('chat.sources')}
@@ -32,11 +35,7 @@
 		>
 			<div class="flex flex-col gap-1.5 pl-3">
 				{#each citations as citation}
-					<a
-						href={citation.url}
-						target="_blank"
-						class="flex flex-row items-center gap-2.5 rounded-lg border border-outline p-2.5 duration-150 hover:bg-accent hover:text-inverse"
-					>
+					<a href={citation.url} target="_blank" class={linkStyle}>
 						{#if citation.favicon}
 							<img
 								src={citation.favicon}

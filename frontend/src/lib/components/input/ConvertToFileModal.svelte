@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '$lib/ui/Button.svelte';
+	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
 	import { _ } from 'svelte-i18n';
 
@@ -10,6 +12,9 @@
 
 	let { open = $bindable(false), content = $bindable(''), onAddFiles }: Props = $props();
 	let convertFileName = $state('');
+
+	const inputStyle =
+		'w-full rounded-md border border-border bg-card px-3 py-2 focus:ring-2 focus:ring-accent focus:outline-hidden';
 
 	function close() {
 		open = false;
@@ -56,26 +61,20 @@
 					type="text"
 					bind:value={convertFileName}
 					placeholder="message.md"
-					class="w-full rounded-md border border-outline bg-surface-panel px-3 py-2 focus:ring-2 focus:ring-accent focus:outline-hidden"
+					class={inputStyle}
 				/>
-				<p class="mt-1 text-sm text-primary/60">
+				<p class="mt-1 text-sm text-muted-foreground">
 					{$_('chat.convert_to_file.file_hint')}
 				</p>
 			</div>
 		</form>
 	{/snippet}
 	{#snippet footer()}
-		<button
-			onclick={close}
-			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
+		<Button class="px-4 py-2" onclick={close}>
 			{$_('chat.convert_to_file.cancel')}
-		</button>
-		<button
-			onclick={handleConvertToFile}
-			class="rounded-md border border-outline bg-accent px-4 py-2 transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
+		</Button>
+		<DangerButton onclick={handleConvertToFile}>
 			{$_('chat.convert_to_file.convert')}
-		</button>
+		</DangerButton>
 	{/snippet}
 </Modal>

@@ -16,8 +16,8 @@ https://github.com/mermaid-js/mermaid/pull/6775
 .mermaid svg .cluster-label,
 .mermaid svg .cluster-label text,
 .mermaid svg .cluster-label div {
-	color: var(--color-primary) !important;
-	fill: var(--color-primary) !important;
+	color: var(--foreground) !important;
+	fill: var(--foreground) !important;
 	word-break: break-word;
 }
 
@@ -27,41 +27,41 @@ https://github.com/mermaid-js/mermaid/pull/6775
 .mermaid svg .node ellipse,
 .mermaid svg .node path,
 .mermaid svg .basic.label-container {
-	fill: var(--color-surface-panel) !important;
-	stroke: var(--color-outline) !important;
+	fill: var(--card) !important;
+	stroke: var(--border) !important;
 }
 
 .mermaid svg foreignObject div,
 .mermaid svg foreignObject div span {
-	color: var(--color-primary) !important;
+	color: var(--foreground) !important;
 }
 
 .mermaid svg .edgeLabel,
 .mermaid svg .edgeLabel div,
 .mermaid svg .edgeLabel rect,
 .mermaid svg .labelBkg {
-	background-color: var(--color-surface-base) !important;
-	color: var(--color-primary) !important;
+	background-color: var(--background) !important;
+	color: var(--foreground) !important;
 }
 
 .mermaid svg .edgePath .path,
 .mermaid svg .flowchart-link,
 .mermaid svg .edge-thickness-normal,
 .mermaid svg .relationshipLine {
-	stroke: var(--color-outline) !important;
+	stroke: var(--border) !important;
 }
 
 .mermaid svg .marker,
 .mermaid svg .arrowheadPath,
 .mermaid svg .marker path,
 .mermaid svg .arrowMarkerPath {
-	stroke: var(--color-outline) !important;
-	fill: var(--color-outline) !important;
+	stroke: var(--border) !important;
+	fill: var(--border) !important;
 }
 
 .mermaid svg .cluster rect {
-	fill: var(--color-surface-panel) !important;
-	stroke: var(--color-outline) !important;
+	fill: var(--card) !important;
+	stroke: var(--border) !important;
 }
 
 .mermaid .edgeLabel p {
@@ -69,8 +69,8 @@ https://github.com/mermaid-js/mermaid/pull/6775
 }
 
 .mermaid svg .actor {
-	fill: var(--color-surface-panel) !important;
-	stroke: var(--color-outline) !important;
+	fill: var(--card) !important;
+	stroke: var(--border) !important;
 	stroke-width: 1px;
 }
 
@@ -81,71 +81,71 @@ https://github.com/mermaid-js/mermaid/pull/6775
 }
 
 .mermaid svg .actor-line {
-	stroke: var(--color-outline) !important;
+	stroke: var(--border) !important;
 	stroke-width: 1px;
 	opacity: 0.5;
 }
 
 .mermaid svg .actor-box {
-	fill: var(--color-surface-panel) !important;
+	fill: var(--card) !important;
 }
 
 .mermaid svg .actor-box tspan {
-	fill: var(--color-primary) !important;
+	fill: var(--foreground) !important;
 	font-size: 14px;
 }
 
 .mermaid svg .messageLine0 {
-	stroke: var(--color-outline) !important;
+	stroke: var(--border) !important;
 	stroke-width: 1.5px;
 	fill: none;
 }
 
 .mermaid svg .messageLine1 {
-	stroke: var(--color-outline) !important;
+	stroke: var(--border) !important;
 	stroke-width: 1.5px;
 	stroke-dasharray: 4, 3;
 	fill: none;
 }
 
 .mermaid svg .messageText {
-	fill: var(--color-primary) !important;
+	fill: var(--foreground) !important;
 	font-size: 14px;
 }
 
 .mermaid svg .note {
-	fill: var(--color-surface-base) !important;
-	stroke: var(--color-outline) !important;
+	fill: var(--background) !important;
+	stroke: var(--border) !important;
 	stroke-width: 1px;
 	rx: 4;
 	ry: 4;
 }
 
 .mermaid svg .noteText tspan {
-	fill: var(--color-primary) !important;
+	fill: var(--foreground) !important;
 	font-size: 14px;
 }
 
 .mermaid svg #arrowhead path {
-	fill: var(--color-outline) !important;
-	stroke: var(--color-outline) !important;
+	fill: var(--border) !important;
+	stroke: var(--border) !important;
 }
 
 .mermaid svg .labelBox {
-	fill: var(--color-surface-panel) !important;
-	stroke: var(--color-outline) !important;
+	fill: var(--card) !important;
+	stroke: var(--border) !important;
 }
 
 .mermaid svg .labelText tspan {
-	fill: var(--color-primary) !important;
+	fill: var(--foreground) !important;
 }
 
 .mermaid svg .loopText tspan {
-	fill: var(--color-primary) !important;
+	fill: var(--foreground) !important;
 }
 
 .mermaid svg .loopLine {
-	stroke: var(--color-outline) !important;
+	stroke: var(--border) !important;
 	stroke-width: 2px;
 	stroke-dasharray: 3, 2;
 }

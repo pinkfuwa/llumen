@@ -2,6 +2,7 @@
 	import { copy } from '$lib/copy';
 	import { CircleDollarSign, ClipboardCopy } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
+	import InteractiveRow from '$lib/ui/InteractiveRow.svelte';
 
 	let { content = '', token = 0, cost = 0.0 } = $props();
 	let showUsage = $derived(token > 0);
@@ -11,21 +12,23 @@
 	<div class="group/usage relative flex space-x-1">
 		{#if showUsage}
 			<CircleDollarSign
-				class="h-10 w-10 rounded-lg p-2 duration-150  group-hover/usage:bg-accent group-hover/usage:text-inverse"
+				class="h-10 w-10 rounded-lg p-2 duration-150  group-hover/usage:bg-interactive-hover"
 			/>
 
 			<div
 				class="absolute top-0 right-13 flex h-10 w-sm items-center justify-end duration-150 group-hover/usage:visible md:invisible"
 			>
-				<div class="rounded-md bg-accent-soft p-2 select-none">
+				<div class="rounded-md bg-muted p-2 select-none">
 					{token} token/${cost.toFixed(4)}
 				</div>
 			</div>
 		{/if}
 	</div>
-	<button onclick={() => copy(content)} aria-label="copy response">
-		<ClipboardCopy
-			class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-accent hover:text-inverse"
-		/>
-	</button>
+	<InteractiveRow
+		class="h-10 w-10 rounded-lg"
+		onclick={() => copy(content)}
+		aria-label="copy response"
+	>
+		<ClipboardCopy class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-interactive-hover" />
+	</InteractiveRow>
 </div>

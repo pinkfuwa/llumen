@@ -4,6 +4,9 @@
 	import { Collapsible } from 'bits-ui';
 	import Radio from '$lib/ui/Radio.svelte';
 
+	const triggerStyle =
+		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
+
 	let {
 		title,
 		selected = $bindable<string>(''),
@@ -19,20 +22,18 @@
 	} = $props();
 </script>
 
-<div class="mb-4 hidden items-center justify-between border-b border-outline pb-2 text-lg md:flex">
+<div class="mb-4 hidden items-center justify-between border-b border-border pb-2 text-lg md:flex">
 	<span>{title}: </span>
 	<Select bind:selected class="w-36 truncate" popupClass="w-38" {data} {disabled} {onchange} />
 </div>
 
 <Collapsible.Root class="md:hidden">
-	<Collapsible.Trigger
-		class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent hover:text-inverse"
-	>
+	<Collapsible.Trigger class={triggerStyle}>
 		<span>{title}</span>
 		<ChevronDown />
 	</Collapsible.Trigger>
 	<Collapsible.Content
-		class="flex flex-col border-b border-outline px-2 pt-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
+		class="flex flex-col border-b border-border px-2 pt-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
 		<Radio {data} bind:selected {disabled} {onchange} />
 	</Collapsible.Content>

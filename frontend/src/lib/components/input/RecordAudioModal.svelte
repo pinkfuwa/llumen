@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { Mic } from '@lucide/svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
 	import { _ } from 'svelte-i18n';
 
@@ -157,21 +159,23 @@
 				{$_('chat.record_audio_dialog.description')}
 			</p>
 			{#if recordingError}
-				<p class="border-warning/40 bg-warning/10 text-warning rounded-md border px-3 py-2 text-sm">
+				<p
+					class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+				>
 					{recordingError}
 				</p>
 			{/if}
 			{#if isRecording}
 				<div class="flex flex-col items-center gap-4 py-6">
 					<div
-						class="flex size-16 animate-pulse items-center justify-center rounded-full bg-red-500"
+						class="flex size-16 animate-pulse items-center justify-center rounded-full bg-destructive text-destructive-foreground"
 					>
-						<Mic class="size-8 text-white" />
+						<Mic class="size-8" />
 					</div>
 					<div class="font-mono text-2xl font-semibold">
 						{formatTime(recordingTime)}
 					</div>
-					<p class="text-sm text-primary/60">
+					<p class="text-sm text-muted-foreground">
 						{$_('chat.record_audio_dialog.recording')}
 					</p>
 				</div>
@@ -179,11 +183,11 @@
 				<div class="flex flex-col items-center gap-4 py-6">
 					<button
 						onclick={startRecording}
-						class="flex size-16 items-center justify-center rounded-full border-2 border-outline bg-accent transition-colors hover:bg-accent/80"
+						class="flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/80"
 					>
 						<Mic class="size-8" />
 					</button>
-					<p class="text-sm text-primary/60">
+					<p class="text-sm text-muted-foreground">
 						{$_('chat.record_audio_dialog.click_to_start')}
 					</p>
 				</div>
@@ -191,19 +195,13 @@
 		</div>
 	{/snippet}
 	{#snippet footer()}
-		<button
-			onclick={cancelRecording}
-			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
+		<Button class="px-4 py-2" onclick={cancelRecording}>
 			{$_('chat.record_audio_dialog.cancel')}
-		</button>
+		</Button>
 		{#if isRecording}
-			<button
-				onclick={stopRecording}
-				class="rounded-md border border-outline bg-accent px-4 py-2 transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-			>
+			<DangerButton onclick={stopRecording}>
 				{$_('chat.record_audio_dialog.stop')}
-			</button>
+			</DangerButton>
 		{/if}
 	{/snippet}
 </Modal>

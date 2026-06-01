@@ -7,6 +7,9 @@
 	import Warning from '../Warning.svelte';
 	import { createUser } from '$lib/api/user.svelte';
 
+	const triggerStyle =
+		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
+
 	let username = $state('');
 	let password = $state('');
 	let passwordCheck = $state('');
@@ -35,42 +38,40 @@
 
 <div class="flex h-full flex-col gap-2 overflow-auto">
 	<Collapsible.Root class="md:hidden">
-		<Collapsible.Trigger
-			class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent hover:text-inverse"
-		>
+		<Collapsible.Trigger class={triggerStyle}>
 			<span>{$_('setting.admin.create')}</span>
 			<ChevronDown />
 		</Collapsible.Trigger>
 		<Collapsible.Content
-			class="flex flex-col border-b border-outline px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
+			class="flex flex-col border-b border-border px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
 		>
 			{#if isError()}
 				<Warning>{$_('setting.admin.error_creating_user')}</Warning>
 			{/if}
 			{#if success}
 				<div class="mb-2 text-center text-sm">
-					{$_('setting.admin.user')} <span class="rounded-md bg-accent-soft p-1">{username}</span>
+					{$_('setting.admin.user')} <span class="rounded-md bg-muted p-1">{username}</span>
 					{$_('setting.admin.created')}
 				</div>
 			{/if}
 			<div class="mb-2 flex flex-col gap-2">
 				<input
 					type="text"
-					class="w-full rounded-md border border-outline p-2"
+					class="w-full rounded-md border border-border p-2"
 					placeholder={$_('setting.username')}
 					bind:value={username}
 					oninput={() => (success = false)}
 				/>
 				<input
 					type="password"
-					class="w-full rounded-md border border-outline p-2"
+					class="w-full rounded-md border border-border p-2"
 					placeholder={$_('setting.account.password')}
 					bind:value={password}
 					oninput={() => (success = false)}
 				/>
 				<input
 					type="password"
-					class="w-full rounded-md border border-outline p-2"
+					class="w-full rounded-md border border-border p-2"
 					placeholder={$_('setting.account.confirm_password')}
 					bind:value={passwordCheck}
 					oninput={() => (success = false)}
@@ -86,7 +87,7 @@
 		</Collapsible.Content>
 	</Collapsible.Root>
 
-	<div class="mb-4 hidden space-y-2 border-b border-outline pb-2 text-lg md:block">
+	<div class="mb-4 hidden space-y-2 border-b border-border pb-2 text-lg md:block">
 		<div class="text-lg">
 			{$_('setting.admin.create')}
 		</div>
@@ -94,7 +95,7 @@
 			{$_('setting.username')}
 			<input
 				type="text"
-				class="max-w-80 grow rounded-md border border-outline p-1"
+				class="max-w-80 grow rounded-md border border-border p-1"
 				placeholder={$_('setting.username')}
 				bind:value={username}
 				oninput={() => (success = false)}
@@ -104,7 +105,7 @@
 			{$_('setting.account.password')}
 			<input
 				type="password"
-				class="max-w-80 grow rounded-md border border-outline p-1"
+				class="max-w-80 grow rounded-md border border-border p-1"
 				placeholder={$_('setting.account.password')}
 				bind:value={password}
 				oninput={() => (success = false)}
@@ -114,7 +115,7 @@
 			{$_('setting.account.confirm_password')}
 			<input
 				type="password"
-				class="max-w-80 grow rounded-md border border-outline p-1"
+				class="max-w-80 grow rounded-md border border-border p-1"
 				placeholder={$_('setting.account.confirm_password')}
 				bind:value={passwordCheck}
 				oninput={() => (success = false)}
@@ -145,9 +146,7 @@
 			<h3 class="text-lg">{$_('setting.admin.users')}</h3>
 		</div>
 		<Collapsible.Root class="md:hidden">
-			<Collapsible.Trigger
-				class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent hover:text-inverse"
-			>
+			<Collapsible.Trigger class={triggerStyle}>
 				<h3>{$_('setting.admin.users')}</h3>
 				<ChevronDown />
 			</Collapsible.Trigger>

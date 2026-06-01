@@ -21,7 +21,7 @@
 {/await}
 
 {#if !$isLoading}
-	<div class="h-full w-full bg-surface-base text-primary">
+	<div class="bg-surface-base h-full w-full text-foreground">
 		{@render children()}
 		<ErrorMessage />
 		{#if $copyCounter != 0}

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '$lib/ui/Button.svelte';
+	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
 	import { _ } from 'svelte-i18n';
 	import { AlertTriangle } from '@lucide/svelte';
@@ -24,10 +26,10 @@
 			</p>
 
 			<div
-				class="max-h-48 space-y-2 overflow-y-auto rounded-md border border-outline bg-surface-overlay p-3"
+				class="max-h-48 space-y-2 overflow-y-auto rounded-md border border-border bg-popover p-3"
 			>
 				{#each unsupportedFiles as file}
-					<div class="flex items-center gap-2 rounded-md bg-accent px-3 py-2">
+					<div class="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-primary">
 						<AlertTriangle class="size-6 shrink-0" />
 						<span class="min-w-0 truncate">{file.name}</span>
 					</div>
@@ -40,17 +42,11 @@
 		</div>
 	{/snippet}
 	{#snippet footer()}
-		<button
-			onclick={onUploadSupported}
-			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
+		<Button class="px-4 py-2" onclick={onUploadSupported}>
 			{$_('chat.unsupported_files.upload_supported')}
-		</button>
-		<button
-			onclick={onUploadAll}
-			class="rounded-md border border-outline bg-accent px-4 py-2 transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
-		>
+		</Button>
+		<DangerButton onclick={onUploadAll}>
 			{$_('chat.unsupported_files.upload_all')}
-		</button>
+		</DangerButton>
 	{/snippet}
 </Modal>

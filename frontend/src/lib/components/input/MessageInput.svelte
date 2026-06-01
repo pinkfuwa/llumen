@@ -15,6 +15,10 @@
 	import { getSupportedFileExtensions, separateFiles } from './fileTypes';
 	import Confirm from './Confirm.svelte';
 	import UnsupportedFilesModal from './UnsupportedFilesModal.svelte';
+
+	const inputAreaStyle =
+		'min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-border bg-card p-2 shadow-xl shadow-accent-soft md:w-[min(750px,75%)]';
+
 	let {
 		mode = $bindable(Mode.Normal),
 		files = $bindable([]),
@@ -151,21 +155,17 @@
 	onUploadSupported={uploadSupportedOnly}
 />
 
-<div
-	role="region"
-	class="min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-outline bg-surface-panel p-2 shadow-xl shadow-accent-soft md:w-[min(750px,75%)]"
-	bind:this={container}
->
+<div role="region" class={inputAreaStyle} bind:this={container}>
 	{#if dropZone.isOver && isEditing}
 		<div
-			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-lg bg-accent text-2xl"
+			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-md border-2 border-dashed border-border bg-muted/30 text-2xl text-primary"
 		>
 			<FileUp />
 			{$_('chat.upload_file')}
 		</div>
 	{/if}
 	{#if files.length != 0}
-		<div class="mb-2 max-h-[60vh] overflow-y-auto border-b border-outline pb-2">
+		<div class="mb-2 max-h-[60vh] overflow-y-auto border-b border-border pb-2">
 			<FileGroup {files} {mimes} deletable />
 		</div>
 	{/if}

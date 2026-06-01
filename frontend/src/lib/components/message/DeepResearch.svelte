@@ -4,17 +4,19 @@
 	import { Collapsible } from 'bits-ui';
 	import ResearchStep from './ResearchStep.svelte';
 	import type { Deep, Step } from '$lib/api/types';
+
 	let {
 		plan,
 		open = $bindable(false),
 		streaming = false
 	} = $props<{ plan: Deep; open?: boolean; streaming?: boolean }>();
+
+	const triggerStyle =
+		'flex flex-row flex-nowrap rounded p-2 cursor-pointer duration-150 hover:bg-interactive-hover';
 </script>
 
 <Collapsible.Root bind:open>
-	<Collapsible.Trigger
-		class="flex flex-row flex-nowrap rounded p-2 duration-150 hover:bg-accent hover:text-inverse"
-	>
+	<Collapsible.Trigger class={triggerStyle}>
 		<Atom class="mr-2" />
 		<span> {$_('chat.research_agent')} </span>
 	</Collapsible.Trigger>

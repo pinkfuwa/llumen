@@ -3,6 +3,7 @@
 	import { downloadCompressed, download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
+	import InteractiveRow from '$lib/ui/InteractiveRow.svelte';
 
 	let { id, name }: { id: number; name?: string } = $props();
 
@@ -43,7 +44,7 @@
 </script>
 
 {#if error}
-	<div class="border-border my-2 flex justify-center rounded-lg border p-4">
+	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
 		{$_('chat.failed_load_image')}
 	</div>
 {:else if src}
@@ -52,7 +53,7 @@
 			<img
 				{src}
 				alt={$_('chat.image_alt')}
-				class="border-border group relative h-auto max-h-[min(30rem,85vw,70vh)] max-w-full rounded-lg border"
+				class="group relative h-auto max-h-[min(30rem,85vw,70vh)] max-w-full rounded-lg border border-border"
 				loading="lazy"
 			/>
 			{#if name}
@@ -60,18 +61,19 @@
 					{name}
 				</div>
 			{/if}
-			<button
+			<InteractiveRow
 				onclick={downloadImage}
-				disabled={isDownloading}
 				aria-label="download image"
-				class="visible absolute top-2 right-2 rounded-lg bg-accent-soft p-2 duration-150 hover:bg-accent hover:text-inverse disabled:opacity-50 md:invisible md:group-hover:visible"
+				class="visible absolute top-2 right-2 rounded-lg bg-muted p-2 md:invisible md:group-hover:visible{isDownloading
+					? ' opacity-50'
+					: ''}"
 			>
 				<Download class="h-5 w-5" />
-			</button>
+			</InteractiveRow>
 		</div>
 	</div>
 {:else}
-	<div class="border-border my-2 flex justify-center rounded-lg border p-4">
+	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
 		{$_('chat.loading_image')}
 	</div>
 {/if}

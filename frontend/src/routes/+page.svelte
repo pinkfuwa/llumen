@@ -8,7 +8,7 @@
 	});
 </script>
 
-<div class="flex h-screen flex-col items-center justify-center bg-surface-base">
+<div class="bg-surface-base flex h-screen flex-col items-center justify-center">
 	<h1 class="mb-4 text-3xl md:text-5xl">
 		Redirecting...<LoaderCircle class="ml-2 inline-block h-12 w-12 animate-spin" />
 	</h1>

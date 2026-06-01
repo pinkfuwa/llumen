@@ -7,12 +7,12 @@
 		borderless = false,
 		...restProps
 	}: Button.RootProps & { borderless?: boolean } = $props();
+
+	const base =
+		'cursor-pointer rounded-lg p-2 text-center text-foreground duration-150 not-disabled:hover:bg-interactive-hover focus:ring-4 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+	const bordered = 'border border-border';
 </script>
 
-<!-- hover:bg-accent hover:text-inverse not-disabled:hover:bg-accent not-disabled:hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 -->
-<Button.Root
-	class={`cursor-pointer rounded-lg p-2 text-center text-primary duration-150 not-disabled:hover:bg-accent not-disabled:hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${borderless ? '' : 'border border-outline'} ${className}`}
-	{...restProps}
->
+<Button.Root class={`${base} ${borderless ? '' : bordered} ${className}`} {...restProps}>
 	{@render children?.()}
 </Button.Root>

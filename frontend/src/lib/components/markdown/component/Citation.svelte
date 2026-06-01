@@ -12,13 +12,12 @@
 	let { raw, url, title, favicon, authoritative }: Props = $props();
 
 	let imageErrored = $state(false);
+
+	const citationStyle =
+		'mr-2 inline-flex flex-row items-center space-x-2 overflow-hidden rounded-full border-b border-border p-2 px-3 py-[0.15rem] hover:bg-interactive-hover';
 </script>
 
-<a
-	class="mr-2 inline-flex flex-row items-center space-x-2 overflow-hidden rounded-full border-b border-outline p-2 px-3 py-[0.15rem] hover:bg-accent hover:text-inverse"
-	href={url}
-	target="_blank"
->
+<a class={citationStyle} href={url} target="_blank">
 	{#if authoritative == true || authoritative == 'true'}
 		<SearchCheck class="h-5 w-5" />
 	{:else}

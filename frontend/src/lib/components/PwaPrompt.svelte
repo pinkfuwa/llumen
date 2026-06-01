@@ -32,13 +32,14 @@
 	};
 
 	const toast = $derived($offlineReady || $needRefresh);
+
+	const promptStyle =
+		'fixed right-0 bottom-0 m-4 rounded border border-border bg-input p-3 shadow-sm';
 </script>
 
 {#if toast}
-	<div
-		class="fixed right-0 bottom-0 m-4 rounded border border-outline bg-input-bg p-3 shadow-surface-base"
-	>
-		<div class="pb-2 text-primary">
+	<div class={promptStyle}>
+		<div class="pb-2 text-foreground">
 			{#if $offlineReady}
 				<span> {$_('pwa.offline_ready')} </span>
 			{:else}

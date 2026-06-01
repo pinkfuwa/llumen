@@ -9,7 +9,7 @@
 </script>
 
 <Warning>{$_('setting.config_override_warning')}</Warning>
-<div class="my-2 border-b border-outline pb-2">
+<div class="my-2 border-b border-border pb-2">
 	<Button
 		class="flex w-full flex-row items-center justify-between px-3 py-2"
 		onclick={() => (value = 'openrouter_new')}

@@ -6,16 +6,13 @@
 
 	const url = $derived(node.url);
 	const title = $derived(node.title);
+
+	const linkStyle =
+		'rounded-xs border-b border-border p-0.5 duration-150 hover:bg-interactive-hover';
 </script>
 
 <span class="pb-1">
-	<a
-		href={url}
-		{title}
-		target="_blank"
-		rel="noopener noreferrer"
-		class="rounded-xs border-b border-outline p-0.5 duration-150 hover:bg-accent hover:text-inverse"
-	>
+	<a href={url} {title} target="_blank" rel="noopener noreferrer" class={linkStyle}>
 		{@render children()}
 	</a>
 </span>
