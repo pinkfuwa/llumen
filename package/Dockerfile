@@ -47,8 +47,14 @@ COPY ./backend .
 COPY ./agent ../agent
 COPY --from=frontend-builder /app/build ../frontend/build
 
+ARG FEATURES=""
+
 RUN --mount=type=cache,id=target,target=/compiler/target \
-    cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl && \
+    if [ -n "$FEATURES" ]; then \
+        cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl --features "$FEATURES"; \
+    else \
+        cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl; \
+    fi && \
     mkdir -p /app/linux && \
     cp target/aarch64-unknown-linux-musl/release/backend /app/linux/arm64 && \
     cp target/x86_64-unknown-linux-musl/release/backend /app/linux/amd64

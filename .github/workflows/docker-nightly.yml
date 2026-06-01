@@ -2,6 +2,12 @@ name: Nightly Docker
 
 on:
   workflow_dispatch:
+    inputs:
+      features:
+        description: 'Cargo features to enable (comma-separated)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -57,5 +63,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            FEATURES=${{ inputs.features || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

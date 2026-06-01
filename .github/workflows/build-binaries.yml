@@ -2,6 +2,12 @@ name: Release Binaries
 
 on:
   workflow_dispatch:
+    inputs:
+      features:
+        description: 'Cargo features to enable (comma-separated)'
+        required: false
+        default: 'deep-research'
+        type: string
 
 permissions:
   contents: write
@@ -88,12 +94,12 @@ jobs:
 
       - name: Build artifacts for Linux
         if: matrix.platform == 'linux'
-        run: ./package/build-artifacts.sh ${{ matrix.target }}
+        run: ./package/build-artifacts.sh ${{ matrix.target }} "${{ inputs.features || 'deep-research' }}"
 
       - name: Build artifacts for Windows
         if: matrix.platform == 'windows'
         shell: bash
-        run: ./package/build-artifacts-windows.sh ${{ matrix.target }}
+        run: ./package/build-artifacts-windows.sh ${{ matrix.target }} "${{ inputs.features || 'deep-research' }}"
 
       - name: Upload release asset (Linux)
         if: matrix.platform == 'linux' && github.event_name == 'release'
