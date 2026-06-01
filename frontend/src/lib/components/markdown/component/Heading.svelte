@@ -4,11 +4,13 @@
 
 	let { node, children }: { node: HeadingNode; children: Snippet } = $props();
 
-	const classes = ['mt-4 text-2xl font-bold', 'mt-4 text-xl font-bold', 'mt-3 text-lg font-bold'];
+	const sizes = ['mt-4 text-2xl', 'mt-4 text-xl', 'mt-3 text-lg'];
+	const colors = ['text-markdown-heading1', 'text-markdown-heading2', 'text-markdown-heading3', 'text-markdown-heading4'];
 	const classname = $derived.by(() => {
 		const level = node.level - 1;
-		if (level >= classes.length) return classes.at(-1)!;
-		return classes[level];
+		const size = level >= sizes.length ? sizes.at(-1)! : sizes[level];
+		const color = level >= colors.length ? colors.at(-1)! : colors[level];
+		return `${size} font-bold ${color}`;
 	});
 </script>
 

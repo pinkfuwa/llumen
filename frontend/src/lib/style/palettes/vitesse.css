@@ -4,7 +4,6 @@
 	--muted: #ecebeb;
 	--muted-foreground: #5b5c54cb;
 	--card: #f7f7f7;
-	--card-foreground: #393a34;
 	--popover: #f7f7f7;
 	--popover-foreground: #393a34;
 	--border: #d4d0d0;
@@ -19,13 +18,7 @@
 	--destructive-foreground: #ffffff;
 	--ring: #0000000050;
 	--sidebar: #ecebeb;
-	--sidebar-foreground: #5b5c54cb;
-	--sidebar-primary: #1c6b48;
-	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: #ecebeb;
-	--sidebar-accent-foreground: #2c2c28;
 	--sidebar-border: #d4d0d0;
-	--sidebar-ring: #0000000050;
 	--chart-1: #1c6b48;
 	--chart-2: #1e754f;
 	--chart-3: #296aa3;
@@ -47,44 +40,8 @@
 	--surface-overlay: #ffffff80;
 	--surface-subtle: #ecebeb;
 
-	--interactive-border: #d4d0d0;
-	--interactive-border-hover: #cbc7c7;
-	--interactive-border-focus: #635454b8;
 	--interactive-selection: #22222218;
-	--interactive-selection-foreground: #393a34;
-	--interactive-focus: #00000000;
-	--interactive-focus-ring: #0000000050;
-	--interactive-cursor: #cecdc3;
 	--interactive-hover: #22222218;
-	--interactive-active: #22222218;
-
-	--status-error: #ab5959;
-	--status-error-foreground: #ffffff;
-	--status-error-background: #ab595920;
-	--status-error-border: #ab595950;
-	--status-warning: #a65e2b;
-	--status-warning-foreground: #ffffff;
-	--status-warning-background: #a65e2b20;
-	--status-warning-border: #a65e2b50;
-	--status-success: #1e754f;
-	--status-success-foreground: #ffffff;
-	--status-success-background: #1e754f20;
-	--status-success-border: #1e754f50;
-	--status-info: #296aa3;
-	--status-info-foreground: #ffffff;
-	--status-info-background: #296aa320;
-	--status-info-border: #296aa350;
-
-	--syntax-background: #ffffff;
-	--syntax-foreground: #393a34;
-	--syntax-comment: #a0ada0;
-	--syntax-keyword: #1e754f;
-	--syntax-string: #b56959;
-	--syntax-number: #2f798a;
-	--syntax-function: #59873a;
-	--syntax-variable: #b07d48;
-	--syntax-type: #2e808f;
-	--syntax-operator: #ab5959;
 
 	--markdown-heading1: #2c2c28;
 	--markdown-heading2: #2c2c28;
@@ -94,7 +51,7 @@
 	--markdown-link-hover: #1c6b48;
 	--markdown-inline-code: #3a631e;
 	--markdown-inline-code-bg: #f7f3f395;
-	--markdown-blockquote: #2c2c2850;
+	--markdown-blockquote: #2c2c28;
 	--markdown-blockquote-border: #00000015;
 	--markdown-list-marker: #1c6b4899;
 	--markdown-bold: #2c2c28;
@@ -102,28 +59,12 @@
 	--markdown-strikethrough: #5b5c54cb;
 	--markdown-hr: #d4d0d0;
 
-	--chat-background: #ffffff;
-	--chat-user-message: #2c2c28;
-	--chat-user-message-bg: #f4f1f1;
-	--chat-assistant-message: #393a34;
-	--chat-assistant-message-bg: #ffffff;
-	--chat-timestamp: #393a3450;
-	--chat-divider: #00000015;
-	--chat-typing: #5b5c54cb;
-
 	--tools-background: #ffffff50;
 	--tools-border: #dbd7d7;
 	--tools-header-hover: #0000001550;
 	--tools-icon: #21221e86;
 	--tools-title: #393a34;
 	--tools-description: #404139b6;
-	--tools-edit-added: #1e754f;
-	--tools-edit-added-bg: #1e754f20;
-	--tools-edit-removed: #ab5959;
-	--tools-edit-removed-bg: #ab595920;
-	--tools-edit-modified: #635454b8;
-	--tools-edit-modified-bg: #ecebeb;
-	--tools-edit-line-number: #b9b6b6;
 
 	--loading-spinner: #1c6b48;
 	--loading-spinner-track: #ecebeb;
@@ -132,10 +73,9 @@
 [data-theme='vitesse'][data-dark='true'] {
 	--background: #121212;
 	--foreground: white;
-	--muted: #2a3a2a;
+	--muted: #213121;
 	--muted-foreground: #c0beb99c;
 	--card: #1a1a1a;
-	--card-foreground: #dbd7caee;
 	--popover: #1a1a1a;
 	--popover-foreground: #dbd7caee;
 	--border: #393939;
@@ -150,13 +90,7 @@
 	--destructive-foreground: #121212;
 	--ring: #0000000050;
 	--sidebar: #171717;
-	--sidebar-foreground: #c0beb99c;
-	--sidebar-primary: #4d9375;
-	--sidebar-primary-foreground: #121212;
-	--sidebar-accent: #212020;
-	--sidebar-accent-foreground: #dbd7caee;
 	--sidebar-border: #393939;
-	--sidebar-ring: #0000000050;
 	--chart-1: #4d9375;
 	--chart-2: #4d9375;
 	--chart-3: #6394bf;
@@ -178,44 +112,8 @@
 	--surface-overlay: #12121280;
 	--surface-subtle: #212020;
 
-	--interactive-border: #393939;
-	--interactive-border-hover: #3c3c3c;
-	--interactive-border-focus: #00000000;
 	--interactive-selection: #eeeeee18;
-	--interactive-selection-foreground: #dbd7caee;
-	--interactive-focus: #00000000;
-	--interactive-focus-ring: #0000000050;
-	--interactive-cursor: #cecdc3;
 	--interactive-hover: #eeeeee14;
-	--interactive-active: #eeeeee18;
-
-	--status-error: #cb7676;
-	--status-error-foreground: #121212;
-	--status-error-background: #cb767620;
-	--status-error-border: #cb767650;
-	--status-warning: #d4976c;
-	--status-warning-foreground: #121212;
-	--status-warning-background: #d4976c20;
-	--status-warning-border: #d4976c50;
-	--status-success: #4d9375;
-	--status-success-foreground: #121212;
-	--status-success-background: #4d937520;
-	--status-success-border: #4d937550;
-	--status-info: #6394bf;
-	--status-info-foreground: #121212;
-	--status-info-background: #6394bf20;
-	--status-info-border: #6394bf50;
-
-	--syntax-background: #121212;
-	--syntax-foreground: #dbd7caee;
-	--syntax-comment: #758575dd;
-	--syntax-keyword: #4d9375;
-	--syntax-string: #c98a7d;
-	--syntax-number: #4c9a91;
-	--syntax-function: #80a665;
-	--syntax-variable: #bd976a;
-	--syntax-type: #5d99a9;
-	--syntax-operator: #cb7676;
 
 	--markdown-heading1: #4d9375;
 	--markdown-heading2: #4d9375;
@@ -225,22 +123,13 @@
 	--markdown-link-hover: #4d9375;
 	--markdown-inline-code: #80a665;
 	--markdown-inline-code-bg: #121212;
-	--markdown-blockquote: #dedcd550;
-	--markdown-blockquote-border: #ffffff15;
+	--markdown-blockquote: #dedcd5;
+	--markdown-blockquote-border: #ffffff25;
 	--markdown-list-marker: #4d937599;
 	--markdown-bold: #dbd7caee;
 	--markdown-italic: #dbd7caee;
 	--markdown-strikethrough: #c0beb99c;
 	--markdown-hr: #393939;
-
-	--chat-background: #121212;
-	--chat-user-message: #dbd7caee;
-	--chat-user-message-bg: #252525;
-	--chat-assistant-message: #dbd7caee;
-	--chat-assistant-message-bg: #121212;
-	--chat-timestamp: #dedcd550;
-	--chat-divider: #ffffff15;
-	--chat-typing: #c0beb99c;
 
 	--tools-background: #12121250;
 	--tools-border: #2d2c2c;
@@ -248,13 +137,6 @@
 	--tools-icon: #dedcd5a4;
 	--tools-title: #dbd7caee;
 	--tools-description: #dedcd550;
-	--tools-edit-added: #4d9375;
-	--tools-edit-added-bg: #4d937520;
-	--tools-edit-removed: #cb7676;
-	--tools-edit-removed-bg: #cb767620;
-	--tools-edit-modified: #00000000;
-	--tools-edit-modified-bg: #171717;
-	--tools-edit-line-number: #ffffff24;
 
 	--loading-spinner: #4d9375;
 	--loading-spinner-track: #171717;

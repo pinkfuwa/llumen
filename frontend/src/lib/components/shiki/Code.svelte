@@ -1,5 +1,5 @@
 <script>
-	import { getThemeStyle } from './shiki';
+	import { getThemeName, getThemeStyle } from './shiki';
 	import { highlight } from './highlight';
 	import { theme } from '$lib/preference';
 	import Monochrome from './Monochrome.svelte';
@@ -7,7 +7,9 @@
 
 	let { lang = 'text', text = '', monochrome = false } = $props();
 
-	let themeStyle = derived(theme, (x) => getThemeStyle(x.dark));
+	let themeName = derived(theme, getThemeName);
+
+	let themeStyle = derived(theme, getThemeStyle);
 
 	let monochromeInner = $derived(lang == 'text' || monochrome);
 </script>
@@ -20,7 +22,7 @@
 		{#if monochromeInner}
 			<Monochrome {text} />
 		{:else}
-			{#await highlight(text, lang, $theme.dark)}
+			{#await highlight(text, lang, $themeName)}
 				<Monochrome {text} />
 			{:then value}
 				{@html value}

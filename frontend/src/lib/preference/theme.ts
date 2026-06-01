@@ -1,5 +1,5 @@
 export type Theme = {
-	name: string;
+	name: 'dracula' | 'llumen' | 'vitesse';
 	dark: boolean;
 	pattern: boolean;
 };

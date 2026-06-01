@@ -7,7 +7,7 @@
 	const content = $derived(node.content);
 
 	const codeStyle =
-		'my-0.5 rounded-md bg-muted px-2 py-0.5 font-mono break-all text-foreground duration-150 select-text hover:bg-interactive-hover';
+		'my-0.5 rounded-md bg-markdown-inline-code-bg px-2 py-0.5 font-mono break-all text-markdown-inline-code duration-150 select-text hover:bg-interactive-hover';
 </script>
 
 <span class="mx-1 py-1">

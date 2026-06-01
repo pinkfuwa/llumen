@@ -5,8 +5,8 @@
 
 	let { text = '' } = $props();
 
-	let themeName = derived(theme, (x) => getThemeName(x.dark));
-	let themeStyle = derived(theme, (x) => getThemeStyle(x.dark));
+	let themeName = derived(theme, getThemeName);
+	let themeStyle = derived(theme, getThemeStyle);
 </script>
 
 <pre class="shiki {$themeName}" style={$themeStyle}><code

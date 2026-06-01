@@ -4,6 +4,6 @@
 	let { children }: { children: Snippet } = $props();
 </script>
 
-<del>
+<del class="text-markdown-strikethrough">
 	{@render children()}
 </del>

@@ -70,7 +70,7 @@ const commonLanguages = [
 
 let { code } = await codegen({
 	langs: commonLanguages,
-	themes: ['github-light', 'github-dark'],
+	themes: ['github-light', 'github-dark', 'vitesse-light', 'vitesse-dark', 'dracula'],
 	engine: 'javascript',
 	typescript: true
 });

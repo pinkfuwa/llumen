@@ -13,11 +13,11 @@
 </script>
 
 {#if isOrdered}
-	<ol start={startNumber} class="list-decimal" style={`margin-left: ${numberWidthRem}rem`}>
+	<ol start={startNumber} class="list-decimal marker:text-markdown-list-marker" style={`margin-left: ${numberWidthRem}rem`}>
 		{@render children()}
 	</ol>
 {:else}
-	<ul class="ml-4 list-disc">
+	<ul class="ml-4 list-disc marker:text-markdown-list-marker">
 		{@render children()}
 	</ul>
 {/if}

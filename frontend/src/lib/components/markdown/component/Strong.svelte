@@ -4,6 +4,6 @@
 	let { children }: { children: Snippet } = $props();
 </script>
 
-<strong>
+<strong class="text-markdown-bold">
 	{@render children()}
 </strong>

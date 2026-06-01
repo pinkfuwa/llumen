@@ -18,7 +18,7 @@ export { propToRune } from './mutate.svelte';
 function defaultPreference(): Required<UserPreference> {
 	const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 	return {
-		theme: { name: 'llumen', dark, pattern: false },
+		theme: { name: 'llumen', dark, pattern: true },
 		locale: navigator.language.includes('zh') ? 'zh-tw' : 'en',
 		submit_on_enter: 'true'
 	};

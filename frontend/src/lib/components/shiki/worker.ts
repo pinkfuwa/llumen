@@ -3,14 +3,14 @@ import type { BundledLanguage, BundledTheme } from './shiki.bundle';
 import { createHighlighter } from './shiki.bundle';
 
 let highlighter = await createHighlighter({
-	themes: ['github-light', 'github-dark'],
+	themes: ['github-light', 'github-dark', 'vitesse-dark', 'vitesse-light', 'dracula'],
 	langs: []
 });
 
 const loaded = new Set<string>();
 
 self.onmessage = async (event: MessageEvent<ShikiWorkerRequest>) => {
-	const { code, lang, dark } = event.data;
+	const { code, lang, theme } = event.data;
 
 	try {
 		if (!loaded.has(lang)) {
@@ -20,7 +20,7 @@ self.onmessage = async (event: MessageEvent<ShikiWorkerRequest>) => {
 
 		const html = highlighter.codeToHtml(code, {
 			lang: lang as BundledLanguage,
-			theme: (dark ? 'github-dark' : 'github-light') as BundledTheme
+			theme: theme
 		});
 
 		self.postMessage({ html });

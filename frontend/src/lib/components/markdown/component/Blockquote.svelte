@@ -4,6 +4,6 @@
 	let { children }: { children: Snippet } = $props();
 </script>
 
-<blockquote class="my-1 space-y-1 border-l-4 pl-3 hover:border-accent">
+<blockquote class="my-1 space-y-1 border-l-4 border-markdown-blockquote-border pl-3 text-markdown-blockquote">
 	{@render children?.()}
 </blockquote>

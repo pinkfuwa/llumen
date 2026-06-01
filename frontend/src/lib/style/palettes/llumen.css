@@ -4,7 +4,6 @@
 	--muted: #f2f2f2;
 	--muted-foreground: #8a8a8a;
 	--card: #f8f8f8;
-	--card-foreground: #181818;
 	--popover: #f8f8f8;
 	--popover-foreground: #181818;
 	--border: #f2c2c2;
@@ -19,13 +18,7 @@
 	--destructive-foreground: #ffffff;
 	--ring: #f4521447;
 	--sidebar: #f4f4f4;
-	--sidebar-foreground: #8a8a8a;
-	--sidebar-primary: #ec5b2b;
-	--sidebar-primary-foreground: #000000;
-	--sidebar-accent: #e9e9e9;
-	--sidebar-accent-foreground: #181818;
 	--sidebar-border: #c7c7c7;
-	--sidebar-ring: #f4521447;
 	--chart-1: #ec5b2b;
 	--chart-2: #318795;
 	--chart-3: #0062d1;
@@ -47,49 +40,13 @@
 	--surface-overlay: #ffffff33;
 	--surface-subtle: #e9e9e9;
 
-	--interactive-border: #c7c7c7;
-	--interactive-border-hover: #b9b9b9;
-	--interactive-border-focus: #f45214;
 	--interactive-selection: #18181816;
-	--interactive-selection-foreground: #181818;
-	--interactive-focus: #f45214;
-	--interactive-focus-ring: #f4521447;
-	--interactive-cursor: #090909;
 	--interactive-hover: #1818180e;
-	--interactive-active: #18181816;
-
-	--status-error: #d1383d;
-	--status-error-foreground: #ffffff;
-	--status-error-background: #fde3e0;
-	--status-error-border: #faa8a3;
-	--status-warning: #ec5b2b;
-	--status-warning-foreground: #000000;
-	--status-warning-background: #ffe3da;
-	--status-warning-border: #fea88e;
-	--status-success: #0062d1;
-	--status-success-foreground: #ffffff;
-	--status-success-background: #deebfe;
-	--status-success-border: #9ec3fa;
-	--status-info: #318795;
-	--status-info-foreground: #000000;
-	--status-info-background: #bff5ff;
-	--status-info-border: #77d1e1;
-
-	--syntax-background: #f8f8f8;
-	--syntax-foreground: #181818;
-	--syntax-comment: #8a8a8a;
-	--syntax-keyword: #ec5b2b;
-	--syntax-string: #0062d1;
-	--syntax-number: #ec5b2b;
-	--syntax-function: #318795;
-	--syntax-variable: #d1383d;
-	--syntax-type: #b0851f;
-	--syntax-operator: #318795;
 
 	--markdown-heading1: #ec5b2b;
 	--markdown-heading2: #ec5b2b;
-	--markdown-heading3: #090909;
-	--markdown-heading4: #181818;
+	--markdown-heading3: #000000;
+	--markdown-heading4: #0a0a0a;
 	--markdown-link: #ec5b2b;
 	--markdown-link-hover: #318795;
 	--markdown-inline-code: #0062d1;
@@ -102,29 +59,12 @@
 	--markdown-strikethrough: #8a8a8a;
 	--markdown-hr: #8a8a8a;
 
-	--chat-background: #ffffff;
-	--chat-user-message: #181818;
-	--chat-user-message-bg: #f2f2f2;
-	--chat-assistant-message: #181818;
-	--chat-assistant-message-bg: #ffffff;
-	--chat-timestamp: #afafaf;
-	--chat-divider: #e3e3e3;
-	--chat-typing: #8a8a8a;
-
 	--tools-background: #f2f2f2;
 	--tools-border: #e3e3e3;
 	--tools-header-hover: #e9e9e9;
 	--tools-icon: #c9c9c9;
 	--tools-title: #181818;
 	--tools-description: #8a8a8a;
-	--tools-edit-added: #2f60a4;
-	--tools-edit-added-bg: #f6faff;
-	--tools-edit-removed: #e9055a;
-	--tools-edit-removed-bg: #fef7f8;
-	--tools-edit-modified: #ff8c00;
-	--tools-edit-modified-bg: #fcf7f5;
-	--tools-edit-line-number: #afafaf;
-
 	--loading-spinner: #ec5b2b;
 	--loading-spinner-track: #e9e9e9;
 }
@@ -135,7 +75,6 @@
 	--muted: #281d1e;
 	--muted-foreground: #808080;
 	--card: #0e0e0e;
-	--card-foreground: #eeeeee;
 	--popover: #0e0e0e;
 	--popover-foreground: #eeeeee;
 	--border: #434343;
@@ -150,13 +89,7 @@
 	--destructive-foreground: #151313;
 	--ring: #be3c0761;
 	--sidebar: #0b0b0b;
-	--sidebar-foreground: #808080;
-	--sidebar-primary: #ec5b2b;
-	--sidebar-primary-foreground: #151313;
-	--sidebar-accent: #1c1c1c;
-	--sidebar-accent-foreground: #eeeeee;
 	--sidebar-border: #434343;
-	--sidebar-ring: #be3c0761;
 	--chart-1: #ec5b2b;
 	--chart-2: #56b6c2;
 	--chart-3: #6ba1e6;
@@ -178,49 +111,13 @@
 	--surface-overlay: #050505cc;
 	--surface-subtle: #1c1c1c;
 
-	--interactive-border: #434343;
-	--interactive-border-hover: #4c4c4c;
-	--interactive-border-focus: #be3c07;
 	--interactive-selection: #eeeeee1f;
-	--interactive-selection-foreground: #eeeeee;
-	--interactive-focus: #be3c07;
-	--interactive-focus-ring: #be3c0761;
-	--interactive-cursor: #fdfdfd;
 	--interactive-hover: #eeeeee17;
-	--interactive-active: #eeeeee1f;
 
-	--status-error: #e06c75;
-	--status-error-foreground: #151313;
-	--status-error-background: #5c0318;
-	--status-error-border: #7c0a25;
-	--status-warning: #ec5b2b;
-	--status-warning-foreground: #151313;
-	--status-warning-background: #531906;
-	--status-warning-border: #752101;
-	--status-success: #6ba1e6;
-	--status-success-foreground: #151313;
-	--status-success-background: #042e5d;
-	--status-success-border: #09417d;
-	--status-info: #56b6c2;
-	--status-info-foreground: #151313;
-	--status-info-background: #05363b;
-	--status-info-border: #0d4b51;
-
-	--syntax-background: #0e0e0e;
-	--syntax-foreground: #eeeeee;
-	--syntax-comment: #808080;
-	--syntax-keyword: #ec5b2b;
-	--syntax-string: #6ba1e6;
-	--syntax-number: #fff7f1;
-	--syntax-function: #56b6c2;
-	--syntax-variable: #e06c75;
-	--syntax-type: #e5c07b;
-	--syntax-operator: #56b6c2;
-
-	--markdown-heading1: #ec5b2b;
-	--markdown-heading2: #ec5b2b;
-	--markdown-heading3: #fdfdfd;
-	--markdown-heading4: #eeeeee;
+	--markdown-heading1: #f0805b;
+	--markdown-heading2: #f0805b;
+	--markdown-heading3: #ffffff;
+	--markdown-heading4: #f5f5f5;
 	--markdown-link: #ec5b2b;
 	--markdown-link-hover: #56b6c2;
 	--markdown-inline-code: #6ba1e6;
@@ -233,29 +130,12 @@
 	--markdown-strikethrough: #808080;
 	--markdown-hr: #808080;
 
-	--chat-background: #050505;
-	--chat-user-message: #eeeeee;
-	--chat-user-message-bg: #141414;
-	--chat-assistant-message: #eeeeee;
-	--chat-assistant-message-bg: #050505;
-	--chat-timestamp: #5d5d5d;
-	--chat-divider: #303030;
-	--chat-typing: #808080;
-
 	--tools-background: #141414;
 	--tools-border: #303030;
 	--tools-header-hover: #1c1c1c;
 	--tools-icon: #1e1e1e;
 	--tools-title: #eeeeee;
 	--tools-description: #808080;
-	--tools-edit-added: #b8d6fe;
-	--tools-edit-added-bg: #021631;
-	--tools-edit-removed: #e92b53;
-	--tools-edit-removed-bg: #30030a;
-	--tools-edit-modified: #ffba92;
-	--tools-edit-modified-bg: #150e0c;
-	--tools-edit-line-number: #5d5d5d;
-
 	--loading-spinner: #ec5b2b;
 	--loading-spinner-track: #1c1c1c;
 }

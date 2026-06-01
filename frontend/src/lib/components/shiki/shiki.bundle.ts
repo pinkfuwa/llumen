@@ -103,7 +103,7 @@ type BundledLanguage =
 	| 'asm'
 	| 'lean'
 	| 'lean4';
-type BundledTheme = 'github-light' | 'github-dark';
+type BundledTheme = 'github-light' | 'github-dark' | 'dracula' | 'vitesse-dark' | 'vitesse-light';
 type Highlighter = HighlighterGeneric<BundledLanguage, BundledTheme>;
 
 const bundledLanguages = {
@@ -207,7 +207,10 @@ const bundledLanguages = {
 
 const bundledThemes = {
 	'github-light': () => import('shiki/themes/github-light.mjs'),
-	'github-dark': () => import('shiki/themes/github-dark.mjs')
+	'github-dark': () => import('shiki/themes/github-dark.mjs'),
+	dracula: () => import('shiki/themes/dracula.mjs'),
+	'vitesse-dark': () => import('shiki/themes/vitesse-dark.mjs'),
+	'vitesse-light': () => import('shiki/themes/vitesse-light.mjs')
 } as Record<BundledTheme, DynamicImportThemeRegistration>;
 
 const createHighlighter = /* @__PURE__ */ createBundledHighlighter<BundledLanguage, BundledTheme>({

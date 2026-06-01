@@ -30,7 +30,11 @@
 	});
 </script>
 
-<header bind:this={sidebarElement} class={sidebarStyle} data-state={open ? 'open' : 'close'}>
+<header
+	bind:this={sidebarElement}
+	class="flex h-screen w-screen flex-col justify-between border-sidebar-border bg-card p-5 transition-all data-[state=close]:ml-[-100vw] md:w-[min(calc(160px+20rem),33vw)] md:border-r md:data-[state=close]:-ml-[min(calc(160px+20rem),33vw)]"
+	data-state={open ? 'open' : 'close'}
+>
 	<div class="mb-4 shrink-0 border-b border-border pb-1">
 		<CollapseHeader onclick={() => (open = !open)} />
 	</div>

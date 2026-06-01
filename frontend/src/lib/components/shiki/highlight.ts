@@ -1,5 +1,6 @@
 import type { ShikiWorkerRequest, ShikiWorkerResponse } from './types';
 import Semaphore from '$lib/semaphore';
+import type { BundledTheme } from './shiki.bundle';
 
 const worker = new Worker(new URL('./worker.ts', import.meta.url), {
 	type: 'module'
@@ -17,12 +18,12 @@ worker.addEventListener('message', (event: MessageEvent<ShikiWorkerResponse>) =>
 	}
 });
 
-export async function highlight(code: string, lang: string, dark: boolean): Promise<string> {
+export async function highlight(code: string, lang: string, theme: BundledTheme): Promise<string> {
 	await semphore.acquire();
 
 	let { html, error } = await new Promise<ShikiWorkerResponse>((resolve) => {
 		renderCallback = resolve;
-		const request: ShikiWorkerRequest = { code, lang, dark };
+		const request: ShikiWorkerRequest = { code, lang, theme };
 		worker.postMessage(request);
 	});
 

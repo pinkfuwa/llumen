@@ -158,7 +158,7 @@
 <div role="region" class={inputAreaStyle} bind:this={container}>
 	{#if dropZone.isOver && isEditing}
 		<div
-			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-md border-2 border-dashed border-border bg-muted/30 text-2xl text-primary"
+			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-md border-2 border-dashed border-border bg-muted/40 text-2xl text-primary"
 		>
 			<FileUp />
 			{$_('chat.upload_file')}

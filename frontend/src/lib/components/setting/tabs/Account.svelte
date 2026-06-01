@@ -20,7 +20,6 @@
 			data={[
 				{ value: 'llumen', label: 'Llumen' },
 				{ value: 'dracula', label: 'Dracula' },
-				{ value: 'flexoki', label: 'Flexoki' },
 				{ value: 'vitesse', label: 'Vitesse' }
 			]}
 			bind:selected={themeName.val}

@@ -8,7 +8,7 @@
 	const title = $derived(node.title);
 
 	const linkStyle =
-		'rounded-xs border-b border-border p-0.5 duration-150 hover:bg-interactive-hover';
+		'rounded-xs border-b border-markdown-link p-0.5 text-markdown-link duration-150 hover:text-markdown-link-hover';
 </script>
 
 <span class="pb-1">
