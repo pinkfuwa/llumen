@@ -45,8 +45,8 @@
 	});
 
 	let themeStyle = get(darkTheme)
-		? 'background-color:#fff;color:#24292e'
-		: 'background-color:#24292e;color:#e1e4e8';
+		? 'background-color:#24292e;color:#e1e4e8'
+		: 'background-color:#fff;color:#24292e';
 </script>
 
 <div class="border-radius-md h-full w-full rounded-md border border-border p-2" style={themeStyle}>
