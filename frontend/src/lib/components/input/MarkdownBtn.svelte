@@ -7,7 +7,7 @@
 </script>
 
 <Tooltip
-	class="hover:bg-hover hidden rounded-md p-1 md:block"
+	class="hidden rounded-md p-1 hover:bg-accent md:block"
 	onclick={() => (isEditing = !isEditing)}
 	text={isEditing ? $_('chat.markdown_mode.disable') : $_('chat.markdown_mode.enable')}
 	{disabled}

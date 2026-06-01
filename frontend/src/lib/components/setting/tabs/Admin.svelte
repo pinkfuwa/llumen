@@ -36,7 +36,7 @@
 <div class="flex h-full flex-col gap-2 overflow-auto">
 	<Collapsible.Root class="md:hidden">
 		<Collapsible.Trigger
-			class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-primary hover:text-text-hover"
+			class="hover:text-inverse flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent"
 		>
 			<span>{$_('setting.admin.create')}</span>
 			<ChevronDown />
@@ -49,7 +49,7 @@
 			{/if}
 			{#if success}
 				<div class="mb-2 text-center text-sm">
-					{$_('setting.admin.user')} <span class="bg-hover rounded-md p-1">{username}</span>
+					{$_('setting.admin.user')} <span class="rounded-md bg-accent-soft p-1">{username}</span>
 					{$_('setting.admin.created')}
 				</div>
 			{/if}
@@ -146,7 +146,7 @@
 		</div>
 		<Collapsible.Root class="md:hidden">
 			<Collapsible.Trigger
-				class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-primary hover:text-text-hover"
+				class="hover:text-inverse flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent"
 			>
 				<h3>{$_('setting.admin.users')}</h3>
 				<ChevronDown />

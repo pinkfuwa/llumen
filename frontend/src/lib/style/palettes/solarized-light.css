@@ -1,0 +1,13 @@
+[data-theme='solarized-light'] {
+	--color-surface-base: #fdf6e3;
+	--color-surface-panel: #eee8d5;
+	--color-surface-overlay: #fbf3df;
+	--color-surface-pattern: #e8e0c8;
+	--color-accent: #268bd2;
+	--color-accent-soft: #93a1a1;
+	--color-primary: #586e75;
+	--color-inverse: #fdf6e3;
+	--color-input-bg: #fbf3df;
+	--color-outline: #93a1a1;
+	--color-code-bg: #fbf3df;
+}

@@ -14,7 +14,7 @@
 		{title}
 		target="_blank"
 		rel="noopener noreferrer"
-		class="rounded-xs border-b border-outline p-0.5 duration-150 hover:bg-primary hover:text-text-hover"
+		class="hover:text-inverse rounded-xs border-b border-outline p-0.5 duration-150 hover:bg-accent"
 	>
 		{@render children()}
 	</a>

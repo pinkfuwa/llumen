@@ -34,8 +34,8 @@ export default function useCodeMirror(option: {
 		'.cm-tooltip-autocomplete': {
 			borderRadius: '0.5rem !important',
 			border: '1px solid var(--color-outline, #e5e7eb) !important',
-			background: 'var(--color-input, #fff) !important',
-			color: 'var(--color-text, #24292e) !important',
+			background: 'var(--color-input-bg, #fff) !important',
+			color: 'var(--color-primary, #24292e) !important',
 			boxShadow: '0 4px 32px 0 rgba(0,0,0,0.08) !important',
 			padding: '0.25rem 0 !important',
 			fontSize: '0.95rem !important',

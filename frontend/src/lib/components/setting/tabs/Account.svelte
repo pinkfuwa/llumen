@@ -36,7 +36,11 @@
 				{ value: 'light-pattern', label: 'Llumen*' },
 				{ value: 'dark', label: 'Sun set' },
 				{ value: 'dark-pattern', label: 'Sun set*' },
-				{ value: 'blue', label: 'Ocean' }
+				{ value: 'blue', label: 'Ocean' },
+				{ value: 'solarized-light', label: 'Solarized' },
+				{ value: 'solarized-dark', label: 'Solarized*' },
+				{ value: 'dracula', label: 'Dracula' },
+				{ value: 'nord', label: 'Nord' }
 			]}
 			bind:selected={themeData}
 			disabled={isPending()}

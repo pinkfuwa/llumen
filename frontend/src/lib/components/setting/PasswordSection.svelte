@@ -51,7 +51,7 @@
 
 <Collapsible.Root bind:open class="md:hidden">
 	<Collapsible.Trigger
-		class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-primary hover:text-text-hover"
+		class="hover:text-inverse flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-accent"
 	>
 		<span>{$_('setting.change_password')}</span>
 		<ChevronDown />

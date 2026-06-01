@@ -15,7 +15,7 @@
 </script>
 
 <a
-	class="mr-2 inline-flex flex-row items-center space-x-2 overflow-hidden rounded-full border-b border-outline p-2 px-3 py-[0.15rem] hover:bg-primary hover:text-text-hover"
+	class="hover:text-inverse mr-2 inline-flex flex-row items-center space-x-2 overflow-hidden rounded-full border-b border-outline p-2 px-3 py-[0.15rem] hover:bg-accent"
 	href={url}
 	target="_blank"
 >

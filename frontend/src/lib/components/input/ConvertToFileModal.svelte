@@ -56,9 +56,9 @@
 					type="text"
 					bind:value={convertFileName}
 					placeholder="message.md"
-					class="w-full rounded-md border border-outline bg-chat-input-bg px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-hidden"
+					class="w-full rounded-md border border-outline bg-surface-panel px-3 py-2 focus:ring-2 focus:ring-accent focus:outline-hidden"
 				/>
-				<p class="mt-1 text-sm text-text/60">
+				<p class="text-primary/60 mt-1 text-sm">
 					{$_('chat.convert_to_file.file_hint')}
 				</p>
 			</div>
@@ -67,13 +67,13 @@
 	{#snippet footer()}
 		<button
 			onclick={close}
-			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-primary focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
+			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
 		>
 			{$_('chat.convert_to_file.cancel')}
 		</button>
 		<button
 			onclick={handleConvertToFile}
-			class="rounded-md border border-outline bg-primary px-4 py-2 transition-colors hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
+			class="rounded-md border border-outline bg-accent px-4 py-2 transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
 		>
 			{$_('chat.convert_to_file.convert')}
 		</button>

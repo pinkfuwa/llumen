@@ -1,0 +1,13 @@
+[data-theme='dracula'] {
+	--color-surface-base: #282a36;
+	--color-surface-panel: #44475a;
+	--color-surface-overlay: #44475a;
+	--color-surface-pattern: #343746;
+	--color-accent: #bd93f9;
+	--color-accent-soft: #6272a4;
+	--color-primary: #f8f8f2;
+	--color-inverse: #282a36;
+	--color-input-bg: #44475a;
+	--color-outline: #6272a4;
+	--color-code-bg: #44475a;
+}

@@ -44,11 +44,11 @@
 				bind:value={passwordCheck}
 			/>
 		</div>
-		<button class="mx-1 rounded-md p-1 hover:bg-hover{matched ? '' : ' hidden'}" type="submit">
+		<button class="mx-1 rounded-md p-1 hover:bg-accent{matched ? '' : ' hidden'}" type="submit">
 			<CheckLine />
 		</button>
 		{#if !matched}
-			<button class="hover:bg-hover mx-1 rounded-md p-1" onclick={oncancal}>
+			<button class="mx-1 rounded-md p-1 hover:bg-accent" onclick={oncancal}>
 				<X />
 			</button>
 		{/if}

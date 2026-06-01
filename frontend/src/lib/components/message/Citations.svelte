@@ -19,7 +19,7 @@
 {#if citations.length}
 	<Collapsible.Root bind:open>
 		<Collapsible.Trigger
-			class="flex flex-row flex-nowrap items-center rounded p-2 duration-150 hover:bg-primary hover:text-text-hover"
+			class="hover:text-inverse flex flex-row flex-nowrap items-center rounded p-2 duration-150 hover:bg-accent"
 		>
 			<Globe class="mr-2" />
 			<span>
@@ -35,7 +35,7 @@
 					<a
 						href={citation.url}
 						target="_blank"
-						class="flex flex-row items-center gap-2.5 rounded-lg border border-outline p-2.5 duration-150 hover:bg-primary hover:text-text-hover"
+						class="hover:text-inverse flex flex-row items-center gap-2.5 rounded-lg border border-outline p-2.5 duration-150 hover:bg-accent"
 					>
 						{#if citation.favicon}
 							<img

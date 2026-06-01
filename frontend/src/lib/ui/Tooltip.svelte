@@ -14,12 +14,12 @@
 	<Tooltip.Root delayDuration={200}>
 		<Tooltip.Trigger
 			{...restProps}
-			class={`cursor-pointer rounded-lg text-center text-text duration-150 not-disabled:hover:bg-primary not-disabled:hover:text-text-hover focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+			class={`text-primary cursor-pointer rounded-lg text-center duration-150 not-disabled:hover:bg-accent not-disabled:hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
 		>
 			{@render children()}
 		</Tooltip.Trigger>
 		<Tooltip.Content sideOffset={6}>
-			<div class="rounded-md border border-outline bg-popup-bg p-2 text-text">
+			<div class="text-primary rounded-md border border-outline bg-surface-overlay p-2">
 				{text}
 			</div>
 		</Tooltip.Content>

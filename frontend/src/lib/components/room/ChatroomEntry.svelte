@@ -24,8 +24,8 @@
 </svelte:head>
 
 <div
-	class="group flex items-center rounded-sm text-base duration-150 hover:bg-primary"
-	class:bg-primary={selected}
+	class="group flex items-center rounded-sm text-base duration-150 hover:bg-accent"
+	class:bg-accent={selected}
 	onmouseleave={() => {
 		checked = false;
 	}}

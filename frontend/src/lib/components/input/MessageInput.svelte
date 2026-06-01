@@ -153,12 +153,12 @@
 
 <div
 	role="region"
-	class="min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-outline bg-chat-input-bg p-2 shadow-xl shadow-secondary md:w-[min(750px,75%)]"
+	class="min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-outline bg-surface-panel p-2 shadow-xl shadow-accent-soft md:w-[min(750px,75%)]"
 	bind:this={container}
 >
 	{#if dropZone.isOver && isEditing}
 		<div
-			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-lg bg-primary text-2xl"
+			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-lg bg-accent text-2xl"
 		>
 			<FileUp />
 			{$_('chat.upload_file')}

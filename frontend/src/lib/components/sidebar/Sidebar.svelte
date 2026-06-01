@@ -29,7 +29,7 @@
 
 <header
 	bind:this={sidebarElement}
-	class="flex h-screen w-screen flex-col justify-between border-outline bg-sidebar-bg p-5 transition-all data-[state=close]:-ml-[100vw] md:w-[min(calc(160px+20rem),33vw)] md:border-r md:data-[state=close]:-ml-[min(calc(160px+20rem),33vw)]"
+	class="flex h-screen w-screen flex-col justify-between border-outline bg-surface-panel p-5 transition-all data-[state=close]:-ml-[100vw] md:w-[min(calc(160px+20rem),33vw)] md:border-r md:data-[state=close]:-ml-[min(calc(160px+20rem),33vw)]"
 	data-state={open ? 'open' : 'close'}
 >
 	<div class="mb-4 shrink-0 border-b border-outline pb-1">

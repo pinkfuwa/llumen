@@ -1,0 +1,13 @@
+[data-theme='blue'] {
+	--color-surface-base: #0d1117;
+	--color-surface-panel: #334155;
+	--color-surface-overlay: #1e293b;
+	--color-surface-pattern: #0f3051;
+	--color-accent: #1378d6;
+	--color-accent-soft: #12395c;
+	--color-primary: #ffffff;
+	--color-inverse: #0d1117;
+	--color-input-bg: #334155;
+	--color-outline: #cccccc;
+	--color-code-bg: #1e293b;
+}

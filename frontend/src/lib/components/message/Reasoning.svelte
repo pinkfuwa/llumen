@@ -26,7 +26,7 @@
 
 <Collapsible.Root bind:open>
 	<Collapsible.Trigger
-		class="flex flex-row flex-nowrap rounded p-2 duration-150 hover:bg-primary hover:text-text-hover"
+		class="hover:text-inverse flex flex-row flex-nowrap rounded p-2 duration-150 hover:bg-accent"
 	>
 		<Brain class="mr-2" />
 		<span>

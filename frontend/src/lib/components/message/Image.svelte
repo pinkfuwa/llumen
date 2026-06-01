@@ -64,7 +64,7 @@
 				onclick={downloadImage}
 				disabled={isDownloading}
 				aria-label="download image"
-				class="visible absolute top-2 right-2 rounded-lg bg-secondary p-2 duration-150 hover:bg-primary hover:text-text-hover disabled:opacity-50 md:invisible md:group-hover:visible"
+				class="hover:text-inverse visible absolute top-2 right-2 rounded-lg bg-accent-soft p-2 duration-150 hover:bg-accent disabled:opacity-50 md:invisible md:group-hover:visible"
 			>
 				<Download class="h-5 w-5" />
 			</button>

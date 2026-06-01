@@ -49,8 +49,8 @@
 
 			{#if streaming}
 				<div class="space-y-4">
-					<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
-					<hr class="mx-3 animate-pulse rounded-md border-primary bg-primary p-1" />
+					<hr class="mx-3 animate-pulse rounded-md border-accent bg-accent p-1" />
+					<hr class="mx-3 animate-pulse rounded-md border-accent bg-accent p-1" />
 				</div>
 			{:else}
 				{@const text = chunks

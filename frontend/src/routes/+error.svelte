@@ -12,7 +12,7 @@
 	});
 </script>
 
-<div class="flex h-screen flex-col items-center justify-center bg-login-bg">
+<div class="flex h-screen flex-col items-center justify-center bg-surface-base">
 	<h1 class="mb-4 text-4xl">
 		{page.status}: {messages[String(page.status)] || $_('error.unknown_error')}
 	</h1>

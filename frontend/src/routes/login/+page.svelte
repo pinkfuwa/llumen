@@ -48,9 +48,9 @@
 <svelte:head>
 	<title>{$_('login.title')}</title>
 </svelte:head>
-<main class="flex h-screen flex-col items-center justify-center bg-login-bg">
+<main class="flex h-screen flex-col items-center justify-center bg-surface-base">
 	<h2
-		class="mb-3 bg-gradient-to-r from-secondary to-primary bg-clip-text px-6 text-center text-4xl text-transparent"
+		class="mb-3 bg-gradient-to-r from-accent-soft to-accent bg-clip-text px-6 text-center text-4xl text-transparent"
 	>
 		{$_('login.welcome')}
 	</h2>

@@ -19,7 +19,7 @@
 
 <Collapsible.Root bind:open>
 	<Collapsible.Trigger
-		class="flex flex-row flex-nowrap rounded p-1 duration-150 hover:bg-primary hover:text-text-hover"
+		class="hover:text-inverse flex flex-row flex-nowrap rounded p-1 duration-150 hover:bg-accent"
 	>
 		{#if step.kind == StepKind.Code}
 			<ChartSpline class="mr-2" />
@@ -35,7 +35,7 @@
 	>
 		{step.description}
 
-		<div class="my-1 space-y-1 border-l-4 pl-3 hover:border-primary">
+		<div class="my-1 space-y-1 border-l-4 pl-3 hover:border-accent">
 			{#if lastProgress != undefined}
 				<Markdown source={lastProgress.c || ''} incremental={streaming} />
 			{/if}

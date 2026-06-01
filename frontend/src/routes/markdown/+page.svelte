@@ -14,7 +14,7 @@
 <div class="bg-chat relative grid h-screen w-screen grid-cols-2 gap-3 overflow-y-auto p-3">
 	<title>Test Markdown</title>
 	<textarea
-		class="resize-none rounded-lg border border-outline bg-component-bg p-3 text-lg"
+		class="resize-none rounded-lg border border-outline bg-surface-panel p-3 text-lg"
 		bind:value={content}
 		onkeyup={throttledUpdate}
 	></textarea>

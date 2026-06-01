@@ -171,7 +171,7 @@
 					<div class="font-mono text-2xl font-semibold">
 						{formatTime(recordingTime)}
 					</div>
-					<p class="text-sm text-text/60">
+					<p class="text-primary/60 text-sm">
 						{$_('chat.record_audio_dialog.recording')}
 					</p>
 				</div>
@@ -179,11 +179,11 @@
 				<div class="flex flex-col items-center gap-4 py-6">
 					<button
 						onclick={startRecording}
-						class="flex size-16 items-center justify-center rounded-full border-2 border-outline bg-primary transition-colors hover:bg-primary/80"
+						class="flex size-16 items-center justify-center rounded-full border-2 border-outline bg-accent transition-colors hover:bg-accent/80"
 					>
 						<Mic class="size-8" />
 					</button>
-					<p class="text-sm text-text/60">
+					<p class="text-primary/60 text-sm">
 						{$_('chat.record_audio_dialog.click_to_start')}
 					</p>
 				</div>
@@ -193,14 +193,14 @@
 	{#snippet footer()}
 		<button
 			onclick={cancelRecording}
-			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-primary focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
+			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
 		>
 			{$_('chat.record_audio_dialog.cancel')}
 		</button>
 		{#if isRecording}
 			<button
 				onclick={stopRecording}
-				class="rounded-md border border-outline bg-primary px-4 py-2 transition-colors hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
+				class="rounded-md border border-outline bg-accent px-4 py-2 transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
 			>
 				{$_('chat.record_audio_dialog.stop')}
 			</button>

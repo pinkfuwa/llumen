@@ -15,7 +15,7 @@
 		onclick={() => {
 			open = !open;
 		}}
-		class={`bg-sidebar-bg p-3 ${className}`}
+		class={`bg-surface-panel p-3 ${className}`}
 	>
 		<ArrowRight />
 	</Button>

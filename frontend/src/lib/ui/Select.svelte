@@ -42,7 +42,7 @@
 	{disabled}
 >
 	<Select.Trigger
-		class="inline-flex h-full items-center justify-between rounded-lg border border-outline px-3 text-center text-nowrap text-text duration-150 not-disabled:cursor-pointer not-disabled:hover:bg-primary not-disabled:hover:text-text-hover focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed {className}"
+		class="text-primary inline-flex h-full items-center justify-between rounded-lg border border-outline px-3 text-center text-nowrap duration-150 not-disabled:cursor-pointer not-disabled:hover:bg-accent not-disabled:hover:text-inverse focus:ring-4 focus:ring-outline focus:outline-none disabled:cursor-not-allowed {className}"
 		{disabled}
 	>
 		<span class="flex min-w-0 grow justify-start truncate">
@@ -55,13 +55,13 @@
 	</Select.Trigger>
 	<Select.Portal>
 		<Select.Content
-			class="z-20 max-h-48 rounded-xl border border-outline bg-input text-text outline-hidden select-none data-[side=bottom]:translate-y-1 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:-translate-y-1 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 {popupClass} "
+			class="text-primary z-20 max-h-48 rounded-xl border border-outline bg-input-bg outline-hidden select-none data-[side=bottom]:translate-y-1 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:-translate-y-1 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 {popupClass} "
 			sideOffset={10}
 		>
 			<Select.Viewport class="rounded-xl bg-clip-padding">
 				{#each data as row, i}
 					<Select.Item
-						class="flex h-10 w-full items-center px-2 py-3 text-sm outline-hidden duration-150 select-none not-disabled:cursor-pointer not-disabled:hover:bg-primary not-disabled:hover:text-text-hover disabled:opacity-50"
+						class="flex h-10 w-full items-center px-2 py-3 text-sm outline-hidden duration-150 select-none not-disabled:cursor-pointer not-disabled:hover:bg-accent not-disabled:hover:text-inverse disabled:opacity-50"
 						value={row.value}
 						label={row.label}
 						disabled={row.disabled}

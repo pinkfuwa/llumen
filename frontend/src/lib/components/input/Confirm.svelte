@@ -31,13 +31,13 @@
 	{#snippet footer()}
 		<button
 			onclick={handleCancel}
-			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-primary focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
+			class="rounded-md border border-outline bg-transparent px-4 py-2 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
 		>
 			{$_('chat.confirm.cancel')}
 		</button>
 		<button
 			onclick={handleConfirm}
-			class="rounded-md border border-outline bg-primary px-4 py-2 transition-colors hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
+			class="rounded-md border border-outline bg-accent px-4 py-2 transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
 		>
 			{$_('chat.confirm.confirm')}
 		</button>

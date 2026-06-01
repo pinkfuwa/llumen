@@ -42,7 +42,7 @@
 			onclick={handleOutsideClick}
 		/>
 		<Dialog.Content
-			class="fixed top-1/2 left-1/2 z-100 w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-outline bg-popup-bg p-6 font-mono text-text shadow-xl fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in"
+			class="text-primary fixed top-1/2 left-1/2 z-100 w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-outline bg-surface-overlay p-6 font-mono shadow-xl fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in"
 		>
 			<Dialog.Close
 				class="focus-visible:ring-foreground focus-visible:ring-offset-background absolute top-4 right-4 rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.98]"
@@ -61,7 +61,7 @@
 			{/if}
 
 			{#if description}
-				<Dialog.Description class="mb-6 text-text/80">
+				<Dialog.Description class="text-primary/80 mb-6">
 					{description}
 				</Dialog.Description>
 			{/if}

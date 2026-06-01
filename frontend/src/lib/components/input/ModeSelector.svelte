@@ -27,7 +27,7 @@
 	<DropdownMenu.Separator class="mx-1 mb-1 h-px bg-outline/80" />
 	<div class="space-y-1">
 		<DropdownMenu.Item
-			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover data-disabled:opacity-50 ${isActive(Mode.Search) ? 'bg-primary text-text-hover' : ''}`}
+			class={`hover:text-inverse flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-accent data-disabled:opacity-50 ${isActive(Mode.Search) ? 'text-inverse bg-accent' : ''}`}
 			onSelect={() => setMode(Mode.Search)}
 			disabled={searchDisabled}
 			aria-disabled={searchDisabled}
@@ -38,7 +38,7 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover data-disabled:opacity-50 ${isActive(Mode.Research) ? 'bg-primary text-text-hover' : ''}`}
+			class={`hover:text-inverse flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-accent data-disabled:opacity-50 ${isActive(Mode.Research) ? 'text-inverse bg-accent' : ''}`}
 			onSelect={() => setMode(Mode.Research)}
 			disabled={deepResearchDisabled}
 			aria-disabled={deepResearchDisabled}
@@ -49,7 +49,7 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-primary hover:text-text-hover data-disabled:opacity-50 ${isActive(Mode.Media) ? 'bg-primary text-text-hover' : ''}`}
+			class={`hover:text-inverse flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-accent data-disabled:opacity-50 ${isActive(Mode.Media) ? 'text-inverse bg-accent' : ''}`}
 			onSelect={() => setMode(Mode.Media)}
 			disabled={mediaDisabled}
 			aria-disabled={mediaDisabled}

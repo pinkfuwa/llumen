@@ -23,7 +23,7 @@
 			class="fixed inset-0 z-20 backdrop-blur-md fade-in-100 fade-out-0 data-[state=closed]:animate-out data-[state=open]:animate-in"
 		/>
 		<Dialog.Content
-			class="fixed inset-0 z-20 m-2 flex max-w-4xl rounded-xl border border-outline bg-popup-bg p-3 font-mono text-text fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:m-auto md:h-[min(80vh,48rem)] md:w-full"
+			class="text-primary fixed inset-0 z-20 m-2 flex max-w-4xl rounded-xl border border-outline bg-surface-overlay p-3 font-mono fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:m-auto md:h-[min(80vh,48rem)] md:w-full"
 		>
 			<Dialog.Close
 				class="focus-visible:ring-foreground focus-visible:ring-offset-background absolute top-5 right-5 rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.98]"
@@ -41,8 +41,8 @@
 					<div class="flex flex-col space-y-2">
 						<Tabs.Trigger
 							value="account"
-							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover
-						data-[state=active]:bg-primary data-[state=active]:text-text-hover"
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-accent hover:text-inverse
+						data-[state=active]:bg-accent data-[state=active]:text-inverse"
 						>
 							<CircleUser class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block">
@@ -51,8 +51,8 @@
 						</Tabs.Trigger>
 						<Tabs.Trigger
 							value="admin"
-							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover
-					data-[state=active]:bg-primary 	data-[state=active]:text-text-hover"
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-accent hover:text-inverse
+					data-[state=active]:bg-accent 	data-[state=active]:text-inverse"
 						>
 							<ShieldUser class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block">
@@ -61,8 +61,8 @@
 						</Tabs.Trigger>
 						<Tabs.Trigger
 							value="openrouter"
-							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover
-						data-[state=active]:bg-primary data-[state=active]:text-text-hover"
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-accent hover:text-inverse
+						data-[state=active]:bg-accent data-[state=active]:text-inverse"
 						>
 							<EthernetPort class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block"> Openrouter </span>
@@ -70,7 +70,7 @@
 					</div>
 					<div class="flex flex-col space-y-2">
 						<a
-							class="rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
+							class="rounded px-3 py-2 text-left duration-150 hover:bg-accent hover:text-inverse"
 							href="https://github.com/pinkfuwa/llumen"
 							target="_blank"
 						>
@@ -78,7 +78,7 @@
 							<span class="hidden md:inline-block"> {$_('setting.github_star')} </span>
 						</a>
 						<button
-							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-primary hover:text-text-hover"
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-accent hover:text-inverse"
 							onclick={() => {
 								token.set(undefined);
 							}}

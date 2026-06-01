@@ -11,13 +11,13 @@
 	<div class="group/usage relative flex space-x-1">
 		{#if showUsage}
 			<CircleDollarSign
-				class="h-10 w-10 rounded-lg p-2 duration-150  group-hover/usage:bg-primary group-hover/usage:text-text-hover"
+				class="group-hover/usage:text-inverse h-10 w-10 rounded-lg p-2  duration-150 group-hover/usage:bg-accent"
 			/>
 
 			<div
 				class="absolute top-0 right-13 flex h-10 w-sm items-center justify-end duration-150 group-hover/usage:visible md:invisible"
 			>
-				<div class="rounded-md bg-secondary p-2 select-none">
+				<div class="rounded-md bg-accent-soft p-2 select-none">
 					{token} token/${cost.toFixed(4)}
 				</div>
 			</div>
@@ -25,7 +25,7 @@
 	</div>
 	<button onclick={() => copy(content)} aria-label="copy response">
 		<ClipboardCopy
-			class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-primary hover:text-text-hover"
+			class="hover:text-inverse h-10 w-10 rounded-lg p-2 duration-150 hover:bg-accent"
 		/>
 	</button>
 </div>

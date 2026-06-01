@@ -73,7 +73,7 @@
 <div class="group/files mt-4 w-full px-[5vw] lg:px-20 2xl:px-36">
 	<div class="flex justify-end">
 		<div
-			class="rounded-md bg-user-bg p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]"
+			class="rounded-md bg-accent-soft p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]"
 			data-state={isEditing ? 'edit' : 'text'}
 		>
 			{#if files.length != 0}
