@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/message.svelte';
 	import { type ChatReadResp } from '$lib/api/types';
-	import { dispatchError } from '$lib/error.svelte';
+	import { displayError } from '$lib/error.svelte';
 	import ResponseBox from './ResponseBox.svelte';
 	import ResponseEdit from './ResponseEdit.svelte';
 	import User from './User.svelte';
@@ -30,7 +30,7 @@
 			messageId={msg.id}
 			onupdate={(text, updatedFiles) => {
 				if (room == undefined) return;
-				if (room.model_id == undefined) dispatchError('internal', $_('error.select_model_first'));
+				if (room.model_id == undefined) displayError('internal', $_('error.select_model_first'));
 				else
 					mutate({
 						chat_id: chatId,

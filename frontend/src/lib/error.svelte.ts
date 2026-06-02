@@ -1,35 +1,16 @@
-import { writable } from 'svelte/store';
 import { token } from './store.svelte';
 
-let latestError = writable<{
-	id: number;
+type ErrorDetail = {
 	error: string;
 	reason?: string;
-} | null>(null);
+};
 
-export function dispatchError(errorMsg: string, reason?: string) {
-	latestError.update((prev) => {
-		const lastId = prev ? prev.id : 0;
+export const error = $state<{ val: ErrorDetail | null }>({ val: null });
 
-		return {
-			id: lastId + 1,
-			error: errorMsg,
-			reason
-		};
-	});
-}
-
-export function useError() {
-	return latestError;
-}
-
-export function dismissError() {
-	latestError.set(null);
+export function displayError(errorMsg: string, reason?: string) {
+	error.val = { error: errorMsg, reason };
 }
 
 $effect.root(() => {
-	const unsubscriber = latestError.subscribe((error) => {
-		if (error?.error == 'malformed_token') token.value = undefined;
-	});
-	return () => unsubscriber();
+	if (error.val && error.val.error == 'malformed_token') token.value = undefined;
 });

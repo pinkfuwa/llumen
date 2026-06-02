@@ -1,9 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import './lib/style/tokens.css';
-@import './lib/style/palettes/llumen.css';
-@import './lib/style/palettes/dracula.css';
-@import './lib/style/palettes/vitesse.css';
+@import './theme/tokens.css';
+@import './theme/palettes/llumen.css';
+@import './theme/palettes/dracula.css';
+@import './theme/palettes/vitesse.css';
 
 html {
 	background: var(--surface-background);

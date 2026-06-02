@@ -1,7 +1,7 @@
 import { RawAPIFetch, APIFetch } from './state/errorHandle.svelte';
 import type { FileUploadResp, FileRefreshReq, FileRefreshResp } from './types';
 import { compressImage, isImageFile } from '$lib/image';
-import { dispatchError } from '$lib/error.svelte';
+import { displayError } from '$lib/error.svelte';
 import { untrack } from 'svelte';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
@@ -10,7 +10,7 @@ const COMPRESS_SIZE_THRESHOLD = 2.5 * 1024 * 1024;
 export async function upload(file: File, signal?: AbortSignal): Promise<number | null> {
 	const formData = new FormData();
 	if (file.size > MAX_FILE_SIZE) {
-		dispatchError('internal', 'File size exceeds the maximum limit of 100MB.');
+		displayError('internal', 'File size exceeds the maximum limit of 100MB.');
 		return null;
 	}
 

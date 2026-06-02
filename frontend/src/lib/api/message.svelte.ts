@@ -24,7 +24,7 @@ import type {
 	SseCursor,
 	UrlCitation
 } from './types';
-import { dispatchError } from '$lib/error.svelte';
+import { displayError } from '$lib/error.svelte';
 import { updateInfiniteQueryDataById } from './state';
 import { getRoomPages, setRoomPages } from './chatroom.svelte';
 import { untrack } from 'svelte';
@@ -380,7 +380,7 @@ function startSSE(chatId: number, signal: AbortSignal) {
 				if (data != undefined && data.trim() != ':') {
 					const resJson = JSON.parse(data) as SseResp;
 					const error = getError(resJson);
-					if (error) dispatchError(error.error, error.reason);
+					if (error) displayError(error.error, error.reason);
 					else {
 						if (dev) console.log('resJson', resJson);
 						(Handlers[resJson.t] as (data: any, chatId: number) => void)(resJson.c, chatId);

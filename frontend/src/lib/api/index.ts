@@ -1,7 +1,7 @@
-// Re-export all API modules for easier imports and future refactoring
+export type MutationStatus = 'pending' | 'failed' | 'success' | 'untried';
 
 // Auth
-export { Login, RenewToken, TryHeaderAuth, type User } from './auth.svelte';
+export { Login, RenewToken, type User } from './auth.svelte';
 
 // Chatroom
 export {

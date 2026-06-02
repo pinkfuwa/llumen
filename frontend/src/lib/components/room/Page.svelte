@@ -4,7 +4,7 @@
 	import { deleteRoom, updateRoom, getRoomPages, setRoomPages } from '$lib/api/chatroom.svelte';
 	import type { PageState } from '$lib/api/state';
 	import { type ChatPaginateRespList } from '$lib/api/types';
-	import { dispatchError } from '$lib/error.svelte';
+	import { displayError } from '$lib/error.svelte';
 	import ChatroomEntry from './ChatroomEntry.svelte';
 	import { _ } from 'svelte-i18n';
 
@@ -43,7 +43,7 @@
 				// TODO: delete is reserved keyword
 				delete_({ id: room.id }, (resp) => {
 					if (!resp.deleted) {
-						dispatchError('network', $_('error.fail_to_delete'));
+						displayError('network', $_('error.fail_to_delete'));
 						return;
 					}
 					const pages = getRoomPages();

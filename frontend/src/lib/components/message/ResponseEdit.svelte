@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { copy } from '$lib/copy';
+	import { copy } from '$lib/copy.svelte';
 	import { CircleDollarSign, ClipboardCopy } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
 	import InteractiveRow from '$lib/ui/InteractiveRow.svelte';

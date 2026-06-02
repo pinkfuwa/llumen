@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { LatexInlineNode } from '../parser/types';
 	import LatexComponent from '../../latex/Latex.svelte';
-	import { copy } from '$lib/copy';
+	import { copy } from '$lib/copy.svelte';
 
 	let { node }: { node: LatexInlineNode } = $props();
 

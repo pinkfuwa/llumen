@@ -1,4 +1,4 @@
-import { dispatchError } from '$lib/error.svelte';
+import { displayError } from '$lib/error.svelte';
 import type { Error as APIError } from '../types';
 import { token } from '$lib/store.svelte';
 import { dev } from '$app/environment';
@@ -54,9 +54,9 @@ export async function APIFetch<D, P = any>(
 	try {
 		const resJson: D | APIError = await res.json();
 		const error = getError(resJson);
-		if (error) dispatchError(error.error, error.reason);
+		if (error) displayError(error.error, error.reason);
 		else return resJson as D;
 	} catch (_) {
-		dispatchError('API(typeshare)', 'maybe backend is disconnected');
+		displayError('API(typeshare)', 'maybe backend is disconnected');
 	}
 }

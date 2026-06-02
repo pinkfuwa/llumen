@@ -1,10 +1,10 @@
 import { token } from '$lib/store.svelte';
 import { page } from '$app/state';
 import { goto } from '$app/navigation';
-import { createMutation, type MutationResult } from './state';
 import { APIFetch } from './state/errorHandle.svelte';
 
 import type { LoginReq, LoginResp, RenewResp, RenewReq, HeaderAuthResp } from './types';
+import type { MutationStatus } from '.';
 
 export interface User {
 	username: string;
@@ -22,13 +22,13 @@ function applyToken(data: { token: string; exp: string | number }) {
 	};
 }
 
-export function Login(): MutationResult<LoginReq, LoginResp> {
-	return createMutation({
-		path: 'auth/login',
-		onSuccess: (data) => {
-			applyToken(data);
-		}
-	});
+export async function Login(username: string, password: string): Promise<MutationStatus> {
+	let data = await APIFetch<LoginResp>('auth/login', { username, password } as LoginReq);
+	if (!data) return 'failed';
+
+	applyToken(data);
+
+	return 'success';
 }
 
 export async function RenewToken(originalToken: string) {
@@ -39,13 +39,13 @@ export async function RenewToken(originalToken: string) {
 	}
 }
 
-export async function TryHeaderAuth() {
-	const res = await APIFetch<HeaderAuthResp>('auth/header');
-
-	if (res && res.exp != undefined && res.token) {
-		applyToken({ token: res.token, exp: res.exp });
-	}
-}
+$effect.root(() => {
+	APIFetch<HeaderAuthResp>('auth/header').then((res) => {
+		if (res && res.exp != undefined && res.token) {
+			applyToken({ token: res.token, exp: res.exp });
+		}
+	});
+});
 
 $effect.root(() => {
 	$effect(() => {

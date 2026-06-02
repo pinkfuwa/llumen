@@ -1,48 +1,31 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { Login, TryHeaderAuth } from '$lib/api/auth.svelte';
-	import { page } from '$app/state';
+	import { Login } from '$lib/api';
 	import { _ } from 'svelte-i18n';
 	import Button from '$lib/ui/Button.svelte';
 	import Input from '$lib/ui/Input.svelte';
+	import type { MutationStatus } from '$lib/api';
 
 	let username = $state('');
 	let password = $state('');
 
-	let { mutate, isPending, isError } = Login();
-	let disabled = $derived(isPending() || username == '' || password == '');
+	let status = $state<MutationStatus>('untried');
 
-	function handleSubmit(event: Event) {
+	let disabled = $derived(status == 'pending' || username == '' || password == '');
+
+	let pending = $derived(status == 'pending' || status == 'success');
+
+	async function handleSubmit(event: Event) {
 		event.preventDefault();
 
 		let usernameVal = username;
 		let passwordVal = password;
 
+		status = 'pending';
+
+		status = await Login(usernameVal, passwordVal);
+
 		password = '';
-
-		mutate(
-			{
-				username: usernameVal,
-				password: passwordVal
-			},
-			(_data) => {
-				const callback = page.url.searchParams.get('callback');
-
-				if (callback) {
-					let url = new URL(decodeURIComponent(callback), document.baseURI);
-					if (url.origin == window.location.origin) goto(url);
-
-					return;
-				}
-
-				goto('/chat/new');
-			}
-		);
 	}
-
-	$effect(() => {
-		TryHeaderAuth();
-	});
 </script>
 
 <svelte:head>
@@ -58,7 +41,7 @@
 		{$_('login.description')}
 	</p>
 	<div class="min-w-[80vw] items-center rounded-lg p-6 md:min-w-lg">
-		<form class="grid grid-rows-3 gap-4" onsubmit={handleSubmit} inert={isPending()}>
+		<form class="grid grid-rows-3 gap-4" onsubmit={handleSubmit} inert={pending}>
 			<div>
 				<Input id="username" type="text" placeholder="admin" bind:value={username} required>
 					{$_('login.username')}
@@ -71,9 +54,9 @@
 			</div>
 
 			<Button type="submit" class="mt-4 text-lg" {disabled}>
-				{#if isError()}
+				{#if status == 'failed'}
 					{$_('login.retry')}
-				{:else if isPending()}
+				{:else if pending}
 					{$_('login.loading')}
 				{:else}
 					{$_('login.submit')}
