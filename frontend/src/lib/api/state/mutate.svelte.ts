@@ -1,4 +1,4 @@
-import { APIFetch } from './errorHandle';
+import { APIFetch } from './errorHandle.svelte';
 
 export interface MutationResult<P, D> {
 	mutate: (param: P, callback?: (data: D) => void) => Promise<D | undefined>;

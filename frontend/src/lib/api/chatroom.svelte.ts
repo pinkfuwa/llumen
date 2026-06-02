@@ -28,7 +28,7 @@ import {
 	type PageState,
 	type RawMutationResult
 } from './state';
-import { APIFetch } from './state/errorHandle';
+import { APIFetch } from './state/errorHandle.svelte';
 import { pushUserMessage } from './message.svelte';
 import { dev } from '$app/environment';
 

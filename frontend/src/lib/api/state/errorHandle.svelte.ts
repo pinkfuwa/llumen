@@ -1,7 +1,6 @@
-import { dispatchError } from '$lib/error';
-import { get } from 'svelte/store';
+import { dispatchError } from '$lib/error.svelte';
 import type { Error as APIError } from '../types';
-import { token } from '$lib/store';
+import { token } from '$lib/store.svelte';
 import { dev } from '$app/environment';
 
 export const apiBase = dev
@@ -23,7 +22,7 @@ export async function RawAPIFetch<P = any>(
 	method: 'POST' | 'GET' | 'PUT' | 'UPDATE' = 'POST',
 	signal?: AbortSignal
 ): Promise<Response> {
-	let tokenVal = get(token)?.value;
+	let tokenVal = token.value?.value;
 
 	if (path.startsWith('/')) throw new Error('Invalid path');
 

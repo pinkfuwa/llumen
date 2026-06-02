@@ -5,7 +5,12 @@
 	let { node, children }: { node: HeadingNode; children: Snippet } = $props();
 
 	const sizes = ['mt-4 text-2xl', 'mt-4 text-xl', 'mt-3 text-lg'];
-	const colors = ['text-markdown-heading1', 'text-markdown-heading2', 'text-markdown-heading3', 'text-markdown-heading4'];
+	const colors = [
+		'text-markdown-heading1',
+		'text-markdown-heading2',
+		'text-markdown-heading3',
+		'text-markdown-heading4'
+	];
 	const classname = $derived.by(() => {
 		const level = node.level - 1;
 		const size = level >= sizes.length ? sizes.at(-1)! : sizes[level];

@@ -1,6 +1,6 @@
 import { events } from 'fetch-event-stream';
 
-import { APIFetch, getError, RawAPIFetch } from './state/errorHandle';
+import { APIFetch, getError, RawAPIFetch } from './state/errorHandle.svelte';
 
 import {
 	createMutation,
@@ -24,7 +24,7 @@ import type {
 	SseCursor,
 	UrlCitation
 } from './types';
-import { dispatchError } from '$lib/error';
+import { dispatchError } from '$lib/error.svelte';
 import { updateInfiniteQueryDataById } from './state';
 import { getRoomPages, setRoomPages } from './chatroom.svelte';
 import { untrack } from 'svelte';

@@ -1,7 +1,7 @@
 // Re-export all API modules for easier imports and future refactoring
 
 // Auth
-export { Login, RenewToken, TryHeaderAuth, initAuth, type User } from './auth';
+export { Login, RenewToken, TryHeaderAuth, type User } from './auth.svelte';
 
 // Chatroom
 export {
@@ -96,7 +96,7 @@ export {
 } from './state';
 
 // Error handling
-export { RawAPIFetch, APIFetch, getError, apiBase } from './state/errorHandle';
+export { RawAPIFetch, APIFetch, getError, apiBase } from './state/errorHandle.svelte';
 
 // Re-export all generated types
 export type * from './types';

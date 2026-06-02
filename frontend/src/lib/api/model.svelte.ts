@@ -1,6 +1,6 @@
 import { dev } from '$app/environment';
 import { createMutation, createQueryEffect, type MutationResult } from './state';
-import { APIFetch } from './state/errorHandle';
+import { APIFetch } from './state/errorHandle.svelte';
 import type {
 	ModelReadReq,
 	ModelReadResp,

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { theme } from '$lib/preference';
+	import { preference } from '$lib/preference/index.svelte';
 	import { onDestroy } from 'svelte';
-	import { derived, get, toStore, writable } from 'svelte/store';
+	import { writable, toStore } from 'svelte/store';
 	import { useModelIdsQueryEffect, getModelIds } from '$lib/api/model.svelte';
 	import { _ } from 'svelte-i18n';
 
@@ -20,12 +20,12 @@
 	let callback: () => void | undefined;
 	let loaded = $state(false);
 
-	const darkTheme = derived(theme, (x) => x.dark);
+	const darkTheme = $derived(preference.value.theme.dark);
 
 	useCodeMirrorPromise.then((useCodeMirror) => {
 		const modelIdsStore = toStore(() => getModelIds()?.ids ?? []);
 		useCodeMirror.default({
-			darkTheme: get(darkTheme),
+			darkTheme: darkTheme,
 			value: valWritable,
 			element: toStore(() => div!),
 			onDestroy: (x) => (callback = x),
@@ -44,9 +44,9 @@
 		return unsubscriber;
 	});
 
-	let themeStyle = get(darkTheme)
-		? 'background-color:#24292e;color:#e1e4e8'
-		: 'background-color:#fff;color:#24292e';
+	const themeStyle = $derived(
+		darkTheme ? 'background-color:#24292e;color:#e1e4e8' : 'background-color:#fff;color:#24292e'
+	);
 </script>
 
 <div class="border-radius-md h-full w-full rounded-md border border-border p-2" style={themeStyle}>

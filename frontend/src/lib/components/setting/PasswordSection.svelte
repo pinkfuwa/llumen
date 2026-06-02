@@ -5,7 +5,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Warning from './Warning.svelte';
 	import { updateUser } from '$lib/api/user.svelte';
-	import { token } from '$lib/store';
+	import { token } from '$lib/store.svelte';
 
 	const triggerStyle =
 		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
@@ -22,7 +22,7 @@
 	function handleSubmit() {
 		if (matched) {
 			mutate({ password }, () => {
-				token.set(undefined);
+				token.value = undefined;
 			});
 		} else {
 			bounceKey += 1;

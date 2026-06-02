@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { render } from './mermaid';
-	import { theme } from '$lib/preference';
+	import { preference } from '$lib/preference/index.svelte';
 	import Code from '../shiki/Code.svelte';
-	import { derived } from 'svelte/store';
 
 	let { text = '', closed = false } = $props<{ text?: string; closed?: boolean }>();
 
@@ -10,7 +9,7 @@
 	let error = $state<string | null>(null);
 	let rendering = $state(false);
 
-	const dark = derived(theme, (x) => x.dark);
+	const dark = $derived(preference.value.theme.dark);
 
 	const mermaidStyle =
 		'mermaid border-radius-md flex justify-center overflow-x-auto rounded-md border border-border bg-white p-4';
@@ -43,7 +42,7 @@
 {:else if error}
 	<Code {text} />
 {:else if svg}
-	<div class="{mermaidStyle} {$theme.dark ? 'dark:bg-neutral-900' : ''}">
+	<div class="{mermaidStyle} {dark ? 'dark:bg-neutral-900' : ''}">
 		{@html svg}
 	</div>
 {/if}

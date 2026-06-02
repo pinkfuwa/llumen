@@ -1,5 +1,4 @@
-import { get } from 'svelte/store';
-import { submitOnEnter } from '$lib/preference';
+import { preference } from '$lib/preference/index.svelte';
 
 type SubmitOnEnterOptions = {
 	virtualKeyboard?: boolean;
@@ -7,5 +6,5 @@ type SubmitOnEnterOptions = {
 
 export function shouldSubmitOnEnter(event: KeyboardEvent, options: SubmitOnEnterOptions = {}) {
 	if (options.virtualKeyboard) return false;
-	return event.key === 'Enter' && !event.shiftKey && get(submitOnEnter) === 'true';
+	return event.key === 'Enter' && !event.shiftKey && preference.value.submit_on_enter === 'true';
 }

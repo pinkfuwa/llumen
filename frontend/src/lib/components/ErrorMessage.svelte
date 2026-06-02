@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { dismissError, useError } from '$lib/error';
+	import { dismissError, useError } from '$lib/error.svelte';
 	import { CircleX } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
 

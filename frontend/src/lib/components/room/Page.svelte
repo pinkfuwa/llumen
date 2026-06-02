@@ -4,7 +4,7 @@
 	import { deleteRoom, updateRoom, getRoomPages, setRoomPages } from '$lib/api/chatroom.svelte';
 	import type { PageState } from '$lib/api/state';
 	import { type ChatPaginateRespList } from '$lib/api/types';
-	import { dispatchError } from '$lib/error';
+	import { dispatchError } from '$lib/error.svelte';
 	import ChatroomEntry from './ChatroomEntry.svelte';
 	import { _ } from 'svelte-i18n';
 

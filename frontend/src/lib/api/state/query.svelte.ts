@@ -1,5 +1,5 @@
 import { untrack } from 'svelte';
-import { APIFetch } from './errorHandle';
+import { APIFetch } from './errorHandle.svelte';
 import { isElementInViewport, addVisiblityListener, clearVisibilityListener } from './helper';
 
 export interface QueryEffectOption<P, D> {

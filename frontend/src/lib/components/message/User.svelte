@@ -3,7 +3,7 @@
 	import FileGroup from '$lib/components/common/FileGroup.svelte';
 	import { Markdown } from '$lib/components/markdown';
 	import { getStream, deleteMessage } from '$lib/api/message.svelte';
-	import { shouldSubmitOnEnter } from '$lib/components/input/submitOnEnter';
+	import { shouldSubmitOnEnter } from '$lib/components/input/submitOnEnter.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
 	let {

@@ -19,4 +19,4 @@ export {
 export type { InfiniteQueryEffectOption, PageState, Fetcher } from './infinite.svelte';
 
 export { CreateMockMutation, CreateMockQuery } from './mock.svelte';
-export { getError } from './errorHandle';
+export { getError } from './errorHandle.svelte';

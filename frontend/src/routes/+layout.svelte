@@ -2,18 +2,11 @@
 	import '../app.css';
 	import { isLoading } from 'svelte-i18n';
 	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
-	import { initError } from '$lib/error';
 	import { copyCounter } from '$lib/copy';
 	import CopyHint from '$lib/components/common/CopyHint.svelte';
-	import { initPreference } from '$lib';
-	import { initAuth } from '$lib/api/auth';
+	import '$lib/preference/index.svelte';
 
 	let { children } = $props();
-
-	initError();
-	initAuth();
-
-	initPreference();
 </script>
 
 {#await import('$lib/components/PwaPrompt.svelte') then { default: ReloadPrompt }}

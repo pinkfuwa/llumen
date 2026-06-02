@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { token } from '$lib/store';
+	import { token } from '$lib/store.svelte';
 	import { LoaderCircle } from '@lucide/svelte';
 </script>
 
@@ -9,7 +9,7 @@
 			class="ml-2 inline-block h-12 w-12 animate-spin text-loading-spinner"
 		/>
 	</h1>
-	{#if $token}
+	{#if token.value}
 		<a href="/login" class="text-2xl">Go to login page</a>
 	{:else}
 		<a href="/chat/new" class="text-2xl">Go to chat</a>

@@ -2,7 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { Star, X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
-	import { token } from '$lib/store';
+	import { token } from '$lib/store.svelte';
 	import { Dialog, Tabs } from 'bits-ui';
 	import SettingBtn from './SettingBtn.svelte';
 	import Account from './tabs/Account.svelte';
@@ -70,7 +70,7 @@
 						<button
 							class={btnRowStyle}
 							onclick={() => {
-								token.set(undefined);
+								token.value = undefined;
 							}}
 						>
 							<LogOut class="inline-block h-5 w-5 md:mr-2" />
