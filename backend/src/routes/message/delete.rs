@@ -45,8 +45,8 @@ pub async fn route(
     }
 
     let result = message::Entity::delete_many()
-        .filter(message::Column::Id.gte(req.id))
         .filter(message::Column::ChatId.eq(message.chat_id))
+        .filter(message::Column::Id.gte(req.id))
         .exec(&app.conn)
         .await
         .raw_kind(ErrorKind::Internal)?;
