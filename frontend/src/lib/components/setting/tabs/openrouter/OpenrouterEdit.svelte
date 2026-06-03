@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-
 	let { id, value = $bindable() }: { id: number; value: string } = $props();
 
 	import { readModel, updateModel } from '$lib/api/model.svelte';
@@ -14,7 +12,10 @@
 
 	let saveSetting = $derived($_('setting.save_settings'));
 
-	let { mutate } = updateModel();
+	async function onSave() {
+		const result = await updateModel({ id, config });
+		if (result === 'success') value = 'openrouter';
+	}
 </script>
 
 {#await readModelPromise}
@@ -22,10 +23,7 @@
 {:then _}
 	{#key id}
 		<ConfigEditor bind:value={config}>
-			<Button
-				class="px-3 py-2"
-				onclick={() => mutate({ id, config }, () => (value = 'openrouter'))}
-			>
+			<Button class="px-3 py-2" onclick={onSave}>
 				{saveSetting}
 			</Button>
 		</ConfigEditor>

@@ -1,4 +1,5 @@
-import { createQueryEffect, createMutation, type MutationResult } from './state';
+import { APIFetch } from './errorHandle.svelte';
+import { token } from '$lib/store.svelte';
 
 import type {
 	UserCreateReq,
@@ -10,91 +11,61 @@ import type {
 	UserListResp,
 	UserDeleteReq
 } from './types';
+import type { MutationStatus } from '.';
 
-export interface User {
-	username: string;
-}
+export const users = $state<{ val?: UserListResp }>({});
+export const currentUser = $state<{ val?: UserReadResp }>({});
 
-// Module-level state
-let users = $state<UserListResp | undefined>(undefined);
-let currentUser = $state<UserReadResp | undefined>(undefined);
-
-// Query effects - must be called during component initialization
-export function useUsersQueryEffect() {
-	createQueryEffect<Record<string, never>, UserListResp>({
-		path: 'user/list',
-		body: {},
-		updateData: (data) => {
-			users = data;
-		}
+$effect.root(() => {
+	if (!token.value) return;
+	APIFetch<UserListResp, Record<string, never>>('user/list', {}).then((x) => {
+		users.val = x;
 	});
-}
+});
 
-export function useUserQueryEffect() {
-	createQueryEffect<UserReadReq, UserReadResp>({
-		path: 'user/read',
-		body: {},
-		updateData: (data) => {
-			currentUser = data;
-		}
+$effect.root(() => {
+	if (!token.value) return;
+	APIFetch<UserReadResp, UserReadReq>('user/read', {}).then((x) => {
+		currentUser.val = x;
 	});
+});
+
+export async function createUser(req: UserCreateReq): Promise<MutationStatus> {
+	const res = await APIFetch<UserCreateResp, UserCreateReq>('user/create', req);
+	if (!res) return 'failed';
+
+	if (users.val !== undefined) {
+		users.val = {
+			...users.val,
+			list: [
+				{
+					id: res.user_id,
+					name: req.username
+				},
+				...users.val.list
+			]
+		};
+	}
+
+	return 'success';
 }
 
-// Getters for reading state
-export function getUsers(): UserListResp | undefined {
-	return users;
+export async function updateUser(req: UserUpdateReq): Promise<MutationStatus> {
+	const res = await APIFetch<UserUpdateResp, UserUpdateReq>('user/update', req);
+	if (!res) return 'failed';
+	return 'success';
 }
 
-export function getCurrentUser(): UserReadResp | undefined {
-	return currentUser;
-}
+export async function deleteUser(req: UserDeleteReq): Promise<MutationStatus> {
+	const res = await APIFetch<UserReadResp, UserDeleteReq>('user/delete', req);
+	if (!res) return 'failed';
 
-// Setters for updating state
-export function setUsers(data: UserListResp | undefined) {
-	users = data;
-}
+	if (users.val !== undefined) {
+		users.val = {
+			...users.val,
+			list: users.val.list.filter((u) => u.id !== req.user_id)
+		};
+	}
 
-export function setCurrentUser(data: UserReadResp | undefined) {
-	currentUser = data;
-}
-
-// Mutations
-export function createUser(): MutationResult<UserCreateReq, UserCreateResp> {
-	return createMutation({
-		onSuccess(data, param) {
-			if (users !== undefined) {
-				users = {
-					...users,
-					list: [
-						{
-							id: data.user_id,
-							name: param.username
-						},
-						...users.list
-					]
-				};
-			}
-		},
-		path: 'user/create'
-	});
-}
-
-export function updateUser(): MutationResult<UserUpdateReq, UserUpdateResp> {
-	return createMutation({
-		path: 'user/update'
-	});
-}
-
-export function deleteUser(): MutationResult<UserDeleteReq, UserReadResp> {
-	return createMutation({
-		path: 'user/delete',
-		onSuccess(data, param) {
-			if (users !== undefined) {
-				users = {
-					...users,
-					list: users.list.filter((u) => u.id !== param.user_id)
-				};
-			}
-		}
-	});
+	return 'success';
 }

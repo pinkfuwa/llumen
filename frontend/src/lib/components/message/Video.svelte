@@ -3,7 +3,7 @@
 	import { download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
-	import InteractiveRow from '$lib/ui/InteractiveRow.svelte';
+	
 
 	let { id, name }: { id: number; name?: string } = $props();
 
@@ -66,15 +66,18 @@
 					{name}
 				</div>
 			{/if}
-			<InteractiveRow
+			<div
 				onclick={downloadVideo}
+				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); downloadVideo(); } }}
+				role="button"
+				tabindex="0"
 				aria-label="download video"
-				class="visible absolute top-2 right-2 rounded-lg bg-muted p-2 md:invisible md:group-hover:visible{isDownloading
+				class="cursor-pointer duration-150 hover:bg-interactive-hover visible absolute top-2 right-2 rounded-lg bg-muted p-2 md:invisible md:group-hover:visible{isDownloading
 					? ' opacity-50'
 					: ''}"
 			>
 				<Download class="h-5 w-5" />
-			</InteractiveRow>
+			</div>
 		</div>
 	</div>
 {:else}

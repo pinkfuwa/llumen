@@ -1,14 +1,9 @@
 import { events } from 'fetch-event-stream';
+import { page } from '$app/state';
 
-import { APIFetch, getError, RawAPIFetch } from './state/errorHandle.svelte';
+import { APIFetch, getError, RawAPIFetch } from './errorHandle.svelte';
 
-import {
-	createMutation,
-	createRawMutation,
-	type MutationResult,
-	type RawMutationResult
-} from './state';
-import { FileKind, MessagePaginateReqOrder } from './types';
+import { FileKind, MessagePaginateReqOrder, ChatMode } from './types';
 import type {
 	MessageDeleteReq,
 	MessageCreateReq,
@@ -22,32 +17,27 @@ import type {
 	Deep,
 	AssistantChunk,
 	SseCursor,
-	UrlCitation
+	UrlCitation,
+	ChatReadResp
 } from './types';
 import { displayError } from '$lib/error.svelte';
-import { updateInfiniteQueryDataById } from './state';
-import { getRoomPages, setRoomPages } from './chatroom.svelte';
 import { untrack } from 'svelte';
 import { dev } from '$app/environment';
+import { currentRoom, updateRoomTitle } from './chatroom.svelte';
 
+// @typeshare generates MessagePaginateRespList without the stream flag (client-only).
 type Message = MessagePaginateRespList & { stream?: boolean };
 type AssistantMessage = Message & { inner: { t: 'assistant'; c: AssistantChunk[] } };
 
-// version only reflect per-message changes, which is the minimal unit that pagination API cares
-// when version mismatch, revaildate messages
-// check version when backend send version event
-// update version on push event(start/completed event)
+export const messages = $state<{ val: Array<Message> }>({ val: [] });
+export const streaming = $state({ val: false });
+export const paginateElement = $state<{ val?: HTMLDivElement }>({ val: undefined });
+export const olderExhausted = $state({ val: false });
+
 let version = $state(-1);
-// cursor reflect per-chunk and per-token changes, which handled by SSE API
-// index for chunk, offset for token(counting char, not a proper tokenized counting).
-//
-// cursor are used to check small different between versions
-//
-// For example:
-// User: What's llumen -> version 1
-// Assistant: -> version 2 index 0 offset 0
-// <thinking>I have to<thinking> -> version 2 index 0 offset 8
-// **Quick Answer:** -> version 2 index 1 offset 17
+
+// index = chunk position within the assistant response
+// offset = char offset within the text/reasoning chunk
 let cursor = $state<SseCursor | null>(null);
 
 function consumeDiscreteChunk() {
@@ -55,22 +45,16 @@ function consumeDiscreteChunk() {
 	cursor!.offset = 1;
 }
 
-// sorted in descending order by id
-let messages = $state<Array<Message>>([]);
-
-// Push a message with id to messages array
-//
-// If same id exist, replace it
+// Push/replace a message while preserving descending order (newest at index 0).
 function pushMessage(m: Message) {
-	let idx = messages.findIndex((message) => message.id <= m.id);
-	if (idx === -1) messages.push(m);
+	let idx = messages.val.findIndex((message) => message.id <= m.id);
+	if (idx === -1) messages.val.push(m);
 	else {
-		const sameId = messages[idx].id === m.id;
-		messages.splice(idx, Number(sameId), m);
+		const sameId = messages.val[idx].id === m.id;
+		messages.val.splice(idx, Number(sameId), m);
 	}
 }
 
-// State for tracking deep research plan being built during streaming
 let deepState = $state<{
 	currentStepIndex: number;
 	fullJson: string;
@@ -87,7 +71,6 @@ const Handlers: {
 		}
 	},
 
-	// user message arrived
 	start(data) {
 		const message: Message = {
 			id: data.id,
@@ -100,16 +83,15 @@ const Handlers: {
 			stream: true
 		};
 		pushMessage(message);
+		streaming.val = true;
 		version = data.version;
 		cursor = { index: 0, offset: 1 };
 		deepState = null;
 	},
 
 	token(token) {
-		const firstMsg = messages[0] as AssistantMessage;
-
+		const firstMsg = messages.val[0] as AssistantMessage;
 		const lastChunk = firstMsg.inner.c.at(-1);
-
 		if (lastChunk?.t === 'text') {
 			lastChunk.c += token as string;
 			cursor!.offset += (token as string).length;
@@ -121,10 +103,8 @@ const Handlers: {
 	},
 
 	reasoning(reasoning) {
-		const firstMsg = messages[0] as AssistantMessage;
-
+		const firstMsg = messages.val[0] as AssistantMessage;
 		const lastChunk = firstMsg.inner.c.at(-1);
-
 		if (lastChunk?.t === 'reasoning') {
 			lastChunk.c += reasoning as string;
 			cursor!.offset += (reasoning as string).length;
@@ -136,8 +116,7 @@ const Handlers: {
 	},
 
 	tool_call(toolCall) {
-		const firstMsg = messages[0] as AssistantMessage;
-
+		const firstMsg = messages.val[0] as AssistantMessage;
 		const toolCallObj = toolCall as { name: string; args: string };
 		firstMsg.inner.c.push({
 			t: 'tool_call',
@@ -157,25 +136,23 @@ const Handlers: {
 	},
 
 	complete(data) {
-		const firstMsg = messages[0] as AssistantMessage;
+		const firstMsg = messages.val[0] as AssistantMessage;
 		firstMsg.stream = false;
 		firstMsg.token_count = data.token_count;
 		firstMsg.price = data.cost;
+		streaming.val = false;
 		version = data.version;
 		cursor = null;
-
-		if (messages.length > 1) messages[1].stream = false;
+		if (messages.val.length > 1) messages.val[1].stream = false;
 	},
 
 	title(data, chatId) {
-		const pages = getRoomPages();
-		setRoomPages(updateInfiniteQueryDataById(pages, chatId, (chat) => ({ ...chat, title: data })));
+		updateRoomTitle(chatId, data);
 		consumeDiscreteChunk();
 	},
 
 	error(err) {
-		const firstMsg = messages[0] as AssistantMessage;
-
+		const firstMsg = messages.val[0] as AssistantMessage;
 		if (firstMsg && firstMsg.stream) {
 			firstMsg.inner.c.push({
 				t: 'error',
@@ -187,10 +164,8 @@ const Handlers: {
 	},
 
 	deep_plan(planChunk) {
-		const firstMsg = messages[0] as AssistantMessage;
-
+		const firstMsg = messages.val[0] as AssistantMessage;
 		const lastChunk = firstMsg.inner.c.at(-1);
-
 		if (!lastChunk || lastChunk.t != 'deep_agent') {
 			firstMsg.inner.c.push({
 				t: 'deep_agent',
@@ -204,15 +179,12 @@ const Handlers: {
 			});
 		}
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
-
 		if (deepState) {
 			cursor!.offset += (planChunk as string).length;
 		} else {
 			cursor!.index++;
 			cursor!.offset = (planChunk as string).length;
 		}
-
-		// Initialize deepState if not already initialized
 		if (!deepState) {
 			deepState = {
 				currentStepIndex: -1,
@@ -232,7 +204,7 @@ const Handlers: {
 	},
 
 	deep_step_start(stepIndex) {
-		const firstMsg = messages.at(0);
+		const firstMsg = messages.val.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		if (!deepState) throw new Error('deepState is not initialized');
 		const lastChunk = firstMsg.inner.c.at(-1)!;
@@ -241,7 +213,7 @@ const Handlers: {
 	},
 
 	deep_step_token(token) {
-		const firstMsg = messages.at(0);
+		const firstMsg = messages.val.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
 		const step = plan.steps[deepState!.currentStepIndex];
@@ -257,7 +229,7 @@ const Handlers: {
 	},
 
 	deep_step_reasoning(reasoning) {
-		const firstMsg = messages.at(0);
+		const firstMsg = messages.val.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
 		const step = plan.steps[deepState!.currentStepIndex];
@@ -273,7 +245,7 @@ const Handlers: {
 	},
 
 	deep_step_tool_call(toolCall) {
-		const firstMsg = messages.at(0);
+		const firstMsg = messages.val.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
 		const step = plan.steps[deepState!.currentStepIndex];
@@ -290,21 +262,18 @@ const Handlers: {
 	},
 
 	deep_step_tool_result(toolResult) {
-		const firstMsg = messages.at(0);
+		const firstMsg = messages.val.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
 		const step = plan.steps[deepState!.currentStepIndex];
 		const payload = toolResult as { content: string; files?: FileMetadata[] };
 		const result = payload.content;
 		const files = payload.files || [];
-		// Find the last tool_call in progress that doesn't have a matching tool_result yet
 		for (let i = step.progress.length - 1; i >= 0; i--) {
 			const chunk = step.progress[i];
 			if (chunk.t === 'tool_call') {
-				// Check if next chunk is already a tool_result for this tool_call
 				const nextChunk = step.progress[i + 1];
 				if (!nextChunk || nextChunk.t !== 'tool_result' || nextChunk.c.id !== chunk.c.id) {
-					// Add tool_result right after the tool_call
 					step.progress.splice(i + 1, 0, {
 						t: 'tool_result',
 						c: {
@@ -321,11 +290,9 @@ const Handlers: {
 	},
 
 	deep_report(report) {
-		const firstMsg = messages.at(0);
+		const firstMsg = messages.val.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
-
 		const lastChunk = firstMsg.inner.c.at(-1);
-
 		if (lastChunk && lastChunk.t === 'text') {
 			lastChunk.c += report as string;
 			cursor!.offset += (report as string).length;
@@ -337,8 +304,7 @@ const Handlers: {
 	},
 
 	image(fileId) {
-		const firstMsg = messages[0] as AssistantMessage;
-
+		const firstMsg = messages.val[0] as AssistantMessage;
 		firstMsg.inner.c.push({
 			t: 'image',
 			c: fileId as number
@@ -347,8 +313,7 @@ const Handlers: {
 	},
 
 	url_citation(citations) {
-		const firstMsg = messages[0] as AssistantMessage;
-
+		const firstMsg = messages.val[0] as AssistantMessage;
 		firstMsg.inner.c.push({
 			t: 'url_citation',
 			c: citations as UrlCitation[]
@@ -372,7 +337,6 @@ function startSSE(chatId: number, signal: AbortSignal) {
 
 		try {
 			for await (const event of stream) {
-				// Check if this connection has been aborted before processing the event
 				if (signal.aborted) break;
 
 				const data = event.data;
@@ -382,7 +346,6 @@ function startSSE(chatId: number, signal: AbortSignal) {
 					const error = getError(resJson);
 					if (error) displayError(error.error, error.reason);
 					else {
-						if (dev) console.log('resJson', resJson);
 						(Handlers[resJson.t] as (data: any, chatId: number) => void)(resJson.c, chatId);
 					}
 				} else {
@@ -395,40 +358,82 @@ function startSSE(chatId: number, signal: AbortSignal) {
 	});
 }
 
-export function useSSEEffect(chatId: () => number) {
-	if (dev) {
-		$inspect('messages', messages);
-		$inspect('version', version);
-	}
+// At module-level: SSE auto-starts when page.params.id is set to a valid chat id.
+// Cleanup runs on id change or module teardown.
+$effect.root(() => {
 	$effect(() => {
+		const pid = page.params.id;
+		if (!pid || isNaN(+pid)) return;
+		const chatId = +pid;
+
 		let controller = new AbortController();
-
-		const id = chatId();
-
-		startSSE(id, controller.signal);
+		startSSE(chatId, controller.signal);
 
 		function onVisibilityChange() {
-			const state = globalThis.document.visibilityState;
-			if (state === 'visible') {
+			if (globalThis.document.visibilityState === 'visible') {
 				if (!controller.signal.aborted) controller.abort();
 				controller = new AbortController();
-				startSSE(id, controller.signal);
-			} else if (state === 'hidden') controller.abort();
+				startSSE(chatId, controller.signal);
+			} else if (globalThis.document.visibilityState === 'hidden') {
+				controller.abort();
+			}
 		}
 
 		globalThis.document.addEventListener('visibilitychange', onVisibilityChange);
 
 		return () => {
 			globalThis.document.removeEventListener('visibilitychange', onVisibilityChange);
-			messages = [];
+			messages.val = [];
 			version = -1;
 			cursor = { index: -1, offset: 0 };
+			olderExhausted.val = false;
 			controller.abort();
 		};
 	});
+
+	// Bind scroll-based pagination to paginateElement.
+	$effect(() => {
+		console.log($state.snapshot(page.url));
+		const el = paginateElement.val;
+		if (!el) return;
+		untrack(() => checkElement(el, 10));
+		el.addEventListener('scrollend', scrollEventHandler);
+		return () => el.removeEventListener('scrollend', scrollEventHandler);
+	});
+});
+
+// Anchor: oldest message id in the array.
+// When empty, uses Infinity so the first fetch returns the newest batch.
+const olderPaginationAnchor = $derived.by(() => {
+	if (messages.val.length !== 0) return messages.val.at(-1)!.id;
+	return Infinity;
+});
+
+// Fetch messages older than the current oldest anchor.
+// When anchor is Infinity (empty list), omits id to get most recent items.
+async function fetchOlder(): Promise<Array<Message>> {
+	const pid = page.params.id;
+	if (!pid || isNaN(+pid)) return [];
+	const chatId = +pid;
+	if (olderExhausted.val) return [];
+
+	const anchor = olderPaginationAnchor;
+	if (anchor === undefined) return [];
+
+	const params: MessagePaginateReq =
+		anchor === Infinity
+			? { t: 'limit', c: { chat_id: chatId, order: MessagePaginateReqOrder.Lt } }
+			: { t: 'limit', c: { chat_id: chatId, id: anchor, order: MessagePaginateReqOrder.Lt } };
+	const resp = await APIFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', params);
+	if (!resp) return [];
+	return resp.list;
 }
 
+// Re-sync on version mismatch. Merges fetched messages into existing array
+// without dropping paginated history (messages with ids older than the fetch window).
 async function syncMessages(chatId: number) {
+	if (messages.val.length === 0) return;
+
 	const resp = await APIFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
 		t: 'limit',
 		c: {
@@ -436,15 +441,47 @@ async function syncMessages(chatId: number) {
 			order: MessagePaginateReqOrder.Lt
 		}
 	});
-	if (resp != undefined) {
-		let streamingMessage = messages.filter((m) => m.stream && !resp.list.some((x) => x.id == m.id));
-		// Merge streaming and fetched messages, sorted by ID in descending order (newest first)
-		messages = [...streamingMessage, ...resp.list].sort((a, b) => b.id - a.id);
+	if (!resp) return;
+
+	const fetchedIds = new Set(resp.list.map((m) => m.id));
+	const keep = messages.val.filter((m) => m.stream || !fetchedIds.has(m.id));
+	messages.val = [...keep, ...resp.list].sort((a, b) => b.id - a.id);
+}
+
+// Reset exhaustion flags on visibility change so re-fetching happens after tab switch.
+$effect.root(() => {
+	document.addEventListener('visibilitychange', () => {
+		olderExhausted.val = false;
+	});
+});
+
+let extending = false;
+
+async function checkElement(target: HTMLDivElement, maxRecursion = 1) {
+	if (maxRecursion === 0 || extending) return;
+	const olderNeeded = target.scrollTop <= target.clientHeight * 0.8 && !olderExhausted.val;
+
+	if (!olderNeeded) return;
+
+	extending = true;
+	const prevScrollHeight = target.scrollHeight;
+	let ext = await fetchOlder();
+	extending = false;
+
+	if (ext.length === 0) olderExhausted.val = true;
+	else {
+		messages.val.push(...ext);
+		target.scrollTop = target.scrollHeight - prevScrollHeight;
 	}
+	checkElement(target, maxRecursion - 1);
+}
+
+function scrollEventHandler(e: Event) {
+	untrack(() => checkElement(e.target as HTMLDivElement));
 }
 
 function handleToolResult(result: string, files: FileMetadata[] = []) {
-	const firstMsg = messages.at(0);
+	const firstMsg = messages.val.at(0);
 	if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 
 	const chunks = firstMsg.inner.c;
@@ -462,26 +499,6 @@ function handleToolResult(result: string, files: FileMetadata[] = []) {
 	} else {
 		console.warn('Unexpected tool result without preceding tool call');
 	}
-}
-
-export function getMessages(): {
-	readonly messages: Message[];
-} {
-	return {
-		get messages() {
-			return messages;
-		}
-	};
-}
-
-export function getStream(): {
-	readonly stream: boolean;
-} {
-	return {
-		get stream() {
-			return messages.at(0)?.stream ? true : false;
-		}
-	};
 }
 
 export function pushUserMessage(
@@ -504,44 +521,74 @@ export function pushUserMessage(
 	});
 }
 
-export function createMessage(): MutationResult<MessageCreateReq, MessageCreateResp> {
-	return createMutation({
-		path: 'message/create',
-		onSuccess: (data, param) => {
-			pushUserMessage(data.user_id, param.text, param.files || []);
-		}
-	});
+export async function createMessage(params: MessageCreateReq): Promise<void> {
+	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', params);
+	if (resp) pushUserMessage(resp.user_id, params.text, params.files || []);
 }
 
-export function deleteMessage(): MutationResult<MessageDeleteReq, MessageDeleteReq> {
-	return createMutation({
-		path: 'message/delete',
-		onSuccess: (data, param) => {
-			const firstKeepIdx = messages.findIndex((x) => x.id < param.id);
-			if (firstKeepIdx === -1) messages.splice(0);
-			else messages.splice(0, firstKeepIdx);
-		}
-	});
+export async function deleteMessage(id: number): Promise<void> {
+	await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', { id });
+	const firstKeepIdx = messages.val.findIndex((x) => x.id < id);
+	if (firstKeepIdx === -1) messages.val.splice(0);
+	else messages.val.splice(0, firstKeepIdx);
 }
 
-export function updateMessage(): RawMutationResult<
-	MessageCreateReq & { msgId: number },
-	MessageCreateResp
-> {
-	const { mutate: create } = createMessage();
-	return createRawMutation({
-		mutator: (param) => {
-			return new Promise(async (resolve, reject) => {
-				await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', {
-					id: param.msgId
-				});
+export async function updateMessage(
+	msgId: number,
+	text: string,
+	files: Array<{ id: number; name: string }>
+): Promise<void> {
+	const pid = page.params.id;
+	if (!pid) return;
+	const chatId = +pid;
 
-				const firstKeepIdx = messages.findIndex((x) => x.id < param.msgId);
-				if (firstKeepIdx === -1) messages.splice(0);
-				else messages.splice(0, firstKeepIdx);
+	const room = currentRoom.val;
+	if (!room || !room.model_id) {
+		displayError('internal', 'select model first');
+		return;
+	}
 
-				await create(param, resolve);
+	await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', { id: msgId });
+
+	const firstKeepIdx = messages.val.findIndex((x) => x.id < msgId);
+	if (firstKeepIdx === -1) messages.val.splice(0);
+	else messages.val.splice(0, firstKeepIdx);
+
+	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
+		chat_id: chatId,
+		model_id: room.model_id,
+		mode: room.mode,
+		text,
+		files
+	});
+	if (resp) pushUserMessage(resp.user_id, text, files);
+}
+
+$effect.root(() => {
+	$effect(() => {
+		let uselessFn = (x: any) => {};
+		uselessFn(page.url);
+		streaming.val = false;
+		messages.val = [];
+		olderExhausted.val = false;
+		version = -1;
+	});
+});
+
+$effect.root(() => {
+	let lastKey = $state(-1);
+	$effect(() => {
+		const el = paginateElement.val;
+		if (!el) return;
+
+		const key = messages.val.at(-1)?.id || -2;
+
+		if (key !== lastKey) {
+			untrack(() => (lastKey = key));
+			el.scrollTo({
+				top: el.scrollHeight,
+				behavior: 'instant'
 			});
 		}
 	});
-}
+});

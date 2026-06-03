@@ -6,6 +6,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Warning from '../Warning.svelte';
 	import { createUser } from '$lib/api/user.svelte';
+	import type { MutationStatus } from '$lib/api';
 
 	const triggerStyle =
 		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
@@ -15,20 +16,21 @@
 	let passwordCheck = $state('');
 	let bounceKey = $state(0);
 	let success = $state(false);
-
-	let { mutate, isError } = createUser();
+	let status = $state<MutationStatus>('untried');
 
 	let matched = $derived(password.length != 0 && password == passwordCheck);
 	let canSubmit = $derived(username.length != 0 && matched);
 
-	function handleSubmit() {
+	async function handleSubmit() {
 		if (canSubmit) {
-			mutate({ username, password }, () => {
+			const result = await createUser({ username, password });
+			status = result;
+			if (result === 'success') {
 				success = true;
 				username = '';
 				password = '';
 				passwordCheck = '';
-			});
+			}
 		} else {
 			bounceKey += 1;
 			passwordCheck = '';
@@ -45,7 +47,7 @@
 		<Collapsible.Content
 			class="flex flex-col border-b border-border px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
 		>
-			{#if isError()}
+			{#if status === 'failed'}
 				<Warning>{$_('setting.admin.error_creating_user')}</Warning>
 			{/if}
 			{#if success}

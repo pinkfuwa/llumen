@@ -1,26 +1,13 @@
 <script lang="ts">
-	import { createRoom } from '$lib/api/chatroom.svelte';
 	import { fade } from 'svelte/transition';
 	import { MessageInput, Copyright } from '$lib/components';
-	import { goto } from '$app/navigation';
 	import { _ } from 'svelte-i18n';
-	import { ChatMode as Mode } from '$lib/api/types';
 	import { page } from '$app/state';
-	import { PersistedState } from 'runed';
-	import { createUploadPipeline } from '$lib/api';
-
-	let { mutate } = createRoom();
-
-	let content = $state('');
-	const modelId = new PersistedState<null | string>('DefaultModelId', null);
-	let files = $state([]);
-	let mode = $state(Mode.Normal);
-
-	const ensureUploaded = createUploadPipeline(() => files);
+	import { inputContent } from '$lib/components/input/state.svelte';
 
 	$effect(() => {
 		const param = page.url.searchParams;
-		if (param.has('q')) content = param.get('q')!;
+		if (param.has('q')) inputContent.val = param.get('q')!;
 	});
 </script>
 
@@ -35,31 +22,7 @@
 	>
 		{$_('chat.welcome')}
 	</h1>
-	<MessageInput
-		bind:content
-		bind:modelId={modelId.current}
-		bind:mode
-		bind:files
-		onsubmit={async () => {
-			if (modelId.current == null) return;
-
-			const uploadedFiles = await ensureUploaded();
-
-			mutate(
-				{
-					message: content,
-					modelId: parseInt(modelId.current),
-					files: uploadedFiles,
-					mode
-				},
-				(data) => goto('/chat/' + encodeURIComponent(data.id))
-			);
-
-			content = '';
-			files = [];
-		}}
-		large
-	/>
+	<MessageInput large />
 </main>
 
 <Copyright />

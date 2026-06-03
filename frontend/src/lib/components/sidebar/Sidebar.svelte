@@ -1,46 +1,19 @@
 <script lang="ts">
-	let { addition = false, open = $bindable(false) } = $props();
-
-	import CollapseHeader from './CollapseHeader.svelte';
-	import RoomPagination from '../room/RoomPagination.svelte';
+	import Header from './Header.svelte';
+	import Pagination from './Pagination.svelte';
 	import Setting from '../setting/Setting.svelte';
-	import { createSwipeGesture } from './gesture';
+	import { _ } from 'svelte-i18n';
+	import OpenBtn from './OpenBtn.svelte';
+	import { open } from './open.svelte';
 
 	const sidebarStyle =
-		'flex h-screen w-screen flex-col justify-between border-border bg-card p-5 transition-all data-[state=close]:-ml-[100vw] md:w-[min(calc(160px+20rem),33vw)] md:border-r md:data-[state=close]:-ml-[min(calc(160px+20rem),33vw)]';
-
-	let sidebarElement = $state<HTMLElement | null>(null);
-
-	$effect(() => {
-		if (!sidebarElement) return;
-
-		const cleanup = createSwipeGesture(sidebarElement, {
-			threshold: 50,
-			velocity: 0.3,
-			onSwipe: (direction) => {
-				if (direction === 'left' && open) {
-					open = false;
-				} else if (direction === 'right' && !open) {
-					open = true;
-				}
-			}
-		});
-
-		return cleanup;
-	});
+		'flex h-screen w-screen flex-col justify-between border-sidebar-border bg-card p-5 transition-all data-[state=close]:ml-[-100vw] md:w-[min(calc(160px+20rem),33vw)] md:border-r md:data-[state=close]:-ml-[min(calc(160px+20rem),33vw)]';
 </script>
 
-<header
-	bind:this={sidebarElement}
-	class="flex h-screen w-screen flex-col justify-between border-sidebar-border bg-card p-5 transition-all data-[state=close]:ml-[-100vw] md:w-[min(calc(160px+20rem),33vw)] md:border-r md:data-[state=close]:-ml-[min(calc(160px+20rem),33vw)]"
-	data-state={open ? 'open' : 'close'}
->
-	<div class="mb-4 shrink-0 border-b border-border pb-1">
-		<CollapseHeader onclick={() => (open = !open)} />
-	</div>
-	<div class="nobar min-w-0 grow overflow-y-auto">
-		<RoomPagination {addition} />
-	</div>
+<OpenBtn />
+<header class={sidebarStyle} data-state={open.val ? 'open' : 'close'}>
+	<Header />
+	<Pagination />
 	<div class="mt-4 shrink-0 border-t border-border pt-4">
 		<Setting />
 	</div>

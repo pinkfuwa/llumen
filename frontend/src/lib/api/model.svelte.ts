@@ -1,6 +1,6 @@
-import { dev } from '$app/environment';
-import { createMutation, createQueryEffect, type MutationResult } from './state';
-import { APIFetch } from './state/errorHandle.svelte';
+import { APIFetch } from './errorHandle.svelte';
+import { token } from '$lib/store.svelte';
+
 import type {
 	ModelReadReq,
 	ModelReadResp,
@@ -15,6 +15,7 @@ import type {
 	ModelWriteResp,
 	ModelIdsResp
 } from './types';
+import type { MutationStatus } from '.';
 
 export enum Mode {
 	DEEP = 2,
@@ -29,108 +30,73 @@ export interface Capabilty {
 	video: boolean;
 }
 
-// Module-level state
-let models = $state<ModelListResp | undefined>(undefined);
-let modelIds = $state<ModelIdsResp | undefined>(undefined);
+export const models = $state<{ val?: ModelListResp }>({});
+// FIXME: remove modelIds
+export const modelIds = $state<{ val?: ModelIdsResp }>({});
 
-// Query effects - must be called during component initialization
-export function useModelsQueryEffect() {
-	if (dev) $inspect('models', models);
-	createQueryEffect<Record<string, never>, ModelListResp>({
-		path: 'model/list',
-		body: {},
-		updateData: (data) => {
-			models = data;
-		}
+$effect.root(() => {
+	if (!token.value) return;
+	APIFetch<ModelListResp, Record<string, never>>('model/list', {}).then((x) => {
+		models.val = x;
 	});
-}
+});
 
-export function useModelIdsQueryEffect() {
-	if (dev) $inspect('modelIds', modelIds);
-	createQueryEffect<Record<string, never>, ModelIdsResp>({
-		path: 'model/ids',
-		body: {},
-		updateData: (data) => {
-			modelIds = data;
-		}
+$effect.root(() => {
+	if (!token.value) return;
+	APIFetch<ModelIdsResp, Record<string, never>>('model/ids', {}).then((x) => {
+		modelIds.val = x;
 	});
-}
+});
 
-// Getters for reading state
-export function getModels(): ModelListResp | undefined {
-	return models;
-}
+export async function deleteModel(req: ModelDeleteReq): Promise<MutationStatus> {
+	const res = await APIFetch<ModelDeleteResp, ModelDeleteReq>('model/delete', req);
+	if (!res) return 'failed';
 
-export function getModelIds(): ModelIdsResp | undefined {
-	return modelIds;
-}
+	if (models.val !== undefined) {
+		models.val = {
+			...models.val,
+			list: models.val.list.filter((u) => u.id !== req.id)
+		};
+	}
 
-// Setters for updating state
-export function setModels(data: ModelListResp | undefined) {
-	models = data;
-}
-
-export function setModelIds(data: ModelIdsResp | undefined) {
-	modelIds = data;
-}
-
-async function refreshModels() {
-	const res = await APIFetch<ModelListResp>('model/list', {});
-	if (res) models = res;
-}
-
-// Mutations
-export function deleteModel(): MutationResult<ModelDeleteReq, ModelDeleteResp> {
-	return createMutation({
-		path: 'model/delete',
-		onSuccess(data, param) {
-			if (models !== undefined) {
-				models = {
-					...models,
-					list: models.list.filter((u) => u.id !== param.id)
-				};
-			}
-		}
-	});
+	return 'success';
 }
 
 export async function readModel(id: number): Promise<ModelReadResp> {
 	const res = await APIFetch<ModelReadResp, ModelReadReq>('model/read', { id });
-
 	if (res === undefined) throw new Error('No response from server');
 	return res;
 }
 
-export function checkConfig(): MutationResult<ModelCheckReq, ModelCheckResp> {
-	return createMutation({
-		path: 'model/check'
-	});
+export async function checkConfig(req: ModelCheckReq): Promise<ModelCheckResp | undefined> {
+	return APIFetch<ModelCheckResp, ModelCheckReq>('model/check', req);
 }
 
-export function createModel(): MutationResult<ModelCreateReq, ModelCreateResp> {
-	return createMutation({
-		path: 'model/create',
-		onSuccess() {
-			void refreshModels();
-		}
-	});
+export async function createModel(req: ModelCreateReq): Promise<MutationStatus> {
+	const res = await APIFetch<ModelCreateResp, ModelCreateReq>('model/create', req);
+	if (!res) return 'failed';
+
+	const refreshed = await APIFetch<ModelListResp, Record<string, never>>('model/list', {});
+	if (refreshed) models.val = refreshed;
+
+	return 'success';
 }
 
-export function updateModel(): MutationResult<ModelWriteReq, ModelWriteResp> {
-	return createMutation({
-		path: 'model/write',
-		onSuccess(data, param) {
-			if (models !== undefined) {
-				const updatedList = models.list.map((model) =>
-					model.id === param.id ? { ...model, display_name: data.display_name } : model
-				);
-				models = {
-					...models,
-					list: updatedList
-				};
-			}
-		}
-	});
+export async function updateModel(req: ModelWriteReq): Promise<MutationStatus> {
+	const res = await APIFetch<ModelWriteResp, ModelWriteReq>('model/write', req);
+	if (!res) return 'failed';
+
+	if (models.val !== undefined) {
+		const updatedList = models.val.list.map((model) =>
+			model.id === req.id ? { ...model, display_name: res.display_name } : model
+		);
+		models.val = {
+			...models.val,
+			list: updatedList
+		};
+	}
+
+	return 'success';
 }
 
 export const defaultModelConfig = [

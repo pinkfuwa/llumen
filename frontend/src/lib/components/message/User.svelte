@@ -2,7 +2,7 @@
 	import { SquarePen, Check, X, Trash2 } from '@lucide/svelte';
 	import FileGroup from '$lib/components/common/FileGroup.svelte';
 	import { Markdown } from '$lib/components/markdown';
-	import { getStream, deleteMessage } from '$lib/api/message.svelte';
+	import { messages, deleteMessage } from '$lib/api/message.svelte';
 	import { shouldSubmitOnEnter } from '$lib/components/input/submitOnEnter.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
@@ -49,9 +49,11 @@
 	let btnGroup = $state<null | HTMLDivElement>(null);
 
 	// Keep the edit UI open but block submit while a stream is active (e.g., other tab sends a message).
-	let editLocked = $derived(getStream().stream);
+	let editLocked = $derived(messages.val[0]?.stream ?? false);
 
-	const { mutate: removeMessage } = deleteMessage();
+	async function handleDelete() {
+		await deleteMessage(messageId);
+	}
 
 	const messageStyle =
 		'rounded-md bg-muted p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]';
@@ -146,9 +148,7 @@
 		</Button>
 		<Button
 			class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
-			onclick={() => {
-				removeMessage({ id: messageId });
-			}}
+			onclick={handleDelete}
 			data-state={isEditing ? 'open' : 'close'}
 			borderless
 			disabled={editLocked}

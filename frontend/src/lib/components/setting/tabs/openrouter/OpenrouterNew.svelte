@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { createModel, defaultModelConfig } from '$lib/api/model.svelte';
 	import { TiltBtn } from '$lib/components';
 	import ConfigEditor from '$lib/components/setting/ConfigEditor.svelte';
@@ -9,11 +8,14 @@
 	let { value = $bindable() }: { value: string } = $props();
 	let config = $state(defaultModelConfig);
 
-	let { mutate } = createModel();
+	async function onCreate() {
+		const result = await createModel({ config });
+		if (result === 'success') value = 'openrouter';
+	}
 </script>
 
 <ConfigEditor bind:value={config}>
-	<Button class="px-3 py-2" onclick={() => mutate({ config }, () => (value = 'openrouter'))}>
+	<Button class="px-3 py-2" onclick={onCreate}>
 		{$_('setting.create_setting')}
 	</Button>
 </ConfigEditor>

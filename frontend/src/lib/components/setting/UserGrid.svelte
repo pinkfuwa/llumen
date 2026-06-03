@@ -1,13 +1,14 @@
 <script lang="ts">
-	import { deleteUser, useUsersQueryEffect, getUsers, getCurrentUser } from '$lib/api/user.svelte';
+	import { deleteUser, users, currentUser } from '$lib/api/user.svelte';
 	import { _ } from 'svelte-i18n';
 	import CheckDelete from './CheckDelete.svelte';
 
-	const { mutate: deleteUserMutation } = deleteUser();
-	useUsersQueryEffect();
+	const data = $derived(users.val);
+	const userData = $derived(currentUser.val);
 
-	const data = $derived(getUsers());
-	const userData = $derived(getCurrentUser());
+	async function handleDelete(userId: number) {
+		await deleteUser({ user_id: userId });
+	}
 </script>
 
 {#if data == undefined}
@@ -21,12 +22,7 @@
 				>
 					{user.name}
 					{#if userData != undefined && user.id != userData?.user_id}
-						<CheckDelete
-							ondelete={() =>
-								deleteUserMutation({
-									user_id: user.id
-								})}
-						/>
+						<CheckDelete ondelete={() => handleDelete(user.id)} />
 					{/if}
 				</li>
 			{/each}

@@ -1,199 +1,215 @@
+import { page } from '$app/state';
+import { untrack } from 'svelte';
 import { goto } from '$app/navigation';
+import { APIFetch } from './errorHandle.svelte';
+import type { MutationStatus } from '.';
 import type {
-	ChatCreateReq,
-	ChatCreateResp,
-	MessageCreateResp,
-	MessageCreateReq,
-	FileKind,
-	ChatPaginateRespList,
-	ChatPaginateReq,
-	ChatPaginateResp,
 	ChatReadResp,
 	ChatReadReq,
+	ChatCreateReq,
+	ChatCreateResp,
 	ChatDeleteReq,
 	ChatDeleteResp,
 	ChatUpdateReq,
-	ChatUpdateResp
+	ChatUpdateResp,
+	ChatPaginateReq,
+	ChatPaginateResp,
+	ChatMode,
+	MessageCreateReqFile,
+	MessageCreateReq,
+	MessageCreateResp
 } from './types';
-import { ChatPaginateReqOrder, ChatMode } from './types';
-import {
-	createInfiniteQueryEffect,
-	createMutation,
-	createRawMutation,
-	createQueryEffect,
-	insertInfiniteQueryData,
-	updateInfiniteQueryDataById,
-	type Fetcher,
-	type MutationResult,
-	type PageState,
-	type RawMutationResult
-} from './state';
-import { APIFetch } from './state/errorHandle.svelte';
-import { pushUserMessage } from './message.svelte';
-import { dev } from '$app/environment';
+import { ChatPaginateReqOrder } from './types';
 
-export interface CreateRoomRequest {
+export interface Entry {
+	name: string;
+	id: number;
+}
+
+// Module-level state for sidebar chatroom list. Array is sorted newest-first (descending id).
+// Components bind to `chatrooms.val` directly and the scroll container sets `paginateElement`.
+export const chatrooms = $state<{ val: Array<Entry> }>({ val: [] });
+
+export const currentRoom = $state<{ val?: ChatReadResp }>({ val: undefined });
+
+// Auto-fetch currentRoom when page.params.id changes.
+$effect.root(() => {
+	$effect(() => {
+		const pid = page.params.id;
+		if (!pid || isNaN(+pid)) {
+			currentRoom.val = undefined;
+			return;
+		}
+		const chatId = +pid;
+		APIFetch<ChatReadResp, ChatReadReq>('chat/read', { id: chatId }).then((resp) => {
+			if (resp) currentRoom.val = resp;
+		});
+	});
+});
+
+// rightPaginationAnchor: last id in array (smallest id = oldest).
+// When chatrooms is empty and on a chat page, uses current chat id as pivot so
+// the first fetch loads items around the active chat.
+const rightPaginationAnchor = $derived.by(() => {
+	if (chatrooms.val.length != 0) return chatrooms.val.at(-1)!.id;
+	if (!page.route.id?.startsWith('/chat')) return Infinity;
+	const pid = page.params.id;
+	if (pid === undefined || isNaN(+pid)) return Infinity;
+	return +pid;
+});
+// leftPaginationAnchor: first id in array (largest id = newest). undefined when empty.
+const leftPaginationAnchor = $derived(chatrooms.val.at(0)?.id);
+
+let leftExhausted = $state({ val: false });
+let rightExhausted = $state({ val: false });
+
+// Fetches items older than the rightmost entry (Lt = smaller id).
+// When anchor is Infinity (empty list), omits id to get most recent items from backend.
+async function fetchRight(): Promise<Array<Entry>> {
+	const anchor = rightPaginationAnchor;
+	if (rightExhausted.val || anchor === undefined) return [];
+	const params: ChatPaginateReq =
+		anchor === Infinity
+			? { t: 'limit', c: { order: ChatPaginateReqOrder.Lt } }
+			: { t: 'limit', c: { id: anchor, order: ChatPaginateReqOrder.Lt } };
+	const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', params);
+	if (!resp) return [];
+	return resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' }));
+}
+
+// Fetches items newer than the leftmost entry (Gt = larger id).
+// Backend returns Gt in ascending order; reverses to maintain descending order.
+async function fetchLeft(): Promise<Array<Entry>> {
+	const anchor = leftPaginationAnchor;
+	if (leftExhausted.val || anchor === undefined) return [];
+	const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
+		t: 'limit',
+		c: { id: anchor, order: ChatPaginateReqOrder.Gt }
+	});
+	if (!resp) return [];
+	return resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })).reverse();
+}
+
+// Reset exhaustion flags on visibility change so re-fetching happens after tab switch.
+$effect.root(() => {
+	document.addEventListener('visibilitychange', () => {
+		leftExhausted.val = false;
+		rightExhausted.val = false;
+	});
+});
+
+let extending = false;
+
+async function checkElement(target: HTMLElement, maxRecursion = 1) {
+	if (maxRecursion === 0 || extending) return;
+	let leftExtNeeded = target.scrollTop <= target.clientHeight * 0.8 && !leftExhausted.val;
+	let rightExtNeeded =
+		target.scrollHeight - target.scrollTop - target.clientHeight <= target.clientHeight * 0.8 &&
+		!rightExhausted.val;
+
+	extending = true;
+	if (rightExtNeeded) {
+		let ext = await fetchRight();
+
+		extending = false;
+
+		if (ext.length === 0) rightExhausted.val = true;
+		else chatrooms.val.push(...ext);
+		checkElement(target, maxRecursion - 1);
+	} else if (leftExtNeeded) {
+		let ext = await fetchLeft();
+		extending = false;
+
+		if (ext.length === 0) leftExhausted.val = true;
+		else {
+			const distanceFromBottom = target.scrollHeight - target.scrollTop;
+			chatrooms.val.unshift(...ext);
+			requestAnimationFrame(() => {
+				target.scrollTop = target.scrollHeight - distanceFromBottom;
+			});
+		}
+		checkElement(target, maxRecursion - 1);
+	} else {
+		extending = false;
+	}
+}
+
+export const paginateElement = $state<{ val?: HTMLElement }>({ val: undefined });
+
+function scrollEventHandler(e: Event) {
+	untrack(() => checkElement(e.target as HTMLElement));
+}
+
+$effect.root(() => {
+	$effect(() => {
+		const el = paginateElement.val;
+		if (!el) return;
+		untrack(() => checkElement(el, 50));
+		el.addEventListener('scrollend', scrollEventHandler);
+		return () => el.removeEventListener('scrollend', scrollEventHandler);
+	});
+});
+
+// Uses Promise<MutationStatus> instead of createMutation pattern because
+// the caller (Entry.svelte) reads the result synchronously to show UI state.
+export function deleteEntry(id: number): Promise<MutationStatus> {
+	return APIFetch<ChatDeleteResp, ChatDeleteReq>('chat/delete', { id }).then((resp) => {
+		if (resp) {
+			const idx = chatrooms.val.findIndex((e) => e.id === id);
+			if (idx !== -1) chatrooms.val.splice(idx, 1);
+			return 'success' as MutationStatus;
+		}
+		return 'failed' as MutationStatus;
+	});
+}
+
+export function syncEntry(id: number, title: string): Promise<MutationStatus> {
+	return APIFetch<ChatUpdateResp, ChatUpdateReq>('chat/write', { chat_id: id, title }).then(
+		(resp) => {
+			if (resp?.wrote) return 'success' as MutationStatus;
+			return 'failed' as MutationStatus;
+		}
+	);
+}
+
+// Two-step flow: create chat room then immediately create the first message.
+// Appends to sidebar before navigation so the room appears instantly.
+export function createRoom(params: {
 	message: string;
 	modelId: number;
-	files: {
-		name: string;
-		id: number;
-		kind?: FileKind;
-	}[];
+	files: Array<{ id: number; name: string }>;
 	mode: ChatMode;
-}
+}): Promise<MutationStatus> {
+	return APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
+		model_id: params.modelId,
+		mode: params.mode
+	}).then(async (resp) => {
+		if (!resp) return 'failed';
+		const chatId = resp.id;
 
-// Module-level state for infinite query
-let roomPages = $state<PageState<ChatPaginateRespList>[]>([]);
-
-// Module-level state for individual room
-let currentRoom = $state<ChatReadResp | undefined>(undefined);
-let currentRoomId = $state<number | undefined>(undefined);
-
-// Query effects
-export function useRoomsQueryEffect() {
-	if (dev) $inspect('roomPages', roomPages);
-	createInfiniteQueryEffect<ChatPaginateRespList>({
-		fetcher: new ChatFetcher(),
-		updatePages: (updater) => {
-			roomPages = updater(roomPages);
-		},
-		getPages: () => roomPages,
-		revalidateOnFocus: 'force'
-	});
-}
-
-export function useRoomQueryEffect(id: number) {
-	currentRoomId = id;
-	createQueryEffect<ChatReadReq, ChatReadResp>({
-		path: 'chat/read',
-		body: { id },
-		staleTime: Infinity,
-		updateData: (data) => {
-			if (currentRoomId === id) {
-				currentRoom = data;
-			}
-		}
-	});
-}
-
-// Getters
-export function getRoomPages(): PageState<ChatPaginateRespList>[] {
-	return roomPages;
-}
-
-export function getCurrentRoom(): ChatReadResp | undefined {
-	return currentRoom;
-}
-
-// Setters
-export function setRoomPages(pages: PageState<ChatPaginateRespList>[]) {
-	roomPages = pages;
-}
-
-export function setCurrentRoom(data: ChatReadResp | undefined) {
-	currentRoom = data;
-}
-
-// Mutations
-export function createRoom(): RawMutationResult<CreateRoomRequest, ChatCreateResp> {
-	return createRawMutation({
-		mutator: async (param) => {
-			let chatRes = await APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
-				model_id: param.modelId,
-				mode: param.mode
-			});
-
-			if (!chatRes) return;
-
-			let chatId = chatRes.id;
-
-			const res = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
-				chat_id: chatRes.id,
-				text: param.message,
-				mode: param.mode,
-				model_id: param.modelId,
-				files: param.files
-			});
-
-			if (!res) return;
-
-			pushUserMessage(res.user_id, param.message, param.files);
-
-			// Insert the new room into the infinite query
-			roomPages = insertInfiniteQueryData(roomPages, {
-				id: chatId,
-				model_id: param.modelId
-			});
-
-			await goto('/chat/' + encodeURIComponent(chatId));
-
-			return chatRes;
-		}
-	});
-}
-
-export function haltCompletion() {
-	return createMutation({
-		path: 'chat/halt',
-		onSuccess: (data) => {
-			// no need to update cache, SSE will handle it
-		}
-	});
-}
-
-export function deleteRoom(): MutationResult<ChatDeleteReq, ChatDeleteResp> {
-	return createMutation<ChatDeleteReq, ChatDeleteResp>({
-		path: 'chat/delete'
-	});
-}
-
-export function updateRoom(): MutationResult<ChatUpdateReq, ChatUpdateResp> {
-	return createMutation({
-		path: 'chat/write'
-	});
-}
-
-export function updateRoomTitle(id: number, title: string) {
-	roomPages = updateInfiniteQueryDataById(roomPages, id, (data) => {
-		return { ...data, title };
-	});
-}
-
-// Fetcher implementation
-class ChatFetcher implements Fetcher<ChatPaginateRespList> {
-	async range(startId: number, endId: number) {
-		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
-			t: 'range',
-			c: {
-				upper: startId + 1,
-				lower: endId - 1
-			}
+		const msgResp = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
+			chat_id: chatId,
+			model_id: params.modelId,
+			mode: params.mode,
+			text: params.message,
+			files: params.files as MessageCreateReqFile[]
 		});
-		return x?.list.sort((a, b) => b.id - a.id);
-	}
-	async forward(limit: number, id?: number) {
-		if (id !== undefined) id = id + 1;
-		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
-			t: 'limit',
-			c: {
-				id,
-				limit,
-				order: ChatPaginateReqOrder.Lt
-			}
-		});
-		return x?.list.sort((a, b) => b.id - a.id);
-	}
-	async backward(limit: number, id: number) {
-		if (id !== undefined) id = id - 1;
-		const x = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
-			t: 'limit',
-			c: {
-				id,
-				limit,
-				order: ChatPaginateReqOrder.Gt
-			}
-		});
-		return x?.list.sort((a, b) => b.id - a.id);
-	}
+		if (!msgResp) return 'failed';
+
+		chatrooms.val.unshift({ id: chatId, name: params.message });
+		await goto(`/chat/${chatId}`);
+		return 'success' as MutationStatus;
+	});
+}
+
+// Called by message.svelte.ts SSE title handler. Fire-and-forget: updates sidebar
+// optimistically; backend write is best-effort.
+export function updateRoomTitle(chatId: number, title: string) {
+	APIFetch<ChatUpdateResp, ChatUpdateReq>('chat/write', { chat_id: chatId, title });
+	const entry = chatrooms.val.find((e) => e.id === chatId);
+	if (entry) entry.name = title;
+}
+
+export function haltCompletion(params: { id: number }): Promise<unknown> {
+	return APIFetch('chat/halt', params);
 }

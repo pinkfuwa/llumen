@@ -1,12 +1,15 @@
 <script lang="ts">
-	import { deleteModel, getModels } from '$lib/api/model.svelte';
+	import { deleteModel, models } from '$lib/api/model.svelte';
 	import { _ } from 'svelte-i18n';
 	import CheckDelete from './CheckDelete.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
 	let { id = $bindable(), value = $bindable() }: { id?: number; value: string } = $props();
-	const { mutate: deleteModelMutation } = deleteModel();
-	const data = $derived(getModels());
+	const data = $derived(models.val);
+
+	async function handleDelete(modelId: number) {
+		await deleteModel({ id: modelId });
+	}
 </script>
 
 {#if data == undefined}
@@ -22,12 +25,7 @@
 				}}
 			>
 				{model.display_name}
-				<CheckDelete
-					ondelete={() =>
-						deleteModelMutation({
-							id: model.id
-						})}
-				/>
+				<CheckDelete ondelete={() => handleDelete(model.id)} />
 			</Button>
 		{/each}
 	</div>

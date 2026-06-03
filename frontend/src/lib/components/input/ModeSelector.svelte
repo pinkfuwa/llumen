@@ -6,15 +6,18 @@
 	import { DropdownMenu } from 'bits-ui';
 
 	let {
-		value = $bindable(Mode.Normal) as Mode,
-		modelCap = undefined
-	}: { value: Mode; modelCap?: ModelList } = $props();
+		value = Mode.Normal as Mode,
+		modelCap = undefined as ModelList | undefined,
+		onchange = undefined as ((mode: Mode) => void) | undefined
+	}: { value: Mode; modelCap?: ModelList; onchange?: (mode: Mode) => void } = $props();
 
 	const itemStyle =
 		'flex items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden select-none cursor-pointer duration-150 hover:bg-interactive-hover';
 
 	function setMode(nextMode: Mode) {
-		value = value === nextMode ? Mode.Normal : nextMode;
+		if (onchange) {
+			onchange(nextMode);
+		}
 	}
 
 	function isActive(mode: Mode) {

@@ -2,7 +2,7 @@
 	import { copy } from '$lib/copy.svelte';
 	import { CircleDollarSign, ClipboardCopy } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
-	import InteractiveRow from '$lib/ui/InteractiveRow.svelte';
+	
 
 	let { content = '', token = 0, cost = 0.0 } = $props();
 	let showUsage = $derived(token > 0);
@@ -24,11 +24,14 @@
 			</div>
 		{/if}
 	</div>
-	<InteractiveRow
-		class="h-10 w-10 rounded-lg"
+	<div
+		role="button"
+		tabindex="0"
 		onclick={() => copy(content)}
+		onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copy(content); } }}
 		aria-label="copy response"
+		class="cursor-pointer duration-150 hover:bg-interactive-hover h-10 w-10 rounded-lg"
 	>
 		<ClipboardCopy class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-interactive-hover" />
-	</InteractiveRow>
+	</div>
 </div>

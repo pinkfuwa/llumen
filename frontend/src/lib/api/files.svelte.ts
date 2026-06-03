@@ -1,4 +1,4 @@
-import { RawAPIFetch, APIFetch } from './state/errorHandle.svelte';
+import { RawAPIFetch, APIFetch } from './errorHandle.svelte';
 import type { FileUploadResp, FileRefreshReq, FileRefreshResp } from './types';
 import { compressImage, isImageFile } from '$lib/image';
 import { displayError } from '$lib/error.svelte';

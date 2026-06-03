@@ -1,7 +1,7 @@
 import { token } from '$lib/store.svelte';
 import { page } from '$app/state';
 import { goto } from '$app/navigation';
-import { APIFetch } from './state/errorHandle.svelte';
+import { APIFetch } from './errorHandle.svelte';
 
 import type { LoginReq, LoginResp, RenewResp, RenewReq, HeaderAuthResp } from './types';
 import type { MutationStatus } from '.';
@@ -50,7 +50,7 @@ $effect.root(() => {
 $effect.root(() => {
 	$effect(() => {
 		const pathname = page.url.pathname;
-		if (pathname.startsWith('/markdown')) return;
+		if (pathname.startsWith('/markdown') || (pathname as any) == '') return;
 		if (token.value) {
 			if (!pathname.startsWith('/chat')) {
 				const callback = page.url.searchParams.get('callback');

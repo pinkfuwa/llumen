@@ -1,25 +1,20 @@
 <script lang="ts">
-	import { getMessages, useSSEEffect, updateMessage } from '$lib/api/message.svelte';
-	import { type ChatReadResp } from '$lib/api/types';
-	import { displayError } from '$lib/error.svelte';
+	import { messages, updateMessage } from '$lib/api/message.svelte';
 	import ResponseBox from './ResponseBox.svelte';
 	import ResponseEdit from './ResponseEdit.svelte';
 	import User from './User.svelte';
 	import Chunks from './Chunks.svelte';
-	import { page } from '$app/state';
-	import { _ } from 'svelte-i18n';
 
-	const { room }: { room: ChatReadResp | undefined } = $props();
-
-	// FIXME: only use when if is presented
-	const chatId = $derived(parseInt(page.params.id!));
-
-	let { mutate } = updateMessage();
-
-	useSSEEffect(() => chatId);
+	async function handleUpdate(
+		messageId: number,
+		text: string,
+		updatedFiles: Array<{ name: string; id: number }>
+	) {
+		await updateMessage(messageId, text, updatedFiles);
+	}
 </script>
 
-{#each getMessages().messages as msg (msg.id)}
+{#each messages.val.toReversed() as msg (msg.id)}
 	{@const streaming = msg.stream}
 	{#if msg.inner.t == 'user'}
 		{@const content = msg.inner.c.text}
@@ -28,19 +23,7 @@
 			{content}
 			{files}
 			messageId={msg.id}
-			onupdate={(text, updatedFiles) => {
-				if (room == undefined) return;
-				if (room.model_id == undefined) displayError('internal', $_('error.select_model_first'));
-				else
-					mutate({
-						chat_id: chatId,
-						model_id: room.model_id,
-						mode: room.mode,
-						text,
-						files: updatedFiles,
-						msgId: msg.id
-					});
-			}}
+			onupdate={(text, updatedFiles) => handleUpdate(msg.id, text, updatedFiles)}
 		/>
 	{:else if msg.inner.t == 'assistant'}
 		{@const chunks = msg.inner.c}

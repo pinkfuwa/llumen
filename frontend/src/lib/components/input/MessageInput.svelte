@@ -1,152 +1,91 @@
 <script lang="ts">
-	import { createDropZone } from './dropzone.svelte';
 	import Textbox from './Textbox.svelte';
 	import ActionMenu from './ActionMenu.svelte';
 	import Send from './Send.svelte';
-	import FileGroup from '../common/FileGroup.svelte';
+	import Stop from './Stop.svelte';
 	import ModelSelector from './ModelSelector.svelte';
 	import MarkdownBtn from './MarkdownBtn.svelte';
-	import { _ } from 'svelte-i18n';
-	import Stop from './Stop.svelte';
-	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
-	import { ChatMode as Mode } from '$lib/api/types';
-	import { getModels } from '$lib/api/model.svelte.js';
-	import { FileUp } from '@lucide/svelte';
-	import { getSupportedFileExtensions, separateFiles } from './fileTypes';
-	import Confirm from './Confirm.svelte';
 	import UnsupportedFilesModal from './UnsupportedFilesModal.svelte';
+	import FileGroup from '../common/FileGroup.svelte';
+	import { createDropZone } from './dropzone.svelte';
+	import { separateFiles } from './fileTypes';
+	import { afterNavigate, beforeNavigate } from '$app/navigation';
+	import { streaming } from '$lib/api/message.svelte';
+	import { FileUp } from '@lucide/svelte';
+	import { _ } from 'svelte-i18n';
+	import {
+		inputContent,
+		inputFiles,
+		submitting,
+		displayModelId,
+		displayMode,
+		supportedMimes,
+		submit,
+		abortStream,
+		onModelChange,
+		onModeChange
+	} from './state.svelte';
 
 	const inputAreaStyle =
 		'min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-border bg-card p-2 shadow-xl shadow-accent-soft md:w-[min(750px,75%)]';
 
 	let {
-		mode = $bindable(Mode.Normal),
-		files = $bindable([]),
-		modelId = $bindable(null),
-		content = $bindable(''),
-		onsubmit,
-		oncancel,
-		disabled = false,
 		large = false
 	}: {
-		mode?: Mode;
-		files?: Array<File>;
-		modelId: string | null;
-		content?: string;
-		onsubmit?: () => void;
-		oncancel?: () => void;
-		disabled?: boolean;
 		large?: boolean;
 	} = $props();
 
+	let container = $state<HTMLElement | null>(null);
 	let isEditing = $state(true);
-	let showConfirm = $state(false);
-	let pendingNavigationUrl: string | null = $state(null);
 	let showUnsupportedModal = $state(false);
 	let pendingFiles: File[] = $state([]);
 	let pendingUnsupportedFiles: File[] = $state([]);
 
-	let container = $state<HTMLElement | null>();
-
-	const models = $derived(getModels());
-
-	const modelIdValid = $derived(
-		modelId != null && (models == undefined || models.list.some((m) => m.id.toString() == modelId))
+	let dropZone = $state(
+		createDropZone(() => container, {
+			onDrop(newFiles: File[] | null) {
+				if (newFiles == null) return;
+				handleNewFiles(newFiles);
+			},
+			onPaste(newFiles: File[] | null) {
+				if (newFiles == null) return;
+				handleNewFiles(newFiles);
+			}
+		})
 	);
 
-	let selectModelCap = $derived.by(() => {
-		let uselessFn = (a: any) => {};
-		uselessFn(modelId);
-		return models?.list.find((x) => x.id.toString() == modelId);
-	});
-	let mimes = $derived(getSupportedFileExtensions(selectModelCap));
-
-	$effect(() => {
-		if (!selectModelCap) return;
-		if (mode == Mode.Research && !selectModelCap.deep_research) {
-			mode = Mode.Normal;
-		}
-		if (mode == Mode.Media && !selectModelCap.media_gen) {
-			mode = Mode.Normal;
-		}
-		if (mode == Mode.Search && !selectModelCap.search_enabled) {
-			mode = Mode.Normal;
-		}
-	});
-
 	function handleNewFiles(newFiles: File[]) {
-		const { supported, unsupported } = separateFiles(newFiles, mimes);
+		const { supported, unsupported } = separateFiles(newFiles, supportedMimes.val);
 
 		if (unsupported.length > 0) {
 			pendingFiles = supported;
 			pendingUnsupportedFiles = unsupported;
 			showUnsupportedModal = true;
 		} else {
-			supported.forEach((f) => files.push(f));
+			for (const f of supported) inputFiles.val.push(f);
 		}
 	}
 
 	function uploadAllFiles() {
-		[...pendingFiles, ...pendingUnsupportedFiles].forEach((f) => files.push(f));
+		for (const f of [...pendingFiles, ...pendingUnsupportedFiles]) inputFiles.val.push(f);
 		showUnsupportedModal = false;
 		pendingFiles = [];
 		pendingUnsupportedFiles = [];
 	}
 
 	function uploadSupportedOnly() {
-		pendingFiles.forEach((f) => files.push(f));
+		for (const f of pendingFiles) inputFiles.val.push(f);
 		showUnsupportedModal = false;
 		pendingFiles = [];
 		pendingUnsupportedFiles = [];
 	}
 
-	const dropZone = createDropZone(() => container, {
-		onDrop(newFiles: File[] | null) {
-			if (newFiles == null) return;
-			handleNewFiles(newFiles);
-		},
-		onPaste(newFiles: File[] | null) {
-			if (newFiles == null) return;
-			handleNewFiles(newFiles);
-		}
-	});
-
-	afterNavigate((after) => {
-		content = '';
+	afterNavigate(() => {
 		isEditing = true;
 	});
 
-	beforeNavigate((navigation) => {
-		if (content.length == 0 && files.length == 0) return;
-
-		const navigationUrl = navigation.to?.url.pathname || null;
-		if (pendingNavigationUrl == navigationUrl) {
-			showConfirm = false;
-			pendingNavigationUrl = null;
-		} else {
-			navigation.cancel();
-			showConfirm = true;
-			pendingNavigationUrl = navigationUrl;
-		}
-	});
-
-	function submit() {
-		if (onsubmit && (content.length > 0 || files.length > 0) && modelIdValid) {
-			disabled = true;
-			onsubmit();
-		}
-	}
-
-	$inspect('files', files);
+	beforeNavigate(() => {});
 </script>
-
-<Confirm
-	bind:open={showConfirm}
-	onconfirm={() => {
-		console.log(pendingNavigationUrl);
-		goto(pendingNavigationUrl!);
-	}}
-/>
 
 <UnsupportedFilesModal
 	bind:open={showUnsupportedModal}
@@ -164,41 +103,37 @@
 			{$_('chat.upload_file')}
 		</div>
 	{/if}
-	{#if files.length != 0}
+	{#if inputFiles.val.length != 0}
 		<div class="mb-2 max-h-[60vh] overflow-y-auto border-b border-border pb-2">
-			<FileGroup {files} {mimes} deletable />
+			<FileGroup files={inputFiles.val} mimes={supportedMimes.val} deletable />
 		</div>
 	{/if}
 	<div class="flex flex-row items-center justify-between space-x-2 pr-2">
 		<Textbox
 			bind:isEditing
-			placeholder={disabled ? $_('chat.stop_first') : $_('chat.question')}
-			bind:value={content}
+			placeholder={streaming.val ? $_('chat.stop_first') : $_('chat.question')}
+			bind:value={inputContent.val}
 			onsubmit={submit}
-			{disabled}
+			disabled={streaming.val}
 			minRow={large ? 2 : 1}
 		/>
-		{#if disabled}
-			<Stop onclick={oncancel} />
+		{#if streaming.val}
+			<Stop onclick={abortStream} />
 		{:else}
 			<Send
 				onclick={submit}
-				disabled={(content.length == 0 && files.length == 0) || !modelIdValid}
+				disabled={(inputContent.val.length == 0 && inputFiles.val.length == 0) ||
+					displayModelId.val == null ||
+					submitting.val}
 			/>
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex h-11 w-full grow items-center justify-start space-x-2">
-			<ModelSelector bind:value={modelId} />
-			<ActionMenu
-				bind:files
-				bind:content
-				bind:mode
-				modelCap={selectModelCap}
-				onFilesAdded={handleNewFiles}
-			/>
+			<ModelSelector value={displayModelId.val} onchange={onModelChange} />
+			<ActionMenu value={displayMode.val} onmodechange={onModeChange} />
 		</div>
-		{#if content.length != 0}
+		{#if inputContent.val.length != 0}
 			<MarkdownBtn bind:isEditing />
 		{/if}
 	</div>

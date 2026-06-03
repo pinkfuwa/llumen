@@ -12,7 +12,6 @@
 	import { ArrowDownToLine, X, AlertTriangle } from '@lucide/svelte';
 	import { download } from '$lib/api/files.svelte';
 	import { isMimeSupported } from '../input/fileTypes';
-	import InteractiveRow from '$lib/ui/InteractiveRow.svelte';
 
 	async function downloadFile(fileId: number, fileName: string) {
 		let url = await download(fileId);
@@ -30,11 +29,11 @@
 
 <div class="space-y-2">
 	{#each files as file, i}
-		<InteractiveRow
-			class="group flex min-h-10 flex-row rounded-md border border-border bg-popover p-3"
+		<div
+			class="cursor-pointer duration-150 hover:bg-interactive-hover group flex min-h-10 flex-row rounded-md border border-border bg-popover p-3"
 		>
-			<InteractiveRow
-				class="my-auto mr-2 shrink-0 rounded-md p-1 focus:ring-4 focus:ring-ring focus:outline-none"
+			<div
+				class="cursor-pointer duration-150 hover:bg-interactive-hover my-auto mr-2 shrink-0 rounded-md p-1 focus:ring-4 focus:ring-ring focus:outline-none"
 			>
 				{#if deletable}
 					{#if file.type && isMimeSupported(file.type, mimes)}
@@ -64,12 +63,12 @@
 						}}
 					/>
 				{/if}
-			</InteractiveRow>
+			</div>
 			<div class="flex min-w-0 grow items-center justify-center">
 				<div class="overflow-x-auto">
 					{file.name}
 				</div>
 			</div>
-		</InteractiveRow>
+		</div>
 	{/each}
 </div>

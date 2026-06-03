@@ -33,7 +33,7 @@ impl FileCleanupService {
     }
 
     async fn cleanup_expired_files(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let now = OffsetDateTime::now_utc().unix_timestamp() as i32;
+        let now = OffsetDateTime::now_utc().unix_timestamp();
 
         let expired_files = File::find()
             .filter(Column::ChatId.is_null())

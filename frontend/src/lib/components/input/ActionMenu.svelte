@@ -4,26 +4,18 @@
 	import { _ } from 'svelte-i18n';
 	import { DropdownMenu } from 'bits-ui';
 	import { ChatMode as Mode } from '$lib/api/types';
-	import type { ModelList } from '$lib/api/types';
 	import ConvertToFileModal from './ConvertToFileModal.svelte';
 	import RecordAudioModal from './RecordAudioModal.svelte';
 	import ModeSelector from './ModeSelector.svelte';
+	import { inputFiles, inputContent, currentModelCap } from './state.svelte';
 
 	let {
-		files = $bindable([]),
-		content = $bindable(''),
-		mode = $bindable(Mode.Normal),
-		modelCap = undefined,
-		onFilesAdded
+		value = $bindable(Mode.Normal) as Mode,
+		onmodechange = undefined as ((mode: Mode) => void) | undefined
 	}: {
-		files: File[];
-		content: string;
-		mode: Mode;
-		modelCap?: ModelList;
-		onFilesAdded?: (files: File[]) => void;
+		value: Mode;
+		onmodechange?: (mode: Mode) => void;
 	} = $props();
-
-	$inspect('content', content);
 
 	let dropdownOpen = $state(false);
 	let showConvertToFileDialog = $state(false);
@@ -46,18 +38,12 @@
 	}
 
 	function addFiles(newFiles: File[]) {
-		if (onFilesAdded) {
-			onFilesAdded(newFiles);
-		} else {
-			files = [...files, ...newFiles];
-		}
+		for (const f of newFiles) inputFiles.val.push(f);
 	}
 
 	function openConvertDialog() {
 		dropdownOpen = false;
-		if (content.trim().length === 0) {
-			return;
-		}
+		if (inputContent.val.trim().length === 0) return;
 		showConvertToFileDialog = true;
 	}
 
@@ -83,8 +69,8 @@
 		<DropdownMenu.Item
 			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover aria-disabled:text-foreground aria-disabled:opacity-50"
 			onSelect={openRecordDialog}
-			disabled={!modelCap?.audio_input}
-			data-disabled={!modelCap?.audio_input ? 'true' : 'false'}
+			disabled={!currentModelCap.val?.audio_input}
+			data-disabled={!currentModelCap.val?.audio_input ? 'true' : 'false'}
 		>
 			<Mic class="size-4" />
 			<span>{$_('chat.record_audio')}</span>
@@ -93,19 +79,23 @@
 		<DropdownMenu.Item
 			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover aria-disabled:text-foreground aria-disabled:opacity-50"
 			onSelect={openConvertDialog}
-			disabled={content.trim().length === 0}
-			data-disabled={content.trim().length === 0 ? 'true' : 'false'}
+			disabled={inputContent.val.trim().length === 0}
+			data-disabled={inputContent.val.trim().length === 0 ? 'true' : 'false'}
 		>
 			<FileText class="size-4" />
 			<span>{$_('chat.convert_to_file.action')}</span>
 		</DropdownMenu.Item>
 
-		<ModeSelector bind:value={mode} {modelCap} />
+		<ModeSelector {value} modelCap={currentModelCap.val ?? undefined} onchange={onmodechange} />
 	{/snippet}
 </Dropdown>
 
 <input type="file" class="hidden" bind:this={inputElement} multiple={true} onchange={onChange} />
 
-<ConvertToFileModal bind:open={showConvertToFileDialog} bind:content onAddFiles={addFiles} />
+<ConvertToFileModal
+	bind:open={showConvertToFileDialog}
+	bind:content={inputContent.val}
+	onAddFiles={addFiles}
+/>
 
 <RecordAudioModal bind:open={showRecordAudioDialog} onAddFiles={addFiles} />

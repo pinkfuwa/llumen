@@ -6,16 +6,27 @@
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
 	import Button from '$lib/ui/Button.svelte';
-	import type { ModelCheckResp } from '$lib/api/types';
 
 	let { value = $bindable(''), children } = $props();
-
-	let { mutate } = checkConfig();
 
 	let configChecked = $state(false);
 
 	let configErrored = $state(false);
 	let errorReason = $state('');
+
+	async function onCheck() {
+		configChecked = false;
+		configErrored = false;
+		const x = await checkConfig({ config: value });
+		if (!x) return;
+		if (x.reason == undefined) {
+			configChecked = true;
+			configErrored = false;
+		} else {
+			errorReason = x.reason;
+			configErrored = true;
+		}
+	}
 </script>
 
 <Toml
@@ -27,21 +38,7 @@
 />
 
 <div class="mt-3 flex items-center justify-start space-x-2">
-	<Button
-		class="px-3 py-2"
-		onclick={() =>
-			mutate(
-				{
-					config: value
-				},
-				(x: ModelCheckResp) => {
-					if (x.reason == undefined) configChecked = true;
-					else errorReason = x.reason;
-
-					configErrored = !configChecked;
-				}
-			)}
-	>
+	<Button class="px-3 py-2" onclick={onCheck}>
 		{$_('setting.check_syntax')}
 	</Button>
 	{@render children()}

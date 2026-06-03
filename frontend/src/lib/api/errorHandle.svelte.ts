@@ -1,5 +1,5 @@
 import { displayError } from '$lib/error.svelte';
-import type { Error as APIError } from '../types';
+import type { Error as APIError } from './types';
 import { token } from '$lib/store.svelte';
 import { dev } from '$app/environment';
 

@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { LoaderCircle } from '@lucide/svelte';
 	import Select from '$lib/ui/Select.svelte';
-	import { getModels } from '$lib/api/model.svelte';
+	import { models } from '$lib/api/model.svelte';
 	import { _ } from 'svelte-i18n';
-	let { value = $bindable<string | undefined>(), disabled = false } = $props();
+	let {
+		value = undefined as string | null | undefined,
+		onchange = undefined as ((id: string) => void) | undefined,
+		disabled = false
+	}: {
+		value?: string | null;
+		onchange?: (id: string) => void;
+		disabled?: boolean;
+	} = $props();
 
-	const data = $derived(getModels());
+	const data = $derived(models.val);
 
 	let selectData = $derived(
 		data?.list.map((x) => ({
@@ -13,6 +21,16 @@
 			label: x.display_name
 		}))
 	);
+
+	let localSelected = $state<string | undefined>();
+
+	$effect(() => {
+		localSelected = value ?? undefined;
+	});
+
+	function handleChange() {
+		if (localSelected != null && onchange) onchange(localSelected);
+	}
 </script>
 
 {#if selectData == undefined}
@@ -29,7 +47,8 @@
 	<Select
 		data={selectData}
 		fallback={$_('chat.select_model')}
-		bind:selected={value}
+		bind:selected={localSelected}
+		onchange={handleChange}
 		{disabled}
 		class="grow truncate sm:w-64 sm:grow-0"
 		popupClass="w-64"

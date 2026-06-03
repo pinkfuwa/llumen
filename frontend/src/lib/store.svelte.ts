@@ -4,11 +4,11 @@ export type Val<T> = { val: T };
 
 export type LocalSyncer<T> = {
 	upload: (data: T) => Promise<void>;
-	download: () => Promise<T>;
+	download: () => Promise<T | null>;
 };
 
 export interface LocalStateOption<T> {
-	defaultValue(): T;
+	defaultValue?(): T;
 	checker?: (data: T) => boolean;
 	syncer?: LocalSyncer<T>;
 }
@@ -41,7 +41,7 @@ function saveToStorage<T>(key: string, value: T): void {
 
 export function localState<T>(key: string, option: LocalStateOption<T>): LocalStateHandle<T> {
 	const checker = option.checker ?? (() => true);
-	const initial = loadFromStorage(key, option.defaultValue, checker);
+	const initial = loadFromStorage(key, option.defaultValue || (() => undefined as T), checker);
 	const handle: LocalStateHandle<T> = $state({
 		value: initial,
 		sync: async () => {}
@@ -82,7 +82,7 @@ export function localState<T>(key: string, option: LocalStateOption<T>): LocalSt
 	handle.sync = async () => {
 		if (!option.syncer) return;
 		const remote = await option.syncer.download();
-		if (!checker(remote)) return;
+		if (remote == null || !checker(remote)) return;
 		syncing = true;
 		untrack(() => {
 			handle.value = remote;
@@ -107,10 +107,7 @@ function loadToken(): TokenInfo | undefined {
 	);
 }
 
-export const token: LocalStateHandle<TokenInfo | undefined> = $state({
-	value: loadToken(),
-	sync: async () => {}
-});
+export const token: LocalStateHandle<TokenInfo | undefined> = localState('token', {});
 
 let tokenLastSerialized = JSON.stringify($state.snapshot(token.value));
 

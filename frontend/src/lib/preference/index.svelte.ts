@@ -1,4 +1,4 @@
-import { APIFetch } from '../api/state/errorHandle.svelte';
+import { APIFetch } from '../api/errorHandle.svelte';
 import type {
 	UserReadReq,
 	UserPreference,
@@ -31,7 +31,7 @@ export const preference = localState<Required<UserPreference>>('preference', {
 		},
 		download: async () => {
 			const remote = await APIFetch<UserReadResp, UserReadReq>('user/read', {});
-			if (!remote) throw new Error('No remote preference');
+			if (!remote) return null;
 			return remote.preference as Required<UserPreference>;
 		}
 	}

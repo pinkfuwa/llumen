@@ -19,31 +19,6 @@ Frontend is built with Svelte 5, TailwindCSS, Vite, and TypeScript.
 - Runes should be used in svelte or svelte.ts file
 - Prefer using arrow function for callback(onclick/onpaste/...)
 
-## Query Management Library
-
-`frontend/src/lib/api/state/index.ts` emphasizes small bundle sizes by omitting advanced features like automatic deduplication in queries and signal-based inputs.
-
-Following are steps to connect new endpoint:
-
-1. Run codegen to generate typescript type from rust code.
-2. Create file for corresponding resource type in `frontend/src/lib/api/<resource>(.svelte).ts`
-3. Use custom query management library
-   ```ts
-   export function getUsers(): UserListResp | undefined {
-   	return users;
-   }
-   export function useUsersQueryEffect() {
-   	createQueryEffect<Record<string, never>, UserListResp>({
-   		path: 'user/list',
-   		body: {},
-   		updateData: (data) => {
-   			users = data;
-   		}
-   	});
-   }
-   ```
-4. Call the function just created inside reactivity context (must be called during component initialization)
-
 ## Commands to Run After Changes
 
 - `pnpm check` - Run svelte-check for TypeScript validation

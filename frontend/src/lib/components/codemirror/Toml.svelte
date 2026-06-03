@@ -2,11 +2,10 @@
 	import { preference } from '$lib/preference/index.svelte';
 	import { onDestroy } from 'svelte';
 	import { writable, toStore } from 'svelte/store';
-	import { useModelIdsQueryEffect, getModelIds } from '$lib/api/model.svelte';
+	import { modelIds } from '$lib/api/model.svelte';
 	import { _ } from 'svelte-i18n';
 
 	const useCodeMirrorPromise = import('./index');
-	useModelIdsQueryEffect();
 
 	let {
 		value = $bindable('# defaultConfig'),
@@ -23,7 +22,7 @@
 	const darkTheme = $derived(preference.value.theme.dark);
 
 	useCodeMirrorPromise.then((useCodeMirror) => {
-		const modelIdsStore = toStore(() => getModelIds()?.ids ?? []);
+		const modelIdsStore = toStore(() => modelIds.val?.ids ?? []);
 		useCodeMirror.default({
 			darkTheme: darkTheme,
 			value: valWritable,

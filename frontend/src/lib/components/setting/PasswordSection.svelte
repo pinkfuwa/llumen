@@ -6,24 +6,24 @@
 	import Warning from './Warning.svelte';
 	import { updateUser } from '$lib/api/user.svelte';
 	import { token } from '$lib/store.svelte';
+	import type { MutationStatus } from '$lib/api';
 
 	const triggerStyle =
 		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
-
-	let { mutate, isError } = updateUser();
 
 	let open = $state(false);
 	let password = $state('');
 	let passwordCheck = $state('');
 	let bounceKey = $state(0);
+	let status = $state<MutationStatus>('untried');
 
 	let matched = $derived(password.length != 0 && password == passwordCheck);
 
-	function handleSubmit() {
+	async function handleSubmit() {
 		if (matched) {
-			mutate({ password }, () => {
-				token.value = undefined;
-			});
+			const result = await updateUser({ password });
+			status = result;
+			if (result === 'success') token.value = undefined;
 		} else {
 			bounceKey += 1;
 			passwordCheck = '';
@@ -60,7 +60,7 @@
 	<Collapsible.Content
 		class="flex flex-col border-b border-border px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
-		{#if isError()}
+		{#if status === 'failed'}
 			<Warning>{$_('setting.account.error_updating_password')}</Warning>
 		{/if}
 		<div class="mb-2 flex flex-col gap-2">

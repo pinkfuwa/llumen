@@ -46,6 +46,10 @@ html {
 	/* Older Safari and Chromium */
 }
 
+.anchor-none {
+	overflow-anchor: none;
+}
+
 .editor:focus-visible {
 	outline: none;
 }

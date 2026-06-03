@@ -1,6 +1,5 @@
-// Cap for initial message/chat page load until frontend pagination is fully
-// implemented. 200 is conservative to prevent loading too many records at once.
-pub const MAX_PAGINATE_LIMIT: u32 = 200;
+// Cap for initial message/chat page load
+pub const MAX_PAGINATE_LIMIT: u32 = 50;
 
 // Default server bind address
 pub const DEFAULT_BIND_ADDR: &str = "0.0.0.0:8001";
@@ -19,3 +18,6 @@ pub const DB_CACHE_SIZE: usize = 1024 * 1024 * 32;
 
 // title generation temperature
 pub const TITLE_GENERATION_TEMPERATURE: f32 = 0.2;
+
+// duration in seconds for unbounded file to expiration
+pub const UNBOUNDED_FILE_EXPIRATION_SECS: i64 = 3600;

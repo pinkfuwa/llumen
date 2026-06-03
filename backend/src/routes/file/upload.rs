@@ -8,12 +8,13 @@ use serde::Serialize;
 use time::OffsetDateTime;
 use typeshare::typeshare;
 
+use crate::config::UNBOUNDED_FILE_EXPIRATION_SECS;
 use crate::routes::file::MAX_FILE_SIZE;
 use crate::{AppState, errors::*, middlewares::auth::UserId};
 
-fn get_valid_until_timestamp() -> i32 {
+fn get_valid_until_timestamp() -> i64 {
     let now = OffsetDateTime::now_utc().unix_timestamp();
-    (now + 3600) as i32
+    now + UNBOUNDED_FILE_EXPIRATION_SECS
 }
 
 #[derive(Debug, Serialize)]
