@@ -35,16 +35,20 @@ export const models = $state<{ val?: ModelListResp }>({});
 export const modelIds = $state<{ val?: ModelIdsResp }>({});
 
 $effect.root(() => {
-	if (!token.value) return;
-	APIFetch<ModelListResp, Record<string, never>>('model/list', {}).then((x) => {
-		models.val = x;
+	$effect(() => {
+		if (!token.value) return;
+		APIFetch<ModelListResp, Record<string, never>>('model/list', {}).then((x) => {
+			models.val = x;
+		});
 	});
 });
 
 $effect.root(() => {
-	if (!token.value) return;
-	APIFetch<ModelIdsResp, Record<string, never>>('model/ids', {}).then((x) => {
-		modelIds.val = x;
+	$effect(() => {
+		if (!token.value) return;
+		APIFetch<ModelIdsResp, Record<string, never>>('model/ids', {}).then((x) => {
+			modelIds.val = x;
+		});
 	});
 });
 

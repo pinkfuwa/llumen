@@ -30,10 +30,10 @@
 <div class="space-y-2">
 	{#each files as file, i}
 		<div
-			class="cursor-pointer duration-150 hover:bg-interactive-hover group flex min-h-10 flex-row rounded-md border border-border bg-popover p-3"
+			class="group flex min-h-10 cursor-pointer flex-row rounded-md border border-border bg-popover p-3 duration-150 hover:bg-interactive-hover"
 		>
 			<div
-				class="cursor-pointer duration-150 hover:bg-interactive-hover my-auto mr-2 shrink-0 rounded-md p-1 focus:ring-4 focus:ring-ring focus:outline-none"
+				class="my-auto mr-2 shrink-0 cursor-pointer rounded-md p-1 duration-150 hover:bg-interactive-hover focus:ring-4 focus:ring-ring focus:outline-none"
 			>
 				{#if deletable}
 					{#if file.type && isMimeSupported(file.type, mimes)}

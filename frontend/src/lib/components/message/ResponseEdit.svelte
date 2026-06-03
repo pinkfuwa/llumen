@@ -2,7 +2,6 @@
 	import { copy } from '$lib/copy.svelte';
 	import { CircleDollarSign, ClipboardCopy } from '@lucide/svelte';
 	import { _ } from 'svelte-i18n';
-	
 
 	let { content = '', token = 0, cost = 0.0 } = $props();
 	let showUsage = $derived(token > 0);
@@ -28,9 +27,14 @@
 		role="button"
 		tabindex="0"
 		onclick={() => copy(content)}
-		onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copy(content); } }}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				copy(content);
+			}
+		}}
 		aria-label="copy response"
-		class="cursor-pointer duration-150 hover:bg-interactive-hover h-10 w-10 rounded-lg"
+		class="h-10 w-10 cursor-pointer rounded-lg duration-150 hover:bg-interactive-hover"
 	>
 		<ClipboardCopy class="h-10 w-10 rounded-lg p-2 duration-150 hover:bg-interactive-hover" />
 	</div>

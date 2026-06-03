@@ -35,6 +35,7 @@ export const paginateElement = $state<{ val?: HTMLDivElement }>({ val: undefined
 export const olderExhausted = $state({ val: false });
 
 let version = $state(-1);
+let streamingMessageId = $state<number | null>(null);
 
 // index = chunk position within the assistant response
 // offset = char offset within the text/reasoning chunk
@@ -45,14 +46,85 @@ function consumeDiscreteChunk() {
 	cursor!.offset = 1;
 }
 
+function assertDescending(arr: Message[]) {
+	if (!dev) return;
+	for (let i = 1; i < arr.length; i++) {
+		if (arr[i - 1].id <= arr[i].id) {
+			console.error(
+				'invariant: messages array not strictly descending at',
+				i,
+				arr[i - 1].id,
+				arr[i].id
+			);
+		}
+	}
+}
+
+function assertDescendingFetched(arr: Message[]) {
+	if (!dev) return;
+	for (let i = 1; i < arr.length; i++) {
+		if (arr[i - 1].id <= arr[i].id) {
+			console.error(
+				'invariant: fetched array not strictly descending at',
+				i,
+				arr[i - 1].id,
+				arr[i].id
+			);
+		}
+	}
+}
+
+// First index where arr[idx].id <= target (descending array).
+function firstLeIdx(arr: Message[], target: number): number {
+	let lo = 0,
+		hi = arr.length;
+	while (lo < hi) {
+		const mid = (lo + hi) >>> 1;
+		if (arr[mid].id <= target) hi = mid;
+		else lo = mid + 1;
+	}
+	return lo;
+}
+
+// First index where arr[idx].id < target (descending array).
+function firstLtIdx(arr: Message[], target: number): number {
+	let lo = 0,
+		hi = arr.length;
+	while (lo < hi) {
+		const mid = (lo + hi) >>> 1;
+		if (arr[mid].id < target) hi = mid;
+		else lo = mid + 1;
+	}
+	return lo;
+}
+
+// Merge two strictly descending arrays into one strictly descending array.
+function mergeDescending(a: Message[], b: Message[]): Message[] {
+	const result: Message[] = [];
+	let i = 0,
+		j = 0;
+	while (i < a.length && j < b.length) {
+		if (a[i].id >= b[j].id) {
+			result.push(a[i]);
+			i++;
+		} else {
+			result.push(b[j]);
+			j++;
+		}
+	}
+	result.push(...a.slice(i), ...b.slice(j));
+	return result;
+}
+
 // Push/replace a message while preserving descending order (newest at index 0).
 function pushMessage(m: Message) {
-	let idx = messages.val.findIndex((message) => message.id <= m.id);
-	if (idx === -1) messages.val.push(m);
+	const idx = firstLeIdx(messages.val, m.id);
+	if (idx === messages.val.length) messages.val.push(m);
 	else {
 		const sameId = messages.val[idx].id === m.id;
 		messages.val.splice(idx, Number(sameId), m);
 	}
+	assertDescending(messages.val);
 }
 
 let deepState = $state<{
@@ -82,6 +154,7 @@ const Handlers: {
 			price: 0,
 			stream: true
 		};
+		streamingMessageId = data.id;
 		pushMessage(message);
 		streaming.val = true;
 		version = data.version;
@@ -141,6 +214,7 @@ const Handlers: {
 		firstMsg.token_count = data.token_count;
 		firstMsg.price = data.cost;
 		streaming.val = false;
+		streamingMessageId = null;
 		version = data.version;
 		cursor = null;
 		if (messages.val.length > 1) messages.val[1].stream = false;
@@ -385,6 +459,7 @@ $effect.root(() => {
 			globalThis.document.removeEventListener('visibilitychange', onVisibilityChange);
 			messages.val = [];
 			version = -1;
+			streamingMessageId = null;
 			cursor = { index: -1, offset: 0 };
 			olderExhausted.val = false;
 			controller.abort();
@@ -443,9 +518,43 @@ async function syncMessages(chatId: number) {
 	});
 	if (!resp) return;
 
-	const fetchedIds = new Set(resp.list.map((m) => m.id));
-	const keep = messages.val.filter((m) => !fetchedIds.has(m.id));
-	messages.val = [...keep, ...resp.list].sort((a, b) => b.id - a.id);
+	assertDescendingFetched(resp.list);
+
+	const fetched = resp.list;
+
+	// Merge-join two strictly descending arrays, deduplicating by id.
+	const result: Message[] = [];
+	let i = 0,
+		j = 0;
+	while (i < messages.val.length && j < fetched.length) {
+		const msg = messages.val[i];
+		const fet = fetched[j];
+		if (msg.id > fet.id) {
+			// msg not yet in fetched → keep our in-memory version
+			result.push(msg);
+			i++;
+		} else if (msg.id < fet.id) {
+			// fetched entry not in our array → take backend version
+			result.push(fet);
+			j++;
+		} else {
+			// same id: keep our in-memory version only if it's the streaming message
+			if (msg.id === streamingMessageId) {
+				result.push(msg);
+				// skip the fetched duplicate
+				const dupStart = j;
+				while (j < fetched.length && fetched[j].id === msg.id) j++;
+				if (j === dupStart) j++;
+			} else {
+				result.push(fet);
+				j++;
+			}
+			i++;
+		}
+	}
+	result.push(...messages.val.slice(i), ...fetched.slice(j));
+	messages.val = result;
+	assertDescending(messages.val);
 }
 
 // Reset exhaustion flags on visibility change so re-fetching happens after tab switch.
@@ -528,9 +637,10 @@ export async function createMessage(params: MessageCreateReq): Promise<void> {
 
 export async function deleteMessage(id: number): Promise<void> {
 	await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', { id });
-	const firstKeepIdx = messages.val.findIndex((x) => x.id < id);
-	if (firstKeepIdx === -1) messages.val.splice(0);
+	const firstKeepIdx = firstLtIdx(messages.val, id);
+	if (firstKeepIdx === messages.val.length) messages.val.splice(0);
 	else messages.val.splice(0, firstKeepIdx);
+	assertDescending(messages.val);
 }
 
 export async function updateMessage(
@@ -550,8 +660,8 @@ export async function updateMessage(
 
 	await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', { id: msgId });
 
-	const firstKeepIdx = messages.val.findIndex((x) => x.id < msgId);
-	if (firstKeepIdx === -1) messages.val.splice(0);
+	const firstKeepIdx = firstLtIdx(messages.val, msgId);
+	if (firstKeepIdx === messages.val.length) messages.val.splice(0);
 	else messages.val.splice(0, firstKeepIdx);
 
 	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
@@ -571,24 +681,33 @@ $effect.root(() => {
 		streaming.val = false;
 		messages.val = [];
 		olderExhausted.val = false;
+		streamingMessageId = null;
 		version = -1;
 	});
 });
 
 $effect.root(() => {
 	let lastKey = $state(-1);
+	let key = $derived(messages.val.at(-1)?.id || -2);
 	$effect(() => {
 		const el = paginateElement.val;
 		if (!el) return;
 
-		const key = messages.val.at(-1)?.id || -2;
-
 		if (key !== lastKey) {
 			untrack(() => (lastKey = key));
-			el.scrollTo({
-				top: el.scrollHeight,
-				behavior: 'instant'
+			requestAnimationFrame(() => {
+				el.scrollTo({
+					top: el.scrollHeight,
+					behavior: 'instant'
+				});
 			});
+			// this is hacky, but I don't want to handle resize
+			setTimeout(() => {
+				el.scrollTo({
+					top: el.scrollHeight,
+					behavior: 'instant'
+				});
+			}, 180);
 		}
 	});
 });

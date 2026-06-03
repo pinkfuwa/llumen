@@ -17,16 +17,20 @@ export const users = $state<{ val?: UserListResp }>({});
 export const currentUser = $state<{ val?: UserReadResp }>({});
 
 $effect.root(() => {
-	if (!token.value) return;
-	APIFetch<UserListResp, Record<string, never>>('user/list', {}).then((x) => {
-		users.val = x;
+	$effect(() => {
+		if (!token.value) return;
+		APIFetch<UserListResp, Record<string, never>>('user/list', {}).then((x) => {
+			users.val = x;
+		});
 	});
 });
 
 $effect.root(() => {
-	if (!token.value) return;
-	APIFetch<UserReadResp, UserReadReq>('user/read', {}).then((x) => {
-		currentUser.val = x;
+	$effect(() => {
+		if (!token.value) return;
+		APIFetch<UserReadResp, UserReadReq>('user/read', {}).then((x) => {
+			currentUser.val = x;
+		});
 	});
 });
 

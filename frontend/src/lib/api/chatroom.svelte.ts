@@ -2,6 +2,7 @@ import { page } from '$app/state';
 import { untrack } from 'svelte';
 import { goto } from '$app/navigation';
 import { APIFetch } from './errorHandle.svelte';
+import { dev } from '$app/environment';
 import type { MutationStatus } from '.';
 import type {
 	ChatReadResp,
@@ -24,6 +25,26 @@ import { ChatPaginateReqOrder } from './types';
 export interface Entry {
 	name: string;
 	id: number;
+}
+
+function assertDescendingChatrooms(arr: Entry[]) {
+	if (!dev) return;
+	for (let i = 1; i < arr.length; i++) {
+		if (arr[i - 1].id <= arr[i].id) {
+			console.error('invariant: chatrooms not strictly descending at', i, arr[i - 1].id, arr[i].id);
+		}
+	}
+}
+
+function findEntryIdx(arr: Entry[], id: number): number {
+	let lo = 0,
+		hi = arr.length;
+	while (lo < hi) {
+		const mid = (lo + hi) >>> 1;
+		if (arr[mid].id <= id) hi = mid;
+		else lo = mid + 1;
+	}
+	return lo;
 }
 
 // Module-level state for sidebar chatroom list. Array is sorted newest-first (descending id).
@@ -114,7 +135,10 @@ async function checkElement(target: HTMLElement, maxRecursion = 1) {
 		extending = false;
 
 		if (ext.length === 0) rightExhausted.val = true;
-		else chatrooms.val.push(...ext);
+		else {
+			chatrooms.val.push(...ext);
+			assertDescendingChatrooms(chatrooms.val);
+		}
 		checkElement(target, maxRecursion - 1);
 	} else if (leftExtNeeded) {
 		let ext = await fetchLeft();
@@ -124,6 +148,7 @@ async function checkElement(target: HTMLElement, maxRecursion = 1) {
 		else {
 			const distanceFromBottom = target.scrollHeight - target.scrollTop;
 			chatrooms.val.unshift(...ext);
+			assertDescendingChatrooms(chatrooms.val);
 			requestAnimationFrame(() => {
 				target.scrollTop = target.scrollHeight - distanceFromBottom;
 			});
@@ -155,8 +180,10 @@ $effect.root(() => {
 export function deleteEntry(id: number): Promise<MutationStatus> {
 	return APIFetch<ChatDeleteResp, ChatDeleteReq>('chat/delete', { id }).then((resp) => {
 		if (resp) {
-			const idx = chatrooms.val.findIndex((e) => e.id === id);
-			if (idx !== -1) chatrooms.val.splice(idx, 1);
+			const idx = findEntryIdx(chatrooms.val, id);
+			if (idx < chatrooms.val.length && chatrooms.val[idx].id === id) {
+				chatrooms.val.splice(idx, 1);
+			}
 			return 'success' as MutationStatus;
 		}
 		return 'failed' as MutationStatus;
@@ -208,6 +235,8 @@ export function updateRoomTitle(chatId: number, title: string) {
 	APIFetch<ChatUpdateResp, ChatUpdateReq>('chat/write', { chat_id: chatId, title });
 	const entry = chatrooms.val.find((e) => e.id === chatId);
 	if (entry) entry.name = title;
+
+	if (currentRoom.val) currentRoom.val.title = title;
 }
 
 export function haltCompletion(params: { id: number }): Promise<unknown> {

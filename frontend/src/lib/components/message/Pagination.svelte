@@ -10,6 +10,7 @@
 		text: string,
 		updatedFiles: Array<{ name: string; id: number }>
 	) {
+		// FIXME: there is only one messags array, which we can use data-as-API concept to avoid prop drilling
 		await updateMessage(messageId, text, updatedFiles);
 	}
 </script>
