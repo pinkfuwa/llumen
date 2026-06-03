@@ -444,7 +444,7 @@ async function syncMessages(chatId: number) {
 	if (!resp) return;
 
 	const fetchedIds = new Set(resp.list.map((m) => m.id));
-	const keep = messages.val.filter((m) => m.stream || !fetchedIds.has(m.id));
+	const keep = messages.val.filter((m) => !fetchedIds.has(m.id));
 	messages.val = [...keep, ...resp.list].sort((a, b) => b.id - a.id);
 }
 
