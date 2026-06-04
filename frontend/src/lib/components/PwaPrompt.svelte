@@ -2,7 +2,9 @@
 	import Button from '$lib/ui/Button.svelte';
 	// @ts-expect-error - virtual module has no type declarations
 	import { useRegisterSW } from 'virtual:pwa-register/svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 	const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
 		onRegisteredSW(swUrl: string, r: ServiceWorkerRegistration | undefined) {
 			r &&
@@ -41,14 +43,14 @@
 	<div class={promptStyle}>
 		<div class="pb-2 text-foreground">
 			{#if $offlineReady}
-				<span> {m['pwa.offline_ready']()} </span>
+				<span> {m['pwa.offline_ready'](lang)} </span>
 			{:else}
-				<span> {m['pwa.update_available']()} </span>
+				<span> {m['pwa.update_available'](lang)} </span>
 			{/if}
 		</div>
 		{#if $needRefresh}
-			<Button onclick={() => updateServiceWorker(true)}>{m['pwa.reload']()}</Button>
+			<Button onclick={() => updateServiceWorker(true)}>{m['pwa.reload'](lang)}</Button>
 		{/if}
-		<Button onclick={close}>{m['pwa.close']()}</Button>
+		<Button onclick={close}>{m['pwa.close'](lang)}</Button>
 	</div>
 {/if}

@@ -65,7 +65,8 @@ const commonLanguages = [
 	'xml',
 	'yaml',
 	'asm',
-	'lean'
+	'lean',
+	'bash'
 ];
 
 let { code } = await codegen({

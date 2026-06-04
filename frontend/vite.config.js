@@ -2,14 +2,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
-import { paraglideVitePlugin } from '@inlang/paraglide-js';
+import { i18n } from '@sveltevietnam/i18n/vite';
 
 export default defineConfig({
 	plugins: [
-		paraglideVitePlugin({
-			project: './project.inlang',
-			outdir: './src/lib/paraglide',
-			strategy: ['localStorage', 'baseLocale']
+		i18n({
+			input: './src/lib/i18n/locales',
+			output: './src/lib/i18n/generated',
+			mode: 'static'
 		}),
 		tailwindcss(),
 		sveltekit(),

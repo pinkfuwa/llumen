@@ -3,7 +3,9 @@
 	import Button from '$lib/ui/Button.svelte';
 	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 
 	interface Props {
 		open?: boolean;
@@ -152,11 +154,11 @@
 	}
 </script>
 
-<Modal bind:open title={m['chat.record_audio_dialog.title']()} onClose={cancelRecording}>
+<Modal bind:open title={m['chat.record_audio_dialog.title'](lang)} onClose={cancelRecording}>
 	{#snippet children()}
 		<div class="space-y-4">
 			<p>
-				{m['chat.record_audio_dialog.description']()}
+				{m['chat.record_audio_dialog.description'](lang)}
 			</p>
 			{#if recordingError}
 				<p
@@ -176,7 +178,7 @@
 						{formatTime(recordingTime)}
 					</div>
 					<p class="text-sm text-muted-foreground">
-						{m['chat.record_audio_dialog.recording']()}
+						{m['chat.record_audio_dialog.recording'](lang)}
 					</p>
 				</div>
 			{:else}
@@ -188,7 +190,7 @@
 						<Mic class="size-8" />
 					</button>
 					<p class="text-sm text-muted-foreground">
-						{m['chat.record_audio_dialog.click_to_start']()}
+						{m['chat.record_audio_dialog.click_to_start'](lang)}
 					</p>
 				</div>
 			{/if}
@@ -196,11 +198,11 @@
 	{/snippet}
 	{#snippet footer()}
 		<Button class="px-4 py-2" onclick={cancelRecording}>
-			{m['chat.record_audio_dialog.cancel']()}
+			{m['chat.record_audio_dialog.cancel'](lang)}
 		</Button>
 		{#if isRecording}
 			<DangerButton onclick={stopRecording}>
-				{m['chat.record_audio_dialog.stop']()}
+				{m['chat.record_audio_dialog.stop'](lang)}
 			</DangerButton>
 		{/if}
 	{/snippet}

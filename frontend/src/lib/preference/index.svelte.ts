@@ -6,7 +6,6 @@ import type {
 	UserUpdateResp,
 	UserUpdateReq
 } from '../api/types';
-import { setLocale } from '$lib/paraglide/runtime';
 import { localState, token } from '../store.svelte';
 import type { Theme } from './theme';
 import { setTheme } from './theme';
@@ -44,7 +43,6 @@ export const lastModel = localState<number | null>('lastModel', {
 $effect.root(() => {
 	$effect(() => {
 		setTheme(preference.value.theme as Theme);
-		setLocale(preference.value.locale as any, { reload: false });
 	});
 	return () => {};
 });

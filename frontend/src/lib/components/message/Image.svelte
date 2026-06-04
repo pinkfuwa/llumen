@@ -2,7 +2,9 @@
 	import { onDestroy } from 'svelte';
 	import { downloadCompressed, download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 
 	let { id, name }: { id: number; name?: string } = $props();
 
@@ -44,14 +46,14 @@
 
 {#if error}
 	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
-		{m['chat.failed_load_image']()}
+		{m['chat.failed_load_image'](lang)}
 	</div>
 {:else if src}
 	<div class="my-2 flex justify-center">
 		<div class="group relative">
 			<img
 				{src}
-				alt={m['chat.image_alt']()}
+				alt={m['chat.image_alt'](lang)}
 				class="group relative h-auto max-h-[min(30rem,85vw,70vh)] max-w-full rounded-lg border border-border"
 				loading="lazy"
 			/>
@@ -81,6 +83,6 @@
 	</div>
 {:else}
 	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
-		{m['chat.loading_image']()}
+		{m['chat.loading_image'](lang)}
 	</div>
 {/if}

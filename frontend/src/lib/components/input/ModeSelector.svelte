@@ -2,7 +2,9 @@
 	import { ChatMode as Mode } from '$lib/api/types';
 	import type { ModelList } from '$lib/api/types';
 	import { SearchCode, Atom, ImagePlus } from '@lucide/svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 	import { DropdownMenu } from 'bits-ui';
 
 	let {
@@ -40,7 +42,7 @@
 			data-active={isActive(Mode.Search) ? 'true' : 'false'}
 		>
 			<SearchCode class="size-4" />
-			<span>{m['chat.model_mode.search']()}</span>
+			<span>{m['chat.model_mode.search'](lang)}</span>
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
@@ -51,7 +53,7 @@
 			data-active={isActive(Mode.Research) ? 'true' : 'false'}
 		>
 			<Atom class="size-4" />
-			<span>{m['chat.model_mode.deep_research']()}</span>
+			<span>{m['chat.model_mode.deep_research'](lang)}</span>
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
@@ -62,7 +64,7 @@
 			data-active={isActive(Mode.Media) ? 'true' : 'false'}
 		>
 			<ImagePlus class="size-4" />
-			<span>{m['chat.model_mode.media']()}</span>
+			<span>{m['chat.model_mode.media'](lang)}</span>
 		</DropdownMenu.Item>
 	</div>
 </div>

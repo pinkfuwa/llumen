@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { Plus, Upload, FileText, Mic } from '@lucide/svelte';
 	import Dropdown from '$lib/ui/Dropdown.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 	import { DropdownMenu } from 'bits-ui';
 	import { ChatMode as Mode } from '$lib/api/types';
 	import ConvertToFileModal from './ConvertToFileModal.svelte';
@@ -63,7 +65,7 @@
 			onSelect={openFileDialog}
 		>
 			<Upload class="size-4" />
-			<span>{m['chat.upload_file']()}</span>
+			<span>{m['chat.upload_file'](lang)}</span>
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
@@ -73,7 +75,7 @@
 			data-disabled={!currentModelCap.val?.audio_input ? 'true' : 'false'}
 		>
 			<Mic class="size-4" />
-			<span>{m['chat.record_audio']()}</span>
+			<span>{m['chat.record_audio'](lang)}</span>
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
@@ -83,7 +85,7 @@
 			data-disabled={inputContent.val.trim().length === 0 ? 'true' : 'false'}
 		>
 			<FileText class="size-4" />
-			<span>{m['chat.convert_to_file.action']()}</span>
+			<span>{m['chat.convert_to_file.action'](lang)}</span>
 		</DropdownMenu.Item>
 
 		<ModeSelector {value} modelCap={currentModelCap.val ?? undefined} onchange={onmodechange} />

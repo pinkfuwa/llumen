@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 
 	const linkStyle = 'rounded-md px-2 py-0.5 duration-150 hover:bg-interactive-hover';
 </script>

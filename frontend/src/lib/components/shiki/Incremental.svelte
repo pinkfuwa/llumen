@@ -91,9 +91,9 @@
 {#if !ready}
 	<Monochrome {text} />
 {:else}
-	<pre class="shiki {themeName}" style={themeStyle}
-		><code>{#each lines as line, i (i)}<div class="line min-h-6">{@html line}</div
-				>{/each}{#if currentLineSpans}<div class="line min-h-6">{@html currentLineSpans}</div
-				>{/if}</code
+	<pre class="shiki {themeName}" style={themeStyle}><code
+			>{#each lines as line, i (i)}<div
+					class="line min-h-6">{@html line}</div>{/each}{#if currentLineSpans}<div
+					class="line min-h-6">{@html currentLineSpans}</div>{/if}</code
 		></pre>
 {/if}

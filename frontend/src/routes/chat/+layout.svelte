@@ -2,7 +2,9 @@
 	import { currentRoom } from '$lib/api';
 	let { children } = $props();
 	import { Sidebar } from '$lib/components';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 </script>
 
 {#if currentRoom.val && currentRoom.val?.title}
@@ -11,7 +13,7 @@
 	</title>
 {:else}
 	<title>
-		{m['chat.title']()}
+		{m['chat.title'](lang)}
 	</title>
 {/if}
 

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { Trash, TriangleAlert } from '@lucide/svelte';
 	import { Button } from 'bits-ui';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 
 	let { ondelete }: { ondelete: () => void } = $props();
 	let checked = $state(false);

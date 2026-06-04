@@ -2,7 +2,9 @@
 	import Button from '$lib/ui/Button.svelte';
 	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 
 	interface Props {
 		open?: boolean;
@@ -40,7 +42,7 @@
 	}
 </script>
 
-<Modal bind:open title={m['chat.convert_to_file.title']()} onClose={close}>
+<Modal bind:open title={m['chat.convert_to_file.title'](lang)} onClose={close}>
 	{#snippet children()}
 		<form
 			class="space-y-4"
@@ -50,11 +52,11 @@
 			}}
 		>
 			<p>
-				{m['chat.convert_to_file.description']()}
+				{m['chat.convert_to_file.description'](lang)}
 			</p>
 			<div>
 				<label for="filename" class="mb-2 block">
-					{m['chat.convert_to_file.filename_label']()}
+					{m['chat.convert_to_file.filename_label'](lang)}
 				</label>
 				<input
 					id="filename"
@@ -64,17 +66,17 @@
 					class={inputStyle}
 				/>
 				<p class="mt-1 text-sm text-muted-foreground">
-					{m['chat.convert_to_file.file_hint']()}
+					{m['chat.convert_to_file.file_hint'](lang)}
 				</p>
 			</div>
 		</form>
 	{/snippet}
 	{#snippet footer()}
 		<Button class="px-4 py-2" onclick={close}>
-			{m['chat.convert_to_file.cancel']()}
+			{m['chat.convert_to_file.cancel'](lang)}
 		</Button>
 		<DangerButton onclick={handleConvertToFile}>
-			{m['chat.convert_to_file.convert']()}
+			{m['chat.convert_to_file.convert'](lang)}
 		</DangerButton>
 	{/snippet}
 </Modal>

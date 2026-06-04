@@ -18,8 +18,8 @@ Thumbs.db
 !.env.example
 !.env.test
 
-# Paraglide (auto-generated)
-/src/lib/paraglide
+# @sveltevietnam/i18n (auto-generated)
+/src/lib/i18n/generated
 
 # Vite
 vite.config.js.timestamp-*

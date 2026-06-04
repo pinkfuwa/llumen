@@ -106,7 +106,12 @@ type BundledLanguage =
 	| 'yml'
 	| 'asm'
 	| 'lean'
-	| 'lean4';
+	| 'lean4'
+	| 'shellscript'
+	| 'bash'
+	| 'sh'
+	| 'shell'
+	| 'zsh';
 type BundledTheme = 'github-light' | 'github-dark' | 'vitesse-light' | 'vitesse-dark' | 'dracula';
 type Highlighter = HighlighterGeneric<BundledLanguage, BundledTheme>;
 
@@ -209,7 +214,12 @@ const bundledLanguages = {
 	yml: () => import('shiki/langs/yaml.mjs'),
 	asm: () => import('shiki/langs/asm.mjs'),
 	lean: () => import('shiki/langs/lean.mjs'),
-	lean4: () => import('shiki/langs/lean.mjs')
+	lean4: () => import('shiki/langs/lean.mjs'),
+	shellscript: () => import('shiki/langs/shellscript.mjs'),
+	bash: () => import('shiki/langs/shellscript.mjs'),
+	sh: () => import('shiki/langs/shellscript.mjs'),
+	shell: () => import('shiki/langs/shellscript.mjs'),
+	zsh: () => import('shiki/langs/shellscript.mjs')
 } as Record<BundledLanguage, DynamicImportLanguageRegistration>;
 
 const bundledThemes = {

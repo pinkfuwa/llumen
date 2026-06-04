@@ -4,13 +4,15 @@
 	import { readModel, updateModel } from '$lib/api/model.svelte';
 	import ConfigEditor from '$lib/components/setting/ConfigEditor.svelte';
 	import Button from '$lib/ui/Button.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { Context } from '@sveltevietnam/i18n';
+	import * as m from '@sveltevietnam/i18n/generated/messages';
+	let lang = $derived(Context.get().lang);
 
 	let config = $state('');
 
 	let readModelPromise = $derived(readModel(id).then((x) => (config = x.raw)));
 
-	let saveSetting = $derived(m['setting.save_settings']());
+	let saveSetting = $derived(m['setting.save_settings'](lang));
 
 	async function onSave() {
 		const result = await updateModel({ id, config });
@@ -19,7 +21,7 @@
 </script>
 
 {#await readModelPromise}
-	{m['common.loading']()}
+	{m['common.loading'](lang)}
 {:then _}
 	{#key id}
 		<ConfigEditor bind:value={config}>
@@ -29,5 +31,5 @@
 		</ConfigEditor>
 	{/key}
 {:catch}
-	{m['common.error']()}
+	{m['common.error'](lang)}
 {/await}

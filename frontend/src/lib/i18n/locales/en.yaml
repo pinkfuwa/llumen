@@ -1,0 +1,120 @@
+messages:
+  setting.account.general: General
+  setting.account.password: Password
+  setting.account.confirm_password: Confirm Password
+  setting.account.error_sync_preference: Error syncing preference
+  setting.account.error_updating_password: Error updating password
+  setting.account.enter_new_password: Enter new password
+  setting.admin.users: Users
+  setting.admin.create: Create User
+  setting.admin.user_created: User {{username}} created
+  setting.admin.type_password_for_user: Type password for {{username}}
+  setting.admin.user: User
+  setting.admin.created: created
+  setting.admin.error_creating_user: Error creating user
+  setting.title: settings
+  setting.setting: Setting
+  setting.theme: Theme
+  setting.color_scheme: color scheme
+  setting.light: Light Mode
+  setting.dark: Dark Mode
+  setting.language: Language
+  setting.enter: Submit on enter
+  setting.disable: Disable
+  setting.enable: Enable
+  setting.change_password: Change Password
+  setting.confirm: Confirm
+  setting.account_settings: Account Settings
+  setting.admin_settings: Admin Settings
+  setting.logout: Logout
+  setting.create_user: Create User
+  setting.username: Username
+  setting.config_override_warning: This action will override other's model configuration.
+  setting.check_syntax: Check Syntax
+  setting.save_settings: Save Settings
+  setting.create_setting: Create New
+  setting.github_star: Start on Github
+  setting.old_password: Old Password
+  setting.add_model: Add New Model
+  setting.edit_model: Edit Model
+  setting.pattern: Show pattern
+  login.title: Sign in to llumen
+  login.welcome: Welcome to llumen
+  login.description: Simple LLM chat frontend with great out-of-box experience.
+  login.username: Username
+  login.password: Password
+  login.submit: Sign in
+  login.retry: Try again
+  login.loading: Loading
+  chat.title: Llumen Chat
+  chat.welcome: Ask anything!
+  chat.question: Send your question here
+  chat.model_mode.search: Web Search
+  chat.model_mode.deep_research: Deep Research
+  chat.model_mode.media: Media Generation
+  chat.markdown_mode.enable: Markdown rendering
+  chat.markdown_mode.disable: Normal text editing
+  chat.file: upload file
+  chat.new: new chat
+  chat.assistant.response: Answer
+  chat.error.no_output: No response from model, please try again.
+  chat.stop_first: stop the current responding to type new message.
+  chat.default_title: New Chat
+  chat.reasoning: Show reasoning steps
+  chat.sources: Sources
+  chat.upload_file: Upload File
+  chat.loading_image: Loading image...
+  chat.failed_load_image: Failed to load image
+  chat.loading_video: Loading video...
+  chat.failed_load_video: Failed to load video
+  chat.image_alt: Generated
+  chat.select_model: Select Model
+  chat.research_agent: Research Agent
+  chat.calling: Calling
+  chat.default_tool: Default Tool
+  chat.hallucination_warning: Llumen can make mistakes. Check important info.
+  chat.confirm.title: Leave this page?
+  chat.confirm.message: You have unsaved changes. Are you sure you want to leave this page?
+  chat.confirm.cancel: Cancel
+  chat.confirm.confirm: Leave
+  chat.actions_menu: Actions menu
+  chat.record_audio: Record Audio
+  chat.convert_to_file.title: Convert Text to File Attachment
+  chat.convert_to_file.description: Convert the current message text into a file
+    attachment. The textbox will be cleared and the file will be attached.
+  chat.convert_to_file.filename_label: Filename
+  chat.convert_to_file.file_hint: 'Default extension: .md'
+  chat.convert_to_file.action: Convert to File
+  chat.convert_to_file.cancel: Cancel
+  chat.convert_to_file.convert: Convert
+  chat.record_audio_dialog.title: Record Audio
+  chat.record_audio_dialog.description: Record audio to attach as an MP3 file to your message.
+  chat.record_audio_dialog.click_to_start: Click the microphone to start recording
+  chat.record_audio_dialog.recording: Recording in progress...
+  chat.record_audio_dialog.cancel: Cancel
+  chat.record_audio_dialog.stop: Stop Recording
+  chat.unsupported_files.title: Unsupported File Formats
+  chat.unsupported_files.description: Some files you're trying to upload are not
+    supported by the selected model. You can either upload all files anyway or
+    exclude the unsupported ones.
+  chat.unsupported_files.hint: Unsupported files may not be processed correctly by the model.
+  chat.unsupported_files.upload_all: Upload All Anyway
+  chat.unsupported_files.upload_supported: Upload Supported Only
+  common.loading: Loading
+  common.error: Error
+  common.loading_editor: Loading code editor...
+  common.copied_clipboard: Copied to clipboard
+  error.page_not_found: Page not found
+  error.internal_server_error: Internal server error
+  error.access_denied: Access denied
+  error.unauthorized: Unauthorized
+  error.bad_request: Bad request
+  error.method_not_allowed: Method not allowed
+  error.unknown_error: Unknown error
+  error.back_to_home: Back to home
+  error.select_model_first: Select a model first
+  error.fail_to_delete: Failed to delete
+  pwa.offline_ready: App ready to work offline
+  pwa.update_available: New content available, click on reload button to update.
+  pwa.reload: Reload
+  pwa.close: Close
