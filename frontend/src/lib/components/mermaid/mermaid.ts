@@ -1,6 +1,6 @@
 import './mermaid.css';
 
-let mermaidInstance: Promise<typeof import('mermaid')> | null = null;
+let mermaidInstance: Promise<typeof import('mermaid')> = import('mermaid');
 
 export const MERMAID_LANGUAGES = new Set([
 	'mermaid',
@@ -24,10 +24,6 @@ export function isMermaidLanguage(lang: string | undefined): boolean {
 let idCounter = 0;
 
 export async function render(code: string): Promise<string> {
-	if (mermaidInstance === null) {
-		mermaidInstance = import('mermaid');
-	}
-
 	const mermaidModule = await mermaidInstance;
 	const id = `mermaid-${++idCounter}`;
 

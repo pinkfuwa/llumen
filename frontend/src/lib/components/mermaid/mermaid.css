@@ -126,6 +126,55 @@ https://github.com/mermaid-js/mermaid/pull/6775
 	font-size: 14px;
 }
 
+.mermaid-container {
+	position: relative;
+	overflow: hidden;
+	background-color: var(--card);
+}
+
+.mermaid-scroll {
+	height: 100%;
+	overflow-y: auto;
+}
+
+.mermaid-zoom-layer {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.mermaid-svg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	transform-origin: 0 0;
+	pointer-events: none;
+}
+
+.mermaid-error {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	height: 100%;
+	padding: 1rem;
+	color: var(--foreground);
+	font-size: 0.875rem;
+	font-family: ui-monospace, monospace;
+	background-color: color-mix(in srgb, var(--destructive, #ef4444) 10%, transparent);
+	word-break: break-word;
+}
+
+.mermaid-error-icon {
+	flex-shrink: 0;
+	font-size: 1.25rem;
+	color: var(--destructive, #ef4444);
+}
+
 .mermaid svg #arrowhead path {
 	fill: var(--border) !important;
 	stroke: var(--border) !important;

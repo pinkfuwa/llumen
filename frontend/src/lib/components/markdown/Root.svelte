@@ -39,7 +39,7 @@
 
 	function doFullParse(currentSource: string) {
 		try {
-			children.children = parseSync(currentSource);
+			children.children = parseSync(currentSource + '\n');
 		} catch (error) {
 			console.error('Parse error:', error);
 			children.children = [];
