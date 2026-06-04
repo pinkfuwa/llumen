@@ -23,3 +23,5 @@ export function getThemeStyle(x: Theme) {
 	};
 	return styleMap[getThemeName(x)];
 }
+
+export const bundle: Promise<typeof import('./shiki.bundle')> = import('./shiki.bundle');

@@ -11,7 +11,7 @@ pub struct Model {
     pub owner_id: Option<i32>,
     // plan to remove
     pub mime_type: Option<String>,
-    pub valid_until: Option<i64>,
+    pub valid_until: Option<u32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

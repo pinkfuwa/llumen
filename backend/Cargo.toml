@@ -47,6 +47,7 @@ webp = "0.3.1"
 getrandom = "0.3.4"
 stream-json = { git = "https://github.com/Eason0729/stream_json.git", rev = "251cf0da47526fa6f3c0e31cc5bcd23710a85f14", features=["base64", "json_value"] }
 eventsource-stream = "0.2.3"
+imagesize = { version = "0.14.0", default-features = false, features = ["jpeg", "png", "webp"] }
 
 [dependencies.rust-embed-for-web]
 version = "11.3.0"
@@ -55,7 +56,7 @@ default-features = false
 [dependencies.image]
 version = "0.25.9"
 default-features = false
-features = ["jpeg", "png"]
+features = ["jpeg", "png", "webp"]
 
 [dependencies.sqlx]
 version = "0.8.6"

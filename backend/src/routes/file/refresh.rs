@@ -10,9 +10,9 @@ use typeshare::typeshare;
 
 use crate::{AppState, errors::*, middlewares::auth::UserId};
 
-fn get_valid_until_timestamp() -> i64 {
+fn get_valid_until_timestamp() -> u32 {
     let now = OffsetDateTime::now_utc().unix_timestamp();
-    now + 3600
+    now as u32 + 3600
 }
 
 #[derive(Debug, Deserialize)]
@@ -24,7 +24,7 @@ pub struct FileRefreshReq {
 #[derive(Debug, Serialize)]
 #[typeshare]
 pub struct FileRefreshResp {
-    pub valid_until: i64,
+    pub valid_until: u32,
 }
 
 pub async fn route(

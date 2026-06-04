@@ -20,4 +20,7 @@ pub const DB_CACHE_SIZE: usize = 1024 * 1024 * 32;
 pub const TITLE_GENERATION_TEMPERATURE: f32 = 0.2;
 
 // duration in seconds for unbounded file to expiration
-pub const UNBOUNDED_FILE_EXPIRATION_SECS: i64 = 3600;
+pub const UNBOUNDED_FILE_EXPIRATION_SECS: u32 = 3600;
+
+// max size in bytes for re-encoded images
+pub const MAX_REENCODE_IMAGE_SIZE: usize = 32 * 1024 * 1024;

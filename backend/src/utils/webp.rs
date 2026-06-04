@@ -1,4 +1,8 @@
+use axum::body::Body;
 use image::{DynamicImage, GenericImageView, imageops::FilterType};
+
+use crate::config::MAX_REENCODE_IMAGE_SIZE;
+use crate::utils::blob::{MmapStream, Reader};
 
 /// Convert an image to WebP format, resize to a target width, and compress to a
 /// target file size.
@@ -7,19 +11,25 @@ use image::{DynamicImage, GenericImageView, imageops::FilterType};
 /// Quality is automatically adjusted to hit the target DPI(450).
 /// If image format is unsupported, or the mime_type is incorrect, return Err.
 /// If conversion is done, mime_type is updated to "image/webp".
+/// `body_size` is updated to the size of the returned body.
 pub async fn image_to_webp(
     mime_type: &mut String,
-    image: &[u8],
+    body_size: &mut usize,
+    reader: Reader,
     width: u32,
-) -> anyhow::Result<Vec<u8>> {
-    if *mime_type == "image/svg+xml" {
-        return Ok(image.to_vec());
+) -> anyhow::Result<Body> {
+    debug_assert_eq!(reader.len(), *body_size);
+    if *mime_type == "image/svg+xml" || reader.len() > MAX_REENCODE_IMAGE_SIZE {
+        let stream: MmapStream = reader.into();
+        let body = Body::from_stream(stream);
+        return Ok(body);
     }
 
-    let image_data = image.to_vec();
     let original_mime = mime_type.clone();
 
     tokio::task::spawn_blocking(move || {
+        let image_data = reader.as_ref().to_vec();
+
         let img = image::load_from_memory(&image_data)?;
 
         let original_dimensions = img.dimensions();
@@ -46,7 +56,8 @@ pub async fn image_to_webp(
     .await?
     .map(|(data, new_mime)| {
         *mime_type = new_mime;
-        data
+        *body_size = data.len();
+        Body::from(data)
     })
 }
 

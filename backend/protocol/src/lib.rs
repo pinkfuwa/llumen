@@ -230,6 +230,17 @@ pub enum AssistantChunk {
     Error(String),
     DeepAgent(Deep),
     Image(i32),
+    ImageWithDimensions {
+        id: i32,
+        dimensions: Option<Dimensions>,
+    },
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[typeshare]
+pub struct Dimensions {
+    pub width: i32,
+    pub height: i32,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -239,6 +250,8 @@ pub struct FileMetadata {
     pub id: i32,
     #[serde(default)]
     pub kind: FileKind,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dimensions: Option<Dimensions>,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Default)]
@@ -346,11 +359,14 @@ impl MessageInner {
             }
         }
     }
-    pub fn add_image(&mut self, file_id: i32) {
+    pub fn add_image(&mut self, file_id: i32, dimensions: Option<Dimensions>) {
         match self {
             MessageInner::User { .. } => {}
             MessageInner::Assistant(assistant_chunks) => {
-                assistant_chunks.push(AssistantChunk::Image(file_id))
+                assistant_chunks.push(AssistantChunk::ImageWithDimensions {
+                    id: file_id,
+                    dimensions,
+                })
             }
         }
     }

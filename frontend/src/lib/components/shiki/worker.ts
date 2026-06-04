@@ -1,8 +1,10 @@
 import type { ShikiWorkerRequest } from './types';
-import type { BundledLanguage, BundledTheme } from './shiki.bundle';
-import { createHighlighter } from './shiki.bundle';
+import type { BundledLanguage } from './shiki.bundle';
+import { bundle } from './shiki';
 
-let highlighter = await createHighlighter({
+const localbundle = await bundle;
+
+let highlighter = await localbundle.createHighlighter({
 	themes: ['github-light', 'github-dark', 'vitesse-dark', 'vitesse-light', 'dracula'],
 	langs: []
 });

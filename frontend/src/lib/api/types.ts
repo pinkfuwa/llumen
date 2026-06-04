@@ -117,7 +117,14 @@ export type AssistantChunk =
 	  }
 	| { t: 'error'; c: string }
 	| { t: 'deep_agent'; c: Deep }
-	| { t: 'image'; c: number };
+	| { t: 'image'; c: number }
+	| {
+			t: 'image_with_dimensions';
+			c: {
+				id: number;
+				dimensions?: Dimensions;
+			};
+	  };
 
 export interface Step {
 	need_search: boolean;
@@ -133,6 +140,11 @@ export interface Deep {
 	thought: string;
 	title: string;
 	steps: Step[];
+}
+
+export interface Dimensions {
+	width: number;
+	height: number;
 }
 
 /**
@@ -238,6 +250,7 @@ export interface FileMetadata {
 	name: string;
 	id: number;
 	kind?: FileKind;
+	dimensions?: Dimensions;
 }
 
 export interface FileRefreshReq {

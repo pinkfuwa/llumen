@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { preference } from '$lib/preference/index.svelte';
-	import { getThemeName, getThemeStyle } from './shiki';
+	import { bundle, getThemeName, getThemeStyle } from './shiki';
 	import Monochrome from './Monochrome.svelte';
 	import { buildTokenHtml } from './incremental';
-	import type { BundledLanguage } from './shiki.bundle';
+	import { type BundledLanguage } from './shiki.bundle';
+	import { ShikiStreamTokenizer } from '@shikijs/stream';
 
 	let {
 		text = '',
@@ -18,7 +19,6 @@
 	let themeName = $derived(getThemeName(preference.value.theme));
 	let themeStyle = $derived(getThemeStyle(preference.value.theme));
 
-	let ready = $state(false);
 	let lines = $state<string[]>([]);
 	let currentLineSpans = $state('');
 	let tokenizer: any = null;
@@ -30,13 +30,11 @@
 		let stopped = false;
 
 		(async () => {
-			const [bundle, streamModule] = await Promise.all([
-				import('./shiki.bundle'),
-				import('@shikijs/stream')
-			]);
 			if (stopped) return;
 
-			const h = await bundle.createHighlighter({
+			const localbundle = await bundle;
+
+			const h = await localbundle.createHighlighter({
 				themes: [themeName],
 				langs: []
 			});
@@ -47,12 +45,11 @@
 			}
 			if (stopped) return;
 
-			tokenizer = new streamModule.ShikiStreamTokenizer({
+			tokenizer = new ShikiStreamTokenizer({
 				highlighter: h,
 				lang,
 				theme: themeName
 			});
-			ready = true;
 		})();
 
 		return () => {
@@ -65,7 +62,7 @@
 			const parts = t.content.split('\n');
 			for (let i = 0; i < parts.length; i++) {
 				if (i > 0) {
-					lines = [...lines, currentLineSpans];
+					lines.push(...currentLineSpans);
 					currentLineSpans = '';
 				}
 				if (parts[i].length > 0) {
@@ -76,7 +73,7 @@
 	}
 
 	$effect(() => {
-		if (!ready || !tokenizer || !incremental) return;
+		if (!tokenizer || !incremental) return;
 
 		const remaining = text.slice(prevPushedLength);
 		if (remaining.length === 0) return;
@@ -88,7 +85,7 @@
 	});
 </script>
 
-{#if !ready}
+{#if lines.length == 0}
 	<Monochrome {text} />
 {:else}
 	<pre class="shiki {themeName}" style={themeStyle}><code

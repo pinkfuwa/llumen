@@ -14,6 +14,7 @@ use futures_util::TryStreamExt;
 use protocol::*;
 use sea_orm::*;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use toml::de;
 
 use super::context::{Context, StreamEndReason};
 use super::converter;
@@ -485,7 +486,11 @@ impl CompletionSession {
         }
         for img in &result.image {
             if let Some(id) = self.store_image(img).await {
-                self.message.inner.add_image(id);
+                let dimensions = imagesize::blob_size(&img.data).ok().map(|size| Dimensions {
+                    width: size.width as i32,
+                    height: size.height as i32,
+                });
+                self.message.inner.add_image(id, dimensions);
                 self.publisher.publish(Token::Image(id));
             }
         }

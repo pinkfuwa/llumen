@@ -12,9 +12,9 @@ use crate::config::UNBOUNDED_FILE_EXPIRATION_SECS;
 use crate::routes::file::MAX_FILE_SIZE;
 use crate::{AppState, errors::*, middlewares::auth::UserId};
 
-fn get_valid_until_timestamp() -> i64 {
+fn get_valid_until_timestamp() -> u32 {
     let now = OffsetDateTime::now_utc().unix_timestamp();
-    now + UNBOUNDED_FILE_EXPIRATION_SECS
+    now as u32 + UNBOUNDED_FILE_EXPIRATION_SECS
 }
 
 #[derive(Debug, Serialize)]

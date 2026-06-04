@@ -38,11 +38,12 @@
 			<Result content={nextChunk.c.response || ''} />
 		</ToolBox>
 		{#if nextChunk.t == 'tool_result'}
+			{JSON.stringify(nextChunk.c.files)}
 			{#each nextChunk.c.files as file}
 				{#if file.kind === 'video'}
 					<Video id={file.id} name={file.name} />
 				{:else if file.kind == 'image'}
-					<Image id={file.id} name={file.name} />
+					<Image id={file.id} name={file.name} dimensions={file.dimensions} />
 				{/if}
 			{/each}
 		{/if}
@@ -52,5 +53,7 @@
 		<DeepResearch plan={chunk.c} {streaming} />
 	{:else if kind == 'image'}
 		<Image id={chunk.c} />
+	{:else if kind == 'image_with_dimensions'}
+		<Image id={chunk.c.id} dimensions={chunk.c.dimensions} />
 	{/if}
 {/each}

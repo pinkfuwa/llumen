@@ -69,6 +69,7 @@ pub async fn route(
             name: f.name,
             id: f.id,
             kind: protocol::FileKind::User,
+            dimensions: None,
         })
         .collect::<Vec<_>>();
 

@@ -173,7 +173,8 @@ fn chunks_to_openrouter(chunks: &[AssistantChunk], out: &mut Vec<openrouter::Mes
                     },
                 ));
             }
-            AssistantChunk::Image(_file_id) => {
+            AssistantChunk::Image(_) => {}
+            AssistantChunk::ImageWithDimensions { .. } => {
                 // Image reconstruction from blob not supported in history
                 // replay
             }

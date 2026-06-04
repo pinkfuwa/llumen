@@ -59,15 +59,14 @@ pub async fn route(
         .into());
     }
 
-    // FIXME: we should stream original data if image is too large(low-memory
-    // design)
-    let original_data = app.blob.get_vectored(id).await.ok_or(Json(Error {
+    let reader = app.blob.get(id).ok_or(Json(Error {
         error: ErrorKind::ResourceNotFound,
         reason: "File data not found".to_owned(),
     }))?;
 
+    let mut body_size = reader.len();
     let mut content_type = mime_type.to_owned();
-    let compressed_data = image_to_webp(&mut content_type, &original_data, width)
+    let body = image_to_webp(&mut content_type, &mut body_size, reader, width)
         .await
         .map_err(|e| {
             Json(Error {
@@ -85,7 +84,7 @@ pub async fn route(
 
     headers.insert(
         axum::http::header::CONTENT_LENGTH,
-        axum::http::HeaderValue::from_str(&compressed_data.len().to_string()).unwrap(),
+        axum::http::HeaderValue::from_str(&body_size.to_string()).unwrap(),
     );
 
     headers.insert(
@@ -102,5 +101,5 @@ pub async fn route(
         axum::http::HeaderValue::from_str(&format!("\"{}-{}\"", id, width)).unwrap(),
     );
 
-    Ok((headers, compressed_data).into_response())
+    Ok((headers, body).into_response())
 }

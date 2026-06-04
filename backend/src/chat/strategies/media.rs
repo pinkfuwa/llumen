@@ -1,5 +1,5 @@
 use anyhow::Result;
-use protocol::{AssistantChunk, FileMetadata};
+use protocol::{AssistantChunk, Dimensions, FileMetadata};
 use tokio_stream::StreamExt;
 
 use crate::chat::context::StreamEndReason;
@@ -292,6 +292,12 @@ async fn execute_generate_image(
 
     let mut file_refs = Vec::new();
     for image in &output.images {
+        let dimensions = imagesize::blob_size(&image.data)
+            .ok()
+            .map(|size| Dimensions {
+                width: size.width as i32,
+                height: size.height as i32,
+            });
         if let Ok(file_id) = session.store_blob_file(image).await {
             let file_name = generated_file_name(
                 parsed.generating_file.clone(),
@@ -301,8 +307,8 @@ async fn execute_generate_image(
                 id: file_id,
                 name: file_name,
                 kind: protocol::FileKind::Image,
+                dimensions,
             });
-            // TODO: session.add_token(Token::Image(file_id));
         }
     }
 
@@ -403,6 +409,7 @@ async fn execute_generate_video(
                 id: file_id,
                 name: file_name,
                 kind: protocol::FileKind::Video,
+                dimensions: None,
             });
         }
     }
