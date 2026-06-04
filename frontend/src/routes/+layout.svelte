@@ -12,11 +12,10 @@
 	let lang = $derived(preference.value.locale);
 </script>
 
-{#await import('$lib/components/PwaPrompt.svelte') then { default: ReloadPrompt }}
-	<ReloadPrompt />
-{/await}
-
 <Provider {lang}>
+	{#await import('$lib/components/PwaPrompt.svelte') then { default: ReloadPrompt }}
+		<ReloadPrompt />
+	{/await}
 	<Copy />
 	<Error />
 	<div class="bg-surface-base h-full w-full text-foreground">
