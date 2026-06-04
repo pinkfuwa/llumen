@@ -2,7 +2,6 @@
 	import { MessageInput } from '$lib/components';
 	import MessagePagination from '$lib/components/message/Pagination.svelte';
 	import Hallucination from '$lib/components/common/Hallucination.svelte';
-	import { m } from '$lib/paraglide/messages';
 	import { messagesElement } from '$lib/api';
 </script>
 

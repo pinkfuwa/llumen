@@ -28,6 +28,6 @@
 	{#if isMermaid}
 		<Mermaid text={content} closed={shouldHighlight} />
 	{:else}
-		<ShikiCode text={content} lang={language} monochrome={!shouldHighlight} />
+		<ShikiCode text={content} lang={language} incremental={!shouldHighlight} />
 	{/if}
 </div>

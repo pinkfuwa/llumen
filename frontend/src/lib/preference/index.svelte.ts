@@ -44,7 +44,7 @@ export const lastModel = localState<number | null>('lastModel', {
 $effect.root(() => {
 	$effect(() => {
 		setTheme(preference.value.theme as Theme);
-		setLocale(preference.value.locale as any);
+		setLocale(preference.value.locale as any, { reload: false });
 	});
 	return () => {};
 });
