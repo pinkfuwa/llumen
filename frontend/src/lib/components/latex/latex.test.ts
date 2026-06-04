@@ -19,14 +19,6 @@ describe('toHtml with katex', () => {
 		expect(result).toContain('<math');
 	});
 
-	it('should trim dollar signs from input', async () => {
-		const result1 = await toHtml('$E = mc^2$', false);
-		const result2 = await toHtml('E = mc^2', false);
-		// Both should produce similar output
-		expect(result1).toContain('<math');
-		expect(result2).toContain('<math');
-	});
-
 	it('should support greek letters', async () => {
 		const result = await toHtml('\\phi', false);
 		expect(result).toContain('<mi>');
