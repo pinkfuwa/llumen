@@ -676,8 +676,7 @@ export async function updateMessage(
 
 $effect.root(() => {
 	$effect(() => {
-		let uselessFn = (x: any) => {};
-		uselessFn(page.url);
+		void page.url;
 		streaming.val = false;
 		messages.val = [];
 		olderExhausted.val = false;

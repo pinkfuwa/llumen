@@ -3,10 +3,9 @@ import { createSwipeGesture } from '$lib/components/sidebar/gesture';
 
 export const open = $state({ val: window.matchMedia('(width >= 48rem)').matches });
 
-function uselessFn(i: any) {}
 $effect.root(() => {
 	$effect(() => {
-		uselessFn(page.url);
+		void page.url;
 		const large = window.matchMedia('(width >= 48rem)').matches;
 		if (!large) open.val = false;
 	});
