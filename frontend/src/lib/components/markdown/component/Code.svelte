@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CodeBlockNode } from '../parser/types';
+	import type { CodeBlockNode } from '../vendor/types';
 	import { ClipboardCopy } from '@lucide/svelte';
 	import { copy } from '$lib/copy.svelte';
 	import ShikiCode from '../../shiki/Code.svelte';

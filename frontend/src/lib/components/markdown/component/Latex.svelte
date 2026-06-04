@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { LatexBlockNode } from '../parser/types';
+	import type { LatexBlockNode } from '../vendor/types';
 	import LatexComponent from '../../latex/Latex.svelte';
 	import { copy } from '$lib/copy.svelte';
 

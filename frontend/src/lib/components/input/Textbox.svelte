@@ -7,7 +7,6 @@
 		onsubmit,
 		minRow = 1
 	}: {
-		// True shows the textarea editor; false shows markdown preview.
 		isEditing: boolean;
 		value: string;
 		placeholder: string;
@@ -25,8 +24,21 @@
 	import { stringWidthWithWrap } from '$lib/string-width';
 
 	let input = $state<null | HTMLElement>(null);
-	let charMeasure = $state<null | HTMLElement>(null);
-	let clientWidth = $state(0);
+	let inputWidth = $state(0);
+	let inputFont = $state('');
+
+	$effect(() => {
+		if (!input) return;
+		const style = getComputedStyle(input);
+		inputFont = `${style.fontSize} ${style.fontFamily}`;
+		const ro = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				inputWidth = entry.contentBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
+			}
+		});
+		ro.observe(input);
+		return () => ro.disconnect();
+	});
 
 	function onKeyDown(event: KeyboardEvent) {
 		const activeElement = document.activeElement;
@@ -57,17 +69,13 @@
 	let rows = $state(1);
 
 	$effect(() => {
-		if (!clientWidth || !charMeasure || !input) return;
-
-		const charWidth = charMeasure.getBoundingClientRect().width;
-		if (charWidth === 0) return;
+		if (!inputWidth || !inputFont || !input) return;
 
 		const style = getComputedStyle(input);
 		const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-		const contentWidth = clientWidth - horizontalPadding;
-		const charsPerLine = Math.max(1, Math.floor(contentWidth / charWidth));
+		const contentWidth = inputWidth - horizontalPadding;
 
-		rows = Math.max(minRow, Math.min(stringWidthWithWrap(value, charsPerLine), 20));
+		rows = Math.max(minRow, Math.min(stringWidthWithWrap(value, inputFont, contentWidth), 20));
 	});
 
 	let virtualKeyboard = $state(false);
@@ -86,17 +94,10 @@
 	});
 </script>
 
-<span
-	bind:this={charMeasure}
-	class="editor pointer-events-none absolute opacity-0"
-	style="font-family: inherit; font-size: inherit; line-height: inherit; letter-spacing: inherit; white-space: pre;"
-	aria-hidden="true">0</span
->
 <!-- TODO: replace max-h-96 with calc(... keyboard-inset-height) -->
 <textarea
 	class={editorStyle}
 	bind:value
-	bind:clientWidth
 	{placeholder}
 	{rows}
 	bind:this={input}

@@ -1,3 +1,83 @@
+// --- Token constants (from streaming-markdown) ---
+export const DOCUMENT = 1,
+	PARAGRAPH = 2,
+	HEADING_1 = 3,
+	HEADING_2 = 4,
+	HEADING_3 = 5,
+	HEADING_4 = 6,
+	HEADING_5 = 7,
+	HEADING_6 = 8,
+	CODE_BLOCK = 9,
+	CODE_FENCE = 10,
+	CODE_INLINE = 11,
+	ITALIC_AST = 12,
+	ITALIC_UND = 13,
+	STRONG_AST = 14,
+	STRONG_UND = 15,
+	STRIKE = 16,
+	LINK = 17,
+	RAW_URL = 18,
+	IMAGE = 19,
+	BLOCKQUOTE = 20,
+	LINE_BREAK = 21,
+	RULE = 22,
+	LIST_UNORDERED = 23,
+	LIST_ORDERED = 24,
+	LIST_ITEM = 25,
+	CHECKBOX = 26,
+	TABLE = 27,
+	TABLE_ROW = 28,
+	TABLE_CELL = 29,
+	EQUATION_BLOCK = 30,
+	EQUATION_INLINE = 31,
+	NEWLINE = 101,
+	MAYBE_URL = 102,
+	MAYBE_TASK = 103,
+	MAYBE_BR = 104,
+	MAYBE_EQ_BLOCK = 105;
+
+export type Token = number;
+
+export const HREF = 1,
+	SRC = 2,
+	LANG = 4,
+	CHECKED = 8,
+	START = 16;
+
+export type Attr = number;
+
+export interface Parser {
+	renderer: Renderer;
+	text: string;
+	pending: string;
+	tokens: Uint32Array;
+	len: number;
+	token: number;
+	spaces: Uint8Array;
+	indent: string;
+	indent_len: number;
+	fence_end: number;
+	fence_start: number;
+	blockquote_idx: number;
+	hr_char: string;
+	hr_chars: number;
+	table_state: number;
+}
+
+export interface RendererData {
+	nodes: unknown[];
+	index: number;
+}
+
+export interface Renderer {
+	data: RendererData;
+	add_token: (data: RendererData, type: number) => void;
+	end_token: (data: RendererData) => void;
+	add_text: (data: RendererData, text: string) => void;
+	set_attr: (data: RendererData, type: number, value: string) => void;
+}
+
+// --- AST node types (for Svelte rendering) ---
 export enum AstNodeType {
 	Heading = 'Heading',
 	Paragraph = 'Paragraph',

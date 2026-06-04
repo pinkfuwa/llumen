@@ -3,6 +3,11 @@
 This file contains license information for all third-party dependencies used in the frontend.
 Generated from package.json and pnpm-lock.yaml.
 --------------------------------------------------------------------------------
+@chenglou/pretext@0.0.7
+
+License: MIT
+Repository: https://github.com/chenglou/pretext
+--------------------------------------------------------------------------------
 @codemirror/autocomplete@6.20.2
 
 License: MIT
@@ -93,13 +98,6 @@ runed@0.37.1
 
 License: MIT
 Repository: https://github.com/svecosystem/runed
---------------------------------------------------------------------------------
-svelte-i18n@4.0.1
-
-License: MIT
-Repository: https://github.com/kaisermann/svelte-i18n
-Publisher: Christian Kaisermann
-Email: christian@kaisermann.me
 --------------------------------------------------------------------------------
 workbox-window@7.4.1
 

@@ -13,7 +13,7 @@
 		type LinkNode,
 		type ImageNode,
 		type TextNode
-	} from './parser/types';
+	} from './vendor/types';
 
 	import Blockquote from './component/Blockquote.svelte';
 	import Br from './component/Br.svelte';

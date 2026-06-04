@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { OrderedListNode, UnorderedListNode } from '../parser/types';
-	import { AstNodeType } from '../parser/types';
+	import type { OrderedListNode, UnorderedListNode } from '../vendor/types';
+	import { AstNodeType } from '../vendor/types';
 	import type { Snippet } from 'svelte';
 
 	let { node, children }: { node: OrderedListNode | UnorderedListNode; children: Snippet } =

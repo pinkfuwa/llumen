@@ -701,13 +701,6 @@ $effect.root(() => {
 					behavior: 'instant'
 				});
 			});
-			// this is hacky, but I don't want to handle resize
-			setTimeout(() => {
-				el.scrollTo({
-					top: el.scrollHeight,
-					behavior: 'instant'
-				});
-			}, 180);
 		}
 	});
 });

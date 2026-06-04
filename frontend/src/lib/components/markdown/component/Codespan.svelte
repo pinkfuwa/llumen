@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { copy } from '$lib/copy.svelte';
-	import type { InlineCodeNode } from '../parser/types';
+	import type { InlineCodeNode } from '../vendor/types';
 
 	let { node }: { node: InlineCodeNode } = $props();
 

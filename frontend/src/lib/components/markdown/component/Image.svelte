@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ImageNode } from '../parser/types';
+	import type { ImageNode } from '../vendor/types';
 	import { BookX } from '@lucide/svelte';
 
 	let { node }: { node: ImageNode } = $props();

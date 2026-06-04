@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { HeadingNode } from '../parser/types';
+	import type { HeadingNode } from '../vendor/types';
 	import type { Snippet } from 'svelte';
 
 	let { node, children }: { node: HeadingNode; children: Snippet } = $props();
