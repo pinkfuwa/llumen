@@ -577,9 +577,9 @@ export function parser_write(p: Parser, chunk: string): void {
 				break;
 			case CODE_BLOCK:
 				switch (pending_with_char) {
-					case '\n ':
-					case '\n \t':
-					case '\n \t':
+					case '\n    ':
+					case '\n   \t':
+					case '\n  \t':
 					case '\n \t':
 					case '\n\t':
 						p.text += '\n';
@@ -587,8 +587,8 @@ export function parser_write(p: Parser, chunk: string): void {
 						continue;
 					case '\n':
 					case '\n ':
-					case '\n ':
-					case '\n ':
+					case '\n  ':
+					case '\n   ':
 						p.pending = pending_with_char;
 						continue;
 					default:

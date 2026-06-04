@@ -1,4 +1,4 @@
-import './mermaid.css';
+import { getMermaidDarkMode, getMermaidThemeVariables } from './mermaid-theme';
 
 let mermaidInstance: Promise<typeof import('mermaid')> = import('mermaid');
 
@@ -30,7 +30,9 @@ export async function render(code: string): Promise<string> {
 	mermaidModule.default.initialize({
 		startOnLoad: false,
 		theme: 'base',
-		suppressErrorRendering: true
+		suppressErrorRendering: true,
+		darkMode: getMermaidDarkMode(),
+		themeVariables: getMermaidThemeVariables()
 	});
 
 	const cleanCode = code.replaceAll(/^\s*style\s+\S+.*$/gm, '').trim();

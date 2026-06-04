@@ -1,4 +1,5 @@
 <script lang="ts">
+	import './mermaid.css';
 	import { render } from './mermaid';
 	import { preference } from '$lib/preference/index.svelte';
 	import Code from '../shiki/Code.svelte';
@@ -30,6 +31,9 @@
 			panY = 0;
 			return;
 		}
+
+		void preference.value.theme.name;
+		void preference.value.theme.dark;
 
 		const timer = setTimeout(() => {
 			rendering = true;
