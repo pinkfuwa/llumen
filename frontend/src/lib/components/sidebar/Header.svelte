@@ -4,7 +4,7 @@
 
 	import { open } from './open.svelte';
 	import { page } from '$app/state';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 
 	let addition = $derived(page.params.id != undefined);
 </script>
@@ -32,6 +32,6 @@
 		class="flex w-full items-center justify-center rounded-md p-1.5 font-semibold"
 	>
 		<Plus class="mr-2 h-5 w-5" />
-		{$_('chat.new')}
+		{m['chat.new']()}
 	</Button>
 </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { Star, X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 	import { token } from '$lib/store.svelte';
@@ -48,13 +48,13 @@
 						<Tabs.Trigger value="account" class={tabStyle}>
 							<CircleUser class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block">
-								{$_('setting.account_settings')}
+								{m['setting.account_settings']()}
 							</span>
 						</Tabs.Trigger>
 						<Tabs.Trigger value="admin" class={tabStyle}>
 							<ShieldUser class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block">
-								{$_('setting.admin_settings')}
+								{m['setting.admin_settings']()}
 							</span>
 						</Tabs.Trigger>
 						<Tabs.Trigger value="openrouter" class={tabStyle}>
@@ -65,7 +65,7 @@
 					<div class="flex flex-col space-y-2">
 						<a class={linkStyle} href="https://github.com/pinkfuwa/llumen" target="_blank">
 							<Star class="inline-block h-5 w-5 md:mr-2" />
-							<span class="hidden md:inline-block"> {$_('setting.github_star')} </span>
+							<span class="hidden md:inline-block"> {m['setting.github_star']()} </span>
 						</a>
 						<button
 							class={btnRowStyle}
@@ -74,20 +74,20 @@
 							}}
 						>
 							<LogOut class="inline-block h-5 w-5 md:mr-2" />
-							<span class="hidden md:inline-block"> {$_('setting.logout')} </span>
+							<span class="hidden md:inline-block"> {m['setting.logout']()} </span>
 						</button>
 					</div>
 				</Tabs.List>
 				<div class="flex h-full w-full min-w-0 flex-1 flex-col justify-center overflow-hidden p-3">
 					<Tabs.Content value="account" class="flex h-full flex-col overflow-auto">
 						<Dialog.Title class="pb-6 text-center text-xl">
-							{$_('setting.account_settings')}
+							{m['setting.account_settings']()}
 						</Dialog.Title>
 						<Account />
 					</Tabs.Content>
 					<Tabs.Content value="admin" class="flex h-full flex-col overflow-auto">
 						<Dialog.Title class="pb-6 text-center text-xl">
-							{$_('setting.admin_settings')}
+							{m['setting.admin_settings']()}
 						</Dialog.Title>
 						<Admin />
 					</Tabs.Content>
@@ -100,7 +100,7 @@
 						class="flex w-full flex-col justify-between overflow-auto"
 					>
 						<Dialog.Title class="pb-6 text-center text-xl">
-							{$_('setting.add_model')}
+							{m['setting.add_model']()}
 						</Dialog.Title>
 
 						<OpenrouterNew bind:value />
@@ -110,7 +110,7 @@
 						class="flex w-full flex-col justify-between overflow-auto"
 					>
 						<Dialog.Title class="pb-6 text-center text-xl">
-							{$_('setting.edit_model')}
+							{m['setting.edit_model']()}
 						</Dialog.Title>
 
 						{#if id != undefined}

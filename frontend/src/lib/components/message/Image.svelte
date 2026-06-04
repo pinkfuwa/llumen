@@ -2,7 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { downloadCompressed, download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 
 	let { id, name }: { id: number; name?: string } = $props();
 
@@ -44,14 +44,14 @@
 
 {#if error}
 	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
-		{$_('chat.failed_load_image')}
+		{m['chat.failed_load_image']()}
 	</div>
 {:else if src}
 	<div class="my-2 flex justify-center">
 		<div class="group relative">
 			<img
 				{src}
-				alt={$_('chat.image_alt')}
+				alt={m['chat.image_alt']()}
 				class="group relative h-auto max-h-[min(30rem,85vw,70vh)] max-w-full rounded-lg border border-border"
 				loading="lazy"
 			/>
@@ -81,6 +81,6 @@
 	</div>
 {:else}
 	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
-		{$_('chat.loading_image')}
+		{m['chat.loading_image']()}
 	</div>
 {/if}

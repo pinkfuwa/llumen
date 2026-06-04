@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Trash, TriangleAlert } from '@lucide/svelte';
 	import { Button } from 'bits-ui';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 
 	let { ondelete }: { ondelete: () => void } = $props();
 	let checked = $state(false);

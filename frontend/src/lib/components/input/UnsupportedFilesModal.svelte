@@ -2,7 +2,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { AlertTriangle } from '@lucide/svelte';
 
 	let {
@@ -18,11 +18,11 @@
 	} = $props();
 </script>
 
-<Modal bind:open title={$_('chat.unsupported_files.title')}>
+<Modal bind:open title={m['chat.unsupported_files.title']()}>
 	{#snippet children()}
 		<div class="space-y-4">
 			<p>
-				{$_('chat.unsupported_files.description')}
+				{m['chat.unsupported_files.description']()}
 			</p>
 
 			<div
@@ -37,16 +37,16 @@
 			</div>
 
 			<p class="text-sm">
-				{$_('chat.unsupported_files.hint')}
+				{m['chat.unsupported_files.hint']()}
 			</p>
 		</div>
 	{/snippet}
 	{#snippet footer()}
 		<Button class="px-4 py-2" onclick={onUploadSupported}>
-			{$_('chat.unsupported_files.upload_supported')}
+			{m['chat.unsupported_files.upload_supported']()}
 		</Button>
 		<DangerButton onclick={onUploadAll}>
-			{$_('chat.unsupported_files.upload_all')}
+			{m['chat.unsupported_files.upload_all']()}
 		</DangerButton>
 	{/snippet}
 </Modal>

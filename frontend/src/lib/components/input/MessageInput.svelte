@@ -12,7 +12,7 @@
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
 	import { streaming } from '$lib/api/message.svelte';
 	import { FileUp } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import {
 		inputContent,
 		inputFiles,
@@ -100,7 +100,7 @@
 			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-md border-2 border-dashed border-border bg-muted/40 text-2xl text-primary"
 		>
 			<FileUp />
-			{$_('chat.upload_file')}
+			{m['chat.upload_file']()}
 		</div>
 	{/if}
 	{#if inputFiles.val.length != 0}
@@ -111,7 +111,7 @@
 	<div class="flex flex-row items-center justify-between space-x-2 pr-2">
 		<Textbox
 			bind:isEditing
-			placeholder={streaming.val ? $_('chat.stop_first') : $_('chat.question')}
+			placeholder={streaming.val ? m['chat.stop_first']() : m['chat.question']()}
 			bind:value={inputContent.val}
 			onsubmit={submit}
 			disabled={streaming.val}

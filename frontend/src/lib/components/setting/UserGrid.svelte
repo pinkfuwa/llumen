@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { deleteUser, users, currentUser } from '$lib/api/user.svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import CheckDelete from './CheckDelete.svelte';
 
 	const data = $derived(users.val);

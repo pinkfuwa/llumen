@@ -1,7 +1,8 @@
 <script>
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
+	import { copyCounter } from '$lib/copy.svelte';
 
 	let copied = $state(true);
 
@@ -14,9 +15,13 @@
 	});
 </script>
 
-{#if copied}
-	<div class={hintStyle} in:fade={{ duration: 150 }} out:fade={{ duration: 150 }}>
-		<CircleCheck class="mr-2 inline-block" />
-		{$_('common.copied_clipboard')}
-	</div>
+{#if copyCounter.val != 0}
+	{#key copyCounter.val}
+		{#if copied}
+			<div class={hintStyle} in:fade={{ duration: 150 }} out:fade={{ duration: 150 }}>
+				<CircleCheck class="mr-2 inline-block" />
+				{m['common.copied_clipboard']()}
+			</div>
+		{/if}
+	{/key}
 {/if}

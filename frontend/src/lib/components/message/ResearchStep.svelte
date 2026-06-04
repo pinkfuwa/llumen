@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { StepKind, type Step } from '$lib/api/types';
 	import { FlaskConical, ChartSpline, TextSearch } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { Collapsible } from 'bits-ui';
 	import { Markdown } from '$lib/components/markdown';
 

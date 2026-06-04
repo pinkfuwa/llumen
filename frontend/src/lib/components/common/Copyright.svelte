@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 
 	const linkStyle = 'rounded-md px-2 py-0.5 duration-150 hover:bg-interactive-hover';
 </script>

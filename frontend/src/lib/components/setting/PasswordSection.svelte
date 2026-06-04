@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { Collapsible } from 'bits-ui';
 	import { ChevronDown, CheckLine } from '@lucide/svelte';
 	import Button from '$lib/ui/Button.svelte';
@@ -32,18 +32,18 @@
 </script>
 
 <div class="mb-4 hidden items-center justify-between border-b border-border pb-2 text-lg md:flex">
-	<span>{$_('setting.change_password')}: </span>
+	<span>{m['setting.change_password']()}: </span>
 	<div class="flex items-center gap-2">
 		<input
 			type="password"
 			class="w-36 rounded-md border border-border p-1"
-			placeholder={$_('setting.account.password')}
+			placeholder={m['setting.account.password']()}
 			bind:value={password}
 		/>
 		<input
 			type="password"
 			class="w-36 rounded-md border border-border p-1"
-			placeholder={$_('setting.account.confirm_password')}
+			placeholder={m['setting.account.confirm_password']()}
 			bind:value={passwordCheck}
 		/>
 		<Button class="p-2 {matched ? '' : 'opacity-60'}" disabled={!matched} onclick={handleSubmit}>
@@ -54,26 +54,26 @@
 
 <Collapsible.Root bind:open class="md:hidden">
 	<Collapsible.Trigger class={triggerStyle}>
-		<span>{$_('setting.change_password')}</span>
+		<span>{m['setting.change_password']()}</span>
 		<ChevronDown />
 	</Collapsible.Trigger>
 	<Collapsible.Content
 		class="flex flex-col border-b border-border px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
 		{#if status === 'failed'}
-			<Warning>{$_('setting.account.error_updating_password')}</Warning>
+			<Warning>{m['setting.account.error_updating_password']()}</Warning>
 		{/if}
 		<div class="mb-2 flex flex-col gap-2">
 			<input
 				type="password"
 				class="w-full rounded-md border border-border p-2"
-				placeholder={$_('setting.account.password')}
+				placeholder={m['setting.account.password']()}
 				bind:value={password}
 			/>
 			<input
 				type="password"
 				class="w-full rounded-md border border-border p-2"
-				placeholder={$_('setting.account.confirm_password')}
+				placeholder={m['setting.account.confirm_password']()}
 				bind:value={passwordCheck}
 			/>
 		</div>
@@ -82,7 +82,7 @@
 			disabled={!matched}
 			onclick={handleSubmit}
 		>
-			{$_('setting.confirm')}
+			{m['setting.confirm']()}
 		</Button>
 	</Collapsible.Content>
 </Collapsible.Root>

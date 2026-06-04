@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { copy } from '$lib/copy.svelte';
 	import { CircleDollarSign, ClipboardCopy } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 
 	let { content = '', token = 0, cost = 0.0 } = $props();
 	let showUsage = $derived(token > 0);

@@ -23,6 +23,7 @@
 		"@codemirror/legacy-modes": "^6.5.2",
 		"@codemirror/state": "^6.6.0",
 		"@codemirror/view": "^6.42.1",
+		"@inlang/paraglide-js": "^2.18.2",
 		"@lezer/highlight": "^1.2.3",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"bits-ui": "^2.18.1",
@@ -31,7 +32,6 @@
 		"katex": "^0.16.46",
 		"mermaid": "^11.15.0",
 		"runed": "^0.37.1",
-		"svelte-i18n": "^4.0.1",
 		"workbox-window": "^7.4.1"
 	},
 	"devDependencies": {

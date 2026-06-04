@@ -2,7 +2,7 @@
 	import { currentRoom } from '$lib/api';
 	let { children } = $props();
 	import { Sidebar } from '$lib/components';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 </script>
 
 {#if currentRoom.val && currentRoom.val?.title}
@@ -11,7 +11,7 @@
 	</title>
 {:else}
 	<title>
-		{$_('chat.title')}
+		{m['chat.title']()}
 	</title>
 {/if}
 

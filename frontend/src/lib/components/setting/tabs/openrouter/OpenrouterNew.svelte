@@ -3,7 +3,7 @@
 	import { TiltBtn } from '$lib/components';
 	import ConfigEditor from '$lib/components/setting/ConfigEditor.svelte';
 	import Button from '$lib/ui/Button.svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 
 	let { value = $bindable() }: { value: string } = $props();
 	let config = $state(defaultModelConfig);
@@ -16,6 +16,6 @@
 
 <ConfigEditor bind:value={config}>
 	<Button class="px-3 py-2" onclick={onCreate}>
-		{$_('setting.create_setting')}
+		{m['setting.create_setting']()}
 	</Button>
 </ConfigEditor>

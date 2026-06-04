@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { checkConfig } from '../../api/model.svelte';
 	import Toml from '../codemirror/Toml.svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import Warning from './Warning.svelte';
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
@@ -39,7 +39,7 @@
 
 <div class="mt-3 flex items-center justify-start space-x-2">
 	<Button class="px-3 py-2" onclick={onCheck}>
-		{$_('setting.check_syntax')}
+		{m['setting.check_syntax']()}
 	</Button>
 	{@render children()}
 	{#if configChecked}

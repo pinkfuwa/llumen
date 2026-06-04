@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Trash2, OctagonX } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import Button from '$lib/ui/Button.svelte';
 	import { deleteEntry, syncEntry } from '$lib/api';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
-	let { name = $bindable($_('chat.default_title')), id } = $props();
+	let { name = $bindable(m['chat.default_title']()), id } = $props();
 
 	let selected = $derived(page.params.id === String(id));
 	// onupdate={(newName: string) => syncEntry(chatroom.id, newName)}
@@ -15,7 +15,7 @@
 	let disabled = $state(false);
 
 	$effect(() => {
-		if (name.trim().length == 0) name = $_('chat.default_title');
+		if (name.trim().length == 0) name = m['chat.default_title']();
 	});
 
 	async function runBusy<T>(p: Promise<T>) {

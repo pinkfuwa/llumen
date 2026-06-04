@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { deleteModel, models } from '$lib/api/model.svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import CheckDelete from './CheckDelete.svelte';
 	import Button from '$lib/ui/Button.svelte';
 

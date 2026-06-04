@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Atom } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { Collapsible } from 'bits-ui';
 	import ResearchStep from './ResearchStep.svelte';
 	import type { Deep, Step } from '$lib/api/types';
@@ -18,7 +18,7 @@
 <Collapsible.Root bind:open>
 	<Collapsible.Trigger class={triggerStyle}>
 		<Atom class="mr-2" />
-		<span> {$_('chat.research_agent')} </span>
+		<span> {m['chat.research_agent']()} </span>
 	</Collapsible.Trigger>
 	<Collapsible.Content
 		class="py-2 pl-3 slide-out-to-start-2 fade-in fade-out slide-in-from-top-2 data-[state=close]:animate-out data-[state=open]:animate-in"

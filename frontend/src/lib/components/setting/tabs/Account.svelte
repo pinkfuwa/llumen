@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { preference } from '$lib/preference/index.svelte';
 	import Option from '../Option.svelte';
 	import PasswordSection from '../PasswordSection.svelte';
@@ -9,7 +9,7 @@
 <div class="flex h-full flex-col overflow-auto">
 	<div class="flex flex-col gap-2">
 		<Option
-			title={$_('setting.theme')}
+			title={m['setting.theme']()}
 			data={[
 				{ value: 'llumen', label: 'Llumen' },
 				{ value: 'dracula', label: 'Dracula' },
@@ -19,21 +19,21 @@
 		/>
 
 		<Toggle
-			title={$_('setting.color_scheme')}
-			trueLabel={$_('setting.dark')}
-			falseLabel={$_('setting.light')}
+			title={m['setting.color_scheme']()}
+			trueLabel={m['setting.dark']()}
+			falseLabel={m['setting.light']()}
 			bind:value={preference.value.theme.dark}
 		/>
 
 		<Toggle
-			title={$_('setting.pattern')}
-			trueLabel={$_('setting.enable')}
-			falseLabel={$_('setting.disable')}
+			title={m['setting.pattern']()}
+			trueLabel={m['setting.enable']()}
+			falseLabel={m['setting.disable']()}
 			bind:value={preference.value.theme.pattern}
 		/>
 
 		<Option
-			title={$_('setting.language')}
+			title={m['setting.language']()}
 			data={[
 				{ value: 'en', label: 'English' },
 				{ value: 'zh-tw', label: '繁體中文' },
@@ -43,10 +43,10 @@
 		/>
 
 		<Option
-			title={$_('setting.enter')}
+			title={m['setting.enter']()}
 			data={[
-				{ value: 'true', label: $_('setting.enable') },
-				{ value: 'false', label: $_('setting.disable') }
+				{ value: 'true', label: m['setting.enable']() },
+				{ value: 'false', label: m['setting.disable']() }
 			]}
 			bind:selected={preference.value.submit_on_enter}
 		/>

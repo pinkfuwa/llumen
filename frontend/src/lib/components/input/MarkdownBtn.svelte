@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Book, BookA } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	let { isEditing = $bindable(true), disabled = false } = $props();
@@ -11,7 +11,7 @@
 <Tooltip
 	class={markdownBtnStyle}
 	onclick={() => (isEditing = !isEditing)}
-	text={isEditing ? $_('chat.markdown_mode.disable') : $_('chat.markdown_mode.enable')}
+	text={isEditing ? m['chat.markdown_mode.disable']() : m['chat.markdown_mode.enable']()}
 	{disabled}
 >
 	{#if isEditing}

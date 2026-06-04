@@ -2,7 +2,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		open?: boolean;
@@ -40,7 +40,7 @@
 	}
 </script>
 
-<Modal bind:open title={$_('chat.convert_to_file.title')} onClose={close}>
+<Modal bind:open title={m['chat.convert_to_file.title']()} onClose={close}>
 	{#snippet children()}
 		<form
 			class="space-y-4"
@@ -50,11 +50,11 @@
 			}}
 		>
 			<p>
-				{$_('chat.convert_to_file.description')}
+				{m['chat.convert_to_file.description']()}
 			</p>
 			<div>
 				<label for="filename" class="mb-2 block">
-					{$_('chat.convert_to_file.filename_label')}
+					{m['chat.convert_to_file.filename_label']()}
 				</label>
 				<input
 					id="filename"
@@ -64,17 +64,17 @@
 					class={inputStyle}
 				/>
 				<p class="mt-1 text-sm text-muted-foreground">
-					{$_('chat.convert_to_file.file_hint')}
+					{m['chat.convert_to_file.file_hint']()}
 				</p>
 			</div>
 		</form>
 	{/snippet}
 	{#snippet footer()}
 		<Button class="px-4 py-2" onclick={close}>
-			{$_('chat.convert_to_file.cancel')}
+			{m['chat.convert_to_file.cancel']()}
 		</Button>
 		<DangerButton onclick={handleConvertToFile}>
-			{$_('chat.convert_to_file.convert')}
+			{m['chat.convert_to_file.convert']()}
 		</DangerButton>
 	{/snippet}
 </Modal>

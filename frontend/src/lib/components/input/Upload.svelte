@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Upload } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import TipButton from '$lib/ui/TipButton.svelte';
 
 	let { files = $bindable([] as File[]) }: { files: File[] } = $props();
@@ -26,7 +26,7 @@
 	class="aspect-square h-full shrink-0"
 	onclick={openDialog}
 	aria-label="upload file"
-	text={$_('chat.file')}
+	text={m['chat.file']()}
 >
 	<Upload class="inline-block" />
 </TipButton>

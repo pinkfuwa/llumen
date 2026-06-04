@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import { MessageInput, Copyright } from '$lib/components';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
 	import { inputContent } from '$lib/components/input/state.svelte';
 
@@ -12,7 +12,7 @@
 </script>
 
 <svelte:head>
-	<title>{$_('chat.title')}</title>
+	<title>{m['chat.title']()}</title>
 </svelte:head>
 
 <main class="flex h-full w-full flex-col justify-center">
@@ -20,7 +20,7 @@
 		class="mx-auto mb-4 bg-gradient-to-r from-primary to-primary/50 bg-clip-text pb-4 text-[11vw] font-semibold text-transparent select-none md:text-[max(4rem,5vw)]"
 		in:fade={{ duration: 150 }}
 	>
-		{$_('chat.welcome')}
+		{m['chat.welcome']()}
 	</h1>
 	<MessageInput large />
 </main>

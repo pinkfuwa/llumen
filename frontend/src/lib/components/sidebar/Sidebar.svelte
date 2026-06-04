@@ -2,7 +2,7 @@
 	import Header from './Header.svelte';
 	import Pagination from './Pagination.svelte';
 	import Setting from '../setting/Setting.svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import OpenBtn from './OpenBtn.svelte';
 	import { open } from './open.svelte';
 

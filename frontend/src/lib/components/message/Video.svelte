@@ -2,7 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 
 	let { id, name }: { id: number; name?: string } = $props();
 
@@ -47,7 +47,7 @@
 
 {#if error}
 	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
-		{$_('chat.failed_load_video')}
+		{m['chat.failed_load_video']()}
 	</div>
 {:else if src}
 	<div class="my-2 flex justify-center">
@@ -86,6 +86,6 @@
 	</div>
 {:else}
 	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
-		{$_('chat.loading_video')}
+		{m['chat.loading_video']()}
 	</div>
 {/if}

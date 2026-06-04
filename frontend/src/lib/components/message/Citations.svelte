@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Globe } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { Collapsible } from 'bits-ui';
 	import type { UrlCitation } from '$lib/api/types';
 
@@ -26,7 +26,7 @@
 		<Collapsible.Trigger class={triggerStyle}>
 			<Globe class="mr-2" />
 			<span>
-				{$_('chat.sources')}
+				{m['chat.sources']()}
 				<span class="ml-1 text-xs opacity-60">({citations.length})</span>
 			</span>
 		</Collapsible.Trigger>

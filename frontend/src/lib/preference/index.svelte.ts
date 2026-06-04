@@ -6,7 +6,7 @@ import type {
 	UserUpdateResp,
 	UserUpdateReq
 } from '../api/types';
-import { setLocale } from './i18n';
+import { setLocale } from '$lib/paraglide/runtime';
 import { localState, token } from '../store.svelte';
 import type { Theme } from './theme';
 import { setTheme } from './theme';

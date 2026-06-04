@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Brain } from '@lucide/svelte';
-	import { _ } from 'svelte-i18n';
+	import { m } from '$lib/paraglide/messages';
 	import { Collapsible } from 'bits-ui';
 	let { content, open = $bindable(false) }: { content: string; open?: boolean } = $props();
 
@@ -31,7 +31,7 @@
 	<Collapsible.Trigger class={triggerStyle}>
 		<Brain class="mr-2" />
 		<span>
-			{$_('chat.reasoning')}
+			{m['chat.reasoning']()}
 		</span>
 	</Collapsible.Trigger>
 	<Collapsible.Content
