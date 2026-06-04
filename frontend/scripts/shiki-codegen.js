@@ -76,12 +76,15 @@ let { code } = await codegen({
 });
 
 code = code.replaceAll('@shikijs', 'shiki');
+code = code.replaceAll('shiki/engine-javascript', 'shiki/engine/javascript');
+code = code.replaceAll(/import\('(shiki\/langs\/[^']+)'\)/g, "import('$1.mjs')");
+code = code.replaceAll(/import\('(shiki\/themes\/[^']+)'\)/g, "import('$1.mjs')");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 await writeFile(
-	join(__dirname, 'src', 'lib', 'components', 'shiki', 'shiki.bundle.ts'),
+	join(__dirname, '..', 'src', 'lib', 'components', 'shiki', 'shiki.bundle.ts'),
 	code,
 	'utf8'
 );

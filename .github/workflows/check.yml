@@ -3,9 +3,6 @@ name: Status Check
 on:
   pull_request:
   push:
-    branches:
-      - main
-      - develop
 
 permissions:
   contents: read

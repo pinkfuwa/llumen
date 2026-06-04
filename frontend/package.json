@@ -12,7 +12,7 @@
 		"format": "prettier --write .",
 		"format-ffi": "prettier --write src/lib/api/types.ts",
 		"lint": "prettier --check .",
-		"codegen-shiki": "node scripts/shiki-codegen.js",
+		"codegen-shiki": "node scripts/shiki-codegen.js && pnpm format",
 		"generate-licenses": "node scripts/generate-licenses.js",
 		"gen-test": "node src/lib/components/markdown/tests/generate/codegen.mjs"
 	},

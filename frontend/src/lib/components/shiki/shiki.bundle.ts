@@ -4,8 +4,8 @@ import type {
 	DynamicImportThemeRegistration,
 	HighlighterGeneric
 } from 'shiki/types';
-import { createSingletonShorthands, createBundledHighlighter } from 'shiki/core';
-import { createJavaScriptRegexEngine } from 'shiki/engine-javascript.mjs';
+import { createBundledHighlighter, createSingletonShorthands } from 'shiki/core';
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
 
 type BundledLanguage =
 	| 'abap'
@@ -35,6 +35,7 @@ type BundledLanguage =
 	| 'f#'
 	| 'fs'
 	| 'gdscript'
+	| 'gd'
 	| 'go'
 	| 'graphql'
 	| 'gql'
@@ -49,6 +50,8 @@ type BundledLanguage =
 	| 'java'
 	| 'javascript'
 	| 'js'
+	| 'cjs'
+	| 'mjs'
 	| 'json'
 	| 'jsx'
 	| 'julia'
@@ -92,6 +95,8 @@ type BundledLanguage =
 	| 'tsx'
 	| 'typescript'
 	| 'ts'
+	| 'cts'
+	| 'mts'
 	| 'verilog'
 	| 'vue'
 	| 'wasm'
@@ -99,11 +104,10 @@ type BundledLanguage =
 	| 'xml'
 	| 'yaml'
 	| 'yml'
-	| 'bash'
 	| 'asm'
 	| 'lean'
 	| 'lean4';
-type BundledTheme = 'github-light' | 'github-dark' | 'dracula' | 'vitesse-dark' | 'vitesse-light';
+type BundledTheme = 'github-light' | 'github-dark' | 'vitesse-light' | 'vitesse-dark' | 'dracula';
 type Highlighter = HighlighterGeneric<BundledLanguage, BundledTheme>;
 
 const bundledLanguages = {
@@ -134,6 +138,7 @@ const bundledLanguages = {
 	'f#': () => import('shiki/langs/fsharp.mjs'),
 	fs: () => import('shiki/langs/fsharp.mjs'),
 	gdscript: () => import('shiki/langs/gdscript.mjs'),
+	gd: () => import('shiki/langs/gdscript.mjs'),
 	go: () => import('shiki/langs/go.mjs'),
 	graphql: () => import('shiki/langs/graphql.mjs'),
 	gql: () => import('shiki/langs/graphql.mjs'),
@@ -148,6 +153,8 @@ const bundledLanguages = {
 	java: () => import('shiki/langs/java.mjs'),
 	javascript: () => import('shiki/langs/javascript.mjs'),
 	js: () => import('shiki/langs/javascript.mjs'),
+	cjs: () => import('shiki/langs/javascript.mjs'),
+	mjs: () => import('shiki/langs/javascript.mjs'),
 	json: () => import('shiki/langs/json.mjs'),
 	jsx: () => import('shiki/langs/jsx.mjs'),
 	julia: () => import('shiki/langs/julia.mjs'),
@@ -191,6 +198,8 @@ const bundledLanguages = {
 	tsx: () => import('shiki/langs/tsx.mjs'),
 	typescript: () => import('shiki/langs/typescript.mjs'),
 	ts: () => import('shiki/langs/typescript.mjs'),
+	cts: () => import('shiki/langs/typescript.mjs'),
+	mts: () => import('shiki/langs/typescript.mjs'),
 	verilog: () => import('shiki/langs/verilog.mjs'),
 	vue: () => import('shiki/langs/vue.mjs'),
 	wasm: () => import('shiki/langs/wasm.mjs'),
@@ -198,19 +207,17 @@ const bundledLanguages = {
 	xml: () => import('shiki/langs/xml.mjs'),
 	yaml: () => import('shiki/langs/yaml.mjs'),
 	yml: () => import('shiki/langs/yaml.mjs'),
-	bash: () => import('shiki/langs/bash.mjs'),
-	shell: () => import('shiki/langs/shell.mjs'),
 	asm: () => import('shiki/langs/asm.mjs'),
-	lean: () => import('shiki/langs/lean4.mjs'),
-	lean4: () => import('shiki/langs/lean4.mjs')
+	lean: () => import('shiki/langs/lean.mjs'),
+	lean4: () => import('shiki/langs/lean.mjs')
 } as Record<BundledLanguage, DynamicImportLanguageRegistration>;
 
 const bundledThemes = {
 	'github-light': () => import('shiki/themes/github-light.mjs'),
 	'github-dark': () => import('shiki/themes/github-dark.mjs'),
-	dracula: () => import('shiki/themes/dracula.mjs'),
+	'vitesse-light': () => import('shiki/themes/vitesse-light.mjs'),
 	'vitesse-dark': () => import('shiki/themes/vitesse-dark.mjs'),
-	'vitesse-light': () => import('shiki/themes/vitesse-light.mjs')
+	dracula: () => import('shiki/themes/dracula.mjs')
 } as Record<BundledTheme, DynamicImportThemeRegistration>;
 
 const createHighlighter = /* @__PURE__ */ createBundledHighlighter<BundledLanguage, BundledTheme>({
