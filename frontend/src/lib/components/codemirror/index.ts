@@ -5,6 +5,8 @@ import { EditorView, keymap, type ViewUpdate } from '@codemirror/view';
 import { toml } from '@codemirror/legacy-modes/mode/toml';
 import githubLight from './github-light';
 import githubDark from './github-dark';
+import vitesseLight from './vitesse-light';
+import vitesseDark from './vitesse-dark';
 import { get, type Readable, type Writable } from 'svelte/store';
 import { autocompletion, acceptCompletion } from '@codemirror/autocomplete';
 import { minimalSetup } from 'codemirror';
@@ -13,12 +15,13 @@ import { setModelIds, tomlCompletion } from './completion';
 
 export default function useCodeMirror(option: {
 	darkTheme: boolean;
+	themeName: string;
 	value: Writable<string>;
 	element: Readable<HTMLDivElement>;
 	onDestroy: (callback: () => void) => void;
 	modelIds: Readable<string[]>;
 }) {
-	const { darkTheme, value, element, onDestroy, modelIds } = option;
+	const { darkTheme, themeName, value, element, onDestroy, modelIds } = option;
 
 	const div = get(element);
 
@@ -82,7 +85,13 @@ export default function useCodeMirror(option: {
 				}
 			]),
 			StreamLanguage.define(toml),
-			darkTheme ? githubDark : githubLight,
+			themeName === 'vitesse'
+				? darkTheme
+					? vitesseDark
+					: vitesseLight
+				: darkTheme
+					? githubDark
+					: githubLight,
 			onUpdate,
 			autocompleteTheme,
 			autocompletion({ override: [tomlCompletion] })

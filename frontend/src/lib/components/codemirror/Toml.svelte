@@ -20,11 +20,13 @@
 	let loaded = $state(false);
 
 	const darkTheme = $derived(preference.value.theme.dark);
+	const themeName = $derived(preference.value.theme.name);
 
 	useCodeMirrorPromise.then((useCodeMirror) => {
 		const modelIdsStore = toStore(() => modelIds.val?.ids ?? []);
 		useCodeMirror.default({
 			darkTheme: darkTheme,
+			themeName: themeName,
 			value: valWritable,
 			element: toStore(() => div!),
 			onDestroy: (x) => (callback = x),
@@ -44,7 +46,13 @@
 	});
 
 	const themeStyle = $derived(
-		darkTheme ? 'background-color:#24292e;color:#e1e4e8' : 'background-color:#fff;color:#24292e'
+		darkTheme
+			? themeName === 'vitesse'
+				? 'background-color:#1e1e1e;color:#d4cfbf'
+				: 'background-color:#24292e;color:#e1e4e8'
+			: themeName === 'vitesse'
+				? 'background-color:#fbfbfb;color:#393a34'
+				: 'background-color:#fff;color:#24292e'
 	);
 </script>
 
