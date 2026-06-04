@@ -62,6 +62,7 @@ export interface Parser {
 	hr_char: string;
 	hr_chars: number;
 	table_state: number;
+	eq_open: number;
 }
 
 export interface RendererData {

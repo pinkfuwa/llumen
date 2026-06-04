@@ -101,7 +101,8 @@ export function parser(renderer: Renderer): Parser {
 		spaces: new Uint8Array(TOKEN_ARRAY_CAP),
 		indent: '',
 		indent_len: 0,
-		table_state: 0
+		table_state: 0,
+		eq_open: 0
 	};
 }
 
@@ -782,15 +783,37 @@ export function parser_write(p: Parser, chunk: string): void {
 				}
 				break;
 			case EQUATION_INLINE:
-				if ('\\)' === pending_with_char || '$' === p.pending[0]) {
+				// \\ double backslash — preserve as LaTeX line break
+				if (p.pending[0] === '\\' && char === '\\') {
+					p.text += '\\\\';
+					p.pending = '';
+					continue;
+				}
+				// escaped \$ — preserve backslash for KaTeX
+				if (p.pending[0] === '\\' && char === '$') {
+					p.text += '\\$';
+					p.pending = '';
+					continue;
+				}
+				// close only on matching delimiter
+				if (p.eq_open === 1 && '$' === p.pending[0]) {
 					add_text(p);
 					end_token(p);
-
-					if (char === ')') {
-						p.pending = '';
-					} else {
-						p.pending = char;
-					}
+					p.eq_open = 0;
+					p.pending = char;
+					continue;
+				}
+				if (p.eq_open === 2 && '\\)' === pending_with_char) {
+					add_text(p);
+					end_token(p);
+					p.eq_open = 0;
+					p.pending = '';
+					continue;
+				}
+				// $ as literal content inside \(…\)
+				if (p.eq_open === 2 && '$' === p.pending[0]) {
+					p.text += '$';
+					p.pending = char;
 					continue;
 				}
 				break;
@@ -885,6 +908,7 @@ export function parser_write(p: Parser, chunk: string): void {
 					case '(':
 						add_text(p);
 						add_token(p, EQUATION_INLINE);
+						p.eq_open = 2;
 						p.pending = '';
 						continue;
 					case '[':
@@ -939,7 +963,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				}
 				break;
 			case '`':
-				if (p.token === IMAGE) break;
+				if (p.token === IMAGE || p.token === EQUATION_BLOCK || p.token === EQUATION_INLINE) break;
 
 				if ('`' === char) {
 					p.fence_start += 1;
@@ -1000,7 +1024,12 @@ export function parser_write(p: Parser, chunk: string): void {
 				break;
 			}
 			case '~':
-				if (p.token !== IMAGE && p.token !== STRIKE) {
+				if (
+					p.token !== IMAGE &&
+					p.token !== STRIKE &&
+					p.token !== EQUATION_BLOCK &&
+					p.token !== EQUATION_INLINE
+				) {
 					if ('~' === p.pending) {
 						if ('~' === char) {
 							p.pending = pending_with_char;
@@ -1017,7 +1046,13 @@ export function parser_write(p: Parser, chunk: string): void {
 				}
 				break;
 			case '$':
-				if (p.token !== IMAGE && p.token !== STRIKE && '$' === p.pending) {
+				if (
+					p.token !== IMAGE &&
+					p.token !== STRIKE &&
+					p.token !== EQUATION_BLOCK &&
+					p.token !== EQUATION_INLINE &&
+					'$' === p.pending
+				) {
 					if ('$' === char) {
 						p.token = MAYBE_EQ_BLOCK;
 						p.pending = pending_with_char;
@@ -1027,6 +1062,7 @@ export function parser_write(p: Parser, chunk: string): void {
 					} else {
 						add_text(p);
 						add_token(p, EQUATION_INLINE);
+						p.eq_open = 1;
 						p.pending = char;
 						continue;
 					}
@@ -1047,7 +1083,12 @@ export function parser_write(p: Parser, chunk: string): void {
 				}
 				break;
 			case '!':
-				if (!(p.token === IMAGE) && '[' === char) {
+				if (
+					p.token !== IMAGE &&
+					p.token !== EQUATION_BLOCK &&
+					p.token !== EQUATION_INLINE &&
+					'[' === char
+				) {
 					add_text(p);
 					add_token(p, IMAGE);
 					p.pending = '';

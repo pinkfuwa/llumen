@@ -220,9 +220,7 @@ export function createAstRenderer(): { renderer: Renderer; getResult: () => AstN
 		add_token(_data: RendererData, token: number): void {
 			if (token === DOCUMENT) return;
 
-			if (token === LINE_BREAK) {
-				flushText(stack[stack.length - 1]);
-			}
+			flushText(stack[stack.length - 1]);
 
 			if (token === TABLE_ROW) {
 				const tableEntry = getTableEntry();

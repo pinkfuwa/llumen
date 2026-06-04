@@ -232,3 +232,88 @@ describe('single newline behavior', () => {
 		expect(nodes[1].type).toBe(AstNodeType.Blockquote);
 	});
 });
+
+describe('latex delimiter matching', () => {
+	it('escaped \\$ inside \\(...\\) produces literal $', () => {
+		const nodes = parseSync('\\( a = \\$b \\)');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const para = nodes[0] as ParagraphNode;
+		const hasLatex = para.children?.some((c) => c.type === AstNodeType.LatexInline);
+		expect(hasLatex).toBe(true);
+		const latex = para.children!.find((c) => c.type === AstNodeType.LatexInline)!;
+		expect((latex as any).content).toBe(' a = \\$b ');
+	});
+
+	it('$ inside \\(...\\) treated as literal (does not close)', () => {
+		const nodes = parseSync('\\( a = $10 \\)');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const latex = para.children!.find((c) => c.type === AstNodeType.LatexInline)!;
+		expect((latex as any).content).toBe(' a = $10 ');
+	});
+
+	it('\\) inside $...$ treated as literal (does not close)', () => {
+		const nodes = parseSync('$a \\) b$');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const latex = para.children!.find((c) => c.type === AstNodeType.LatexInline)!;
+		expect((latex as any).content).toBe('a \\) b');
+	});
+
+	it('lone $ in text followed by space remains literal (not latex)', () => {
+		const nodes = parseSync('price is $10');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const text = flattenText((nodes[0] as ParagraphNode).children);
+		expect(text).toBe('price is $10');
+	});
+
+	it('escaped \\$ in $...$ equation produces literal $', () => {
+		const nodes = parseSync('$\\$$');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const latex = para.children!.find((c) => c.type === AstNodeType.LatexInline)!;
+		expect((latex as any).content).toBe('\\$');
+	});
+
+	it('\\\\$ in $...$ equation closes correctly', () => {
+		const nodes = parseSync('$\\\\$');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const latex = para.children!.find((c) => c.type === AstNodeType.LatexInline)!;
+		expect((latex as any).content).toBe('\\\\');
+	});
+
+	it('backtick inside \\(...\\) does not break equation', () => {
+		const nodes = parseSync('\\( \\text{`hello`} \\)');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const latex = para.children!.find((c) => c.type === AstNodeType.LatexInline)!;
+		expect((latex as any).content).toBe(' \\text{`hello`} ');
+	});
+
+	it('tilde inside \\(...\\) does not open strikethrough', () => {
+		const nodes = parseSync('\\( a \\sim b \\)');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const latex = para.children!.find((c) => c.type === AstNodeType.LatexInline)!;
+		expect((latex as any).content).toBe(' a \\sim b ');
+	});
+
+	it('mixed text and inline latex preserves order', () => {
+		const nodes = parseSync('a \\( b \\) c \\( d \\)');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const children = para.children!;
+		expect(children).toHaveLength(4);
+		expect(children[0].type).toBe(AstNodeType.Text);
+		expect((children[0] as TextNode).content).toBe('a ');
+		expect(children[1].type).toBe(AstNodeType.LatexInline);
+		expect((children[1] as any).content).toBe(' b ');
+		expect(children[2].type).toBe(AstNodeType.Text);
+		expect((children[2] as TextNode).content).toBe(' c ');
+		expect(children[3].type).toBe(AstNodeType.LatexInline);
+		expect((children[3] as any).content).toBe(' d ');
+	});
+});
