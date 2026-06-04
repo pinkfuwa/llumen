@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get pnpm lockfile hash
         id: pnpm_lockfile_hash
@@ -21,12 +21,12 @@ jobs:
           echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
 
       - name: Cache frontend node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: frontend/node_modules
           key: frontend-node-modules-${{ runner.os }}-${{ steps.pnpm_lockfile_hash.outputs.pnpm_lock_hash }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Install pnpm
         with:
           version: 11
@@ -54,7 +54,7 @@ jobs:
           echo "cargo_lock_hash=$(sha256sum backend/Cargo.lock | awk '{print $1}')" >> $GITHUB_OUTPUT
 
       - name: Cache backend target directory
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: backend/target
           key: backend-target-${{ runner.os }}-${{ steps.lockfile_hash.outputs.cargo_lock_hash }}
@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get pnpm lockfile hash
         id: lockfile_hash
@@ -80,18 +80,18 @@ jobs:
           echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
 
       - name: Cache frontend node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: frontend/node_modules
           key: frontend-node-modules-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
 
       - name: Cache frontend .svelte-kit
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: frontend/.svelte-kit
           key: frontend-svelte-kit-${{ runner.os }}-${{ steps.lockfile_hash.outputs.pnpm_lock_hash }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Install pnpm
         with:
           version: 11
@@ -112,6 +112,10 @@ jobs:
       - name: Generate svelte-kit types
         working-directory: ./frontend
         run: pnpm exec svelte-kit sync
+
+      - name: Build frontend (generates i18n files)
+        working-directory: ./frontend
+        run: pnpm build
 
       - name: Run svelte-check
         id: svelte_check

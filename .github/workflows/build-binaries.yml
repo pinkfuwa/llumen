@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -61,7 +61,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl-tools pkg-config make perl binutils-mingw-w64-x86-64
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Install pnpm
         with:
           version: 11
@@ -115,14 +115,14 @@ jobs:
 
       - name: Upload artifact for manual dispatch (Linux)
         if: matrix.platform == 'linux' && github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: llumen-${{ matrix.target }}
           path: artifacts/llumen-${{ matrix.target }}
 
       - name: Upload artifact for manual dispatch (Windows)
         if: matrix.platform == 'windows' && github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: llumen-${{ matrix.target }}
           path: artifacts/llumen-${{ matrix.target }}.exe
