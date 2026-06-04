@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       features:
-        description: 'Cargo features to enable (comma-separated)'
+        description: "Cargo features to enable (comma-separated)"
         required: false
-        default: 'deep-research'
+        default: "deep-research"
         type: string
 
 permissions:

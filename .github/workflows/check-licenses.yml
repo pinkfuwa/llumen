@@ -3,13 +3,16 @@ name: Check Licenses
 on:
   pull_request:
     paths:
-      - 'backend/Cargo.lock'
-      - 'frontend/pnpm-lock.yaml'
+      - "backend/Cargo.lock"
+      - "frontend/pnpm-lock.yaml"
   push:
     paths:
-      - 'backend/Cargo.lock'
-      - 'frontend/pnpm-lock.yaml'
+      - "backend/Cargo.lock"
+      - "frontend/pnpm-lock.yaml"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   check-backend-licenses:
