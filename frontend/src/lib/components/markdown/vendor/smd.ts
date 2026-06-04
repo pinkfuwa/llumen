@@ -488,6 +488,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				let to_write = pending_with_char;
 
 				if (p.token === LINE_BREAK) {
+					p.text = '';
 					p.token = p.tokens[p.len];
 					p.renderer.add_token(p.renderer.data, LINE_BREAK);
 					p.renderer.end_token(p.renderer.data);

@@ -170,3 +170,65 @@ describe('regression: table cell boundaries', () => {
 		expect(cellDText).toContain('action');
 	});
 });
+
+describe('single newline behavior', () => {
+	it('single newline produces inline LineBreak inside same paragraph', () => {
+		const nodes = parseSync('hello\nworld');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const para = nodes[0] as ParagraphNode;
+		expect(para.children).toHaveLength(3);
+		expect(para.children[0].type).toBe(AstNodeType.Text);
+		expect((para.children[0] as TextNode).content).toBe('hello');
+		expect(para.children[1].type).toBe(AstNodeType.LineBreak);
+		expect(para.children[2].type).toBe(AstNodeType.Text);
+		expect((para.children[2] as TextNode).content).toBe('world');
+	});
+
+	it('double newline still produces separate paragraphs', () => {
+		const nodes = parseSync('hello\n\nworld');
+		expect(nodes).toHaveLength(2);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		expect(nodes[1].type).toBe(AstNodeType.Paragraph);
+		const text0 = flattenText((nodes[0] as ParagraphNode).children);
+		const text1 = flattenText((nodes[1] as ParagraphNode).children);
+		expect(text0).toBe('hello');
+		expect(text1).toBe('world');
+	});
+
+	it('multiple single newlines produce multiple LineBreaks in one paragraph', () => {
+		const nodes = parseSync('first line\nsecond line\nthird line');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const para = nodes[0] as ParagraphNode;
+		expect(para.children).toHaveLength(5);
+		expect((para.children[0] as TextNode).content).toBe('first line');
+		expect(para.children[1].type).toBe(AstNodeType.LineBreak);
+		expect((para.children[2] as TextNode).content).toBe('second line');
+		expect(para.children[3].type).toBe(AstNodeType.LineBreak);
+		expect((para.children[4] as TextNode).content).toBe('third line');
+	});
+
+	it('two trailing spaces still produces hard break', () => {
+		const nodes = parseSync('hello  \nworld');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const hasLineBreak = para.children?.some((c) => c.type === AstNodeType.LineBreak);
+		expect(hasLineBreak).toBe(true);
+	});
+
+	it('backslash newline still produces hard break', () => {
+		const nodes = parseSync('hello\\\nworld');
+		expect(nodes).toHaveLength(1);
+		const para = nodes[0] as ParagraphNode;
+		const hasLineBreak = para.children?.some((c) => c.type === AstNodeType.LineBreak);
+		expect(hasLineBreak).toBe(true);
+	});
+
+	it('single newline before blockquote still starts blockquote', () => {
+		const nodes = parseSync('hello\n> quote');
+		expect(nodes).toHaveLength(2);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		expect(nodes[1].type).toBe(AstNodeType.Blockquote);
+	});
+});

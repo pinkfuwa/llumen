@@ -64,10 +64,11 @@ let nodeIdCounter = 0;
 
 function flushText(entry: StackEntry): void {
 	if (entry.textBuf.length === 0) return;
+	const id = ++nodeIdCounter;
 	entry.children.push({
 		type: AstNodeType.Text,
-		start: 0,
-		end: 0,
+		start: id,
+		end: id,
 		content: entry.textBuf
 	} as TextNode);
 	entry.textBuf = '';
@@ -218,6 +219,10 @@ export function createAstRenderer(): { renderer: Renderer; getResult: () => AstN
 		data: { nodes: [], index: 0 },
 		add_token(_data: RendererData, token: number): void {
 			if (token === DOCUMENT) return;
+
+			if (token === LINE_BREAK) {
+				flushText(stack[stack.length - 1]);
+			}
 
 			if (token === TABLE_ROW) {
 				const tableEntry = getTableEntry();
