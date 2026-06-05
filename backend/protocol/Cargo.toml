@@ -14,4 +14,4 @@ features = ["derive"]
 [dependencies.sea-orm]
 version = "1.1.14"
 default-features = false
-features = ["macros"]
+features = ["macros", "sqlx-sqlite", "with-json"]

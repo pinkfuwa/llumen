@@ -1,0 +1,5 @@
+[advisories]
+# rsa used by sqlx-mysql which is only a build-time proc-macro dependency
+# (sqlx-macros-core unconditionally depends on it in sqlx 0.8.x)
+# We only use SQLite, this vulnerability does not affect us.
+ignore = ["RUSTSEC-2023-0071"]

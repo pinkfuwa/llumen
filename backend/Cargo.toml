@@ -60,6 +60,7 @@ features = ["jpeg", "png", "webp"]
 
 [dependencies.sqlx]
 version = "0.8.6"
+default-features = false
 features = ["runtime-tokio", "sqlite"]
 
 [dependencies.axum]
@@ -98,6 +99,7 @@ features = ["macros", "rt-multi-thread", "sync", "signal", "tracing"]
 
 [dependencies.sea-orm]
 version = "1.1.14"
+default-features = false
 features = ["sqlx-sqlite", "runtime-tokio", "macros"]
 
 [dependencies.flexi_logger]
