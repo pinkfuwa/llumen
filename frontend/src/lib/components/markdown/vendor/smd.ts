@@ -29,6 +29,8 @@ import {
 	TABLE_ROW,
 	TABLE_CELL,
 	EQUATION_BLOCK,
+	EQUATION_BLOCK_DOLLAR,
+	EQUATION_BLOCK_BRACKET,
 	EQUATION_INLINE,
 	NEWLINE,
 	MAYBE_URL,
@@ -281,6 +283,20 @@ function is_delimeter(charcode: number): boolean {
 
 function is_delimeter_or_number(charcode: number): boolean {
 	return is_digit(charcode) || is_delimeter(charcode);
+}
+
+function is_block_eq(token: number): boolean {
+	return token === EQUATION_BLOCK || token === EQUATION_BLOCK_DOLLAR || token === EQUATION_BLOCK_BRACKET;
+}
+
+function indent_width(s: string): number {
+	let w = 0;
+	for (const c of s) {
+		if (c === '\t') w += 4;
+		else if (c === ' ') w += 1;
+		else break;
+	}
+	return w;
 }
 
 export function parser_write(p: Parser, chunk: string): void {
@@ -581,31 +597,26 @@ export function parser_write(p: Parser, chunk: string): void {
 				}
 				break;
 			case CODE_BLOCK:
-				switch (pending_with_char) {
-					case '\n    ':
-					case '\n   \t':
-					case '\n  \t':
-					case '\n \t':
-					case '\n\t':
+				if (p.pending[0] === '\n') {
+					const iw = indent_width(pending_with_char.slice(1));
+					if (iw >= 4) {
 						p.text += '\n';
 						p.pending = '';
 						continue;
-					case '\n':
-					case '\n ':
-					case '\n  ':
-					case '\n   ':
+					}
+					if (iw === 0) {
 						p.pending = pending_with_char;
 						continue;
-					default:
-						if (p.pending.length !== 0) {
-							add_text(p);
-							end_token(p);
-							p.pending = char;
-						} else {
-							p.text += char;
-						}
-						continue;
+					}
 				}
+				if (p.pending.length !== 0) {
+					add_text(p);
+					end_token(p);
+					p.pending = char;
+				} else {
+					p.text += char;
+				}
+				continue;
 			case CODE_FENCE:
 				switch (char) {
 					case '`':
@@ -766,23 +777,32 @@ export function parser_write(p: Parser, chunk: string): void {
 			case MAYBE_EQ_BLOCK:
 				if (char === '\n') {
 					add_text(p);
-					add_token(p, EQUATION_BLOCK);
+					add_token(p, EQUATION_BLOCK_DOLLAR);
 					p.pending = '';
 				} else {
 					p.token = p.tokens[p.len];
-					if (p.pending[0] === '\\') {
-						p.text += '[';
-					} else {
-						p.text += '$$';
-					}
+					p.text += '$$';
 					p.pending = '';
 					parser_write(p, char);
 				}
 				continue;
-			case EQUATION_BLOCK:
-				if ('\\]' === pending_with_char || '$$' === pending_with_char) {
+			case EQUATION_BLOCK_DOLLAR:
+				if ('$$' === pending_with_char) {
 					add_text(p);
 					end_token(p);
+					p.pending = '';
+					continue;
+				}
+				break;
+			case EQUATION_BLOCK_BRACKET:
+				if ('\\]' === pending_with_char) {
+					add_text(p);
+					end_token(p);
+					p.pending = '';
+					continue;
+				}
+				if (p.pending[0] === '\\' && char !== ']') {
+					p.text += pending_with_char;
 					p.pending = '';
 					continue;
 				}
@@ -797,6 +817,12 @@ export function parser_write(p: Parser, chunk: string): void {
 				// escaped \$ — preserve backslash for KaTeX
 				if (p.pending[0] === '\\' && char === '$') {
 					p.text += '\\$';
+					p.pending = '';
+					continue;
+				}
+				// explicit escape passthrough: preserve \X for KaTeX
+				if (p.pending[0] === '\\' && char !== ')' && char !== '(' && char !== '$') {
+					p.text += pending_with_char;
 					p.pending = '';
 					continue;
 				}
@@ -907,7 +933,7 @@ export function parser_write(p: Parser, chunk: string): void {
 
 		switch (p.pending[0]) {
 			case '\\':
-				if (p.token === IMAGE || p.token === EQUATION_BLOCK || p.token === EQUATION_INLINE) break;
+				if (p.token === IMAGE || is_block_eq(p.token) || p.token === EQUATION_INLINE) break;
 
 				switch (char) {
 					case '(':
@@ -917,8 +943,9 @@ export function parser_write(p: Parser, chunk: string): void {
 						p.pending = '';
 						continue;
 					case '[':
-						p.token = MAYBE_EQ_BLOCK;
-						p.pending = pending_with_char;
+						add_text(p);
+						add_token(p, EQUATION_BLOCK_BRACKET);
+						p.pending = '';
 						continue;
 					case '\n':
 						p.pending = char;
@@ -938,6 +965,8 @@ export function parser_write(p: Parser, chunk: string): void {
 				switch (p.token) {
 					case IMAGE:
 					case EQUATION_BLOCK:
+					case EQUATION_BLOCK_DOLLAR:
+					case EQUATION_BLOCK_BRACKET:
 					case EQUATION_INLINE:
 						break;
 					case ITALIC_AST:
@@ -971,7 +1000,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				}
 				break;
 			case '<':
-				if (p.token !== IMAGE && p.token !== EQUATION_BLOCK && p.token !== EQUATION_INLINE) {
+				if (p.token !== IMAGE && !is_block_eq(p.token) && p.token !== EQUATION_INLINE) {
 					add_text(p);
 					p.pending = pending_with_char;
 					p.token = MAYBE_BR;
@@ -979,7 +1008,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				}
 				break;
 			case '`':
-				if (p.token === IMAGE || p.token === EQUATION_BLOCK || p.token === EQUATION_INLINE) break;
+				if (p.token === IMAGE || is_block_eq(p.token) || p.token === EQUATION_INLINE) break;
 
 				if ('`' === char) {
 					p.fence_start += 1;
@@ -996,7 +1025,7 @@ export function parser_write(p: Parser, chunk: string): void {
 			case '*': {
 				if (
 					p.token === IMAGE ||
-					p.token === EQUATION_BLOCK ||
+					is_block_eq(p.token) ||
 					p.token === EQUATION_INLINE ||
 					p.token === STRONG_AST
 				)
@@ -1055,7 +1084,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				if (
 					p.token !== IMAGE &&
 					p.token !== STRIKE &&
-					p.token !== EQUATION_BLOCK &&
+					!is_block_eq(p.token) &&
 					p.token !== EQUATION_INLINE
 				) {
 					if ('~' === p.pending) {
@@ -1077,7 +1106,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				if (
 					p.token !== IMAGE &&
 					p.token !== STRIKE &&
-					p.token !== EQUATION_BLOCK &&
+					!is_block_eq(p.token) &&
 					p.token !== EQUATION_INLINE &&
 					'$' === p.pending
 				) {
@@ -1100,7 +1129,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				if (
 					p.token !== IMAGE &&
 					p.token !== LINK &&
-					p.token !== EQUATION_BLOCK &&
+					!is_block_eq(p.token) &&
 					p.token !== EQUATION_INLINE &&
 					']' !== char
 				) {
@@ -1113,7 +1142,7 @@ export function parser_write(p: Parser, chunk: string): void {
 			case '!':
 				if (
 					p.token !== IMAGE &&
-					p.token !== EQUATION_BLOCK &&
+					!is_block_eq(p.token) &&
 					p.token !== EQUATION_INLINE &&
 					'[' === char
 				) {
@@ -1133,7 +1162,7 @@ export function parser_write(p: Parser, chunk: string): void {
 		if (
 			p.token !== IMAGE &&
 			p.token !== LINK &&
-			p.token !== EQUATION_BLOCK &&
+			!is_block_eq(p.token) &&
 			p.token !== EQUATION_INLINE &&
 			'h' === char &&
 			(' ' === p.pending || '' === p.pending)

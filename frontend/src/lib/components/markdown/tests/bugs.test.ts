@@ -8,6 +8,7 @@ import type {
 	TableNode,
 	TableRowNode,
 	TableCellNode,
+	LatexBlockNode,
 	AstNode
 } from '../vendor/types';
 
@@ -222,16 +223,26 @@ describe('regression: paragraph then table with single newline', () => {
 });
 
 describe('regression: escaped latex brackets', () => {
-	it('treats \\[ \\] as literal text (not latex block)', () => {
-		// streaming-markdown uses $$ $$ for block equations, not \[ \]
+	it('treats \\[ \\] as display math block', () => {
 		const markdown = 'prefix：\\[ X \\rightarrow Y a \\]';
 		const nodes = parseSync(markdown);
-		expect(nodes).toHaveLength(1);
-		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const para = nodes[0] as ParagraphNode;
+		const block = para.children?.find((n) => n.type === AstNodeType.LatexBlock) as
+			| LatexBlockNode
+			| undefined;
+		expect(block).toBeDefined();
+		expect(block!.content).toContain('rightarrow');
+	});
 
-		const textContent = flattenText((nodes[0] as ParagraphNode).children);
-		expect(textContent).toContain('prefix：');
-		expect(textContent).toContain('rightarrow');
+	it('does not close \\[ block on embedded $$', () => {
+		const markdown = '\\[ b$$\\a\\]';
+		const nodes = parseSync(markdown);
+		const para = nodes[0] as ParagraphNode;
+		const block = para.children?.find((n) => n.type === AstNodeType.LatexBlock) as
+			| LatexBlockNode
+			| undefined;
+		expect(block).toBeDefined();
+		expect(block!.content).toBe(' b$$\\a');
 	});
 
 	it('parses $$ block equation', () => {

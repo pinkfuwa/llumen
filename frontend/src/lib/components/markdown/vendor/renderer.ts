@@ -29,6 +29,8 @@ import {
 	TABLE_ROW,
 	TABLE_CELL,
 	EQUATION_BLOCK,
+	EQUATION_BLOCK_DOLLAR,
+	EQUATION_BLOCK_BRACKET,
 	EQUATION_INLINE,
 	HREF,
 	SRC,
@@ -120,6 +122,8 @@ function tokenToNodeType(token: number): AstNodeType {
 		case TABLE_CELL:
 			return AstNodeType.TableCell;
 		case EQUATION_BLOCK:
+		case EQUATION_BLOCK_DOLLAR:
+		case EQUATION_BLOCK_BRACKET:
 			return AstNodeType.LatexBlock;
 		case EQUATION_INLINE:
 			return AstNodeType.LatexInline;
