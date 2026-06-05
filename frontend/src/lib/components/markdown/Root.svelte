@@ -16,21 +16,13 @@
 
 	let pendingSource: string | null = null;
 
-	let parserInstance: ReturnType<typeof parser> | null = null;
-	let astRenderer: ReturnType<typeof createAstRenderer> | null = null;
-
-	function initStreamingParser() {
-		astRenderer = createAstRenderer();
-		parserInstance = parser(astRenderer.renderer);
-	}
-
 	function doStreamingParse(currentSource: string) {
-		if (!parserInstance || !astRenderer) {
-			initStreamingParser();
-		}
 		try {
-			parser_write(parserInstance!, currentSource);
-			children.children = astRenderer!.getResult();
+			const renderer = createAstRenderer();
+			const p = parser(renderer.renderer);
+			parser_write(p, currentSource);
+			parser_end(p);
+			children.children = renderer.getResult();
 		} catch (error) {
 			console.error('Streaming parse error:', error);
 			children.children = [];
@@ -51,8 +43,6 @@
 
 		if (incremental) {
 			if (!throttleTimer) {
-				initStreamingParser();
-
 				const runThrottle = () => {
 					const lastParsedSource = untrack(() => pendingSource);
 					if (lastParsedSource !== null) {
@@ -69,9 +59,6 @@
 				throttleTimer = setTimeout(runThrottle, THROTTLE_MS);
 			}
 		} else {
-			parserInstance = null;
-			astRenderer = null;
-
 			if (throttleTimer != null) {
 				clearTimeout(throttleTimer);
 				throttleTimer = null;

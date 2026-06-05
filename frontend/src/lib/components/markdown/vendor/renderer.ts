@@ -60,11 +60,9 @@ interface StackEntry {
 	id: number;
 }
 
-let nodeIdCounter = 0;
-
-function flushText(entry: StackEntry): void {
+function flushText(entry: StackEntry, nodeIdCounter: { val: number }): void {
 	if (entry.textBuf.length === 0) return;
-	const id = ++nodeIdCounter;
+	const id = ++nodeIdCounter.val;
 	entry.children.push({
 		type: AstNodeType.Text,
 		start: id,
@@ -132,7 +130,7 @@ function tokenToNodeType(token: number): AstNodeType {
 	}
 }
 
-function finalizeNode(entry: StackEntry): AstNode {
+function finalizeNode(entry: StackEntry, _nodeIdCounter: { val: number }): AstNode {
 	const base = { start: entry.id, end: entry.id };
 
 	switch (entry.type) {
@@ -211,6 +209,7 @@ function finalizeNode(entry: StackEntry): AstNode {
 }
 
 export function createAstRenderer(): { renderer: Renderer; getResult: () => AstNode[] } {
+	const nodeIdCounter = { val: 0 };
 	const stack: StackEntry[] = [
 		{ type: AstNodeType.Paragraph, token: DOCUMENT, children: [], textBuf: '', rowCount: 0, id: 0 }
 	];
@@ -220,7 +219,7 @@ export function createAstRenderer(): { renderer: Renderer; getResult: () => AstN
 		add_token(_data: RendererData, token: number): void {
 			if (token === DOCUMENT) return;
 
-			flushText(stack[stack.length - 1]);
+			flushText(stack[stack.length - 1], nodeIdCounter);
 
 			if (token === TABLE_ROW) {
 				const tableEntry = getTableEntry();
@@ -234,16 +233,16 @@ export function createAstRenderer(): { renderer: Renderer; getResult: () => AstN
 				children: [],
 				textBuf: '',
 				rowCount: 0,
-				id: ++nodeIdCounter
+				id: ++nodeIdCounter.val
 			};
 			stack.push(entry);
 		},
 		end_token(_data: RendererData): void {
 			if (stack.length <= 1) return;
 			const entry = stack.pop()!;
-			flushText(entry);
+			flushText(entry, nodeIdCounter);
 
-			const node = finalizeNode(entry);
+			const node = finalizeNode(entry, nodeIdCounter);
 			stack[stack.length - 1].children.push(node);
 		},
 		add_text(_data: RendererData, text: string): void {
@@ -289,8 +288,8 @@ export function createAstRenderer(): { renderer: Renderer; getResult: () => AstN
 	function getResult(): AstNode[] {
 		while (stack.length > 1) {
 			const entry = stack.pop()!;
-			flushText(entry);
-			stack[stack.length - 1].children.push(finalizeNode(entry));
+			flushText(entry, nodeIdCounter);
+			stack[stack.length - 1].children.push(finalizeNode(entry, nodeIdCounter));
 		}
 		return stack[0].children;
 	}
