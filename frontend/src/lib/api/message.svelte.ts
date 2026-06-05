@@ -468,7 +468,7 @@ $effect.root(() => {
 
 	// Bind scroll-based pagination to paginateElement.
 	$effect(() => {
-		console.log($state.snapshot(page.url));
+		void page.url.pathname;
 		const el = paginateElement.val;
 		if (!el) return;
 		untrack(() => checkElement(el, 10));
@@ -674,9 +674,14 @@ export async function updateMessage(
 	if (resp) pushUserMessage(resp.user_id, text, files);
 }
 
+let pathname = $state(page.url.pathname);
 $effect.root(() => {
 	$effect(() => {
-		void page.url;
+		if (page.url.pathname == pathname) return;
+		untrack(() => {
+			pathname = page.url.pathname;
+		});
+		console.log('cleaned!', page.url.pathname);
 		streaming.val = false;
 		messages.val = [];
 		olderExhausted.val = false;

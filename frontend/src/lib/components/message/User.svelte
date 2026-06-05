@@ -5,6 +5,7 @@
 	import { messages, deleteMessage } from '$lib/api/message.svelte';
 	import { shouldSubmitOnEnter } from '$lib/components/input/submitOnEnter.svelte';
 	import Button from '$lib/ui/Button.svelte';
+	import { page } from '$app/state';
 
 	let {
 		content = $bindable(''),
@@ -75,7 +76,7 @@
 	}
 </script>
 
-<div class="group/files mt-4 w-full snap-start px-[5vw] lg:px-20 2xl:px-36">
+<div class="group/files mt-4 w-full snap-start px-[5vw] lg:px-20 2xl:px-36" id={`${messageId}`}>
 	<div class="flex justify-end">
 		<div class={messageStyle} data-state={isEditing ? 'edit' : 'text'}>
 			{#if files.length != 0}

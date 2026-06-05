@@ -5,7 +5,7 @@ export const open = $state({ val: window.matchMedia('(width >= 48rem)').matches 
 
 $effect.root(() => {
 	$effect(() => {
-		void page.url;
+		void page.url.pathname;
 		const large = window.matchMedia('(width >= 48rem)').matches;
 		if (!large) open.val = false;
 	});

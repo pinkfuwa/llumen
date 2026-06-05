@@ -1,5 +1,4 @@
 import { page } from '$app/state';
-import { goto } from '$app/navigation';
 import { currentRoom, createRoom, haltCompletion } from '$lib/api/chatroom.svelte';
 import { models } from '$lib/api/model.svelte';
 import { createMessage, streaming } from '$lib/api/message.svelte';

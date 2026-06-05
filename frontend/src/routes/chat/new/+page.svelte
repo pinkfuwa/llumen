@@ -4,13 +4,6 @@
 	import { Context } from '@sveltevietnam/i18n';
 	import * as m from '@sveltevietnam/i18n/generated/messages';
 	let lang = $derived(Context.get().lang);
-	import { page } from '$app/state';
-	import { inputContent } from '$lib/components/input/state.svelte';
-
-	$effect(() => {
-		const param = page.url.searchParams;
-		if (param.has('q')) inputContent.val = param.get('q')!;
-	});
 </script>
 
 <svelte:head>
