@@ -20,7 +20,7 @@
 	></textarea>
 	<div class="overflow-y-auto rounded-lg border border-dashed border-border p-3 pt-1">
 		<div class="w-full">
-			<Markdown source={renderContent} incremental />
+			<Markdown source={renderContent} />
 		</div>
 	</div>
 </div>

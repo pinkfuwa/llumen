@@ -256,6 +256,11 @@ function is_digit(charcode: number): boolean {
 	}
 }
 
+function is_alphanumeric(ch: string): boolean {
+	const code = ch.charCodeAt(0);
+	return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
 function is_delimeter(charcode: number): boolean {
 	switch (charcode) {
 		case 32:
@@ -648,6 +653,7 @@ export function parser_write(p: Parser, chunk: string): void {
 						p.token = LINE_BREAK;
 						p.blockquote_idx = 0;
 						add_text(p);
+						end_token(p);
 						continue;
 					case ' ':
 						p.text += p.pending;
@@ -948,6 +954,21 @@ export function parser_write(p: Parser, chunk: string): void {
 						continue;
 					default:
 						add_text(p);
+						while (p.len > 0) {
+							const t = p.tokens[p.len];
+							if (
+								t === ITALIC_AST ||
+								t === ITALIC_UND ||
+								t === STRONG_AST ||
+								t === STRONG_UND ||
+								t === STRIKE ||
+								t === CODE_INLINE
+							) {
+								end_token(p);
+							} else {
+								break;
+							}
+						}
 						p.pending = char;
 						p.token = LINE_BREAK;
 						p.blockquote_idx = 0;
@@ -992,6 +1013,18 @@ export function parser_write(p: Parser, chunk: string): void {
 				if ('_' === symbol) {
 					italic = ITALIC_UND;
 					strong = STRONG_UND;
+				}
+
+				// _ between two alphanumeric chars is not emphasis (e.g., foo_bar, a_b)
+				if (
+					symbol === '_' &&
+					p.text.length > 0 &&
+					is_alphanumeric(p.text[p.text.length - 1]) &&
+					is_alphanumeric(char)
+				) {
+					p.text += p.pending;
+					p.pending = char;
+					continue;
 				}
 
 				if (p.pending.length === 1) {
