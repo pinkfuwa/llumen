@@ -650,10 +650,9 @@ export function parser_write(p: Parser, chunk: string): void {
 					case '\n':
 						p.text += p.pending;
 						p.pending = '';
-						p.token = LINE_BREAK;
-						p.blockquote_idx = 0;
 						add_text(p);
 						end_token(p);
+						parser_write(p, '\n');
 						continue;
 					case ' ':
 						p.text += p.pending;
@@ -941,6 +940,17 @@ export function parser_write(p: Parser, chunk: string): void {
 					case EQUATION_BLOCK:
 					case EQUATION_INLINE:
 						break;
+					case ITALIC_AST:
+					case ITALIC_UND:
+					case STRONG_AST:
+					case STRONG_UND:
+					case STRIKE:
+					case CODE_INLINE:
+						add_text(p);
+						end_token(p);
+						p.pending = '';
+						parser_write(p, pending_with_char);
+						continue;
 					case HEADING_1:
 					case HEADING_2:
 					case HEADING_3:
@@ -954,21 +964,6 @@ export function parser_write(p: Parser, chunk: string): void {
 						continue;
 					default:
 						add_text(p);
-						while (p.len > 0) {
-							const t = p.tokens[p.len];
-							if (
-								t === ITALIC_AST ||
-								t === ITALIC_UND ||
-								t === STRONG_AST ||
-								t === STRONG_UND ||
-								t === STRIKE ||
-								t === CODE_INLINE
-							) {
-								end_token(p);
-							} else {
-								break;
-							}
-						}
 						p.pending = char;
 						p.token = LINE_BREAK;
 						p.blockquote_idx = 0;

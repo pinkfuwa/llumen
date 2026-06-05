@@ -46,6 +46,143 @@ describe('regression: unclosed formatting', () => {
 	});
 });
 
+describe('regression: unclosed formatting on newline', () => {
+	it('_ between word chars is literal (not emphasis)', () => {
+		const nodes = parseSync('aaaa_unclosedEmphasis\nthis should be normal text.');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const children = (nodes[0] as any).children ?? [];
+		const hasItalic = children.some((c: any) => c.type === AstNodeType.Italic);
+		expect(hasItalic).toBe(false);
+	});
+
+	it('unclosed * emphasis closes on newline', () => {
+		const nodes = parseSync('aaaa*unclosedEmphasis\nthis should be normal text.');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const children = (nodes[0] as any).children ?? [];
+		const secondLineText = children.find(
+			(c: any, i: number) =>
+				c.type === AstNodeType.Text && (c as any).content.includes('normal text')
+		);
+		expect(secondLineText).toBeDefined();
+	});
+
+	it('unclosed ** bold closes on newline', () => {
+		const nodes = parseSync('aaaa**unclosedBold\nthis should be normal text.');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const children = (nodes[0] as any).children ?? [];
+		const secondLineText = children.find(
+			(c: any, i: number) =>
+				c.type === AstNodeType.Text && (c as any).content.includes('normal text')
+		);
+		expect(secondLineText).toBeDefined();
+	});
+
+	it('unclosed ~~ strikethrough closes on newline', () => {
+		const nodes = parseSync('aaaa~~unclosedStrike\nthis should be normal text.');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const children = (nodes[0] as any).children ?? [];
+		const secondLineText = children.find(
+			(c: any, i: number) =>
+				c.type === AstNodeType.Text && (c as any).content.includes('normal text')
+		);
+		expect(secondLineText).toBeDefined();
+	});
+
+	it('unclosed ` code closes on newline', () => {
+		const nodes = parseSync('aaaa`unclosedCode\nthis should be normal text.');
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Paragraph);
+		const children = (nodes[0] as any).children ?? [];
+		const secondLineText = children.find(
+			(c: any, i: number) =>
+				c.type === AstNodeType.Text && (c as any).content.includes('normal text')
+		);
+		expect(secondLineText).toBeDefined();
+	});
+});
+
+describe('regression: unclosed formatting in heading', () => {
+	it('closes unclosed ** bold at end of heading', () => {
+		const nodes = parseSync('# markdown **content\nThis should be normal text.');
+		expect(nodes).toHaveLength(2);
+		expect(nodes[0].type).toBe(AstNodeType.Heading);
+		expect(nodes[1].type).toBe(AstNodeType.Paragraph);
+		expect(flattenText((nodes[1] as ParagraphNode).children ?? [])).toBe(
+			'This should be normal text.'
+		);
+	});
+
+	it('closes unclosed ~~ strikethrough at end of heading', () => {
+		const nodes = parseSync('## heading ~~content\nThis should be normal text.');
+		expect(nodes).toHaveLength(2);
+		expect(nodes[0].type).toBe(AstNodeType.Heading);
+		expect(nodes[1].type).toBe(AstNodeType.Paragraph);
+		expect(flattenText((nodes[1] as ParagraphNode).children ?? [])).toBe(
+			'This should be normal text.'
+		);
+	});
+
+	it('closes unclosed ~~ with escaped angle brackets in heading', () => {
+		const md = "# markdown ~~\\<delete\\>title\nThis should be normal text, but it's normal title";
+		const nodes = parseSync(md);
+		expect(nodes).toHaveLength(2);
+		expect(nodes[0].type).toBe(AstNodeType.Heading);
+		expect(nodes[1].type).toBe(AstNodeType.Paragraph);
+		const children = (nodes[0] as any).children ?? [];
+		const strike = children.find((c: any) => c.type === AstNodeType.Strikethrough);
+		expect(strike).toBeDefined();
+		const strikeText = flattenText(strike.children ?? []);
+		expect(strikeText).toContain('<delete>');
+		expect(strikeText).not.toContain('normal text');
+	});
+});
+
+describe('regression: _ flanking edge cases', () => {
+	it('_ at start of word still opens emphasis', () => {
+		const nodes = parseSync('hello _world_');
+		expect(nodes).toHaveLength(1);
+		const children = (nodes[0] as ParagraphNode).children!;
+		const italic = children.find((c) => c.type === AstNodeType.Italic);
+		expect(italic).toBeDefined();
+	});
+
+	it('_ preceded by space is emphasis', () => {
+		const nodes = parseSync('hello _world_ again');
+		expect(nodes).toHaveLength(1);
+		const children = (nodes[0] as ParagraphNode).children!;
+		const italic = children.find((c) => c.type === AstNodeType.Italic);
+		expect(italic).toBeDefined();
+	});
+
+	it('two separate _ emphasis regions', () => {
+		const nodes = parseSync('_hello_ _world_');
+		expect(nodes).toHaveLength(1);
+		const children = (nodes[0] as ParagraphNode).children!;
+		const italics = children.filter((c) => c.type === AstNodeType.Italic);
+		expect(italics).toHaveLength(2);
+	});
+
+	it('_ between numbers is literal', () => {
+		const nodes = parseSync('value is 100_000');
+		expect(nodes).toHaveLength(1);
+		const children = (nodes[0] as ParagraphNode).children!;
+		const italic = children.find((c) => c.type === AstNodeType.Italic);
+		expect(italic).toBeUndefined();
+	});
+
+	it('nested _ inside * still works', () => {
+		const nodes = parseSync('*foo _bar_ baz*');
+		expect(nodes).toHaveLength(1);
+		const children = (nodes[0] as ParagraphNode).children!;
+		const outerItalic = children.find((c) => c.type === AstNodeType.Italic);
+		expect(outerItalic).toBeDefined();
+	});
+});
+
 describe('regression: empty constructs', () => {
 	it('empty code block', () => {
 		const nodes = parseSync('```\n```');
