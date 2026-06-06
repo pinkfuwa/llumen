@@ -155,12 +155,14 @@ impl Prompt {
         llumen_related: bool,
         time: &str,
         chat_title: Option<&str>,
+        contain_dollar_sign: bool,
     ) -> Result<String> {
         let tmpl = self.env.get_template("context")?;
         Ok(tmpl.render(minijinja::context! {
             llumen_related,
             time,
             chat_title,
+            contain_dollar_sign
         })?)
     }
 

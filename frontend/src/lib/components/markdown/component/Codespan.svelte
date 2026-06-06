@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { copy } from '$lib/copy.svelte';
 	import type { InlineCodeNode } from '../vendor/types';
+	import RawMarker from './RawMarker.svelte';
 
 	let { node }: { node: InlineCodeNode } = $props();
 
@@ -11,5 +11,6 @@
 </script>
 
 <span class="mx-1 py-1">
-	<button class={codeStyle} onclick={() => copy(content)}>{content}</button>
+	<span class={codeStyle}>{content}</span>
+	<RawMarker text={`\`${content}\``} />
 </span>

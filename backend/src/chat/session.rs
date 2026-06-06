@@ -288,9 +288,13 @@ impl CompletionSession {
             .map(|dt| dt.format(super::prompt::TIME_FORMAT))
             .unwrap_or_else(|_| time::OffsetDateTime::now_utc().format(super::prompt::TIME_FORMAT))
             .unwrap_or_default();
-        let context_prompt =
-            ctx.prompt
-                .render_context(is_llumen_related, &time_str, self.chat.title.as_deref())?;
+        let contain_dollar_sign = self.assert_assistant_message(|t| t.contains("$"));
+        let context_prompt = ctx.prompt.render_context(
+            is_llumen_related,
+            &time_str,
+            self.chat.title.as_deref(),
+            contain_dollar_sign,
+        )?;
 
         if !context_prompt.trim().is_empty() {
             // Find the position of the last user message and insert context before it
@@ -323,6 +327,15 @@ impl CompletionSession {
         self.history.iter().rev().find_map(|m| match &m.inner {
             MessageInner::User { text, .. } => Some(text.as_str()),
             _ => None,
+        })
+    }
+
+    pub fn assert_assistant_message(&self, f: impl Fn(&str) -> bool) -> bool {
+        self.history.iter().any(|m| match &m.inner {
+            MessageInner::Assistant(inner) => {
+                inner.iter().filter_map(|c| c.as_text()).any(|t| f(&t))
+            }
+            _ => false,
         })
     }
 

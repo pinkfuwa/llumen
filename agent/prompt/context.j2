@@ -56,3 +56,8 @@ To make the conversation more natural, try avoid mentioning you read README.md
 Current Date: {{time}}
 {% if chat_title %}Current Chat Name: {{chat_title}}{% endif %}
 </info>
+{% if contain_dollar_sign %}<syntax_warning>
+Previous responses contain dollar sign($), you MUST to properly escape it.
+- Use \[...\] and \(...\) to prevent conflict
+- Use \$ or \(\$\) to represent a literal dollar sign
+</syntax_warning>{% endif %}
