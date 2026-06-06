@@ -21,6 +21,7 @@ import type {
 	MessageCreateResp
 } from './types';
 import { ChatPaginateReqOrder } from './types';
+import { token } from '$lib/store.svelte';
 
 export interface Entry {
 	name: string;
@@ -56,6 +57,8 @@ export const currentRoom = $state<{ val?: ChatReadResp }>({ val: undefined });
 // Auto-fetch currentRoom when page.params.id changes.
 $effect.root(() => {
 	$effect(() => {
+		void token.value?.value;
+
 		const pid = page.params.id;
 		if (!pid || isNaN(+pid)) {
 			currentRoom.val = undefined;
@@ -169,6 +172,7 @@ $effect.root(() => {
 	$effect(() => {
 		const el = paginateElement.val;
 		if (!el) return;
+		void token.value?.value;
 		untrack(() => checkElement(el, 50));
 		el.addEventListener('scrollend', scrollEventHandler);
 		return () => el.removeEventListener('scrollend', scrollEventHandler);

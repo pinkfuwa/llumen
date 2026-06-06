@@ -694,13 +694,13 @@ $effect.root(() => {
 	});
 });
 
+let lastKey = $state(-1);
+
 $effect.root(() => {
-	let lastKey = $state(-1);
-	let key = $derived(messages.val.at(-1)?.id || -2);
+	let key = $derived(messages.val.at(0)?.id || -2);
 	$effect(() => {
 		const el = paginateElement.val;
 		if (!el) return;
-
 		if (key !== lastKey) {
 			untrack(() => (lastKey = key));
 			requestAnimationFrame(() => {
