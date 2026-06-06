@@ -61,7 +61,7 @@
 {:else}
 	<div class="my-2 flex justify-center">
 		<div
-			class="group relative overflow-hidden rounded-lg border border-border"
+			class="group relative w-full overflow-hidden rounded-lg border border-border"
 			style={containerStyle ?? ''}
 		>
 			{#if src}
