@@ -288,7 +288,9 @@ function is_delimeter_or_number(charcode: number): boolean {
 }
 
 function is_block_eq(token: number): boolean {
-	return token === EQUATION_BLOCK || token === EQUATION_BLOCK_DOLLAR || token === EQUATION_BLOCK_BRACKET;
+	return (
+		token === EQUATION_BLOCK || token === EQUATION_BLOCK_DOLLAR || token === EQUATION_BLOCK_BRACKET
+	);
 }
 
 function indent_width(s: string): number {
