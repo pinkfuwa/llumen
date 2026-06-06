@@ -28,9 +28,6 @@
 		onModeChange
 	} from './state.svelte';
 
-	const inputAreaStyle =
-		'min-h-sm item relative mx-auto w-[90%] space-y-2 rounded-md border border-border bg-card p-2 shadow-xl shadow-accent-soft md:w-[min(750px,75%)]';
-
 	let {
 		large = false
 	}: {
@@ -96,7 +93,11 @@
 	onUploadSupported={uploadSupportedOnly}
 />
 
-<div role="region" class={inputAreaStyle} bind:this={container}>
+<div
+	role="region"
+	class="min-h-sm item shadow-accent-soft relative mx-auto w-[90%] space-y-2 rounded-md border border-border bg-card p-2 shadow-xl md:w-[min(750px,75%)]"
+	bind:this={container}
+>
 	{#if dropZone.isOver && isEditing}
 		<div
 			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-md border-2 border-dashed border-border bg-muted/40 text-2xl text-primary"

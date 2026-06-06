@@ -10,13 +10,14 @@
 		value = $bindable(),
 		...attr
 	}: HTMLInputAttributes & { labelClass?: ClassValue } = $props();
-
-	const labelStyle = 'mb-3 block min-w-8 text-sm font-medium text-foreground';
-	const inputStyle =
-		'block w-full rounded-lg border border-border bg-input p-2.5 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none';
 </script>
 
-<Label.Root for={id} class={`${labelStyle} ${labelClass}`}>
+<Label.Root for={id} class={`mb-3 block min-w-8 text-sm font-medium text-foreground ${labelClass}`}>
 	{@render children?.()}
 </Label.Root>
-<input {id} bind:value class={`${inputStyle} ${className}`} {...attr} />
+<input
+	{id}
+	bind:value
+	class={`block w-full rounded-lg border border-border bg-input p-2.5 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none ${className}`}
+	{...attr}
+/>

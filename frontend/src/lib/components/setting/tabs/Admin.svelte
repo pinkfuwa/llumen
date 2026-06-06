@@ -10,9 +10,6 @@
 	import { createUser } from '$lib/api/user.svelte';
 	import type { MutationStatus } from '$lib/api';
 
-	const triggerStyle =
-		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
-
 	let username = $state('');
 	let password = $state('');
 	let passwordCheck = $state('');
@@ -42,7 +39,9 @@
 
 <div class="flex h-full flex-col gap-2 overflow-auto">
 	<Collapsible.Root class="md:hidden">
-		<Collapsible.Trigger class={triggerStyle}>
+		<Collapsible.Trigger
+			class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover"
+		>
 			<span>{m['setting.admin.create'](lang)}</span>
 			<ChevronDown />
 		</Collapsible.Trigger>
@@ -150,7 +149,9 @@
 			<h3 class="text-lg">{m['setting.admin.users'](lang)}</h3>
 		</div>
 		<Collapsible.Root class="md:hidden">
-			<Collapsible.Trigger class={triggerStyle}>
+			<Collapsible.Trigger
+				class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover"
+			>
 				<h3>{m['setting.admin.users'](lang)}</h3>
 				<ChevronDown />
 			</Collapsible.Trigger>

@@ -142,7 +142,7 @@ async function checkElement(target: HTMLElement, maxRecursion = 1) {
 			chatrooms.val.push(...ext);
 			assertDescendingChatrooms(chatrooms.val);
 		}
-		checkElement(target, maxRecursion - 1);
+		requestAnimationFrame(() => checkElement(target, maxRecursion - 1));
 	} else if (leftExtNeeded) {
 		let ext = await fetchLeft();
 		extending = false;
@@ -156,7 +156,7 @@ async function checkElement(target: HTMLElement, maxRecursion = 1) {
 				target.scrollTop = target.scrollHeight - distanceFromBottom;
 			});
 		}
-		checkElement(target, maxRecursion - 1);
+		requestAnimationFrame(() => checkElement(target, maxRecursion - 1));
 	} else {
 		extending = false;
 	}
@@ -170,9 +170,12 @@ function scrollEventHandler(e: Event) {
 
 $effect.root(() => {
 	$effect(() => {
+		console.log('pag up', token.value?.value, paginateElement.val);
+		void token.value?.value;
 		const el = paginateElement.val;
 		if (!el) return;
-		void token.value?.value;
+		leftExhausted.val = false;
+		rightExhausted.val = false;
 		untrack(() => checkElement(el, 50));
 		el.addEventListener('scrollend', scrollEventHandler);
 		return () => el.removeEventListener('scrollend', scrollEventHandler);

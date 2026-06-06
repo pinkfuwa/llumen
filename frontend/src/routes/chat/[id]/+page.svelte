@@ -13,7 +13,7 @@
 	bind:this={messagesElement.val}
 	data-widen={sidebarOpen.val ? undefined : ''}
 >
-	<div class="min-h-16 grow"></div>
+	<div class="min-h-16 grow snap-start"></div>
 	<MessagePagination />
 
 	<div class="sticky bottom-1 z-10 mt-4 flex justify-center">

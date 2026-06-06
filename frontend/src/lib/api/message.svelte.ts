@@ -703,12 +703,7 @@ $effect.root(() => {
 		if (!el) return;
 		if (key !== lastKey) {
 			untrack(() => (lastKey = key));
-			requestAnimationFrame(() => {
-				el.scrollTo({
-					top: el.scrollHeight,
-					behavior: 'instant'
-				});
-			});
+			requestAnimationFrame(() => (el.scrollTop = el.scrollHeight));
 		}
 	});
 });

@@ -15,8 +15,7 @@
 	let { open = $bindable(false), content = $bindable(''), onAddFiles }: Props = $props();
 	let convertFileName = $state('');
 
-	const inputStyle =
-		'w-full rounded-md border border-border bg-card px-3 py-2 focus:ring-2 focus:ring-accent focus:outline-hidden';
+	const inputStyle = '';
 
 	function close() {
 		open = false;
@@ -63,7 +62,7 @@
 					type="text"
 					bind:value={convertFileName}
 					placeholder="message.md"
-					class={inputStyle}
+					class="w-full rounded-md border border-border bg-card px-3 py-2 focus:ring-2 focus:ring-accent focus:outline-hidden"
 				/>
 				<p class="mt-1 text-sm text-muted-foreground">
 					{m['chat.convert_to_file.file_hint'](lang)}

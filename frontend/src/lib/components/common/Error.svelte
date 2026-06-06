@@ -5,8 +5,6 @@
 	import '$lib/preference/index.svelte';
 	import '$lib/api/auth.svelte';
 
-	const errorStyle =
-		'fixed top-0 right-0 z-50 m-3 rounded-md border border-border bg-card px-3 py-2 text-left';
 	const dismissError = () => {
 		error.val = null;
 	};
@@ -14,7 +12,7 @@
 
 {#if error.val != null}
 	<button
-		class={errorStyle}
+		class="fixed top-0 right-0 z-50 m-3 rounded-md border border-border bg-card px-3 py-2 text-left text-foreground"
 		in:fade={{ duration: 150 }}
 		out:fade={{ duration: 150 }}
 		onmouseleave={dismissError}

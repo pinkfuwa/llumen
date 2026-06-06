@@ -68,12 +68,6 @@
 	});
 </script>
 
-{#if nodes.length == 0}
-	<div class="space-y-2 whitespace-pre-wrap">
-		{source}
-	</div>
-{:else}
-	<div class="space-y-2">
-		<Parser {nodes} />
-	</div>
-{/if}
+<div class="space-y-2">
+	<Parser {nodes} />
+</div>
