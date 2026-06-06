@@ -8,7 +8,7 @@ export async function toHtml(text: string, displayMode: boolean) {
 
 	return katex.renderToString(text, {
 		displayMode,
-		output: 'mathml',
+		output: 'html',
 		throwOnError: false
 	});
 }

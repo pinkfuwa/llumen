@@ -36,7 +36,8 @@ export const DOCUMENT = 1,
 	MAYBE_URL = 102,
 	MAYBE_TASK = 103,
 	MAYBE_BR = 104,
-	MAYBE_EQ_BLOCK = 105;
+	MAYBE_EQ_BLOCK = 105,
+	MAYBE_LINK = 106;
 
 export type Token = number;
 
@@ -65,6 +66,7 @@ export interface Parser {
 	hr_chars: number;
 	table_state: number;
 	eq_open: number;
+	maybe_link_text: string;
 }
 
 export interface RendererData {

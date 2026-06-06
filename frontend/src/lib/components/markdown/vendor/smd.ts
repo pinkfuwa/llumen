@@ -37,6 +37,7 @@ import {
 	MAYBE_TASK,
 	MAYBE_BR,
 	MAYBE_EQ_BLOCK,
+	MAYBE_LINK,
 	HREF,
 	SRC,
 	LANG,
@@ -104,7 +105,8 @@ export function parser(renderer: Renderer): Parser {
 		indent: '',
 		indent_len: 0,
 		table_state: 0,
-		eq_open: 0
+		eq_open: 0,
+		maybe_link_text: ''
 	};
 }
 
@@ -861,6 +863,53 @@ export function parser_write(p: Parser, chunk: string): void {
 					parser_write(p, char);
 				}
 				continue;
+			case MAYBE_LINK:
+				if (']' === p.pending) {
+					if ('(' === char) {
+						const saved = p.maybe_link_text;
+						p.token = p.tokens[p.len];
+						p.pending = '';
+						add_token(p, LINK);
+						parser_write(p, saved);
+						p.text += p.pending;
+						p.pending = '';
+						add_text(p);
+						p.pending = '](';
+					} else {
+						p.text = '[';
+						add_text(p);
+						p.token = p.tokens[p.len];
+						p.pending = '';
+						parser_write(p, p.maybe_link_text);
+						p.text += p.pending;
+						p.pending = '';
+						add_text(p);
+						p.text = ']';
+						add_text(p);
+						parser_write(p, char);
+					}
+					continue;
+				}
+				if (']' === char) {
+					p.maybe_link_text += p.pending;
+					p.pending = ']';
+					continue;
+				}
+				if ('\n' === char) {
+					p.token = p.tokens[p.len];
+					p.pending = '';
+					p.text = '[';
+					add_text(p);
+					parser_write(p, p.maybe_link_text + p.text);
+					p.text += p.pending;
+					p.pending = '';
+					add_text(p);
+					parser_write(p, char);
+					continue;
+				}
+				p.maybe_link_text += p.pending;
+				p.pending = char;
+				continue;
 			case LINK:
 			case IMAGE:
 				if (']' === p.pending) {
@@ -1134,7 +1183,8 @@ export function parser_write(p: Parser, chunk: string): void {
 					']' !== char
 				) {
 					add_text(p);
-					add_token(p, LINK);
+					p.token = MAYBE_LINK;
+					p.maybe_link_text = '';
 					p.pending = char;
 					continue;
 				}

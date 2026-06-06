@@ -8,8 +8,10 @@
 	const content = $derived(node.content);
 </script>
 
-<span class="inline-block max-w-full p-1 align-middle">
-	<span class="inline-block max-w-full overflow-x-auto align-middle select-none">
+<span class="inline-flex max-w-full items-center overflow-hidden align-middle">
+	<span
+		class="m-1 inline-block max-w-full overflow-x-auto overflow-y-hidden align-middle select-none"
+	>
 		<LatexComponent text={content} />
 	</span>
 	<RawMarker text={`\\(${content}\\)`} />
