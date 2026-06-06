@@ -29,6 +29,10 @@ import { currentRoom, updateRoomTitle } from './chatroom.svelte';
 type Message = MessagePaginateRespList & { stream?: boolean };
 type AssistantMessage = Message & { inner: { t: 'assistant'; c: AssistantChunk[] } };
 
+function byteLen(s: string): number {
+	return new TextEncoder().encode(s).length;
+}
+
 export const messages = $state<{ val: Array<Message> }>({ val: [] });
 export const streaming = $state({ val: false });
 export const paginateElement = $state<{ val?: HTMLDivElement }>({ val: undefined });
@@ -167,11 +171,11 @@ const Handlers: {
 		const lastChunk = firstMsg.inner.c.at(-1);
 		if (lastChunk?.t === 'text') {
 			lastChunk.c += token as string;
-			cursor!.offset += (token as string).length;
+			cursor!.offset += byteLen(token as string);
 		} else {
 			firstMsg.inner.c.push({ t: 'text', c: token as string });
 			cursor!.index++;
-			cursor!.offset = (token as string).length;
+			cursor!.offset = byteLen(token as string);
 		}
 	},
 
@@ -180,11 +184,11 @@ const Handlers: {
 		const lastChunk = firstMsg.inner.c.at(-1);
 		if (lastChunk?.t === 'reasoning') {
 			lastChunk.c += reasoning as string;
-			cursor!.offset += (reasoning as string).length;
+			cursor!.offset += byteLen(reasoning as string);
 		} else {
 			firstMsg.inner.c.push({ t: 'reasoning', c: reasoning as string });
 			cursor!.index++;
-			cursor!.offset = (reasoning as string).length;
+			cursor!.offset = byteLen(reasoning as string);
 		}
 	},
 
@@ -233,7 +237,7 @@ const Handlers: {
 				c: err
 			});
 			cursor!.index++;
-			cursor!.offset = (err as string).length;
+			cursor!.offset = byteLen(err as string);
 		}
 	},
 
@@ -254,10 +258,10 @@ const Handlers: {
 		}
 		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
 		if (deepState) {
-			cursor!.offset += (planChunk as string).length;
+			cursor!.offset += byteLen(planChunk as string);
 		} else {
 			cursor!.index++;
-			cursor!.offset = (planChunk as string).length;
+			cursor!.offset = byteLen(planChunk as string);
 		}
 		if (!deepState) {
 			deepState = {
@@ -294,11 +298,11 @@ const Handlers: {
 		const lastChunk = step.progress.at(-1);
 		if (lastChunk && lastChunk.t === 'text') {
 			lastChunk.c += token as string;
-			cursor!.offset += (token as string).length;
+			cursor!.offset += byteLen(token as string);
 		} else {
 			step.progress.push({ t: 'text', c: token as string });
 			cursor!.index++;
-			cursor!.offset = (token as string).length;
+			cursor!.offset = byteLen(token as string);
 		}
 	},
 
@@ -310,11 +314,11 @@ const Handlers: {
 		const lastChunk = step.progress.at(-1);
 		if (lastChunk && lastChunk.t === 'reasoning') {
 			lastChunk.c += reasoning as string;
-			cursor!.offset += (reasoning as string).length;
+			cursor!.offset += byteLen(reasoning as string);
 		} else {
 			step.progress.push({ t: 'reasoning', c: reasoning as string });
 			cursor!.index++;
-			cursor!.offset = (reasoning as string).length;
+			cursor!.offset = byteLen(reasoning as string);
 		}
 	},
 
@@ -369,11 +373,11 @@ const Handlers: {
 		const lastChunk = firstMsg.inner.c.at(-1);
 		if (lastChunk && lastChunk.t === 'text') {
 			lastChunk.c += report as string;
-			cursor!.offset += (report as string).length;
+			cursor!.offset += byteLen(report as string);
 		} else {
 			firstMsg.inner.c.push({ t: 'text', c: report as string });
 			cursor!.index++;
-			cursor!.offset = (report as string).length;
+			cursor!.offset = byteLen(report as string);
 		}
 	},
 
