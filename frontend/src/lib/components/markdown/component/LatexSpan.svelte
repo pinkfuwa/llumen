@@ -10,7 +10,7 @@
 
 <span class="inline-flex max-w-full items-center overflow-hidden align-middle">
 	<span
-		class="m-1 inline-block max-w-full overflow-x-auto overflow-y-hidden align-middle select-none"
+		class="m-[0.125rem] inline-block max-w-full overflow-x-auto overflow-y-hidden p-[0.125rem] align-middle select-none"
 	>
 		<LatexComponent text={content} />
 	</span>
