@@ -18,7 +18,7 @@
 		if (!dimensions) return '';
 		const { width, height } = dimensions;
 
-		return `aspect-ratio: ${width} / ${height}; max-height: min(30rem,85vw,70vh); width: min(${width}px, 100%)`;
+		return `aspect-ratio: ${width} / ${height};`;
 	});
 
 	async function downloadImage() {
