@@ -5,12 +5,6 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
   workflow_dispatch:
-    inputs:
-      features:
-        description: "Cargo features to enable (comma-separated)"
-        required: false
-        default: "deep-research"
-        type: string
 
 permissions:
   contents: read
@@ -63,6 +57,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags || steps.meta-manual.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels || steps.meta-manual.outputs.labels }}
           build-args: |
-            FEATURES=${{ github.event.inputs.features || 'deep-research' }}
+            FEATURES=deep-research
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -1,5 +1,8 @@
 pub mod blob;
 pub mod chat;
+#[cfg(feature = "cli")]
+pub mod cli;
+pub mod environment;
 pub mod file_cleanup;
 pub mod logger;
 pub mod model;

@@ -1,11 +1,12 @@
 use std::{io::IsTerminal, io::Write, panic, str::FromStr, sync::Arc};
 
-use dotenvy::var;
 use flexi_logger::{DeferredNow, LogSpecification, Logger};
 use log::LevelFilter;
 
+use crate::utils::environment::Environment;
+
 #[cfg(feature = "tracing")]
-pub fn init() {
+pub fn init(_env: &Environment) {
     use console_subscriber::ConsoleLayer;
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
@@ -48,14 +49,12 @@ fn iso_format(
 }
 
 #[cfg(not(feature = "tracing"))]
-pub fn init() {
+pub fn init(env: &Environment) {
     let is_tty = std::io::stdout().is_terminal();
     let fmt = if is_tty { custom_format } else { iso_format };
 
-    let level = match var("RUST_LOG").map(|x| LevelFilter::from_str(&x.to_lowercase())) {
-        Ok(Ok(level)) => level,
-        _ => LevelFilter::Info,
-    };
+    let level = LevelFilter::from_str(&env.log_level.to_lowercase())
+        .unwrap_or(LevelFilter::Info);
 
     let spec = LogSpecification::builder()
         .default(LevelFilter::Off)

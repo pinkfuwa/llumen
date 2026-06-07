@@ -10,30 +10,6 @@
 //! The server exposes REST APIs for chat management, user authentication,
 //! message handling, and model discovery. It also serves the compiled frontend
 //! as static files.
-//!
-//! # Architecture Overview
-//!
-//! ## Core Components
-//!
-//! 1. **AppState**: Global application state containing database connection,
-//!    encryption keys, and the main chat processing pipeline (Context).
-//!
-//! 2. **Chat Pipeline (chat/context.rs)**: Manages LLM completion requests,
-//!    handles streaming responses, and coordinates between multiple chat modes
-//!    (normal, search, deep research when enabled).
-//!
-//! 3. **API Routes**: Organized into modules for chat, user, message, model,
-//!    file, and auth operations. Each route validates requests and interacts
-//!    with the database and LLM API.
-//!
-//! 4. **Middlewares**: Handles authentication (PASETO tokens), compression
-//!    (Zstd), and logging.
-//!
-//! 5. **OpenRouter Client**: Abstracts interactions with OpenRouter's LLM API,
-//!    including streaming completions and tool calling.
-//!
-//! The MiMalloc allocator is used for better performance on memory-constrained
-//! systems.
 
 #![deny(unsafe_code)]
 
@@ -53,13 +29,12 @@ pub mod error {
     pub use crate::openrouter::Error;
 }
 
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 use anyhow::Context as _;
 use axum::{Router, middleware};
 use chat::Context;
-use config::{DB_BUSY_TIMEOUT_MS, DEFAULT_BIND_ADDR, DB_CACHE_SIZE};
-use dotenvy::var;
+use config::{DB_BUSY_TIMEOUT_MS, DB_CACHE_SIZE};
 use entity::prelude::*;
 
 use migration::MigratorTrait;
@@ -67,6 +42,7 @@ use mimalloc::MiMalloc;
 use pasetors::{keys::SymmetricKey, version4::V4};
 use sea_orm::{ConnectionTrait, Database, DbConn, EntityTrait};
 use tokio::{net::TcpListener, signal};
+use utils::environment::Environment;
 use utils::{blob::BlobDB, password_hash::Hasher};
 
 #[cfg(feature = "tracing")]
@@ -82,21 +58,6 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 // TODO: musl allocator sucks, but compile time is important, too.
 
 /// AppState contains all shared server state accessible to request handlers.
-///
-/// It's wrapped in Arc<AppState> and passed through Axum middleware to all
-/// route handlers. This enables stateful operations across async request
-/// handling.
-///
-/// # Fields
-///
-/// * `conn`: Database connection pool for all database operations via SeaORM
-/// * `key`: Encryption key for PASETO token generation/validation used in
-///   authentication
-/// * `hasher`: Password hasher for user authentication and security
-/// * `chat`: Main chat processing pipeline context managing LLM completions
-/// * `blob`: Blob database for storing binary data and file uploads
-/// * `user_header`: Optional HTTP header name for header-based authentication
-///   (SSO/proxy integration)
 pub struct AppState {
     pub conn: DbConn,
     pub key: SymmetricKey<V4>,
@@ -107,39 +68,7 @@ pub struct AppState {
     pub auth_header: Option<String>,
 }
 
-/// Attempts to load the OpenRouter API key from environment variables.
-///
-/// The API key is required to make requests to the OpenRouter API for LLM
-/// completions. If not found, prints instructions for obtaining a key and exits
-/// gracefully.
-fn load_api_key() -> String {
-    match (var("API_KEY"), var("OPENAI_API_KEY")) {
-        (Ok(key), _) => key,
-        (_, Ok(key)) => key,
-        _ => {
-            println!("Error: API_KEY environment variable not found.");
-            println!("Note: llumen read environment variable as well as .env file.");
-            println!("You can get a key from https://openrouter.ai/keys");
-            println!("Or use alternative setup:");
-            println!("- configuration: https://pinkfuwa.github.io/llumen/user/config/environment");
-            println!("- documentation: https://pinkfuwa.github.io/llumen/");
-
-            #[cfg(windows)]
-            {
-                use std::io::{self, Read};
-                println!("Press Enter to exit...");
-                io::stdin().read_exact(&mut [0u8]).unwrap();
-            }
-            std::process::exit(1);
-        }
-    }
-}
-
 /// Handles graceful shutdown signals.
-///
-/// Listens for either Ctrl+C (SIGINT) on all platforms or SIGTERM on Unix
-/// systems. This allows the server to clean up resources and finish in-flight
-/// requests before stopping.
 async fn shutdown_signal() {
     log::debug!("Shutdown signal handler started");
     let ctrl_c = async {
@@ -180,34 +109,34 @@ async fn main() {
 
     dotenvy::dotenv().ok();
 
-    crate::utils::logger::init();
+    #[cfg(feature = "cli")]
+    let env = {
+        let cli = utils::cli::CliArgs::parse_with_fallbacks();
+        Environment::load_from(&cli)
+    };
+
+    #[cfg(not(feature = "cli"))]
+    let env = Environment::load();
+
+    crate::utils::logger::init(&env);
 
     #[cfg(feature = "tracing")]
     let _main_span = info_span!("llumen_backend_startup").entered();
 
-    let api_key = load_api_key();
-    let api_base = var("API_BASE").unwrap_or_else(|_| {
-        var("OPENAI_API_BASE").unwrap_or("https://openrouter.ai/api".to_string())
-    });
-    log::debug!("API key loaded, base: {}", api_base);
-    let force_openrouter = var("FORCE_OPENROUTER_MODE")
-        .map(|v| v.to_lowercase() == "true" || v == "1")
-        .unwrap_or(false);
-    log::debug!("Force OpenRouter mode: {}", force_openrouter);
-    let data_path = PathBuf::from(var("DATA_PATH").unwrap_or(".".to_owned()));
-    log::debug!("Data path: {}", data_path.display());
-    let mut database_path = data_path.clone();
+    log::debug!("API key loaded, base: {}", env.api_base);
+    log::debug!("Force OpenRouter mode: {}", env.force_openrouter);
+    log::debug!("Data path: {}", env.data_path.display());
+    let mut database_path = env.data_path.clone();
     database_path.push("db.sqlite");
     let database_url = format!(
         "sqlite://{}?mode=rwc",
         database_path.display().to_string().replace('\\', "/")
     );
     log::debug!("Database URL: {}", database_url);
-    let mut blob_path = data_path.clone();
+    let mut blob_path = env.data_path.clone();
     blob_path.push("blobs.redb");
     log::debug!("Blob path: {}", blob_path.display());
-    let bind_addr = var("BIND_ADDR").unwrap_or(DEFAULT_BIND_ADDR.to_owned());
-    log::debug!("Bind address: {}", bind_addr);
+    log::debug!("Bind address: {}", env.bind_addr);
 
     #[cfg(feature = "tracing")]
     let _db_span = info_span!("database_initialization").entered();
@@ -252,9 +181,9 @@ async fn main() {
     log::debug!("Paseto key loaded");
 
     let openrouter = Arc::new(openrouter::Openrouter::new(
-        api_key,
-        api_base,
-        force_openrouter,
+        env.api_key,
+        env.api_base,
+        env.force_openrouter,
     ));
     log::debug!("OpenRouter client created");
 
@@ -271,8 +200,6 @@ async fn main() {
     );
     log::debug!("Chat context created");
 
-    let auth_header = var("TRUSTED_HEADER").ok();
-
     utils::file_cleanup::FileCleanupService::new(conn.clone(), blob.clone()).start();
 
     let state = Arc::new(AppState {
@@ -282,7 +209,7 @@ async fn main() {
         chat,
         openrouter,
         blob,
-        auth_header,
+        auth_header: env.auth_header,
     });
 
     #[cfg(feature = "tracing")]
@@ -298,7 +225,6 @@ async fn main() {
                 .nest("/message", routes::message::routes())
                 .nest("/model", routes::model::routes())
                 .layer(middlewares::compression::ZstdCompressionLayer)
-                // only compress plain text content
                 .nest("/file", routes::file::routes())
                 .layer(middleware::from_extractor_with_state::<
                     middlewares::auth::Middleware,
@@ -321,12 +247,12 @@ async fn main() {
             ])),
     );
 
-    log::info!("Listening on http://{}", bind_addr);
+    log::info!("Listening on http://{}", env.bind_addr);
 
     #[cfg(feature = "tracing")]
-    let _server_span = info_span!("server_startup", bind_addr = %bind_addr).entered();
+    let _server_span = info_span!("server_startup", bind_addr = %env.bind_addr).entered();
 
-    let tcp = TcpListener::bind(bind_addr).await.unwrap();
+    let tcp = TcpListener::bind(env.bind_addr).await.unwrap();
     axum::serve(tcp, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
