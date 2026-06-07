@@ -57,9 +57,14 @@ export const allowMode = $state<{
 });
 export const supportedMimes = $state<{ val: string[] }>({ val: [] });
 
+const baseModelValid = $derived(models.val?.list.some((x) => x.id == Number(baseModelId)));
+
 $effect.root(() => {
 	$effect(() => {
-		displayModelId.val = overridingModelId.val ?? baseModelId;
+		if (overridingModelId.val !== undefined) displayModelId.val = overridingModelId.val;
+		else if (baseModelValid) {
+			displayModelId.val = baseModelId;
+		} else displayModelId.val = null;
 	});
 
 	$effect(() => {
@@ -128,6 +133,10 @@ $effect.root(() => {
 
 export function onModelChange(newModelId: string) {
 	overridingModelId.val = newModelId;
+
+	if (page.route.id == '/chat/new') {
+		defaultModelId.value = newModelId;
+	}
 }
 
 export function onModeChange(newMode: ChatMode) {
