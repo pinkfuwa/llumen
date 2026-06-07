@@ -12,7 +12,7 @@ use crate::chat::session::CompletionSession;
 use crate::chat::Context;
 use crate::openrouter::{self, StreamWithOrderedTokens};
 
-pub async fn execute(ctx: Arc<Context>, session: &mut CompletionSession) -> Result<()> {
+pub async fn execute(ctx: Arc<Context>, session: &mut CompletionSession) -> Result<bool> {
     // Assemble messages with coordinator prompt
     let messages = session.assemble_messages(&ctx, openrouter::CompletionOption::default())?;
 
@@ -37,7 +37,7 @@ pub async fn execute(ctx: Arc<Context>, session: &mut CompletionSession) -> Resu
         .await?;
 
     if matches!(halt, StreamEndReason::Halt) {
-        return Ok(());
+        return Ok(true);
     }
 
     // Get the inner stream back to access the result
@@ -62,5 +62,5 @@ pub async fn execute(ctx: Arc<Context>, session: &mut CompletionSession) -> Resu
         log::warn!("coordinator did not call handoff_to_planner tool");
     }
 
-    Ok(())
+    Ok(false)
 }
