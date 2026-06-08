@@ -495,6 +495,7 @@ export async function createMessage(params: MessageCreateReq): Promise<MutationS
 		body: params,
 		token: token.value?.value
 	});
+	if (resp) pushUserMessage(resp.user_id, params.text, params.files);
 	return resp ? 'success' : 'failed';
 }
 
