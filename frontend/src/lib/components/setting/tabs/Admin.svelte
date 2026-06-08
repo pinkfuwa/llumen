@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { Collapsible } from 'bits-ui';
 	import { ChevronDown } from '@lucide/svelte';
 	import UserGrid from '../UserGrid.svelte';
@@ -9,6 +6,7 @@
 	import Warning from '../Warning.svelte';
 	import { createUser } from '$lib/api/user.svelte';
 	import type { MutationStatus } from '$lib/api';
+	import { t } from 'svelte-intl-precompile';
 
 	let username = $state('');
 	let password = $state('');
@@ -42,40 +40,40 @@
 		<Collapsible.Trigger
 			class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover"
 		>
-			<span>{m['setting.admin.create'](lang)}</span>
+			<span>{$t('setting.admin.create')}</span>
 			<ChevronDown />
 		</Collapsible.Trigger>
 		<Collapsible.Content
 			class="flex flex-col border-b border-border px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
 		>
 			{#if status === 'failed'}
-				<Warning>{m['setting.admin.error_creating_user'](lang)}</Warning>
+				<Warning>{$t('setting.admin.error_creating_user')}</Warning>
 			{/if}
 			{#if success}
 				<div class="mb-2 text-center text-sm">
-					{m['setting.admin.user'](lang)} <span class="rounded-md bg-muted p-1">{username}</span>
-					{m['setting.admin.created'](lang)}
+					{$t('setting.admin.user')} <span class="rounded-md bg-muted p-1">{username}</span>
+					{$t('setting.admin.created')}
 				</div>
 			{/if}
 			<div class="mb-2 flex flex-col gap-2">
 				<input
 					type="text"
 					class="w-full rounded-md border border-border p-2"
-					placeholder={m['setting.username'](lang)}
+					placeholder={$t('setting.username')}
 					bind:value={username}
 					oninput={() => (success = false)}
 				/>
 				<input
 					type="password"
 					class="w-full rounded-md border border-border p-2"
-					placeholder={m['setting.account.password'](lang)}
+					placeholder={$t('setting.account.password')}
 					bind:value={password}
 					oninput={() => (success = false)}
 				/>
 				<input
 					type="password"
 					class="w-full rounded-md border border-border p-2"
-					placeholder={m['setting.account.confirm_password'](lang)}
+					placeholder={$t('setting.account.confirm_password')}
 					bind:value={passwordCheck}
 					oninput={() => (success = false)}
 				/>
@@ -85,41 +83,41 @@
 				disabled={!canSubmit}
 				onclick={handleSubmit}
 			>
-				{m['setting.admin.create'](lang)}
+				{$t('setting.admin.create')}
 			</Button>
 		</Collapsible.Content>
 	</Collapsible.Root>
 
 	<div class="mb-4 hidden space-y-2 border-b border-border pb-2 text-lg md:block">
 		<div class="text-lg">
-			{m['setting.admin.create'](lang)}
+			{$t('setting.admin.create')}
 		</div>
 		<div class="flex flex-row items-center justify-between">
-			{m['setting.username'](lang)}
+			{$t('setting.username')}
 			<input
 				type="text"
 				class="max-w-80 grow rounded-md border border-border p-1"
-				placeholder={m['setting.username'](lang)}
+				placeholder={$t('setting.username')}
 				bind:value={username}
 				oninput={() => (success = false)}
 			/>
 		</div>
 		<div class="flex flex-row items-center justify-between">
-			{m['setting.account.password'](lang)}
+			{$t('setting.account.password')}
 			<input
 				type="password"
 				class="max-w-80 grow rounded-md border border-border p-1"
-				placeholder={m['setting.account.password'](lang)}
+				placeholder={$t('setting.account.password')}
 				bind:value={password}
 				oninput={() => (success = false)}
 			/>
 		</div>
 		<div class="flex flex-row items-center justify-between">
-			{m['setting.account.confirm_password'](lang)}
+			{$t('setting.account.confirm_password')}
 			<input
 				type="password"
 				class="max-w-80 grow rounded-md border border-border p-1"
-				placeholder={m['setting.account.confirm_password'](lang)}
+				placeholder={$t('setting.account.confirm_password')}
 				bind:value={passwordCheck}
 				oninput={() => (success = false)}
 			/>
@@ -131,7 +129,7 @@
 				disabled={!canSubmit}
 				onclick={handleSubmit}
 			>
-				{m['setting.admin.create'](lang)}
+				{$t('setting.admin.create')}
 			</Button>
 		</div>
 	</div>
@@ -146,13 +144,13 @@
 
 	<div class="flex flex-col">
 		<div class="hidden items-center justify-between pb-2 md:flex">
-			<h3 class="text-lg">{m['setting.admin.users'](lang)}</h3>
+			<h3 class="text-lg">{$t('setting.admin.users')}</h3>
 		</div>
 		<Collapsible.Root class="md:hidden">
 			<Collapsible.Trigger
 				class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover"
 			>
-				<h3>{m['setting.admin.users'](lang)}</h3>
+				<h3>{$t('setting.admin.users')}</h3>
 				<ChevronDown />
 			</Collapsible.Trigger>
 			<Collapsible.Content

@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { Collapsible } from 'bits-ui';
 	import { ChevronDown, CheckLine } from '@lucide/svelte';
 	import Button from '$lib/ui/Button.svelte';
@@ -9,6 +6,7 @@
 	import { updateUser } from '$lib/api/user.svelte';
 	import { token } from '$lib/rune.svelte';
 	import type { MutationStatus } from '$lib/api';
+	import { t } from 'svelte-intl-precompile';
 
 	const triggerStyle =
 		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
@@ -34,18 +32,18 @@
 </script>
 
 <div class="mb-4 hidden items-center justify-between border-b border-border pb-2 text-lg md:flex">
-	<span>{m['setting.change_password'](lang)}: </span>
+	<span>{$t('setting.change_password')}: </span>
 	<div class="flex items-center gap-2">
 		<input
 			type="password"
 			class="w-36 rounded-md border border-border p-1"
-			placeholder={m['setting.account.password'](lang)}
+			placeholder={$t('setting.account.password')}
 			bind:value={password}
 		/>
 		<input
 			type="password"
 			class="w-36 rounded-md border border-border p-1"
-			placeholder={m['setting.account.confirm_password'](lang)}
+			placeholder={$t('setting.account.confirm_password')}
 			bind:value={passwordCheck}
 		/>
 		<Button class="p-2 {matched ? '' : 'opacity-60'}" disabled={!matched} onclick={handleSubmit}>
@@ -56,26 +54,26 @@
 
 <Collapsible.Root bind:open class="md:hidden">
 	<Collapsible.Trigger class={triggerStyle}>
-		<span>{m['setting.change_password'](lang)}</span>
+		<span>{$t('setting.change_password')}</span>
 		<ChevronDown />
 	</Collapsible.Trigger>
 	<Collapsible.Content
 		class="flex flex-col border-b border-border px-2 slide-out-to-start-0 slide-in-from-top-0 fade-in fade-out data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
 		{#if status === 'failed'}
-			<Warning>{m['setting.account.error_updating_password'](lang)}</Warning>
+			<Warning>{$t('setting.account.error_updating_password')}</Warning>
 		{/if}
 		<div class="mb-2 flex flex-col gap-2">
 			<input
 				type="password"
 				class="w-full rounded-md border border-border p-2"
-				placeholder={m['setting.account.password'](lang)}
+				placeholder={$t('setting.account.password')}
 				bind:value={password}
 			/>
 			<input
 				type="password"
 				class="w-full rounded-md border border-border p-2"
-				placeholder={m['setting.account.confirm_password'](lang)}
+				placeholder={$t('setting.account.confirm_password')}
 				bind:value={passwordCheck}
 			/>
 		</div>
@@ -84,7 +82,7 @@
 			disabled={!matched}
 			onclick={handleSubmit}
 		>
-			{m['setting.confirm'](lang)}
+			{$t('setting.confirm')}
 		</Button>
 	</Collapsible.Content>
 </Collapsible.Root>

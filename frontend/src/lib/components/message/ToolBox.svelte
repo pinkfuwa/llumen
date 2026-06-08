@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { ToolCase } from '@lucide/svelte';
 	import { Accordion } from 'bits-ui';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { slide } from 'svelte/transition';
 	import Badge from '$lib/ui/Badge.svelte';
+	import { t } from 'svelte-intl-precompile';
 
 	let { children, toolname = 'Default Tool' } = $props();
 
-	let displayName = $derived(toolname === 'Default Tool' ? m['chat.default_tool'](lang) : toolname);
+	let displayName = $derived(toolname === 'Default Tool' ? $t('chat.default_tool') : toolname);
 
 	let open = $state(false);
 
@@ -23,7 +21,7 @@
 			<Accordion.Trigger class={triggerStyle}>
 				<ToolCase class="mr-2" />
 				{#if !open}
-					<span class="mr-1"> {m['chat.calling'](lang)} </span>
+					<span class="mr-1"> {$t('chat.calling')} </span>
 				{/if}
 				<Badge>
 					{displayName}

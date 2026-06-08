@@ -1,22 +1,20 @@
 <script lang="ts">
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { page } from '$app/state';
+	import { t } from 'svelte-intl-precompile';
 
 	const messages = $derived<Record<string, string>>({
-		'404': m['error.page_not_found'](lang),
-		'500': m['error.internal_server_error'](lang),
-		'403': m['error.access_denied'](lang),
-		'401': m['error.unauthorized'](lang),
-		'400': m['error.bad_request'](lang),
-		'405': m['error.method_not_allowed'](lang)
+		'404': $t('error.page_not_found'),
+		'500': $t('error.internal_server_error'),
+		'403': $t('error.access_denied'),
+		'401': $t('error.unauthorized'),
+		'400': $t('error.bad_request'),
+		'405': $t('error.method_not_allowed')
 	});
 </script>
 
 <div class="bg-surface-base flex h-screen flex-col items-center justify-center">
 	<h1 class="mb-4 text-4xl">
-		{page.status}: {messages[String(page.status)] || m['error.unknown_error'](lang)}
+		{page.status}: {messages[String(page.status)] || $t('error.unknown_error')}
 	</h1>
-	<a href="/" class="text-2xl">{m['error.back_to_home'](lang)}</a>
+	<a href="/" class="text-2xl">{$t('error.back_to_home')}</a>
 </div>

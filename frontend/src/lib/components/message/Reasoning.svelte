@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { Brain } from '@lucide/svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { Collapsible } from 'bits-ui';
+	import { t } from 'svelte-intl-precompile';
 	let { content, open = $bindable(false) }: { content: string; open?: boolean } = $props();
 
 	const triggerStyle =
@@ -33,7 +31,7 @@
 	<Collapsible.Trigger class={triggerStyle}>
 		<Brain class="mr-2" />
 		<span>
-			{m['chat.reasoning'](lang)}
+			{$t('chat.reasoning')}
 		</span>
 	</Collapsible.Trigger>
 	<Collapsible.Content

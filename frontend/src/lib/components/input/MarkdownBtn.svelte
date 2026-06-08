@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { Book, BookA } from '@lucide/svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import { t } from 'svelte-intl-precompile';
 
 	let { isEditing = $bindable(true), disabled = false } = $props();
 
@@ -13,7 +11,7 @@
 <Tooltip
 	class={markdownBtnStyle}
 	onclick={() => (isEditing = !isEditing)}
-	text={isEditing ? m['chat.markdown_mode.disable'](lang) : m['chat.markdown_mode.enable'](lang)}
+	text={isEditing ? $t('chat.markdown_mode.disable') : $t('chat.markdown_mode.enable')}
 	{disabled}
 >
 	{#if isEditing}

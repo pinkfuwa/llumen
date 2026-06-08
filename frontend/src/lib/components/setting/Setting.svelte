@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { Star, X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
 	import { token } from '$lib/rune.svelte';
@@ -12,6 +9,7 @@
 	import Openrouter from './tabs/Openrouter.svelte';
 	import OpenrouterNew from './tabs/openrouter/OpenrouterNew.svelte';
 	import OpenrouterEdit from './tabs/openrouter/OpenrouterEdit.svelte';
+	import { t } from 'svelte-intl-precompile';
 
 	const dialogStyle =
 		'fixed inset-0 z-20 m-2 flex max-w-4xl rounded-xl border border-border bg-popover p-3 font-mono text-foreground fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:m-auto md:h-[min(80vh,48rem)] md:w-full';
@@ -50,13 +48,13 @@
 						<Tabs.Trigger value="account" class={tabStyle}>
 							<CircleUser class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block">
-								{m['setting.account_settings'](lang)}
+								{$t('setting.account_settings')}
 							</span>
 						</Tabs.Trigger>
 						<Tabs.Trigger value="admin" class={tabStyle}>
 							<ShieldUser class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block">
-								{m['setting.admin_settings'](lang)}
+								{$t('setting.admin_settings')}
 							</span>
 						</Tabs.Trigger>
 						<Tabs.Trigger value="openrouter" class={tabStyle}>
@@ -67,7 +65,7 @@
 					<div class="flex flex-col space-y-2">
 						<a class={linkStyle} href="https://github.com/pinkfuwa/llumen" target="_blank">
 							<Star class="inline-block h-5 w-5 md:mr-2" />
-							<span class="hidden md:inline-block"> {m['setting.github_star'](lang)} </span>
+							<span class="hidden md:inline-block"> {$t('setting.github_star')} </span>
 						</a>
 						<button
 							class={btnRowStyle}
@@ -76,20 +74,20 @@
 							}}
 						>
 							<LogOut class="inline-block h-5 w-5 md:mr-2" />
-							<span class="hidden md:inline-block"> {m['setting.logout'](lang)} </span>
+							<span class="hidden md:inline-block"> {$t('setting.logout')} </span>
 						</button>
 					</div>
 				</Tabs.List>
 				<div class="flex h-full w-full min-w-0 flex-1 flex-col justify-center overflow-hidden p-3">
 					<Tabs.Content value="account" class="flex h-full flex-col overflow-auto">
 						<Dialog.Title class="pb-6 text-center text-xl">
-							{m['setting.account_settings'](lang)}
+							{$t('setting.account_settings')}
 						</Dialog.Title>
 						<Account />
 					</Tabs.Content>
 					<Tabs.Content value="admin" class="flex h-full flex-col overflow-auto">
 						<Dialog.Title class="pb-6 text-center text-xl">
-							{m['setting.admin_settings'](lang)}
+							{$t('setting.admin_settings')}
 						</Dialog.Title>
 						<Admin />
 					</Tabs.Content>
@@ -102,7 +100,7 @@
 						class="flex w-full flex-col justify-between overflow-auto"
 					>
 						<Dialog.Title class="pb-6 text-center text-xl">
-							{m['setting.add_model'](lang)}
+							{$t('setting.add_model')}
 						</Dialog.Title>
 
 						<OpenrouterNew bind:value />
@@ -112,7 +110,7 @@
 						class="flex w-full flex-col justify-between overflow-auto"
 					>
 						<Dialog.Title class="pb-6 text-center text-xl">
-							{m['setting.edit_model'](lang)}
+							{$t('setting.edit_model')}
 						</Dialog.Title>
 
 						{#if id != undefined}

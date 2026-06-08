@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { Globe } from '@lucide/svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { Collapsible } from 'bits-ui';
 	import type { UrlCitation } from '$lib/api/types';
+	import { t } from 'svelte-intl-precompile';
 
 	let { citations, open = $bindable(false) }: { citations: UrlCitation[]; open?: boolean } =
 		$props();
@@ -28,7 +26,7 @@
 		<Collapsible.Trigger class={triggerStyle}>
 			<Globe class="mr-2" />
 			<span>
-				{m['chat.sources'](lang)}
+				{$t('chat.sources')}
 				<span class="ml-1 text-xs opacity-60">({citations.length})</span>
 			</span>
 		</Collapsible.Trigger>

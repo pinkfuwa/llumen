@@ -1,10 +1,8 @@
 <script>
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { copyCounter } from '$lib/copy.svelte';
+	import { t } from 'svelte-intl-precompile';
 
 	let copied = $state(false);
 
@@ -28,7 +26,7 @@
 			role="tooltip"
 		>
 			<CircleCheck class="mr-2 inline-block" />
-			{m['common.copied_clipboard'](lang)}
+			{$t('common.copied_clipboard')}
 		</div>
 	{/if}
 {/if}

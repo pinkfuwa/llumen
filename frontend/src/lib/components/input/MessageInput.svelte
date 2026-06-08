@@ -11,9 +11,7 @@
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
 	import { streaming } from '$lib/api/message.svelte';
 	import { FileUp } from '@lucide/svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
+	import { t } from 'svelte-intl-precompile';
 	import {
 		inputContent,
 		inputFiles,
@@ -68,7 +66,7 @@
 			class="absolute top-0 left-0 flex h-full w-full items-center justify-center rounded-md border-2 border-dashed border-border bg-muted/40 text-2xl text-primary"
 		>
 			<FileUp />
-			{m['chat.upload_file'](lang)}
+			{$t('chat.upload_file')}
 		</div>
 	{/if}
 	{#if inputFiles.val.length != 0}
@@ -79,7 +77,7 @@
 	<div class="flex flex-row items-center justify-between space-x-2 pr-2">
 		<Textbox
 			bind:isEditing
-			placeholder={streaming.val ? m['chat.stop_first'](lang) : m['chat.question'](lang)}
+			placeholder={streaming.val ? $t('chat.stop_first') : $t('chat.question')}
 			bind:value={inputContent.val}
 			onsubmit={submit}
 			disabled={streaming.val}

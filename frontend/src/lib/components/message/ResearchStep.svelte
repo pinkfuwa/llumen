@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { StepKind, type Step } from '$lib/api/types';
 	import { FlaskConical, ChartSpline, TextSearch } from '@lucide/svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { Collapsible } from 'bits-ui';
 	import { Markdown } from '$lib/components/markdown';
+	import { t } from 'svelte-intl-precompile';
 
 	let {
 		step,

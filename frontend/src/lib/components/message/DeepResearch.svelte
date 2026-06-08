@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { Atom } from '@lucide/svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { Collapsible } from 'bits-ui';
 	import ResearchStep from './ResearchStep.svelte';
 	import type { Deep, Step } from '$lib/api/types';
+	import { t } from 'svelte-intl-precompile';
 
 	let {
 		plan,
@@ -20,7 +18,7 @@
 <Collapsible.Root bind:open>
 	<Collapsible.Trigger class={triggerStyle}>
 		<Atom class="mr-2" />
-		<span> {m['chat.research_agent'](lang)} </span>
+		<span> {$t('chat.research_agent')} </span>
 	</Collapsible.Trigger>
 	<Collapsible.Content
 		class="py-2 pl-3 slide-out-to-start-2 fade-in fade-out slide-in-from-top-2 data-[state=close]:animate-out data-[state=open]:animate-in"

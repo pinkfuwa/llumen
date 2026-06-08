@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { checkConfig } from '../../api/model.svelte';
 	import Toml from '../codemirror/Toml.svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import Warning from './Warning.svelte';
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';
 	import Button from '$lib/ui/Button.svelte';
+	import { t } from 'svelte-intl-precompile';
 
 	let { value = $bindable(''), children } = $props();
 
@@ -41,7 +39,7 @@
 
 <div class="mt-3 flex items-center justify-start space-x-2">
 	<Button class="px-3 py-2" onclick={onCheck}>
-		{m['setting.check_syntax'](lang)}
+		{$t('setting.check_syntax')}
 	</Button>
 	{@render children()}
 	{#if configChecked}

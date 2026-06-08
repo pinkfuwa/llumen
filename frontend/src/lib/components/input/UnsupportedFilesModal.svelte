@@ -2,10 +2,8 @@
 	import Button from '$lib/ui/Button.svelte';
 	import DangerButton from '$lib/ui/DangerButton.svelte';
 	import Modal from '$lib/ui/Modal.svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { AlertTriangle } from '@lucide/svelte';
+	import { t } from 'svelte-intl-precompile';
 	import {
 		unsupportedFilesModalOpen,
 		pendingUnsupportedFiles,
@@ -28,13 +26,13 @@
 
 <Modal
 	bind:open={unsupportedFilesModalOpen.val}
-	title={m['chat.unsupported_files.title'](lang)}
+	title={$t('chat.unsupported_files.title')}
 	onClose={uploadSupportedOnly}
 >
 	{#snippet children()}
 		<div class="space-y-4">
 			<p>
-				{m['chat.unsupported_files.description'](lang)}
+				{$t('chat.unsupported_files.description')}
 			</p>
 
 			<div
@@ -49,16 +47,16 @@
 			</div>
 
 			<p class="text-sm">
-				{m['chat.unsupported_files.hint'](lang)}
+				{$t('chat.unsupported_files.hint')}
 			</p>
 		</div>
 	{/snippet}
 	{#snippet footer()}
 		<Button class="px-4 py-2" onclick={uploadSupportedOnly}>
-			{m['chat.unsupported_files.upload_supported'](lang)}
+			{$t('chat.unsupported_files.upload_supported')}
 		</Button>
 		<DangerButton onclick={uploadAllFiles}>
-			{m['chat.unsupported_files.upload_all'](lang)}
+			{$t('chat.unsupported_files.upload_all')}
 		</DangerButton>
 	{/snippet}
 </Modal>

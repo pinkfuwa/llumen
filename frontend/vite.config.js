@@ -2,15 +2,11 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
-import { i18n } from '@sveltevietnam/i18n/vite';
+import precompileIntl from 'svelte-intl-precompile/sveltekit-plugin';
 
 export default defineConfig({
 	plugins: [
-		i18n({
-			input: './src/lib/i18n/locales',
-			output: './src/lib/i18n/generated',
-			mode: 'static'
-		}),
+		precompileIntl('src/lib/i18n/locales'),
 		tailwindcss(),
 		sveltekit(),
 		SvelteKitPWA({ base: '/', registerType: 'prompt' })

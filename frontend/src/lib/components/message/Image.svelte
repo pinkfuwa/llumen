@@ -2,10 +2,8 @@
 	import { onDestroy } from 'svelte';
 	import { downloadCompressed, download } from '$lib/api/files.svelte';
 	import { Download } from '@lucide/svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
 	import type { Dimensions } from '$lib/api';
-	let lang = $derived(Context.get().lang);
+	import { t } from 'svelte-intl-precompile';
 
 	let { id, name, dimensions }: { id: number; name?: string; dimensions?: Dimensions } = $props();
 
@@ -56,7 +54,7 @@
 
 {#if error}
 	<div class="my-2 flex justify-center rounded-lg border border-border p-4">
-		{m['chat.failed_load_image'](lang)}
+		{$t('chat.failed_load_image')}
 	</div>
 {:else}
 	<div class="my-2 flex justify-center">
@@ -67,7 +65,7 @@
 			{#if src}
 				<img
 					{src}
-					alt={m['chat.image_alt'](lang)}
+					alt={$t('chat.image_alt')}
 					class="h-full w-full object-contain"
 					class:opacity-0={!loaded}
 					onload={() => (loaded = true)}
@@ -99,7 +97,7 @@
 				<div class="h-full w-full animate-pulse bg-muted"></div>
 			{:else}
 				<div class="flex justify-center p-4">
-					{m['chat.loading_image'](lang)}
+					{$t('chat.loading_image')}
 				</div>
 			{/if}
 		</div>

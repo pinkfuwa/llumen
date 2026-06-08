@@ -2,9 +2,7 @@
 	import { LoaderCircle } from '@lucide/svelte';
 	import Select from '$lib/ui/Select.svelte';
 	import { models } from '$lib/api/model.svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
+	import { t } from 'svelte-intl-precompile';
 	let {
 		value = undefined as string | null | undefined,
 		onchange = undefined as ((id: string) => void) | undefined,
@@ -41,14 +39,14 @@
 		px-3 text-center text-nowrap text-foreground duration-150 sm:w-64 sm:grow-0"
 	>
 		<span class="flex min-w-0 grow items-center justify-start truncate">
-			<span> {m['common.loading'](lang)} </span>
+			<span> {$t('common.loading')} </span>
 			<LoaderCircle class="ml-2 inline-block animate-spin" />
 		</span>
 	</div>
 {:else}
 	<Select
 		data={selectData}
-		fallback={m['chat.select_model'](lang)}
+		fallback={$t('chat.select_model')}
 		bind:selected={localSelected}
 		onchange={handleChange}
 		{disabled}

@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { deleteModel, models } from '$lib/api/model.svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import CheckDelete from './CheckDelete.svelte';
 	import Button from '$lib/ui/Button.svelte';
+	import { t } from 'svelte-intl-precompile';
 
 	let { id = $bindable(), value = $bindable() }: { id?: number; value: string } = $props();
 	const data = $derived(models.val);

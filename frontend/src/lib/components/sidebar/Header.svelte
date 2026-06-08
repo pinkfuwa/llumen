@@ -4,9 +4,7 @@
 
 	import { open } from './open.svelte';
 	import { page } from '$app/state';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
+	import { t } from 'svelte-intl-precompile';
 
 	let addition = $derived(page.params.id != undefined);
 </script>
@@ -34,6 +32,6 @@
 		class="flex w-full items-center justify-center rounded-md p-1.5 font-semibold"
 	>
 		<Plus class="mr-2 h-5 w-5" />
-		{m['chat.new'](lang)}
+		{$t('chat.new')}
 	</Button>
 </div>

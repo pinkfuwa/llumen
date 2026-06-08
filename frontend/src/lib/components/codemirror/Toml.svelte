@@ -3,9 +3,7 @@
 	import { onDestroy } from 'svelte';
 	import { writable, toStore } from 'svelte/store';
 	import { modelIds } from '$lib/api/model.svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
+	import { t } from 'svelte-intl-precompile';
 
 	const useCodeMirrorPromise = import('./index');
 
@@ -60,7 +58,7 @@
 
 <div class="border-radius-md h-full w-full rounded-md border border-border p-2" style={themeStyle}>
 	{#if !loaded}
-		<div class="h-full p-1.5 font-mono">{m['common.loading_editor'](lang)}</div>
+		<div class="h-full p-1.5 font-mono">{$t('common.loading_editor')}</div>
 	{/if}
 	<div bind:this={div} class="h-full shrink-0 space-y-2 [&>div]:h-full"></div>
 </div>

@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import { MessageInput, Copyright } from '$lib/components';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
+	import { t } from 'svelte-intl-precompile';
 </script>
 
 <svelte:head>
-	<title>{m['chat.title'](lang)}</title>
+	<title>{$t('chat.title')}</title>
 </svelte:head>
 
 <main class="flex h-full w-full flex-col justify-center">
@@ -15,7 +13,7 @@
 		class="mx-auto mb-4 bg-gradient-to-r from-primary to-primary/50 bg-clip-text pb-4 text-[11vw] font-semibold text-transparent select-none md:text-[max(4rem,5vw)]"
 		in:fade={{ duration: 150 }}
 	>
-		{m['chat.welcome'](lang)}
+		{$t('chat.welcome')}
 	</h1>
 	<MessageInput large />
 </main>

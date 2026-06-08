@@ -2,9 +2,7 @@
 	import { currentRoom } from '$lib/api';
 	let { children } = $props();
 	import { Sidebar } from '$lib/components';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
+	import { t } from 'svelte-intl-precompile';
 </script>
 
 {#if currentRoom.val && currentRoom.val?.title}
@@ -13,7 +11,7 @@
 	</title>
 {:else}
 	<title>
-		{m['chat.title'](lang)}
+		{$t('chat.title')}
 	</title>
 {/if}
 

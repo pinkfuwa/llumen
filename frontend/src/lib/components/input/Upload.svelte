@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { Upload } from '@lucide/svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import TipButton from '$lib/ui/TipButton.svelte';
+	import { t } from 'svelte-intl-precompile';
 
 	let { files = $bindable([] as File[]) }: { files: File[] } = $props();
 
@@ -28,7 +26,7 @@
 	class="aspect-square h-full shrink-0"
 	onclick={openDialog}
 	aria-label="upload file"
-	text={m['chat.file'](lang)}
+	text={$t('chat.file')}
 >
 	<Upload class="inline-block" />
 </TipButton>

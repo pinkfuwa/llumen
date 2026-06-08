@@ -1,17 +1,15 @@
 <script lang="ts">
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import { preference } from '$lib/preference/index.svelte';
 	import Option from '../Option.svelte';
 	import PasswordSection from '../PasswordSection.svelte';
 	import Toggle from '../Toggle.svelte';
+	import { t } from 'svelte-intl-precompile';
 </script>
 
 <div class="flex h-full flex-col overflow-auto">
 	<div class="flex flex-col gap-2">
 		<Option
-			title={m['setting.theme'](lang)}
+			title={$t('setting.theme')}
 			data={[
 				{ value: 'llumen', label: 'Llumen' },
 				{ value: 'dracula', label: 'Dracula' },
@@ -21,21 +19,21 @@
 		/>
 
 		<Toggle
-			title={m['setting.color_scheme'](lang)}
-			trueLabel={m['setting.dark'](lang)}
-			falseLabel={m['setting.light'](lang)}
+			title={$t('setting.color_scheme')}
+			trueLabel={$t('setting.dark')}
+			falseLabel={$t('setting.light')}
 			bind:value={preference.value.theme.dark}
 		/>
 
 		<Toggle
-			title={m['setting.pattern'](lang)}
-			trueLabel={m['setting.enable'](lang)}
-			falseLabel={m['setting.disable'](lang)}
+			title={$t('setting.pattern')}
+			trueLabel={$t('setting.enable')}
+			falseLabel={$t('setting.disable')}
 			bind:value={preference.value.theme.pattern}
 		/>
 
 		<Option
-			title={m['setting.language'](lang)}
+			title={$t('setting.language')}
 			data={[
 				{ value: 'en', label: 'English' },
 				{ value: 'zh-tw', label: '繁體中文' },
@@ -45,10 +43,10 @@
 		/>
 
 		<Option
-			title={m['setting.enter'](lang)}
+			title={$t('setting.enter')}
 			data={[
-				{ value: 'true', label: m['setting.enable'](lang) },
-				{ value: 'false', label: m['setting.disable'](lang) }
+				{ value: 'true', label: $t('setting.enable') },
+				{ value: 'false', label: $t('setting.disable') }
 			]}
 			bind:selected={preference.value.submit_on_enter}
 		/>

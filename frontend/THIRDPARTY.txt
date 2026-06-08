@@ -99,6 +99,12 @@ runed@0.37.1
 License: MIT
 Repository: https://github.com/svecosystem/runed
 --------------------------------------------------------------------------------
+svelte-intl-precompile@0.12.3
+
+License: ISC
+Repository: https://github.com/cibernox/svelte-intl-precompile
+Publisher: Miguel Camba
+--------------------------------------------------------------------------------
 workbox-window@7.4.1
 
 License: MIT

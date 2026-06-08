@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { deleteUser, users, currentUser } from '$lib/api/user.svelte';
-	import { Context } from '@sveltevietnam/i18n';
-	import * as m from '@sveltevietnam/i18n/generated/messages';
-	let lang = $derived(Context.get().lang);
 	import CheckDelete from './CheckDelete.svelte';
+	import { t } from 'svelte-intl-precompile';
 
 	const data = $derived(users.val);
 	const userData = $derived(currentUser.val);
