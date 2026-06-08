@@ -2,7 +2,8 @@
 
 Privacy-focused LLM chat web-application optimized for minimal hardware (Raspberry Pi, old laptops).
 
-> You probably should read BUILD.md for how to build llumen
+> You should read BUILD.md and  `./development`.
+> It's important to check out pattern in similar module, you may also ask user to write one if confused.
 
 ## Architecture
 
@@ -20,7 +21,7 @@ llumen follows mono repo file structure:
 - typeshare (codegen)
 - Svelte 5 (SPA) / TailwindCSS / Vite / TypeScript
 - bit-ui
-- shiki / lezer
+- shiki
 - Custom markdown parser
 
 ## General Coding Guidelines
@@ -35,28 +36,14 @@ Our project emphasizes performance and binary-size. We choose minimal dependency
 - Always use cargo xtask for scripting system (called by developer)
 - Always use plain bash script in `packages` for build script
 
-### Conventional Commits
-
-The Conventional Commits specification is a lightweight convention on top of commit messages:
-```
-<type>: <description>
-
-[optional body]
-
-[optional footer(s)]
-[BREAKING CHANGE: `function_name` changed]
-```
-
-### Don't Change Git Config
-
-Please never change git config by running `git config --global user.name` or `git config --global user.email`
-
 ### Separation of Concerns
 
 - Place UI and presentation logic in `frontend/src/lib/ui` (components, view helpers, styles). Keep this folder as the single place for UI-specific utilities and components.
+- Data fetching and mutation in `frontend/src/lib/api`.
 - Keep route handlers in `backend/src/routes` and limit them to high-level request/response orchestration and input validation; routes should be thin.
 - Put business/domain logic and data access into `backend/src/lib` (services, use-cases, repositories) so routes remain thin and reusable.
 - Avoid mixing UI, business, and persistence code across layers; prefer clear module boundaries and single-responsibility functions.
+- For undocuemented modules, read patterns used in actual code.
 
 ### Always Check Before Commit
 
