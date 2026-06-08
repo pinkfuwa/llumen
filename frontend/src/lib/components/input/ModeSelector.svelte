@@ -5,9 +5,6 @@
 	import { effective, overridingMode } from './state.svelte';
 	import { ChatMode as Mode } from '$lib/api/types';
 
-	const itemStyle =
-		'flex items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden select-none cursor-pointer duration-150 hover:bg-interactive-hover';
-
 	function setMode(nextMode: Mode) {
 		overridingMode.val = nextMode;
 	}
@@ -21,30 +18,30 @@
 	<DropdownMenu.Separator class="mx-1 mb-1 h-px bg-border/80" />
 	<div class="space-y-1">
 		<DropdownMenu.Item
-			class="{itemStyle} aria-disabled:opacity-50 data-disabled:opacity-50 data-[active=true]:bg-interactive-selection data-[active=true]:text-primary"
+			class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden select-none cursor-pointer duration-150 hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
 			onSelect={() => setMode(Mode.Search)}
 			disabled={searchDisabled}
-			data-active={effective.mode === Mode.Search ? 'true' : 'false'}
+			data-active={effective.mode === Mode.Search ? '' : undefined}
 		>
 			<SearchCode class="size-4" />
 			<span>{$t('chat.model_mode.search')}</span>
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class="{itemStyle} aria-disabled:opacity-50 data-disabled:opacity-50 data-[active=true]:bg-interactive-selection data-[active=true]:text-primary"
+			class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden select-none cursor-pointer duration-150 hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
 			onSelect={() => setMode(Mode.Research)}
 			disabled={deepResearchDisabled}
-			data-active={effective.mode === Mode.Research ? 'true' : 'false'}
+			data-active={effective.mode === Mode.Research ? '' : undefined}
 		>
 			<Atom class="size-4" />
 			<span>{$t('chat.model_mode.deep_research')}</span>
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class="{itemStyle} aria-disabled:opacity-50 data-disabled:opacity-50 data-[active=true]:bg-interactive-selection data-[active=true]:text-primary"
+			class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden select-none cursor-pointer duration-150 hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
 			onSelect={() => setMode(Mode.Media)}
 			disabled={mediaDisabled}
-			data-active={effective.mode === Mode.Media ? 'true' : 'false'}
+			data-active={effective.mode === Mode.Media ? '' : undefined}
 		>
 			<ImagePlus class="size-4" />
 			<span>{$t('chat.model_mode.media')}</span>
