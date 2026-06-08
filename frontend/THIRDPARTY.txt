@@ -8,7 +8,7 @@ Generated from package.json and pnpm-lock.yaml.
 License: MIT
 Repository: https://github.com/chenglou/pretext
 --------------------------------------------------------------------------------
-@codemirror/autocomplete@6.20.2
+@codemirror/autocomplete@6.20.3
 
 License: MIT
 Repository: git+https://code.haverbeke.berlin/codemirror/autocomplete
@@ -29,10 +29,10 @@ Repository: https://github.com/codemirror/language
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
-@codemirror/legacy-modes@6.5.2
+@codemirror/legacy-modes@6.5.3
 
 License: MIT
-Repository: https://github.com/codemirror/legacy-modes
+Repository: git+https://code.haverbeke.berlin/codemirror/legacy-modes
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ Repository: https://github.com/codemirror/state
 Publisher: Marijn Haverbeke
 Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
-@codemirror/view@6.42.1
+@codemirror/view@6.43.0
 
 License: MIT
 Repository: git+https://code.haverbeke.berlin/codemirror/view
@@ -83,7 +83,7 @@ Repository: https://github.com/lukeed/fetch-event-stream
 Publisher: Luke Edwards
 Email: luke@lukeed.com
 --------------------------------------------------------------------------------
-katex@0.16.46
+katex@0.16.47
 
 License: MIT
 Repository: https://github.com/KaTeX/KaTeX
