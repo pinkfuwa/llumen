@@ -2,11 +2,10 @@ import { page } from '$app/state';
 import { untrack } from 'svelte';
 import { goto } from '$app/navigation';
 import { APIFetch } from './http.svelte';
-import { dev } from '$app/environment';
 import { ChatPaginateReqOrder } from './types';
 import { token } from '$lib/rune.svelte';
 
-import type { MutationStatus } from '.';
+import { type MutationStatus } from '.';
 import type {
 	ChatReadResp,
 	ChatReadReq,
@@ -224,5 +223,11 @@ $effect.root(() => {
 
 		element.addEventListener('scroll', scrollEventHandler);
 		return () => element.removeEventListener('scroll', scrollEventHandler);
+	});
+});
+
+$effect.root(() => {
+	$effect(() => {
+		if (!token.value?.value) chatrooms.val = [];
 	});
 });
