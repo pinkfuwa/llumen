@@ -16,7 +16,7 @@ pub struct MessageDeleteReq {
 
 #[derive(Debug, Serialize)]
 #[typeshare]
-pub struct Resp {
+pub struct MessageDeleteResp {
     deleted: bool,
 }
 
@@ -24,7 +24,7 @@ pub async fn route(
     State(app): State<Arc<AppState>>,
     Extension(UserId(user_id)): Extension<UserId>,
     Json(req): Json<MessageDeleteReq>,
-) -> JsonResult<Resp> {
+) -> JsonResult<MessageDeleteResp> {
     let (message, chat) = message::Entity::find_by_id(req.id)
         .find_also_related(chat::Entity)
         .one(&app.conn)
@@ -51,7 +51,7 @@ pub async fn route(
         .await
         .raw_kind(ErrorKind::Internal)?;
 
-    Ok(Json(Resp {
+    Ok(Json(MessageDeleteResp {
         deleted: result.rows_affected > 0,
     }))
 }

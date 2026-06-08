@@ -1,9 +1,9 @@
 import { events } from 'fetch-event-stream';
 import { page } from '$app/state';
 
-import { APIFetch, getError, RawAPIFetch } from './errorHandle.svelte';
+import { APIFetch, getError, RawAPIFetch } from './http.svelte';
 
-import { FileKind, MessagePaginateReqOrder, ChatMode } from './types';
+import { FileKind, MessagePaginateReqOrder } from './types';
 import type {
 	MessageDeleteReq,
 	MessageCreateReq,
@@ -18,67 +18,45 @@ import type {
 	AssistantChunk,
 	SseCursor,
 	UrlCitation,
-	ChatReadResp
+	MessageDeleteResp
 } from './types';
 import { displayError } from '$lib/error.svelte';
 import { untrack } from 'svelte';
 import { dev } from '$app/environment';
-import { currentRoom, updateRoomTitle } from './chatroom.svelte';
+import { chatrooms, currentRoom, getChatId } from './chatroom.svelte';
+import { token } from '$lib/rune.svelte';
+import type { MutationStatus } from '.';
 
 // @typeshare generates MessagePaginateRespList without the stream flag (client-only).
 type Message = MessagePaginateRespList & { stream?: boolean };
 type AssistantMessage = Message & { inner: { t: 'assistant'; c: AssistantChunk[] } };
 
-function byteLen(s: string): number {
-	return new TextEncoder().encode(s).length;
-}
-
 export const messages = $state<{ val: Array<Message> }>({ val: [] });
 export const streaming = $state({ val: false });
 export const paginateElement = $state<{ val?: HTMLDivElement }>({ val: undefined });
-export const olderExhausted = $state({ val: false });
-
+let deepState = $state<{
+	currentStepIndex: number;
+	fullJson: string;
+} | null>(null);
 let version = $state(-1);
-let streamingMessageId = $state<number | null>(null);
-
-// index = chunk position within the assistant response
-// offset = char offset within the text/reasoning chunk
 let cursor = $state<SseCursor | null>(null);
+let lastKey = $state(-1);
+let pathname = page.url.pathname;
+
+let paginateRunning = false;
+let exhausted = false;
+let sseController = new AbortController();
+let paginateChainAbort: AbortController = new AbortController();
+
+function byteLen(s: string): number {
+	return new TextEncoder().encode(s).length;
+}
 
 function consumeDiscreteChunk() {
 	cursor!.index++;
 	cursor!.offset = 1;
 }
 
-function assertDescending(arr: Message[]) {
-	if (!dev) return;
-	for (let i = 1; i < arr.length; i++) {
-		if (arr[i - 1].id <= arr[i].id) {
-			console.error(
-				'invariant: messages array not strictly descending at',
-				i,
-				arr[i - 1].id,
-				arr[i].id
-			);
-		}
-	}
-}
-
-function assertDescendingFetched(arr: Message[]) {
-	if (!dev) return;
-	for (let i = 1; i < arr.length; i++) {
-		if (arr[i - 1].id <= arr[i].id) {
-			console.error(
-				'invariant: fetched array not strictly descending at',
-				i,
-				arr[i - 1].id,
-				arr[i].id
-			);
-		}
-	}
-}
-
-// First index where arr[idx].id <= target (descending array).
 function firstLeIdx(arr: Message[], target: number): number {
 	let lo = 0,
 		hi = arr.length;
@@ -90,7 +68,6 @@ function firstLeIdx(arr: Message[], target: number): number {
 	return lo;
 }
 
-// First index where arr[idx].id < target (descending array).
 function firstLtIdx(arr: Message[], target: number): number {
 	let lo = 0,
 		hi = arr.length;
@@ -102,25 +79,6 @@ function firstLtIdx(arr: Message[], target: number): number {
 	return lo;
 }
 
-// Merge two strictly descending arrays into one strictly descending array.
-function mergeDescending(a: Message[], b: Message[]): Message[] {
-	const result: Message[] = [];
-	let i = 0,
-		j = 0;
-	while (i < a.length && j < b.length) {
-		if (a[i].id >= b[j].id) {
-			result.push(a[i]);
-			i++;
-		} else {
-			result.push(b[j]);
-			j++;
-		}
-	}
-	result.push(...a.slice(i), ...b.slice(j));
-	return result;
-}
-
-// Push/replace a message while preserving descending order (newest at index 0).
 function pushMessage(m: Message) {
 	const idx = firstLeIdx(messages.val, m.id);
 	if (idx === messages.val.length) messages.val.push(m);
@@ -128,22 +86,39 @@ function pushMessage(m: Message) {
 		const sameId = messages.val[idx].id === m.id;
 		messages.val.splice(idx, Number(sameId), m);
 	}
-	assertDescending(messages.val);
 }
 
-let deepState = $state<{
-	currentStepIndex: number;
-	fullJson: string;
-} | null>(null);
+export function pushUserMessage(
+	user_id: number,
+	content: string,
+	files: Array<{ name: string; id: number; kind?: FileKind }>
+) {
+	pushMessage({
+		id: user_id,
+		inner: {
+			t: 'user',
+			c: {
+				text: content,
+				files
+			}
+		},
+		token_count: 0,
+		price: 0,
+		stream: true
+	});
+}
 
 const Handlers: {
 	[key in SseResp['t']]: (data: Extract<SseResp, { t: key }>['c'], chatId: number) => void;
 } = {
 	version(data, chatId) {
-		if (version !== data) {
+		if (version == -1) version = data;
+		else if (version !== data) {
+			exhausted = false;
+			paginateRunning = false;
 			version = data;
 			cursor = null;
-			syncMessages(chatId);
+			messages.val = [];
 		}
 	},
 
@@ -158,7 +133,6 @@ const Handlers: {
 			price: 0,
 			stream: true
 		};
-		streamingMessageId = data.id;
 		pushMessage(message);
 		streaming.val = true;
 		version = data.version;
@@ -218,14 +192,14 @@ const Handlers: {
 		firstMsg.token_count = data.token_count;
 		firstMsg.price = data.cost;
 		streaming.val = false;
-		streamingMessageId = null;
 		version = data.version;
 		cursor = null;
 		if (messages.val.length > 1) messages.val[1].stream = false;
 	},
 
 	title(data, chatId) {
-		updateRoomTitle(chatId, data);
+		// FIXME: binary search
+		chatrooms.val.find((e) => e.id === chatId)!.name = data;
 		consumeDiscreteChunk();
 	},
 
@@ -400,7 +374,11 @@ const Handlers: {
 	}
 };
 
-function startSSE(chatId: number, signal: AbortSignal) {
+function startSSE(chatId: number, token: string) {
+	if (!sseController.signal.aborted) sseController.abort();
+	sseController = new AbortController();
+
+	const signal = sseController?.signal!;
 	let cursor_ = untrack(() => cursor);
 
 	const req: SseReq = { id: chatId };
@@ -408,7 +386,7 @@ function startSSE(chatId: number, signal: AbortSignal) {
 		req.resume = { cursor: cursor_, version: untrack(() => version) };
 	}
 
-	RawAPIFetch<SseReq>('chat/sse', req, 'POST', signal).then(async (response) => {
+	RawAPIFetch<SseReq>({ path: 'chat/sse', body: req, signal, token }).then(async (response) => {
 		if (response == undefined) return;
 
 		const stream = events(response);
@@ -436,161 +414,57 @@ function startSSE(chatId: number, signal: AbortSignal) {
 	});
 }
 
-// At module-level: SSE auto-starts when page.params.id is set to a valid chat id.
-// Cleanup runs on id change or module teardown.
-$effect.root(() => {
-	$effect(() => {
-		const pid = page.params.id;
-		if (!pid || isNaN(+pid)) return;
-		const chatId = +pid;
+async function paginateOne(
+	target: HTMLDivElement,
+	chatId: number,
+	token: string
+): Promise<boolean> {
+	const anchor = messages.val.at(-1)?.id;
 
-		let controller = new AbortController();
-		startSSE(chatId, controller.signal);
-
-		function onVisibilityChange() {
-			if (globalThis.document.visibilityState === 'visible') {
-				if (!controller.signal.aborted) controller.abort();
-				controller = new AbortController();
-				startSSE(chatId, controller.signal);
-			} else if (globalThis.document.visibilityState === 'hidden') {
-				controller.abort();
-			}
-		}
-
-		globalThis.document.addEventListener('visibilitychange', onVisibilityChange);
-
-		return () => {
-			globalThis.document.removeEventListener('visibilitychange', onVisibilityChange);
-			messages.val = [];
-			version = -1;
-			streamingMessageId = null;
-			cursor = { index: -1, offset: 0 };
-			olderExhausted.val = false;
-			controller.abort();
-		};
-	});
-
-	// Bind scroll-based pagination to paginateElement.
-	$effect(() => {
-		void page.url.pathname;
-		const el = paginateElement.val;
-		if (!el) return;
-		untrack(() => checkElement(el, 10));
-		el.addEventListener('scrollend', scrollEventHandler);
-		return () => el.removeEventListener('scrollend', scrollEventHandler);
-	});
-});
-
-// Anchor: oldest message id in the array.
-// When empty, uses Infinity so the first fetch returns the newest batch.
-const olderPaginationAnchor = $derived.by(() => {
-	if (messages.val.length !== 0) return messages.val.at(-1)!.id;
-	return Infinity;
-});
-
-// Fetch messages older than the current oldest anchor.
-// When anchor is Infinity (empty list), omits id to get most recent items.
-async function fetchOlder(): Promise<Array<Message>> {
-	const pid = page.params.id;
-	if (!pid || isNaN(+pid)) return [];
-	const chatId = +pid;
-	if (olderExhausted.val) return [];
-
-	const anchor = olderPaginationAnchor;
-	if (anchor === undefined) return [];
-
-	const params: MessagePaginateReq =
-		anchor === Infinity
-			? { t: 'limit', c: { chat_id: chatId, order: MessagePaginateReqOrder.Lt } }
-			: { t: 'limit', c: { chat_id: chatId, id: anchor, order: MessagePaginateReqOrder.Lt } };
-	const resp = await APIFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', params);
-	if (!resp) return [];
-	return resp.list;
-}
-
-// Re-sync on version mismatch. Merges fetched messages into existing array
-// without dropping paginated history (messages with ids older than the fetch window).
-async function syncMessages(chatId: number) {
-	if (messages.val.length === 0) return;
-
-	const resp = await APIFetch<MessagePaginateResp, MessagePaginateReq>('message/paginate', {
-		t: 'limit',
-		c: {
-			chat_id: chatId,
-			order: MessagePaginateReqOrder.Lt
-		}
-	});
-	if (!resp) return;
-
-	assertDescendingFetched(resp.list);
-
-	const fetched = resp.list;
-
-	// Merge-join two strictly descending arrays, deduplicating by id.
-	const result: Message[] = [];
-	let i = 0,
-		j = 0;
-	while (i < messages.val.length && j < fetched.length) {
-		const msg = messages.val[i];
-		const fet = fetched[j];
-		if (msg.id > fet.id) {
-			// msg not yet in fetched → keep our in-memory version
-			result.push(msg);
-			i++;
-		} else if (msg.id < fet.id) {
-			// fetched entry not in our array → take backend version
-			result.push(fet);
-			j++;
-		} else {
-			// same id: keep our in-memory version only if it's the streaming message
-			if (msg.id === streamingMessageId) {
-				result.push(msg);
-				// skip the fetched duplicate
-				const dupStart = j;
-				while (j < fetched.length && fetched[j].id === msg.id) j++;
-				if (j === dupStart) j++;
-			} else {
-				result.push(fet);
-				j++;
-			}
-			i++;
-		}
-	}
-	result.push(...messages.val.slice(i), ...fetched.slice(j));
-	messages.val = result;
-	assertDescending(messages.val);
-}
-
-// Reset exhaustion flags on visibility change so re-fetching happens after tab switch.
-$effect.root(() => {
-	document.addEventListener('visibilitychange', () => {
-		olderExhausted.val = false;
-	});
-});
-
-let extending = false;
-
-async function checkElement(target: HTMLDivElement, maxRecursion = 1) {
-	if (maxRecursion === 0 || extending) return;
-	const olderNeeded = target.scrollTop <= target.clientHeight * 0.8 && !olderExhausted.val;
-
-	if (!olderNeeded) return;
-
-	extending = true;
 	const prevScrollHeight = target.scrollHeight;
-	let ext = await fetchOlder();
-	extending = false;
 
-	if (ext.length === 0) olderExhausted.val = true;
-	else {
-		messages.val.push(...ext);
-		target.scrollTop = target.scrollHeight - prevScrollHeight;
-	}
-	checkElement(target, maxRecursion - 1);
+	const params: MessagePaginateReq = {
+		t: 'limit',
+		c: { chat_id: chatId, id: anchor, order: MessagePaginateReqOrder.Lt }
+	};
+	const resp = await APIFetch<MessagePaginateResp, MessagePaginateReq>({
+		path: 'message/paginate',
+		body: params,
+		signal: paginateChainAbort.signal,
+		token
+	});
+
+	if (!resp || resp.list.length === 0) return true;
+
+	messages.val.push(...resp.list);
+	target.scrollTop = target.scrollHeight - prevScrollHeight;
+	return true;
 }
 
-function scrollEventHandler(e: Event) {
-	untrack(() => checkElement(e.target as HTMLDivElement));
+async function ensurePaginated(
+	target: HTMLDivElement,
+	chatId: number,
+	token: string
+): Promise<void> {
+	const signal = paginateChainAbort.signal;
+	if (signal.aborted || paginateRunning) return;
+	paginateRunning = true;
+	// Ideally, we should keep a state of max try, and increase it by 10 every ensurePaginated fired
+	for (let i = 0; i < 10; i++) {
+		if (exhausted) break;
+		const needMore: boolean = await new Promise((resolve) => {
+			requestAnimationFrame(() => {
+				resolve(target.scrollTop <= target.clientHeight * 0.8);
+			});
+		});
+		if (!needMore) break;
+		try {
+			exhausted = await paginateOne(target, chatId, token);
+		} catch (_) {
+			break;
+		}
+	}
+	paginateRunning = false;
 }
 
 function handleToolResult(result: string, files: FileMetadata[] = []) {
@@ -614,94 +488,127 @@ function handleToolResult(result: string, files: FileMetadata[] = []) {
 	}
 }
 
-export function pushUserMessage(
-	user_id: number,
-	content: string,
-	files: Array<{ name: string; id: number; kind?: FileKind }>
-) {
-	pushMessage({
-		id: user_id,
-		inner: {
-			t: 'user',
-			c: {
-				text: content,
-				files
-			}
-		},
-		token_count: 0,
-		price: 0,
-		stream: true
+export async function createMessage(params: MessageCreateReq): Promise<MutationStatus> {
+	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>({
+		path: 'message/create',
+		body: params,
+		token: true
 	});
+	return resp ? 'success' : 'failed';
 }
 
-export async function createMessage(params: MessageCreateReq): Promise<void> {
-	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', params);
-	if (resp) pushUserMessage(resp.user_id, params.text, params.files || []);
-}
-
-export async function deleteMessage(id: number): Promise<void> {
-	await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', { id });
+export async function deleteMessage(id: number): Promise<MutationStatus> {
+	const resp = await APIFetch<MessageDeleteResp, MessageDeleteReq>({
+		path: 'message/delete',
+		body: { id },
+		token: true
+	});
 	const firstKeepIdx = firstLtIdx(messages.val, id);
 	if (firstKeepIdx === messages.val.length) messages.val.splice(0);
 	else messages.val.splice(0, firstKeepIdx);
-	assertDescending(messages.val);
+
+	if (resp) return resp.deleted ? 'success' : 'failed';
+	return 'failed';
 }
 
-export async function updateMessage(
+export async function syncMessage(
 	msgId: number,
 	text: string,
 	files: Array<{ id: number; name: string }>
-): Promise<void> {
-	const pid = page.params.id;
-	if (!pid) return;
-	const chatId = +pid;
+): Promise<MutationStatus> {
+	const chatId = getChatId();
+	if (chatId === undefined) return 'failed';
 
 	const room = currentRoom.val;
 	if (!room || !room.model_id) {
 		displayError('internal', 'select model first');
-		return;
+		return 'failed';
 	}
 
-	await APIFetch<MessageDeleteReq, MessageDeleteReq>('message/delete', { id: msgId });
+	await APIFetch<MessageDeleteReq, MessageDeleteReq>({
+		path: 'message/delete',
+		body: { id: msgId },
+		token: true
+	});
 
 	const firstKeepIdx = firstLtIdx(messages.val, msgId);
 	if (firstKeepIdx === messages.val.length) messages.val.splice(0);
 	else messages.val.splice(0, firstKeepIdx);
 
-	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
-		chat_id: chatId,
-		model_id: room.model_id,
-		mode: room.mode,
-		text,
-		files
+	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>({
+		path: 'message/create',
+		body: {
+			chat_id: chatId,
+			model_id: room.model_id,
+			mode: room.mode,
+			text,
+			files
+		},
+		token: true
 	});
 	if (resp) pushUserMessage(resp.user_id, text, files);
+
+	return resp ? 'success' : 'failed';
 }
 
-let pathname = $state(page.url.pathname);
 $effect.root(() => {
 	$effect(() => {
-		if (page.url.pathname == pathname) return;
-		untrack(() => {
-			pathname = page.url.pathname;
-		});
-		console.log('cleaned!', page.url.pathname);
-		streaming.val = false;
-		messages.val = [];
-		olderExhausted.val = false;
-		streamingMessageId = null;
-		version = -1;
+		const chatId = getChatId();
+		const token_ = token.value?.value;
+		if (chatId == undefined || !token_) return;
+
+		startSSE(chatId, token_);
+
+		function onVisibilityChange() {
+			const chatId = getChatId();
+			if (chatId == undefined) return;
+			if (globalThis.document.visibilityState === 'visible') {
+				startSSE(chatId, token_!);
+			} else if (globalThis.document.visibilityState === 'hidden') {
+				sseController.abort('b');
+			}
+		}
+
+		globalThis.document.addEventListener('visibilitychange', onVisibilityChange);
+
+		return () => globalThis.document.removeEventListener('visibilitychange', onVisibilityChange);
+	});
+
+	$effect(() => {
+		const el = paginateElement.val;
+		const chatId = getChatId();
+		const token_ = token.value?.value;
+		if (!el || chatId == undefined || !token_) return;
+
+		if (messages.val.length == 0) {
+			untrack(() => ensurePaginated(el, chatId, token_!));
+		}
+
+		function scrollEventHandler() {
+			untrack(() => ensurePaginated(el!, chatId!, token_!));
+		}
+
+		el.addEventListener('scroll', scrollEventHandler);
+		return () => el.removeEventListener('scroll', scrollEventHandler);
 	});
 });
 
-let lastKey = $state(-1);
+$effect.root(() => {
+	$effect(() => {
+		if (page.url.pathname == pathname) return;
+		pathname = page.url.pathname;
+		streaming.val = false;
+		messages.val = [];
+		exhausted = false;
+		version = -1;
+	});
+});
 
 $effect.root(() => {
 	let key = $derived(messages.val.at(0)?.id || -2);
 	$effect(() => {
 		const el = paginateElement.val;
-		if (!el) return;
-		if (key !== lastKey) {
+		if (el && key !== lastKey) {
 			untrack(() => (lastKey = key));
 			requestAnimationFrame(() => (el.scrollTop = el.scrollHeight));
 		}

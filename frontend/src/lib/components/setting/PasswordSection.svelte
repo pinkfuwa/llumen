@@ -7,7 +7,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Warning from './Warning.svelte';
 	import { updateUser } from '$lib/api/user.svelte';
-	import { token } from '$lib/store.svelte';
+	import { token } from '$lib/rune.svelte';
 	import type { MutationStatus } from '$lib/api';
 
 	const triggerStyle =

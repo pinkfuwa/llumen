@@ -302,6 +302,10 @@ export interface MessageDeleteReq {
 	id: number;
 }
 
+export interface MessageDeleteResp {
+	deleted: boolean;
+}
+
 export enum MessagePaginateReqOrder {
 	/** greater than */
 	Gt = 'gt',
@@ -428,10 +432,6 @@ export interface RenewReq {
 export interface RenewResp {
 	token: string;
 	exp: string;
-}
-
-export interface Resp {
-	deleted: boolean;
 }
 
 export interface SseCursor {

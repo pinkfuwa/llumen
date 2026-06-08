@@ -1,4 +1,4 @@
-import { RawAPIFetch, APIFetch } from './errorHandle.svelte';
+import { RawAPIFetch, APIFetch } from './http.svelte';
 import type { FileUploadResp, FileRefreshReq, FileRefreshResp } from './types';
 import { compressImage, isImageFile } from '$lib/image';
 import { displayError } from '$lib/error.svelte';
@@ -17,7 +17,7 @@ export async function upload(file: File, signal?: AbortSignal): Promise<number |
 	formData.append('size', file.size.toString());
 	formData.append('file', file);
 
-	const response = await RawAPIFetch('file/upload', formData, 'POST', signal);
+	const response = await RawAPIFetch({ path: 'file/upload', body: formData, signal, token: true });
 
 	if (!response.ok) {
 		console.warn('Fail to upload', { file });
@@ -31,19 +31,21 @@ export async function upload(file: File, signal?: AbortSignal): Promise<number |
 export async function refresh(fileIds: number[]): Promise<number | null> {
 	if (fileIds.length === 0) return null;
 
-	const response = await APIFetch<FileRefreshResp, FileRefreshReq>('file/refresh', {
-		ids: fileIds
+	const response = await APIFetch<FileRefreshResp, FileRefreshReq>({
+		path: 'file/refresh',
+		body: { ids: fileIds },
+		token: true
 	});
 
 	return response?.valid_until ?? null;
 }
 
 export async function download(id: number): Promise<string | undefined> {
-	const response = await RawAPIFetch<undefined>(
-		`file/read/${encodeURIComponent(id)}`,
-		undefined,
-		'GET'
-	);
+	const response = await RawAPIFetch<undefined>({
+		path: `file/read/${encodeURIComponent(id)}`,
+		method: 'GET',
+		token: true
+	});
 
 	let content_type = response.headers.get('Content-Type');
 	if (!response.ok || content_type == 'application/json') {
@@ -57,11 +59,11 @@ export async function download(id: number): Promise<string | undefined> {
 
 export async function downloadCompressed(id: number): Promise<string | undefined> {
 	const width = Math.max(Math.ceil(window.devicePixelRatio * screen.width), 100);
-	const response = await RawAPIFetch<undefined>(
-		`file/image/${width}/${encodeURIComponent(id)}`,
-		undefined,
-		'GET'
-	);
+	const response = await RawAPIFetch<undefined>({
+		path: `file/image/${width}/${encodeURIComponent(id)}`,
+		method: 'GET',
+		token: true
+	});
 
 	let content_type = response.headers.get('Content-Type');
 	if (!response.ok || content_type == 'application/json') {

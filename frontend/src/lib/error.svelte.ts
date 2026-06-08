@@ -1,4 +1,4 @@
-import { token } from './store.svelte';
+import { token } from './rune.svelte';
 
 type ErrorDetail = {
 	error: string;

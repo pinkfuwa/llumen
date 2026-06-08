@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { messages, updateMessage } from '$lib/api/message.svelte';
+	import { messages, syncMessage } from '$lib/api/message.svelte';
 	import ResponseBox from './ResponseBox.svelte';
 	import ResponseEdit from './ResponseEdit.svelte';
 	import User from './User.svelte';
@@ -11,7 +11,7 @@
 		updatedFiles: Array<{ name: string; id: number }>
 	) {
 		// FIXME: there is only one messags array, which we can use data-as-API concept to avoid prop drilling
-		await updateMessage(messageId, text, updatedFiles);
+		await syncMessage(messageId, text, updatedFiles);
 	}
 </script>
 

@@ -9,7 +9,6 @@ export {
 	paginateElement as chatroomElement,
 	currentRoom,
 	createRoom,
-	updateRoomTitle,
 	deleteEntry,
 	syncEntry,
 	haltCompletion,
@@ -31,10 +30,9 @@ export {
 	messages,
 	streaming,
 	paginateElement as messagesElement,
-	olderExhausted,
 	pushUserMessage,
 	createMessage,
-	updateMessage,
+	syncMessage as updateMessage,
 	deleteMessage
 } from './message.svelte';
 
@@ -59,7 +57,7 @@ export { users, currentUser, createUser, updateUser, deleteUser } from './user.s
 export type { PartialAssistantChunk } from './patch';
 
 // Error handling
-export { RawAPIFetch, APIFetch, getError, apiBase } from './errorHandle.svelte';
+export { RawAPIFetch, APIFetch, getError, apiBase } from './http.svelte';
 
 // Re-export all generated types
 export type * from './types';

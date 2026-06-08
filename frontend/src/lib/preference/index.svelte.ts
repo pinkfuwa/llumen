@@ -1,4 +1,4 @@
-import { APIFetch } from '../api/errorHandle.svelte';
+import { APIFetch } from '../api/http.svelte';
 import type {
 	UserReadReq,
 	UserPreference,
@@ -6,7 +6,7 @@ import type {
 	UserUpdateResp,
 	UserUpdateReq
 } from '../api/types';
-import { localState, token } from '../store.svelte';
+import { localState, token } from '$lib/rune.svelte';
 import type { Theme } from './theme';
 import { setTheme } from './theme';
 
@@ -26,10 +26,18 @@ export const preference = localState<Required<UserPreference>>('preference', {
 	checker: preferenceChecker,
 	syncer: {
 		upload: async (p) => {
-			await APIFetch<UserUpdateResp, UserUpdateReq>('user/update', { preference: p });
+			await APIFetch<UserUpdateResp, UserUpdateReq>({
+				path: 'user/update',
+				body: { preference: p },
+				token: true
+			});
 		},
 		download: async () => {
-			const remote = await APIFetch<UserReadResp, UserReadReq>('user/read', {});
+			const remote = await APIFetch<UserReadResp, UserReadReq>({
+				path: 'user/read',
+				body: {},
+				token: true
+			});
 			if (!remote) return null;
 			return remote.preference as Required<UserPreference>;
 		}

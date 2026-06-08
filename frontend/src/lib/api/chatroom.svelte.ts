@@ -1,8 +1,11 @@
 import { page } from '$app/state';
 import { untrack } from 'svelte';
 import { goto } from '$app/navigation';
-import { APIFetch } from './errorHandle.svelte';
+import { APIFetch } from './http.svelte';
 import { dev } from '$app/environment';
+import { ChatPaginateReqOrder } from './types';
+import { token } from '$lib/rune.svelte';
+
 import type { MutationStatus } from '.';
 import type {
 	ChatReadResp,
@@ -20,13 +23,18 @@ import type {
 	MessageCreateReq,
 	MessageCreateResp
 } from './types';
-import { ChatPaginateReqOrder } from './types';
-import { token } from '$lib/store.svelte';
 
 export interface Entry {
 	name: string;
 	id: number;
 }
+
+export const chatrooms = $state<{ val: Array<Entry> }>({ val: [] });
+export const currentRoom = $state<{ val?: ChatReadResp }>({ val: undefined });
+export const paginateElement = $state<{ val?: HTMLElement }>({ val: undefined });
+let leftExhausted = false;
+let rightExhausted = false;
+let paginateRunning = false;
 
 function assertDescendingChatrooms(arr: Entry[]) {
 	if (!dev) return;
@@ -48,144 +56,86 @@ function findEntryIdx(arr: Entry[], id: number): number {
 	return lo;
 }
 
-// Module-level state for sidebar chatroom list. Array is sorted newest-first (descending id).
-// Components bind to `chatrooms.val` directly and the scroll container sets `paginateElement`.
-export const chatrooms = $state<{ val: Array<Entry> }>({ val: [] });
+export function getChatId() {
+	const id = page.params.id;
+	if (!id || isNaN(+id)) return;
 
-export const currentRoom = $state<{ val?: ChatReadResp }>({ val: undefined });
-
-// Auto-fetch currentRoom when page.params.id changes.
-$effect.root(() => {
-	$effect(() => {
-		void token.value?.value;
-
-		const pid = page.params.id;
-		if (!pid || isNaN(+pid)) {
-			currentRoom.val = undefined;
-			return;
-		}
-		const chatId = +pid;
-		APIFetch<ChatReadResp, ChatReadReq>('chat/read', { id: chatId }).then((resp) => {
-			if (resp) currentRoom.val = resp;
-		});
-	});
-});
-
-// rightPaginationAnchor: last id in array (smallest id = oldest).
-// When chatrooms is empty and on a chat page, uses current chat id as pivot so
-// the first fetch loads items around the active chat.
-const rightPaginationAnchor = $derived.by(() => {
-	if (chatrooms.val.length != 0) return chatrooms.val.at(-1)!.id;
-	if (!page.route.id?.startsWith('/chat')) return Infinity;
-	const pid = page.params.id;
-	if (pid === undefined || isNaN(+pid)) return Infinity;
-	return +pid;
-});
-// leftPaginationAnchor: first id in array (largest id = newest). undefined when empty.
-const leftPaginationAnchor = $derived(chatrooms.val.at(0)?.id);
-
-let leftExhausted = $state({ val: false });
-let rightExhausted = $state({ val: false });
-
-// Fetches items older than the rightmost entry (Lt = smaller id).
-// When anchor is Infinity (empty list), omits id to get most recent items from backend.
-async function fetchRight(): Promise<Array<Entry>> {
-	const anchor = rightPaginationAnchor;
-	if (rightExhausted.val || anchor === undefined) return [];
-	const params: ChatPaginateReq =
-		anchor === Infinity
-			? { t: 'limit', c: { order: ChatPaginateReqOrder.Lt } }
-			: { t: 'limit', c: { id: anchor, order: ChatPaginateReqOrder.Lt } };
-	const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', params);
-	if (!resp) return [];
-	return resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' }));
+	return +id;
 }
 
-// Fetches items newer than the leftmost entry (Gt = larger id).
-// Backend returns Gt in ascending order; reverses to maintain descending order.
-async function fetchLeft(): Promise<Array<Entry>> {
-	const anchor = leftPaginationAnchor;
-	if (leftExhausted.val || anchor === undefined) return [];
-	const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>('chat/paginate', {
-		t: 'limit',
-		c: { id: anchor, order: ChatPaginateReqOrder.Gt }
-	});
-	if (!resp) return [];
-	return resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })).reverse();
-}
-
-// Reset exhaustion flags on visibility change so re-fetching happens after tab switch.
-$effect.root(() => {
-	document.addEventListener('visibilitychange', () => {
-		leftExhausted.val = false;
-		rightExhausted.val = false;
-	});
-});
-
-let extending = false;
-
-async function checkElement(target: HTMLElement, maxRecursion = 1) {
-	if (maxRecursion === 0 || extending) return;
-	let leftExtNeeded = target.scrollTop <= target.clientHeight * 0.8 && !leftExhausted.val;
-	let rightExtNeeded =
-		target.scrollHeight - target.scrollTop - target.clientHeight <= target.clientHeight * 0.8 &&
-		!rightExhausted.val;
-
-	extending = true;
-	if (rightExtNeeded) {
-		let ext = await fetchRight();
-
-		extending = false;
-
-		if (ext.length === 0) rightExhausted.val = true;
-		else {
-			chatrooms.val.push(...ext);
-			assertDescendingChatrooms(chatrooms.val);
-		}
-		requestAnimationFrame(() => checkElement(target, maxRecursion - 1));
-	} else if (leftExtNeeded) {
-		let ext = await fetchLeft();
-		extending = false;
-
-		if (ext.length === 0) leftExhausted.val = true;
-		else {
-			const distanceFromBottom = target.scrollHeight - target.scrollTop;
-			chatrooms.val.unshift(...ext);
-			assertDescendingChatrooms(chatrooms.val);
+async function ensurePaginated(target: HTMLElement, token_: string) {
+	if (paginateRunning) return;
+	paginateRunning = true;
+	for (let i = 0; i < 50; i++) {
+		const [leftNeeded, rightNeeded] = await new Promise<[boolean, boolean]>((resolve) => {
 			requestAnimationFrame(() => {
-				target.scrollTop = target.scrollHeight - distanceFromBottom;
+				resolve([
+					target.scrollTop <= target.clientHeight * 0.8 && !leftExhausted,
+					target.scrollHeight - target.scrollTop - target.clientHeight <=
+						target.clientHeight * 0.8 && !rightExhausted
+				]);
 			});
+		});
+		if (!leftNeeded && !rightNeeded) break;
+		if (rightNeeded) {
+			let params: ChatPaginateReq;
+			if (chatrooms.val.length === 0) {
+				const pid = page.params.id;
+				const pivotId =
+					pid !== undefined && !isNaN(+pid) && page.route.id?.startsWith('/chat') ? +pid : 0;
+				params =
+					pivotId !== 0
+						? { t: 'limit', c: { id: pivotId, order: ChatPaginateReqOrder.Lt } }
+						: { t: 'limit', c: { order: ChatPaginateReqOrder.Lt } };
+			} else {
+				params = {
+					t: 'limit',
+					c: { id: chatrooms.val.at(-1)!.id, order: ChatPaginateReqOrder.Lt }
+				};
+			}
+			const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>({
+				path: 'chat/paginate',
+				body: params,
+				token: token_
+			});
+			if (!resp || resp.list.length === 0) {
+				rightExhausted = true;
+				break;
+			}
+			chatrooms.val.push(...resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })));
+			assertDescendingChatrooms(chatrooms.val);
+		} else if (leftNeeded) {
+			const anchor = chatrooms.val.at(0)?.id;
+			if (anchor === undefined) {
+				leftExhausted = true;
+				break;
+			}
+			const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>({
+				path: 'chat/paginate',
+				body: { t: 'limit', c: { id: anchor, order: ChatPaginateReqOrder.Gt } },
+				token: token_
+			});
+			if (!resp || resp.list.length === 0) {
+				leftExhausted = true;
+				break;
+			}
+			const distanceFromBottom = target.scrollHeight - target.scrollTop;
+			chatrooms.val.unshift(
+				...resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })).reverse()
+			);
+			assertDescendingChatrooms(chatrooms.val);
+			target.scrollTop = target.scrollHeight - distanceFromBottom;
 		}
-		requestAnimationFrame(() => checkElement(target, maxRecursion - 1));
-	} else {
-		extending = false;
 	}
+	paginateRunning = false;
 }
 
-export const paginateElement = $state<{ val?: HTMLElement }>({ val: undefined });
-
-function scrollEventHandler(e: Event) {
-	untrack(() => checkElement(e.target as HTMLElement));
-}
-
-$effect.root(() => {
-	$effect(() => {
-		console.log('pag up', token.value?.value, paginateElement.val);
-		void token.value?.value;
-		const el = paginateElement.val;
-		if (!el) return;
-		leftExhausted.val = false;
-		rightExhausted.val = false;
-		untrack(() => checkElement(el, 50));
-		el.addEventListener('scrollend', scrollEventHandler);
-		return () => el.removeEventListener('scrollend', scrollEventHandler);
-	});
-});
-
-// Uses Promise<MutationStatus> instead of createMutation pattern because
-// the caller (Entry.svelte) reads the result synchronously to show UI state.
 export function deleteEntry(id: number): Promise<MutationStatus> {
-	return APIFetch<ChatDeleteResp, ChatDeleteReq>('chat/delete', { id }).then((resp) => {
+	return APIFetch<ChatDeleteResp, ChatDeleteReq>({
+		path: 'chat/delete',
+		body: { id },
+		token: true
+	}).then((resp) => {
 		if (resp) {
 			const idx = findEntryIdx(chatrooms.val, id);
 			if (idx < chatrooms.val.length && chatrooms.val[idx].id === id) {
@@ -198,54 +148,93 @@ export function deleteEntry(id: number): Promise<MutationStatus> {
 }
 
 export function syncEntry(id: number, title: string): Promise<MutationStatus> {
-	return APIFetch<ChatUpdateResp, ChatUpdateReq>('chat/write', { chat_id: id, title }).then(
-		(resp) => {
-			if (resp?.wrote) return 'success' as MutationStatus;
-			return 'failed' as MutationStatus;
-		}
-	);
+	return APIFetch<ChatUpdateResp, ChatUpdateReq>({
+		path: 'chat/write',
+		body: { chat_id: id, title },
+		token: true
+	}).then((resp) => {
+		if (resp?.wrote) return 'success' as MutationStatus;
+		return 'failed' as MutationStatus;
+	});
 }
 
-// Two-step flow: create chat room then immediately create the first message.
-// Appends to sidebar before navigation so the room appears instantly.
-export function createRoom(params: {
+export async function createRoom(params: {
 	message: string;
 	modelId: number;
 	files: Array<{ id: number; name: string }>;
 	mode: ChatMode;
 }): Promise<MutationStatus> {
-	return APIFetch<ChatCreateResp, ChatCreateReq>('chat/create', {
-		model_id: params.modelId,
-		mode: params.mode
-	}).then(async (resp) => {
-		if (!resp) return 'failed';
-		const chatId = resp.id;
+	// FIXME: this token is not reactive
+	const token_ = token.value?.value;
+	if (!token_) return 'failed';
+	const roomResp = await APIFetch<ChatCreateResp, ChatCreateReq>({
+		path: 'chat/create',
+		body: { model_id: params.modelId, mode: params.mode },
+		token: token.value?.value
+	});
+	if (!roomResp) return 'failed';
+	const chatId = roomResp.id;
 
-		const msgResp = await APIFetch<MessageCreateResp, MessageCreateReq>('message/create', {
+	const msgResp = await APIFetch<MessageCreateResp, MessageCreateReq>({
+		path: 'message/create',
+		body: {
 			chat_id: chatId,
 			model_id: params.modelId,
 			mode: params.mode,
 			text: params.message,
 			files: params.files as MessageCreateReqFile[]
-		});
-		if (!msgResp) return 'failed';
-
-		chatrooms.val.unshift({ id: chatId, name: params.message });
-		await goto(`/chat/${chatId}`);
-		return 'success' as MutationStatus;
+		},
+		token: token.value?.value
 	});
-}
+	if (!msgResp) return 'failed';
 
-// Called by message.svelte.ts SSE title handler. Fire-and-forget: updates sidebar
-// optimistically; backend write is best-effort.
-export function updateRoomTitle(chatId: number, title: string) {
-	APIFetch<ChatUpdateResp, ChatUpdateReq>('chat/write', { chat_id: chatId, title });
-	const entry = chatrooms.val.find((e) => e.id === chatId);
-	if (entry) entry.name = title;
-
-	if (currentRoom.val) currentRoom.val.title = title;
+	chatrooms.val.unshift({ id: chatId, name: params.message });
+	await goto(`/chat/${chatId}`);
+	return 'success' as MutationStatus;
 }
 
 export function haltCompletion(params: { id: number }): Promise<unknown> {
-	return APIFetch('chat/halt', params);
+	// FIXME: token not reactive
+	return APIFetch({ path: 'chat/halt', body: params, token: token.value?.value! });
 }
+
+$effect.root(() => {
+	$effect(() => {
+		const chatId = getChatId();
+		if (chatId === undefined) return;
+		APIFetch<ChatReadResp, ChatReadReq>({
+			path: 'chat/read',
+			body: { id: chatId },
+			token: true
+		}).then((resp) => {
+			if (resp) currentRoom.val = resp;
+		});
+	});
+});
+
+$effect.root(() => {
+	document.addEventListener('visibilitychange', () => {
+		void token.value?.value;
+
+		leftExhausted = false;
+		rightExhausted = false;
+	});
+});
+
+$effect.root(() => {
+	$effect(() => {
+		const token_ = token.value?.value;
+		const element = paginateElement.val;
+		if (!element || !token_) return;
+
+		function scrollEventHandler(e: Event) {
+			const el = e.target as HTMLElement;
+			untrack(() => ensurePaginated(el, token_!));
+		}
+
+		if (chatrooms.val.length == 0) untrack(() => ensurePaginated(element, token_));
+
+		element.addEventListener('scroll', scrollEventHandler);
+		return () => element.removeEventListener('scroll', scrollEventHandler);
+	});
+});

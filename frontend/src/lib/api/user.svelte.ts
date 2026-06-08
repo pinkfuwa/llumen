@@ -1,5 +1,5 @@
-import { APIFetch } from './errorHandle.svelte';
-import { token } from '$lib/store.svelte';
+import { APIFetch } from './http.svelte';
+import { token } from '$lib/rune.svelte';
 
 import type {
 	UserCreateReq,
@@ -16,26 +16,12 @@ import type { MutationStatus } from '.';
 export const users = $state<{ val?: UserListResp }>({});
 export const currentUser = $state<{ val?: UserReadResp }>({});
 
-$effect.root(() => {
-	$effect(() => {
-		if (!token.value) return;
-		APIFetch<UserListResp, Record<string, never>>('user/list', {}).then((x) => {
-			users.val = x;
-		});
-	});
-});
-
-$effect.root(() => {
-	$effect(() => {
-		if (!token.value) return;
-		APIFetch<UserReadResp, UserReadReq>('user/read', {}).then((x) => {
-			currentUser.val = x;
-		});
-	});
-});
-
 export async function createUser(req: UserCreateReq): Promise<MutationStatus> {
-	const res = await APIFetch<UserCreateResp, UserCreateReq>('user/create', req);
+	const res = await APIFetch<UserCreateResp, UserCreateReq>({
+		path: 'user/create',
+		body: req,
+		token: true
+	});
 	if (!res) return 'failed';
 
 	if (users.val !== undefined) {
@@ -55,13 +41,21 @@ export async function createUser(req: UserCreateReq): Promise<MutationStatus> {
 }
 
 export async function updateUser(req: UserUpdateReq): Promise<MutationStatus> {
-	const res = await APIFetch<UserUpdateResp, UserUpdateReq>('user/update', req);
+	const res = await APIFetch<UserUpdateResp, UserUpdateReq>({
+		path: 'user/update',
+		body: req,
+		token: true
+	});
 	if (!res) return 'failed';
 	return 'success';
 }
 
 export async function deleteUser(req: UserDeleteReq): Promise<MutationStatus> {
-	const res = await APIFetch<UserReadResp, UserDeleteReq>('user/delete', req);
+	const res = await APIFetch<UserReadResp, UserDeleteReq>({
+		path: 'user/delete',
+		body: req,
+		token: true
+	});
 	if (!res) return 'failed';
 
 	if (users.val !== undefined) {
@@ -73,3 +67,25 @@ export async function deleteUser(req: UserDeleteReq): Promise<MutationStatus> {
 
 	return 'success';
 }
+
+$effect.root(() => {
+	$effect(() => {
+		if (!token.value) return;
+		APIFetch<UserListResp, Record<string, never>>({
+			path: 'user/list',
+			body: {},
+			token: true
+		}).then((x) => {
+			users.val = x;
+		});
+	});
+});
+
+$effect.root(() => {
+	$effect(() => {
+		if (!token.value) return;
+		APIFetch<UserReadResp, UserReadReq>({ path: 'user/read', body: {}, token: true }).then((x) => {
+			currentUser.val = x;
+		});
+	});
+});

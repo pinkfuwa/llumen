@@ -1,7 +1,7 @@
-import { token } from '$lib/store.svelte';
+import { token } from '$lib/rune.svelte';
 import { page } from '$app/state';
 import { goto } from '$app/navigation';
-import { APIFetch } from './errorHandle.svelte';
+import { APIFetch } from './http.svelte';
 
 import type { LoginReq, LoginResp, RenewResp, RenewReq, HeaderAuthResp } from './types';
 import type { MutationStatus } from '.';
@@ -23,7 +23,11 @@ function applyToken(data: { token: string; exp: string | number }) {
 }
 
 export async function Login(username: string, password: string): Promise<MutationStatus> {
-	let data = await APIFetch<LoginResp>('auth/login', { username, password } as LoginReq);
+	let data = await APIFetch<LoginResp>({
+		path: 'auth/login',
+		body: { username, password } as LoginReq,
+		token: false
+	});
 	if (!data) return 'failed';
 
 	applyToken(data);
@@ -32,7 +36,11 @@ export async function Login(username: string, password: string): Promise<Mutatio
 }
 
 export async function RenewToken(originalToken: string) {
-	const res = await APIFetch<RenewResp, RenewReq>('auth/renew', { token: originalToken });
+	const res = await APIFetch<RenewResp, RenewReq>({
+		path: 'auth/renew',
+		body: { token: originalToken },
+		token: false
+	});
 
 	if (res) {
 		applyToken(res);
@@ -40,7 +48,7 @@ export async function RenewToken(originalToken: string) {
 }
 
 $effect.root(() => {
-	APIFetch<HeaderAuthResp>('auth/header').then((res) => {
+	APIFetch<HeaderAuthResp>({ path: 'auth/header', token: false }).then((res) => {
 		if (res && res.exp != undefined && res.token) {
 			applyToken({ token: res.token, exp: res.exp });
 		}

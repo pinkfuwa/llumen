@@ -47,32 +47,9 @@ function cleanupMessages(messages: Message[], msgId: number) {
 	else messages.splice(0, firstKeepIdx);
 }
 
-function mergeDescending(a: Message[], b: Message[], streamingMessageId: number | null): Message[] {
-	const result: Message[] = [];
-	let i = 0,
-		j = 0;
-	while (i < a.length && j < b.length) {
-		const msg = a[i];
-		const fet = b[j];
-		if (msg.id > fet.id) {
-			result.push(msg);
-			i++;
-		} else if (msg.id < fet.id) {
-			result.push(fet);
-			j++;
-		} else {
-			if (msg.id === streamingMessageId) {
-				result.push(msg);
-				while (j < b.length && b[j].id === msg.id) j++;
-			} else {
-				result.push(fet);
-				j++;
-			}
-			i++;
-		}
-	}
-	result.push(...a.slice(i), ...b.slice(j));
-	return result;
+function syncMessages(messages: Message[], fetched: Message[]) {
+	messages.length = 0;
+	messages.push(...fetched);
 }
 
 describe('firstLeIdx', () => {
@@ -236,11 +213,11 @@ describe('cleanupMessages (remove id >= msgId)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// mergeDescending — syncMessages core algorithm
+// syncMessages — fetched is authoritative; local is fully replaced
 // ---------------------------------------------------------------------------
 
-describe('mergeDescending (syncMessages)', () => {
-	it('deduplicates by taking fetched when same id and not streaming', () => {
+describe('syncMessages', () => {
+	it('replaces local with fetched (dedup not needed — authoritative fetch)', () => {
 		const local: Message[] = [
 			{ id: 150, stream: true, inner: { t: 'user', c: 'old' } },
 			{ id: 100, inner: { t: 'assistant', c: 'a' } }
@@ -249,27 +226,21 @@ describe('mergeDescending (syncMessages)', () => {
 			{ id: 150, inner: { t: 'user', c: 'persisted' } },
 			{ id: 100, inner: { t: 'assistant', c: 'a' } }
 		];
-		const result = mergeDescending(local, fetched, null);
-		expect(result).toEqual(fetched);
+		syncMessages(local, fetched);
+		expect(local).toEqual(fetched);
 	});
 
-	it('keeps streaming message over fetched duplicate', () => {
+	it('replaces local with fetched even with streaming id', () => {
 		const local: Message[] = [
 			{ id: 200, stream: true, inner: { t: 'assistant', c: 'hello' } },
 			{ id: 100, inner: { t: 'user', c: 'hi' } }
 		];
-		const fetched: Message[] = [
-			{ id: 200, inner: { t: 'assistant', c: 'hello' } },
-			{ id: 100, inner: { t: 'user', c: 'hi' } }
-		];
-		const result = mergeDescending(local, fetched, 200);
-		expect(result).toHaveLength(2);
-		expect(result[0].id).toBe(200);
-		expect(result[0].stream).toBe(true);
-		expect(result[1].id).toBe(100);
+		const fetched: Message[] = [{ id: 100, inner: { t: 'user', c: 'hi' } }];
+		syncMessages(local, fetched);
+		expect(local).toEqual(fetched);
 	});
 
-	it('merges items unique to each array', () => {
+	it('fetched overwrites local with different ids', () => {
 		const local: Message[] = [
 			{ id: 300, inner: { t: 'assistant', c: 'a' } },
 			{ id: 100, inner: { t: 'user', c: 'q' } }
@@ -278,62 +249,44 @@ describe('mergeDescending (syncMessages)', () => {
 			{ id: 400, inner: { t: 'assistant', c: 'b' } },
 			{ id: 200, inner: { t: 'user', c: 'c' } }
 		];
-		const result = mergeDescending(local, fetched, null);
-		expect(result.map((m) => m.id)).toEqual([400, 300, 200, 100]);
+		syncMessages(local, fetched);
+		expect(local.map((m) => m.id)).toEqual([400, 200]);
 	});
 
 	it('handles empty local', () => {
+		const local: Message[] = [];
 		const fetched: Message[] = [
 			{ id: 200, inner: { t: 'user', c: 'x' } },
 			{ id: 100, inner: { t: 'user', c: 'y' } }
 		];
-		const result = mergeDescending([], fetched, null);
-		expect(result).toEqual(fetched);
+		syncMessages(local, fetched);
+		expect(local).toEqual(fetched);
 	});
 
-	it('handles empty fetched', () => {
+	it('handles empty fetched — clears local', () => {
 		const local: Message[] = [
 			{ id: 200, inner: { t: 'user', c: 'x' } },
 			{ id: 100, inner: { t: 'user', c: 'y' } }
 		];
-		const result = mergeDescending(local, [], null);
-		expect(result).toEqual(local);
+		syncMessages(local, []);
+		expect(local).toEqual([]);
 	});
 
 	it('handles both empty', () => {
-		const result = mergeDescending([], [], null);
-		expect(result).toEqual([]);
+		const local: Message[] = [];
+		syncMessages(local, []);
+		expect(local).toEqual([]);
 	});
 
-	it('deduplicates when streaming id appears multiple times in fetched', () => {
+	it('removes local items that were deleted on server', () => {
 		const local: Message[] = [
-			{ id: 200, stream: true, inner: { t: 'assistant', c: 'live' } },
-			{ id: 100, inner: { t: 'user', c: 'q' } }
+			{ id: 500, inner: { t: 'user', c: 'deleted_msg' } },
+			{ id: 400, inner: { t: 'assistant', c: 'deleted_also' } },
+			{ id: 100, inner: { t: 'user', c: 'kept' } }
 		];
-		const fetched: Message[] = [
-			{ id: 200, inner: { t: 'assistant', c: 'live' } },
-			// duplicate rows should not happen but merge handles it
-			{ id: 200, inner: { t: 'assistant', c: 'live' } },
-			{ id: 100, inner: { t: 'user', c: 'q' } }
-		];
-		const result = mergeDescending(local, fetched, 200);
-		expect(result).toHaveLength(2);
-		expect(result[0].stream).toBe(true);
-	});
-
-	it('interleaved merge: local and fetched have no shared ids', () => {
-		const local: Message[] = [
-			{ id: 250, inner: { t: 'assistant', c: 'a' } },
-			{ id: 150, inner: { t: 'user', c: 'b' } },
-			{ id: 50, inner: { t: 'assistant', c: 'c' } }
-		];
-		const fetched: Message[] = [
-			{ id: 300, inner: { t: 'user', c: 'd' } },
-			{ id: 200, inner: { t: 'assistant', c: 'e' } },
-			{ id: 100, inner: { t: 'user', c: 'f' } }
-		];
-		const result = mergeDescending(local, fetched, null);
-		expect(result.map((m) => m.id)).toEqual([300, 250, 200, 150, 100, 50]);
+		const fetched: Message[] = [{ id: 100, inner: { t: 'user', c: 'kept' } }];
+		syncMessages(local, fetched);
+		expect(local.map((m) => m.id)).toEqual([100]);
 	});
 });
 
@@ -371,7 +324,7 @@ describe('invariants through push + cleanup + merge cycle', () => {
 		expect(msgs.map((m) => m.id)).toEqual([500, 400, 100]);
 	});
 
-	it('merge after push+cleanup cycle', () => {
+	it('sync after push+cleanup cycle', () => {
 		const msgs: Message[] = [];
 		pushMessage(msgs, { id: 100, inner: { t: 'user', c: 'q1' } });
 		pushMessage(msgs, { id: 200, inner: { t: 'assistant', c: 'a1' } });
@@ -380,12 +333,12 @@ describe('invariants through push + cleanup + merge cycle', () => {
 		cleanupMessages(msgs, 100);
 		expect(msgs).toEqual([]);
 
-		// New messages created via merge (fetched is descending per backend order_by_desc)
+		// New messages from authoritative fetch
 		const fetched: Message[] = [
 			{ id: 400, inner: { t: 'assistant', c: 'a2' } },
 			{ id: 300, inner: { t: 'user', c: 'q2' } }
 		];
-		const result = mergeDescending(msgs, fetched, null);
-		expect(result.map((m) => m.id)).toEqual([400, 300]);
+		syncMessages(msgs, fetched);
+		expect(msgs.map((m) => m.id)).toEqual([400, 300]);
 	});
 });

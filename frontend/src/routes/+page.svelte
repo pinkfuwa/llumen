@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { token } from '$lib/store.svelte';
+	import { token } from '$lib/rune.svelte';
 	import { LoaderCircle } from '@lucide/svelte';
 </script>
 

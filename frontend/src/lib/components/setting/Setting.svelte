@@ -4,7 +4,7 @@
 	let lang = $derived(Context.get().lang);
 	import { Star, X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
-	import { token } from '$lib/store.svelte';
+	import { token } from '$lib/rune.svelte';
 	import { Dialog, Tabs } from 'bits-ui';
 	import SettingBtn from './SettingBtn.svelte';
 	import Account from './tabs/Account.svelte';

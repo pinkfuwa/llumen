@@ -1,16 +1,12 @@
 import { page } from '$app/state';
-import { currentRoom, createRoom, haltCompletion } from '$lib/api/chatroom.svelte';
+import { currentRoom, createRoom, haltCompletion } from '$lib/api';
 import { models } from '$lib/api/model.svelte';
 import { createMessage, streaming } from '$lib/api/message.svelte';
 import { createUploadPipeline } from '$lib/api/files.svelte';
 import { getSupportedFileExtensions } from './fileTypes';
 import { ChatMode } from '$lib/api/types';
 import type { ModelList } from '$lib/api/types';
-import { localState } from '$lib/store.svelte';
-
-// ---------------------------------------------------------------------------
-// Base = room value when room exists, localStorage default otherwise
-// ---------------------------------------------------------------------------
+import { localState } from '$lib/rune.svelte';
 
 const defaultModelId = localState<string | null>('DefaultModelId', {
 	defaultValue: () => null
@@ -19,23 +15,11 @@ const defaultModelId = localState<string | null>('DefaultModelId', {
 const baseModelId = $derived(currentRoom.val?.model_id?.toString() ?? defaultModelId.value);
 const baseMode = $derived(currentRoom.val?.mode ?? ChatMode.Normal);
 
-// ---------------------------------------------------------------------------
-// Override = user-chosen via dropdown (undefined = no override)
-// ---------------------------------------------------------------------------
-
 export const overridingModelId = $state<{ val?: string }>({});
 export const overridingMode = $state<{ val?: ChatMode }>({});
 
-// ---------------------------------------------------------------------------
-// Display = override wins, otherwise base
-// ---------------------------------------------------------------------------
-
 export const displayModelId = $state<{ val: string | null }>({ val: null });
 export const displayMode = $state<{ val: ChatMode }>({ val: ChatMode.Normal });
-
-// ---------------------------------------------------------------------------
-// Model capability for the current display model
-// ---------------------------------------------------------------------------
 
 export const currentModelCap = $state<{ val?: ModelList }>({});
 export const allowMode = $state<{
@@ -93,10 +77,6 @@ $effect.root(() => {
 	});
 });
 
-// ---------------------------------------------------------------------------
-// Content & files (kept across chatrooms / /chat/new)
-// ---------------------------------------------------------------------------
-
 export const inputContent = $state<{ val: string }>({ val: '' });
 export const inputFiles: { val: File[] } = $state({ val: [] });
 export const submitting = $state({ val: false });
@@ -106,10 +86,6 @@ export let ensureUploaded: () => Promise<{ name: string; id: number }[]>;
 $effect.root(() => {
 	ensureUploaded = createUploadPipeline(() => inputFiles.val);
 });
-
-// ---------------------------------------------------------------------------
-// Auto-reset mode when model doesn't support it
-// ---------------------------------------------------------------------------
 
 $effect.root(() => {
 	$effect(() => {
@@ -127,10 +103,6 @@ $effect.root(() => {
 	});
 });
 
-// ---------------------------------------------------------------------------
-// User-initiated changes — called by ModelSelector / ModeSelector
-// ---------------------------------------------------------------------------
-
 export function onModelChange(newModelId: string) {
 	overridingModelId.val = newModelId;
 
@@ -142,10 +114,6 @@ export function onModelChange(newModelId: string) {
 export function onModeChange(newMode: ChatMode) {
 	overridingMode.val = newMode;
 }
-
-// ---------------------------------------------------------------------------
-// Submit dispatch — checks route, calls createMessage or createRoom
-// ---------------------------------------------------------------------------
 
 export async function submit() {
 	if (submitting.val) return;
@@ -188,10 +156,6 @@ export async function submit() {
 		submitting.val = false;
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Abort streaming — called by Stop button
-// ---------------------------------------------------------------------------
 
 export function abortStream() {
 	const pid = page.params.id;
