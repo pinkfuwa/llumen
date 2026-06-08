@@ -6,21 +6,19 @@
 	import { t } from 'svelte-intl-precompile';
 	import {
 		unsupportedFilesModalOpen,
-		pendingUnsupportedFiles,
+		pendingFile,
 		allowedUnsupportedFiles,
 		inputFiles
 	} from './state.svelte';
 
 	function uploadAllFiles() {
-		for (const f of pendingUnsupportedFiles.val) inputFiles.val.push(f);
-		allowedUnsupportedFiles.val = [...allowedUnsupportedFiles.val, ...pendingUnsupportedFiles.val];
-		unsupportedFilesModalOpen.val = false;
-		pendingUnsupportedFiles.val = [];
+		for (const f of pendingFile.val) inputFiles.val.push(f);
+		allowedUnsupportedFiles.val = [...allowedUnsupportedFiles.val, ...pendingFile.val];
+		pendingFile.val = [];
 	}
 
 	function uploadSupportedOnly() {
-		unsupportedFilesModalOpen.val = false;
-		pendingUnsupportedFiles.val = [];
+		pendingFile.val = [];
 	}
 </script>
 
@@ -38,7 +36,7 @@
 			<div
 				class="max-h-48 space-y-2 overflow-y-auto rounded-md border border-border bg-popover p-3"
 			>
-				{#each pendingUnsupportedFiles.val as file}
+				{#each pendingFile.val as file}
 					<div class="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-primary">
 						<AlertTriangle class="size-6 shrink-0" />
 						<span class="min-w-0 truncate">{file.name}</span>

@@ -3,13 +3,11 @@
 	import Select from '$lib/ui/Select.svelte';
 	import { models } from '$lib/api/model.svelte';
 	import { t } from 'svelte-intl-precompile';
+	import { onModelChange, effective } from './state.svelte';
+
 	let {
-		value = undefined as string | null | undefined,
-		onchange = undefined as ((id: string) => void) | undefined,
 		disabled = false
 	}: {
-		value?: string | null;
-		onchange?: (id: string) => void;
 		disabled?: boolean;
 	} = $props();
 
@@ -22,14 +20,10 @@
 		}))
 	);
 
-	let localSelected = $state<string | undefined>();
-
-	$effect(() => {
-		localSelected = value ?? undefined;
-	});
+	let localSelected = $derived<string | undefined>(effective.modelId?.toString());
 
 	function handleChange() {
-		if (localSelected != null && onchange) onchange(localSelected);
+		if (localSelected != null) onModelChange(localSelected);
 	}
 </script>
 

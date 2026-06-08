@@ -35,10 +35,8 @@
 		</span>
 	</Collapsible.Trigger>
 	<Collapsible.Content
-		class="py-2 slide-out-to-start-2 fade-in fade-out slide-in-from-top-2 data-[state=close]:animate-out data-[state=open]:animate-in"
+		class="py-2 whitespace-pre-wrap slide-out-to-start-2 fade-in fade-out slide-in-from-top-2 data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
-		{#each lines as line}
-			<p class="whitespace-pre-wrap">{line}</p>
-		{/each}
+		{content}
 	</Collapsible.Content>
 </Collapsible.Root>

@@ -523,6 +523,7 @@ export async function syncMessage(
 	if (chatId === undefined) return 'failed';
 
 	const room = currentRoom.val;
+	console.log(room);
 	if (!room || !room.model_id) {
 		displayError('internal', 'select model first');
 		return 'failed';

@@ -1,20 +1,4 @@
 <script lang="ts">
-	let {
-		isEditing = $bindable(false),
-		value = $bindable(''),
-		placeholder = '',
-		disabled = false,
-		onsubmit,
-		minRow = 1
-	}: {
-		isEditing: boolean;
-		value: string;
-		placeholder: string;
-		disabled: boolean;
-		onsubmit?: () => void;
-		minRow?: number;
-	} = $props();
-
 	import { default as Markdown } from '$lib/components/markdown/Root.svelte';
 
 	const editorStyle =
@@ -22,10 +6,22 @@
 	import { onDestroy } from 'svelte';
 	import { shouldSubmitOnEnter } from './submitOnEnter.svelte';
 	import { stringWidthWithWrap } from '$lib/string-width';
+	import { inputContent, isEditing } from './state.svelte';
+	import { submit } from './state.svelte';
 
 	let input = $state<null | HTMLElement>(null);
 	let inputWidth = $state(0);
 	let inputFont = $state('');
+
+	let {
+		minRow = 1,
+		placeholder = '',
+		disabled = false
+	}: {
+		minRow?: number;
+		placeholder?: string;
+		disabled?: boolean;
+	} = $props();
 
 	$effect(() => {
 		if (!input) return;
@@ -43,7 +39,7 @@
 	function onKeyDown(event: KeyboardEvent) {
 		const activeElement = document.activeElement;
 		const { code, metaKey, ctrlKey, altKey } = event;
-		if (metaKey || ctrlKey || altKey) return false;
+		if (metaKey || ctrlKey || altKey) return;
 
 		if (
 			activeElement &&
@@ -58,7 +54,7 @@
 
 		if (input !== document.activeElement) {
 			input?.focus();
-			isEditing = true;
+			isEditing.val = true;
 			event.preventDefault();
 		}
 	}
@@ -75,42 +71,44 @@
 		const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
 		const contentWidth = inputWidth - horizontalPadding;
 
-		rows = Math.max(minRow, Math.min(stringWidthWithWrap(value, inputFont, contentWidth), 20));
+		rows = Math.max(
+			minRow,
+			Math.min(stringWidthWithWrap(inputContent.val, inputFont, contentWidth), 20)
+		);
 	});
 
 	let virtualKeyboard = $state(false);
 	if ('virtualKeyboard' in navigator) {
 		navigator.virtualKeyboard.overlaysContent = true;
 
-		navigator.virtualKeyboard.addEventListener('geometrychange', (event) => {
+		navigator.virtualKeyboard.addEventListener('geometrychange', () => {
 			virtualKeyboard = true;
 			navigator.virtualKeyboard.overlaysContent = false;
 		});
 	}
 
-	let renderValue = $state(value);
+	let renderValue = $state(inputContent.val);
 	$effect(() => {
-		if (!isEditing) renderValue = value;
+		if (!isEditing.val) renderValue = inputContent.val;
 	});
 </script>
 
-<!-- TODO: replace max-h-96 with calc(... keyboard-inset-height) -->
 <textarea
 	class={editorStyle}
-	bind:value
+	bind:value={inputContent.val}
 	{placeholder}
 	{rows}
 	bind:this={input}
 	{disabled}
 	aria-label="type message"
-	data-state={isEditing ? 'show' : 'hide'}
+	data-state={isEditing.val ? 'show' : 'hide'}
 	onkeypress={(event) => {
-		if (shouldSubmitOnEnter(event, { virtualKeyboard }) && onsubmit) onsubmit();
+		if (shouldSubmitOnEnter(event, { virtualKeyboard })) submit();
 	}}
 ></textarea>
 <div
 	class="new-message markdown max-h-96 min-h-12 max-w-[65vw] flex-grow space-y-2 overflow-y-auto p-4 pr-2 wrap-break-word data-[state=hide]:hidden md:max-h-[60vh]"
-	data-state={isEditing ? 'hide' : 'show'}
+	data-state={isEditing.val ? 'hide' : 'show'}
 >
 	<Markdown source={renderValue} />
 </div>

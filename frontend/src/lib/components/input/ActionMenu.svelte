@@ -2,20 +2,11 @@
 	import { Plus, Upload, FileText, Mic } from '@lucide/svelte';
 	import Dropdown from '$lib/ui/Dropdown.svelte';
 	import { DropdownMenu } from 'bits-ui';
-	import { ChatMode as Mode } from '$lib/api/types';
 	import ConvertToFileModal from './ConvertToFileModal.svelte';
 	import RecordAudioModal from './RecordAudioModal.svelte';
 	import ModeSelector from './ModeSelector.svelte';
-	import { inputContent, currentModelCap, addFiles } from './state.svelte';
+	import { inputContent, effective, addFiles } from './state.svelte';
 	import { t } from 'svelte-intl-precompile';
-
-	let {
-		value = $bindable(Mode.Normal) as Mode,
-		onmodechange = undefined as ((mode: Mode) => void) | undefined
-	}: {
-		value: Mode;
-		onmodechange?: (mode: Mode) => void;
-	} = $props();
 
 	let dropdownOpen = $state(false);
 	let showConvertToFileDialog = $state(false);
@@ -69,8 +60,8 @@
 		<DropdownMenu.Item
 			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover aria-disabled:text-foreground aria-disabled:opacity-50"
 			onSelect={openRecordDialog}
-			disabled={!currentModelCap.val?.audio_input}
-			data-disabled={!currentModelCap.val?.audio_input ? 'true' : 'false'}
+			disabled={!effective.currentModel?.audio_input}
+			data-disabled={!effective.currentModel?.audio_input ? 'true' : 'false'}
 		>
 			<Mic class="size-4" />
 			<span>{$t('chat.record_audio')}</span>
@@ -86,7 +77,7 @@
 			<span>{$t('chat.convert_to_file.action')}</span>
 		</DropdownMenu.Item>
 
-		<ModeSelector {value} modelCap={currentModelCap.val ?? undefined} onchange={onmodechange} />
+		<ModeSelector />
 	{/snippet}
 </Dropdown>
 

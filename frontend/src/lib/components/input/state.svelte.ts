@@ -5,98 +5,77 @@ import { createMessage, streaming } from '$lib/api/message.svelte';
 import { createUploadPipeline } from '$lib/api/files.svelte';
 import { getSupportedFileExtensions, separateFiles } from './fileTypes';
 import { ChatMode } from '$lib/api/types';
-import type { ModelList } from '$lib/api/types';
 import { localState } from '$lib/rune.svelte';
 
-const defaultModelId = localState<string | null>('DefaultModelId', {
+export const chatNewModelId = localState<string | null>('DefaultModelId', {
 	defaultValue: () => null
 });
 
-const baseModelId = $derived(currentRoom.val?.model_id?.toString() ?? defaultModelId.value);
-const baseMode = $derived(currentRoom.val?.mode ?? ChatMode.Normal);
+const baseModelId = $derived(
+	page.route.id === '/chat/new'
+		? chatNewModelId.value
+		: (currentRoom.val?.model_id?.toString() ?? null)
+);
 
-export const overridingModelId = $state<{ val?: string }>({});
-export const overridingMode = $state<{ val?: ChatMode }>({});
-
-export const displayModelId = $state<{ val: string | null }>({ val: null });
-export const displayMode = $state<{ val: ChatMode }>({ val: ChatMode.Normal });
-
-export const currentModelCap = $state<{ val?: ModelList }>({});
-export const allowMode = $state<{
-	val: {
-		search_enabled: boolean;
-		deep_research: boolean;
-		media_gen: boolean;
-		audio_input: boolean;
-		image_input: boolean;
-	};
-}>({
-	val: {
-		search_enabled: false,
-		deep_research: false,
-		media_gen: false,
-		audio_input: false,
-		image_input: false
-	}
-});
-export const supportedMimes = $state<{ val: string[] }>({ val: [] });
+const baseMode = $derived(
+	page.route.id === '/chat/new' ? ChatMode.Normal : (currentRoom.val?.mode ?? ChatMode.Normal)
+);
 
 const baseModelValid = $derived(models.val?.some((x) => x.id == Number(baseModelId)));
 
-$effect.root(() => {
-	$effect(() => {
-		if (overridingModelId.val !== undefined) displayModelId.val = overridingModelId.val;
-		else if (baseModelValid) {
-			displayModelId.val = baseModelId;
-		} else displayModelId.val = null;
-	});
-
-	$effect(() => {
-		displayMode.val = overridingMode.val ?? baseMode;
-	});
-
-	$effect(() => {
-		const id = displayModelId.val;
-		currentModelCap.val = models.val?.find((m) => m.id.toString() === id) ?? undefined;
-	});
-
-	$effect(() => {
-		const cap = currentModelCap.val;
-		const available = models.val != null;
-		allowMode.val = {
-			search_enabled: available && cap?.search_enabled === true,
-			deep_research: available && cap?.deep_research === true,
-			media_gen: available && cap?.media_gen === true,
-			audio_input: available && cap?.audio_input === true,
-			image_input: available && cap?.image_input === true
-		};
-	});
-
-	$effect(() => {
-		supportedMimes.val = getSupportedFileExtensions(currentModelCap.val ?? undefined);
-	});
-});
-
+export const overridingModelId = $state<{ val?: string }>({});
+export const overridingMode = $state<{ val?: ChatMode }>({});
 export const inputContent = $state<{ val: string }>({ val: '' });
 export const inputFiles: { val: File[] } = $state({ val: [] });
 export const submitting = $state({ val: false });
-
-export const unsupportedFilesModalOpen = $state<{ val: boolean }>({ val: false });
-export const pendingUnsupportedFiles = $state<{ val: File[] }>({ val: [] });
+export const pendingFile = $state<{ val: File[] }>({ val: [] });
 export const allowedUnsupportedFiles = $state<{ val: File[] }>({ val: [] });
+export const isEditing = $state({ val: true });
+
+export class InputState {
+	modelId = $derived.by(() => {
+		const ov = overridingModelId.val;
+		if (ov !== undefined) return ov;
+		if (baseModelValid) return baseModelId;
+		return null;
+	});
+	mode = $derived.by(() => overridingMode.val ?? baseMode);
+	currentModel = $derived(models.val?.find((m) => m.id.toString() === this.modelId) ?? null);
+	allowMode = $derived.by(() => {
+		const cap = this.currentModel;
+		return {
+			search_enabled: cap?.search_enabled === true,
+			deep_research: cap?.deep_research === true,
+			media_gen: cap?.media_gen === true
+		};
+	});
+	modality = $derived.by(() => {
+		const cap = this.currentModel;
+		return {
+			image_input: cap?.image_input === true,
+			audio_input: cap?.audio_input === true,
+			video_input: cap?.video_input === true,
+			native_file_input: cap?.native_file_input === true,
+			ocr_file_input: cap?.ocr_file_input === true
+		};
+	});
+	supportedMimes = $derived(getSupportedFileExtensions(this.currentModel ?? undefined));
+}
+
+export const effective = new InputState();
+
+export const unsupportedFilesModalOpen = $state({ val: false });
 
 export let ensureUploaded: () => Promise<{ name: string; id: number }[]>;
 
 $effect.root(() => {
 	ensureUploaded = createUploadPipeline(() => inputFiles.val);
-});
 
-$effect.root(() => {
 	$effect(() => {
-		const cap = currentModelCap.val;
+		const cap = effective.currentModel;
 		if (!cap) return;
 
-		const mode = displayMode.val;
+		const mode = effective.mode;
 		if (mode === ChatMode.Research && !cap.deep_research) {
 			overridingMode.val = ChatMode.Normal;
 		} else if (mode === ChatMode.Media && !cap.media_gen) {
@@ -108,7 +87,7 @@ $effect.root(() => {
 });
 
 export function addFiles(newFiles: File[]) {
-	const mimes = supportedMimes.val;
+	const mimes = effective.supportedMimes;
 	if (!mimes.length) {
 		for (const f of newFiles) inputFiles.val.push(f);
 		return;
@@ -124,7 +103,7 @@ export function addFiles(newFiles: File[]) {
 
 	if (newUnsupported.length > 0) {
 		for (const f of supported) inputFiles.val.push(f);
-		pendingUnsupportedFiles.val = newUnsupported;
+		pendingFile.val = newUnsupported;
 		unsupportedFilesModalOpen.val = true;
 	} else {
 		for (const f of supported) inputFiles.val.push(f);
@@ -135,7 +114,7 @@ export function onModelChange(newModelId: string) {
 	overridingModelId.val = newModelId;
 
 	if (page.route.id == '/chat/new') {
-		defaultModelId.value = newModelId;
+		chatNewModelId.value = newModelId;
 	}
 }
 
@@ -146,14 +125,14 @@ export function onModeChange(newMode: ChatMode) {
 export async function submit() {
 	if (submitting.val) return;
 	if (streaming.val) return;
-	if (displayModelId.val == null) return;
+	if (effective.modelId == null) return;
 	if (inputContent.val === '' && inputFiles.val.length === 0) return;
 
 	submitting.val = true;
 	const text = inputContent.val;
 	const files = await ensureUploaded();
-	const mode = displayMode.val;
-	const modelIdNum = parseInt(displayModelId.val);
+	const mode = effective.mode;
+	const modelIdNum = parseInt(effective.modelId ?? '');
 
 	let ok = false;
 	try {
@@ -180,8 +159,7 @@ export async function submit() {
 		if (ok) {
 			inputContent.val = '';
 			inputFiles.val = [];
-			unsupportedFilesModalOpen.val = false;
-			pendingUnsupportedFiles.val = [];
+			pendingFile.val = [];
 			allowedUnsupportedFiles.val = [];
 		}
 		submitting.val = false;
