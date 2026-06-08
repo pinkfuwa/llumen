@@ -1,6 +1,6 @@
-# Frontend AGENTS
-
 Frontend is built with Svelte 5, TailwindCSS, Vite, and TypeScript.
+
+> You should read BUILD.md and `./development/svelte.md`.
 
 ## Svelte 5 Coding Guidelines
 

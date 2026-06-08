@@ -2,7 +2,7 @@
 
 Privacy-focused LLM chat web-application optimized for minimal hardware (Raspberry Pi, old laptops).
 
-> You should read BUILD.md and  `./development`.
+> You should read BUILD.md and `./development`.
 > It's important to check out pattern in similar module, you may also ask user to write one if confused.
 
 ## Architecture
