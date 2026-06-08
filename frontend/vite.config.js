@@ -9,7 +9,13 @@ export default defineConfig({
 		precompileIntl('src/lib/i18n/locales'),
 		tailwindcss(),
 		sveltekit(),
-		SvelteKitPWA({ base: '/', registerType: 'prompt' })
+		SvelteKitPWA({
+			base: '/',
+			registerType: 'prompt',
+			workbox: {
+				navigateFallback: null
+			}
+		})
 	],
 	build: {
 		sourcemap: process.env.NOMAP !== 'T'
