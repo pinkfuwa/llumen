@@ -53,8 +53,7 @@ pub fn init(env: &Environment) {
     let is_tty = std::io::stdout().is_terminal();
     let fmt = if is_tty { custom_format } else { iso_format };
 
-    let level = LevelFilter::from_str(&env.log_level.to_lowercase())
-        .unwrap_or(LevelFilter::Info);
+    let level = LevelFilter::from_str(&env.log_level.to_lowercase()).unwrap_or(LevelFilter::Info);
 
     let spec = LogSpecification::builder()
         .default(LevelFilter::Off)

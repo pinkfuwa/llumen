@@ -13,7 +13,7 @@ use clap::Parser;
 pub struct CliArgs {
     /// API key for OpenRouter (or any OpenAI-compatible provider).
     /// Can also be set via the OPENAI_API_KEY environment variable.
-    #[arg(short = 'k', long = "api-key", env = "API_KEY")]
+    #[arg(short = 'k', long = "api-key", env = "API_KEY", hide_env_values = true)]
     pub api_key: Option<String>,
 
     /// API base URL.

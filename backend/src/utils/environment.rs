@@ -1,8 +1,8 @@
 //! Environment configuration for llumen backend.
 //!
-//! [`Environment`] collects all startup configuration from environment variables
-//! (and CLI args when the `cli` feature is enabled). It is the single source of
-//! truth for runtime parameters.
+//! [`Environment`] collects all startup configuration from environment
+//! variables (and CLI args when the `cli` feature is enabled). It is the single
+//! source of truth for runtime parameters.
 
 use std::path::PathBuf;
 
@@ -53,10 +53,7 @@ impl Environment {
     /// Load configuration from CLI args with env var fallback.
     #[cfg(feature = "cli")]
     pub fn load_from(cli: &crate::utils::cli::CliArgs) -> Self {
-        let api_key = match (
-            cli.api_key.clone(),
-            dotenvy::var("OPENAI_API_KEY").ok(),
-        ) {
+        let api_key = match (cli.api_key.clone(), dotenvy::var("OPENAI_API_KEY").ok()) {
             (Some(key), _) => key,
             (None, Some(key)) => key,
             (None, None) => {
@@ -107,9 +104,7 @@ impl Environment {
         println!("Note: llumen read environment variable as well as .env file.");
         println!("You can get a key from https://openrouter.ai/keys");
         println!("Or use alternative setup:");
-        println!(
-            "- configuration: https://pinkfuwa.github.io/llumen/user/config/environment"
-        );
+        println!("- configuration: https://pinkfuwa.github.io/llumen/user/config/environment");
         println!("- documentation: https://pinkfuwa.github.io/llumen/");
 
         #[cfg(windows)]
