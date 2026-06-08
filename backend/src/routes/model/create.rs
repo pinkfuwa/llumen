@@ -20,11 +20,14 @@ pub struct ModelCreateReq {
 pub struct ModelCreateResp {
     pub id: i32,
     pub display_name: String,
+    pub ocr_file_input: bool,
     pub image_input: bool,
     pub audio_input: bool,
     pub video_input: bool,
-    pub other_file_input: bool,
-    pub tool: bool,
+    pub native_file_input: bool,
+    pub deep_research: bool,
+    pub media_gen: bool,
+    pub search_enabled: bool,
 }
 
 pub async fn route(
@@ -53,9 +56,17 @@ pub async fn route(
                 image_input: caps.image_input,
                 audio_input: caps.audio,
                 video_input: caps.video_input,
-                other_file_input: caps.ocr != OcrEngine::Disabled,
-                tool: cfg!(feature = "deep-research") && caps.toolcall,
+                ocr_file_input: matches!(
+                    caps.ocr,
+                    OcrEngine::Mistral | OcrEngine::Text | OcrEngine::Cloudflare
+                ),
+                native_file_input: caps.ocr == OcrEngine::Native,
+                media_gen: (config.media_gen.image_model.is_some()
+                    || config.media_gen.video_model.is_some())
+                    && caps.toolcall,
+                deep_research: cfg!(feature = "deep-research") && caps.toolcall,
                 display_name: config.display_name,
+                search_enabled: caps.toolcall,
             }))
         }
         Err(reason) => Err(Json(Error {

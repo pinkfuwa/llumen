@@ -367,11 +367,14 @@ export interface ModelCreateReq {
 export interface ModelCreateResp {
 	id: number;
 	display_name: string;
+	ocr_file_input: boolean;
 	image_input: boolean;
 	audio_input: boolean;
 	video_input: boolean;
-	other_file_input: boolean;
-	tool: boolean;
+	native_file_input: boolean;
+	deep_research: boolean;
+	media_gen: boolean;
+	search_enabled: boolean;
 }
 
 export interface ModelDeleteReq {

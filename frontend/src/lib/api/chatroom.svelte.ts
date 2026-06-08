@@ -36,15 +36,6 @@ let leftExhausted = false;
 let rightExhausted = false;
 let paginateRunning = false;
 
-function assertDescendingChatrooms(arr: Entry[]) {
-	if (!dev) return;
-	for (let i = 1; i < arr.length; i++) {
-		if (arr[i - 1].id <= arr[i].id) {
-			console.error('invariant: chatrooms not strictly descending at', i, arr[i - 1].id, arr[i].id);
-		}
-	}
-}
-
 function findEntryIdx(arr: Entry[], id: number): number {
 	let lo = 0,
 		hi = arr.length;
@@ -68,6 +59,7 @@ async function ensurePaginated(target: HTMLElement, token_: string) {
 	paginateRunning = true;
 	for (let i = 0; i < 50; i++) {
 		const [leftNeeded, rightNeeded] = await new Promise<[boolean, boolean]>((resolve) => {
+			// We have to wait for svelte update to reflect scrollTop/scrollHeight changes
 			requestAnimationFrame(() => {
 				resolve([
 					target.scrollTop <= target.clientHeight * 0.8 && !leftExhausted,
@@ -103,7 +95,6 @@ async function ensurePaginated(target: HTMLElement, token_: string) {
 				break;
 			}
 			chatrooms.val.push(...resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })));
-			assertDescendingChatrooms(chatrooms.val);
 		} else if (leftNeeded) {
 			const anchor = chatrooms.val.at(0)?.id;
 			if (anchor === undefined) {
@@ -123,7 +114,6 @@ async function ensurePaginated(target: HTMLElement, token_: string) {
 			chatrooms.val.unshift(
 				...resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })).reverse()
 			);
-			assertDescendingChatrooms(chatrooms.val);
 			target.scrollTop = target.scrollHeight - distanceFromBottom;
 		}
 	}
@@ -134,7 +124,7 @@ export function deleteEntry(id: number): Promise<MutationStatus> {
 	return APIFetch<ChatDeleteResp, ChatDeleteReq>({
 		path: 'chat/delete',
 		body: { id },
-		token: true
+		token: token.value?.value
 	}).then((resp) => {
 		if (resp) {
 			const idx = findEntryIdx(chatrooms.val, id);
@@ -151,7 +141,7 @@ export function syncEntry(id: number, title: string): Promise<MutationStatus> {
 	return APIFetch<ChatUpdateResp, ChatUpdateReq>({
 		path: 'chat/write',
 		body: { chat_id: id, title },
-		token: true
+		token: token.value?.value
 	}).then((resp) => {
 		if (resp?.wrote) return 'success' as MutationStatus;
 		return 'failed' as MutationStatus;
@@ -164,7 +154,6 @@ export async function createRoom(params: {
 	files: Array<{ id: number; name: string }>;
 	mode: ChatMode;
 }): Promise<MutationStatus> {
-	// FIXME: this token is not reactive
 	const token_ = token.value?.value;
 	if (!token_) return 'failed';
 	const roomResp = await APIFetch<ChatCreateResp, ChatCreateReq>({
@@ -194,7 +183,6 @@ export async function createRoom(params: {
 }
 
 export function haltCompletion(params: { id: number }): Promise<unknown> {
-	// FIXME: token not reactive
 	return APIFetch({ path: 'chat/halt', body: params, token: token.value?.value! });
 }
 

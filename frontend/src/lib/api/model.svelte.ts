@@ -13,7 +13,8 @@ import type {
 	ModelCreateResp,
 	ModelWriteReq,
 	ModelWriteResp,
-	ModelIdsResp
+	ModelIdsResp,
+	ModelList
 } from './types';
 import type { MutationStatus } from '.';
 
@@ -30,9 +31,8 @@ export interface Capabilty {
 	video: boolean;
 }
 
-export const models = $state<{ val?: ModelListResp }>({});
-// FIXME: remove modelIds
-export const modelIds = $state<{ val?: ModelIdsResp }>({});
+export const models = $state<{ val?: ModelList[] }>({});
+export const modelIds = $state<{ val?: string[] }>({});
 
 export const defaultModelConfig = [
 	'display_name="GPT-OSS 20B"',
@@ -43,32 +43,39 @@ export const defaultModelConfig = [
 	'# For more settings, see https://pinkfuwa.github.io/llumen/user/config/model'
 ].join('\n');
 
+export async function readModel(id: number): Promise<ModelReadResp> {
+	return APIFetch<ModelReadResp, ModelReadReq>({
+		path: 'model/read',
+		body: { id },
+		token: true
+	}).then((x) => x ?? { raw: '' });
+}
+
+async function fetchModel(): Promise<void> {
+	APIFetch<ModelListResp, Record<string, never>>({
+		path: 'model/list',
+		body: {},
+		token: true
+	}).then((x) => {
+		models.val = x?.list;
+	});
+}
+
 export async function deleteModel(req: ModelDeleteReq): Promise<MutationStatus> {
 	const res = await APIFetch<ModelDeleteResp, ModelDeleteReq>({
 		path: 'model/delete',
 		body: req,
-		token: true
+		token: token.value?.value
 	});
-	if (!res) return 'failed';
+	if (!res || !res.deleted) return 'failed';
 
-	if (models.val !== undefined) {
-		models.val = {
-			...models.val,
-			list: models.val.list.filter((u) => u.id !== req.id)
-		};
+	let modelIdx = models.val?.findIndex((m) => m.id == req.id);
+	console.log('to delete', modelIdx, models);
+	if (modelIdx !== undefined && models.val !== undefined) {
+		models.val.splice(modelIdx, 1);
 	}
 
 	return 'success';
-}
-
-export async function readModel(id: number): Promise<ModelReadResp> {
-	const res = await APIFetch<ModelReadResp, ModelReadReq>({
-		path: 'model/read',
-		body: { id },
-		token: true
-	});
-	if (res === undefined) throw new Error('No response from server');
-	return res;
 }
 
 export async function checkConfig(req: ModelCheckReq): Promise<ModelCheckResp | undefined> {
@@ -79,63 +86,43 @@ export async function createModel(req: ModelCreateReq): Promise<MutationStatus> 
 	const res = await APIFetch<ModelCreateResp, ModelCreateReq>({
 		path: 'model/create',
 		body: req,
-		token: true
+		token: token.value?.value
 	});
 	if (!res) return 'failed';
 
-	const refreshed = await APIFetch<ModelListResp, Record<string, never>>({
-		path: 'model/list',
-		body: {},
-		token: true
-	});
-	if (refreshed) models.val = refreshed;
+	models.val?.push(res);
 
 	return 'success';
 }
 
-export async function updateModel(req: ModelWriteReq): Promise<MutationStatus> {
+export async function syncModel(req: ModelWriteReq): Promise<MutationStatus> {
 	const res = await APIFetch<ModelWriteResp, ModelWriteReq>({
 		path: 'model/write',
 		body: req,
-		token: true
+		token: token.value?.value
 	});
 	if (!res) return 'failed';
 
-	if (models.val !== undefined) {
-		const updatedList = models.val.list.map((model) =>
-			model.id === req.id ? { ...model, display_name: res.display_name } : model
-		);
-		models.val = {
-			...models.val,
-			list: updatedList
-		};
-	}
+	fetchModel();
 
 	return 'success';
 }
 
 $effect.root(() => {
 	$effect(() => {
-		if (!token.value) return;
-		APIFetch<ModelListResp, Record<string, never>>({
-			path: 'model/list',
-			body: {},
-			token: true
-		}).then((x) => {
-			models.val = x;
-		});
+		fetchModel();
 	});
 });
 
 $effect.root(() => {
 	$effect(() => {
-		if (!token.value) return;
 		APIFetch<ModelIdsResp, Record<string, never>>({
 			path: 'model/ids',
 			body: {},
 			token: true
 		}).then((x) => {
-			modelIds.val = x;
+			modelIds.val = x?.ids;
 		});
+		fetchModel();
 	});
 });

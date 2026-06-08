@@ -453,6 +453,7 @@ async function ensurePaginated(
 	for (let i = 0; i < 10; i++) {
 		if (exhausted) break;
 		const needMore: boolean = await new Promise((resolve) => {
+			// We have to wait for svelte update to reflect scrollTop/scrollHeight changes
 			requestAnimationFrame(() => {
 				resolve(target.scrollTop <= target.clientHeight * 0.8);
 			});
@@ -492,7 +493,7 @@ export async function createMessage(params: MessageCreateReq): Promise<MutationS
 	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>({
 		path: 'message/create',
 		body: params,
-		token: true
+		token: token.value?.value
 	});
 	return resp ? 'success' : 'failed';
 }
@@ -501,7 +502,7 @@ export async function deleteMessage(id: number): Promise<MutationStatus> {
 	const resp = await APIFetch<MessageDeleteResp, MessageDeleteReq>({
 		path: 'message/delete',
 		body: { id },
-		token: true
+		token: token.value?.value
 	});
 	const firstKeepIdx = firstLtIdx(messages.val, id);
 	if (firstKeepIdx === messages.val.length) messages.val.splice(0);

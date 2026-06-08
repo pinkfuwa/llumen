@@ -3,6 +3,7 @@ import type { FileUploadResp, FileRefreshReq, FileRefreshResp } from './types';
 import { compressImage, isImageFile } from '$lib/image';
 import { displayError } from '$lib/error.svelte';
 import { untrack } from 'svelte';
+import { token } from '$lib/rune.svelte';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const COMPRESS_SIZE_THRESHOLD = 2.5 * 1024 * 1024;
@@ -34,7 +35,7 @@ export async function refresh(fileIds: number[]): Promise<number | null> {
 	const response = await APIFetch<FileRefreshResp, FileRefreshReq>({
 		path: 'file/refresh',
 		body: { ids: fileIds },
-		token: true
+		token: token.value?.value
 	});
 
 	return response?.valid_until ?? null;
@@ -44,7 +45,7 @@ export async function download(id: number): Promise<string | undefined> {
 	const response = await RawAPIFetch<undefined>({
 		path: `file/read/${encodeURIComponent(id)}`,
 		method: 'GET',
-		token: true
+		token: token.value?.value
 	});
 
 	let content_type = response.headers.get('Content-Type');
@@ -169,10 +170,4 @@ export function createUploadPipeline(
 
 		return results;
 	};
-}
-
-export function createUploadEffect(
-	fileGetter: () => File[]
-): () => Promise<{ name: string; id: number }[]> {
-	return createUploadPipeline(fileGetter);
 }

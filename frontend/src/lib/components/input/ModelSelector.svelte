@@ -18,7 +18,7 @@
 	const data = $derived(models.val);
 
 	let selectData = $derived(
-		data?.list.map((x) => ({
+		data?.map((x) => ({
 			value: `${x.id}`,
 			label: x.display_name
 		}))

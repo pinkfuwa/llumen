@@ -16,9 +16,9 @@
 
 {#if data == undefined}
 	<div class="mb-4 flex items-center justify-center p-6 text-lg">Loading models...</div>
-{:else if data != undefined}
+{:else}
 	<div class="grow space-y-2 overflow-y-auto">
-		{#each data.list as model (model.id)}
+		{#each data as model (model.id)}
 			<Button
 				class="flex w-full flex-row items-center justify-between px-3 py-2"
 				onclick={() => {

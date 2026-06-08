@@ -15,6 +15,7 @@
 >
 	<div class="min-h-16 grow snap-start"></div>
 	<MessagePagination />
+	<div class="min-h-1 snap-end"></div>
 
 	<div class="sticky bottom-1 z-10 mt-4 flex justify-center">
 		<MessageInput />

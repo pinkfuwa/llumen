@@ -32,7 +32,7 @@ export {
 	paginateElement as messagesElement,
 	pushUserMessage,
 	createMessage,
-	syncMessage as updateMessage,
+	syncMessage,
 	deleteMessage
 } from './message.svelte';
 
@@ -44,7 +44,7 @@ export {
 	readModel,
 	checkConfig,
 	createModel,
-	updateModel,
+	syncModel,
 	defaultModelConfig,
 	Mode,
 	type Capabilty

@@ -41,7 +41,7 @@ export const allowMode = $state<{
 });
 export const supportedMimes = $state<{ val: string[] }>({ val: [] });
 
-const baseModelValid = $derived(models.val?.list.some((x) => x.id == Number(baseModelId)));
+const baseModelValid = $derived(models.val?.some((x) => x.id == Number(baseModelId)));
 
 $effect.root(() => {
 	$effect(() => {
@@ -57,7 +57,7 @@ $effect.root(() => {
 
 	$effect(() => {
 		const id = displayModelId.val;
-		currentModelCap.val = models.val?.list.find((m) => m.id.toString() === id) ?? undefined;
+		currentModelCap.val = models.val?.find((m) => m.id.toString() === id) ?? undefined;
 	});
 
 	$effect(() => {

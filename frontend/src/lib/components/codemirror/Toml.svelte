@@ -25,7 +25,7 @@
 	const themeName = $derived(preference.value.theme.name);
 
 	useCodeMirrorPromise.then((useCodeMirror) => {
-		const modelIdsStore = toStore(() => modelIds.val?.ids ?? []);
+		const modelIdsStore = toStore(() => modelIds.val ?? []);
 		useCodeMirror.default({
 			darkTheme: darkTheme,
 			themeName: themeName,
