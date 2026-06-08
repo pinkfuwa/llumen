@@ -25,7 +25,7 @@ export async function upload(file: File, signal?: AbortSignal): Promise<number |
 		token: token.value?.value
 	});
 
-	if (!response.ok) {
+	if (!response || !response.ok) {
 		console.warn('Fail to upload', { file });
 		return null;
 	}
@@ -53,13 +53,18 @@ export async function download(id: number): Promise<string | undefined> {
 		token: token.value?.value
 	});
 
-	let content_type = response.headers.get('Content-Type');
-	if (!response.ok || content_type == 'application/json') {
+	let fail = !response || !response.ok;
+	if (!fail) {
+		let content_type = response!.headers.get('Content-Type');
+		fail = content_type == 'application/json';
+	}
+
+	if (fail) {
 		console.warn('Fail to download', { id });
 		return;
 	}
 
-	const blob = await response.blob();
+	const blob = await response!.blob();
 	return URL.createObjectURL(blob);
 }
 
@@ -72,13 +77,18 @@ export async function downloadCompressed(id: number): Promise<string | undefined
 		token: true
 	});
 
-	let content_type = response.headers.get('Content-Type');
-	if (!response.ok || content_type == 'application/json') {
+	let fail = !response || !response.ok;
+	if (!fail) {
+		let content_type = response!.headers.get('Content-Type');
+		fail = content_type == 'application/json';
+	}
+
+	if (fail) {
 		console.warn('Fail to download compressed image', { id, width });
 		return;
 	}
 
-	const blob = await response.blob();
+	const blob = await response!.blob();
 	return URL.createObjectURL(blob);
 }
 

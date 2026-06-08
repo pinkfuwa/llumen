@@ -70,7 +70,6 @@ export async function deleteUser(req: UserDeleteReq): Promise<MutationStatus> {
 
 $effect.root(() => {
 	$effect(() => {
-		if (!token.value) return;
 		APIFetch<UserListResp, Record<string, never>>({
 			path: 'user/list',
 			body: {},
@@ -83,7 +82,6 @@ $effect.root(() => {
 
 $effect.root(() => {
 	$effect(() => {
-		if (!token.value) return;
 		APIFetch<UserReadResp, UserReadReq>({ path: 'user/read', body: {}, token: true }).then((x) => {
 			currentUser.val = x;
 		});

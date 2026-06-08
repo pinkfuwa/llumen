@@ -34,10 +34,11 @@ export interface RawFetchOptions<P = any> {
 	signal?: AbortSignal;
 	/**
 	 * Token behaviour:
-	 * - `false` (default) — no `Authorization` header.
-	 * - `true` — reads `token` from the reactive store.
+	 * - `false` (default) - no `Authorization` header.
+	 * - `true` - reads `token` from the reactive store.
+	 * - `undefined` - skip request on non-Raw request.
 	 *   In dev mode, throws if not inside `$effect.tracking()`.
-	 * - A string — used verbatim as the `Authorization` header value.
+	 * - A string - used verbatim as the `Authorization` header value.
 	 */
 	token?: boolean | string;
 }
@@ -51,7 +52,7 @@ export interface RawFetchOptions<P = any> {
  *
  * @typeParam P - Request body type (default `any`).
  */
-export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response> {
+export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response | undefined> {
 	const path = opts.path;
 	const body = opts.body ?? null;
 	const method = opts.method ?? 'POST';
@@ -64,7 +65,7 @@ export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response
 	const headers: Record<string, string> = {};
 	if (!(body instanceof FormData)) headers['Content-Type'] = 'application/json';
 
-	if (authMode == null || authMode === false) {
+	if (authMode === false) {
 		// no Authorization header
 	} else if (typeof authMode === 'string') {
 		headers['Authorization'] = authMode;
@@ -74,7 +75,8 @@ export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response
 				'RawAPIFetch: token=true requires $effect.tracking(). Pass a string token or use token=false.'
 			);
 		}
-		const tokenVal = token.value?.value;
+		if (token.value === undefined) return Promise.resolve(undefined);
+		const tokenVal = token.value.value;
 		if (tokenVal) headers['Authorization'] = tokenVal;
 	}
 
@@ -105,6 +107,7 @@ export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response
  */
 export function APIFetch<D, P = any>(opts: RawFetchOptions<P>): Promise<D | undefined> {
 	return RawAPIFetch(opts).then(async (res) => {
+		if (res === undefined) return;
 		try {
 			const resJson: D | APIError = await res.json();
 			const error = getError(resJson);

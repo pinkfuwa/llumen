@@ -99,14 +99,6 @@ export function localState<T>(key: string, option: LocalStateOption<T>): LocalSt
 
 export type TokenInfo = { value: string; expireAt: string; renewAt: string };
 
-function loadToken(): TokenInfo | undefined {
-	return loadFromStorage<TokenInfo | undefined>(
-		'token',
-		() => undefined,
-		() => true
-	);
-}
-
 export const token: LocalStateHandle<TokenInfo | undefined> = localState('token', {});
 
 let tokenLastSerialized = JSON.stringify($state.snapshot(token.value));
