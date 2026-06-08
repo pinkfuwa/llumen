@@ -3,7 +3,7 @@ import { currentRoom, createRoom, haltCompletion } from '$lib/api';
 import { models } from '$lib/api/model.svelte';
 import { createMessage, streaming } from '$lib/api/message.svelte';
 import { createUploadPipeline } from '$lib/api/files.svelte';
-import { getSupportedFileExtensions } from './fileTypes';
+import { getSupportedFileExtensions, separateFiles } from './fileTypes';
 import { ChatMode } from '$lib/api/types';
 import type { ModelList } from '$lib/api/types';
 import { localState } from '$lib/rune.svelte';
@@ -81,6 +81,10 @@ export const inputContent = $state<{ val: string }>({ val: '' });
 export const inputFiles: { val: File[] } = $state({ val: [] });
 export const submitting = $state({ val: false });
 
+export const unsupportedFilesModalOpen = $state<{ val: boolean }>({ val: false });
+export const pendingUnsupportedFiles = $state<{ val: File[] }>({ val: [] });
+export const allowedUnsupportedFiles = $state<{ val: File[] }>({ val: [] });
+
 export let ensureUploaded: () => Promise<{ name: string; id: number }[]>;
 
 $effect.root(() => {
@@ -102,6 +106,30 @@ $effect.root(() => {
 		}
 	});
 });
+
+export function addFiles(newFiles: File[]) {
+	const mimes = supportedMimes.val;
+	if (!mimes.length) {
+		for (const f of newFiles) inputFiles.val.push(f);
+		return;
+	}
+
+	const { supported, unsupported } = separateFiles(newFiles, mimes);
+	const newUnsupported = unsupported.filter(
+		(u: File) =>
+			!allowedUnsupportedFiles.val.some(
+				(a: File) => a.name === u.name && a.size === u.size && a.lastModified === u.lastModified
+			)
+	);
+
+	if (newUnsupported.length > 0) {
+		for (const f of supported) inputFiles.val.push(f);
+		pendingUnsupportedFiles.val = newUnsupported;
+		unsupportedFilesModalOpen.val = true;
+	} else {
+		for (const f of supported) inputFiles.val.push(f);
+	}
+}
 
 export function onModelChange(newModelId: string) {
 	overridingModelId.val = newModelId;
@@ -152,6 +180,9 @@ export async function submit() {
 		if (ok) {
 			inputContent.val = '';
 			inputFiles.val = [];
+			unsupportedFilesModalOpen.val = false;
+			pendingUnsupportedFiles.val = [];
+			allowedUnsupportedFiles.val = [];
 		}
 		submitting.val = false;
 	}

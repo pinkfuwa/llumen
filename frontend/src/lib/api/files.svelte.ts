@@ -18,7 +18,12 @@ export async function upload(file: File, signal?: AbortSignal): Promise<number |
 	formData.append('size', file.size.toString());
 	formData.append('file', file);
 
-	const response = await RawAPIFetch({ path: 'file/upload', body: formData, signal, token: true });
+	const response = await RawAPIFetch({
+		path: 'file/upload',
+		body: formData,
+		signal,
+		token: token.value?.value
+	});
 
 	if (!response.ok) {
 		console.warn('Fail to upload', { file });
@@ -58,6 +63,7 @@ export async function download(id: number): Promise<string | undefined> {
 	return URL.createObjectURL(blob);
 }
 
+// FIXME: svelte might read async and cancel reactive context
 export async function downloadCompressed(id: number): Promise<string | undefined> {
 	const width = Math.max(Math.ceil(window.devicePixelRatio * screen.width), 100);
 	const response = await RawAPIFetch<undefined>({

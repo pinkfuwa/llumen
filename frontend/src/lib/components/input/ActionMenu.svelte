@@ -9,7 +9,7 @@
 	import ConvertToFileModal from './ConvertToFileModal.svelte';
 	import RecordAudioModal from './RecordAudioModal.svelte';
 	import ModeSelector from './ModeSelector.svelte';
-	import { inputFiles, inputContent, currentModelCap } from './state.svelte';
+	import { inputContent, currentModelCap, addFiles } from './state.svelte';
 
 	let {
 		value = $bindable(Mode.Normal) as Mode,
@@ -39,8 +39,8 @@
 		}
 	}
 
-	function addFiles(newFiles: File[]) {
-		for (const f of newFiles) inputFiles.val.push(f);
+	function handleAddFiles(newFiles: File[]) {
+		addFiles(newFiles);
 	}
 
 	function openConvertDialog() {
@@ -97,7 +97,7 @@
 <ConvertToFileModal
 	bind:open={showConvertToFileDialog}
 	bind:content={inputContent.val}
-	onAddFiles={addFiles}
+	onAddFiles={handleAddFiles}
 />
 
-<RecordAudioModal bind:open={showRecordAudioDialog} onAddFiles={addFiles} />
+<RecordAudioModal bind:open={showRecordAudioDialog} onAddFiles={handleAddFiles} />

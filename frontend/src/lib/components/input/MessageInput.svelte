@@ -8,7 +8,6 @@
 	import UnsupportedFilesModal from './UnsupportedFilesModal.svelte';
 	import FileGroup from '../common/FileGroup.svelte';
 	import { createDropZone } from './dropzone.svelte';
-	import { separateFiles } from './fileTypes';
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
 	import { streaming } from '$lib/api/message.svelte';
 	import { FileUp } from '@lucide/svelte';
@@ -22,6 +21,7 @@
 		displayModelId,
 		displayMode,
 		supportedMimes,
+		addFiles,
 		submit,
 		abortStream,
 		onModelChange,
@@ -36,48 +36,19 @@
 
 	let container = $state<HTMLElement | null>(null);
 	let isEditing = $state(true);
-	let showUnsupportedModal = $state(false);
-	let pendingFiles: File[] = $state([]);
-	let pendingUnsupportedFiles: File[] = $state([]);
 
 	let dropZone = $state(
 		createDropZone(() => container, {
 			onDrop(newFiles: File[] | null) {
 				if (newFiles == null) return;
-				handleNewFiles(newFiles);
+				addFiles(newFiles);
 			},
 			onPaste(newFiles: File[] | null) {
 				if (newFiles == null) return;
-				handleNewFiles(newFiles);
+				addFiles(newFiles);
 			}
 		})
 	);
-
-	function handleNewFiles(newFiles: File[]) {
-		const { supported, unsupported } = separateFiles(newFiles, supportedMimes.val);
-
-		if (unsupported.length > 0) {
-			pendingFiles = supported;
-			pendingUnsupportedFiles = unsupported;
-			showUnsupportedModal = true;
-		} else {
-			for (const f of supported) inputFiles.val.push(f);
-		}
-	}
-
-	function uploadAllFiles() {
-		for (const f of [...pendingFiles, ...pendingUnsupportedFiles]) inputFiles.val.push(f);
-		showUnsupportedModal = false;
-		pendingFiles = [];
-		pendingUnsupportedFiles = [];
-	}
-
-	function uploadSupportedOnly() {
-		for (const f of pendingFiles) inputFiles.val.push(f);
-		showUnsupportedModal = false;
-		pendingFiles = [];
-		pendingUnsupportedFiles = [];
-	}
 
 	afterNavigate(() => {
 		isEditing = true;
@@ -86,13 +57,7 @@
 	beforeNavigate(() => {});
 </script>
 
-<UnsupportedFilesModal
-	bind:open={showUnsupportedModal}
-	unsupportedFiles={pendingUnsupportedFiles}
-	onUploadAll={uploadAllFiles}
-	onUploadSupported={uploadSupportedOnly}
-/>
-
+<UnsupportedFilesModal />
 <div
 	role="region"
 	class="min-h-sm item shadow-accent-soft relative mx-auto w-[90%] space-y-2 rounded-md border border-border bg-card p-2 shadow-xl md:w-[min(750px,75%)]"

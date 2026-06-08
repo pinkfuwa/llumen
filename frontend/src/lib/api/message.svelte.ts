@@ -117,6 +117,7 @@ const Handlers: {
 			exhausted = false;
 			paginateRunning = false;
 			version = data;
+			streaming.val = false;
 			cursor = null;
 			messages.val = [];
 		}
