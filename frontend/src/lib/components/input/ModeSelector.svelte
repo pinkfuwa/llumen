@@ -18,7 +18,7 @@
 	<DropdownMenu.Separator class="mx-1 mb-1 h-px bg-border/80" />
 	<div class="space-y-1">
 		<DropdownMenu.Item
-			class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden select-none cursor-pointer duration-150 hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
+			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
 			onSelect={() => setMode(Mode.Search)}
 			disabled={searchDisabled}
 			data-active={effective.mode === Mode.Search ? '' : undefined}
@@ -28,7 +28,7 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden select-none cursor-pointer duration-150 hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
+			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
 			onSelect={() => setMode(Mode.Research)}
 			disabled={deepResearchDisabled}
 			data-active={effective.mode === Mode.Research ? '' : undefined}
@@ -38,7 +38,7 @@
 		</DropdownMenu.Item>
 
 		<DropdownMenu.Item
-			class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden select-none cursor-pointer duration-150 hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
+			class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden duration-150 select-none hover:bg-interactive-hover aria-disabled:opacity-50 data-active:bg-interactive-selection data-active:text-primary data-disabled:opacity-50"
 			onSelect={() => setMode(Mode.Media)}
 			disabled={mediaDisabled}
 			data-active={effective.mode === Mode.Media ? '' : undefined}

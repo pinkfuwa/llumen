@@ -9,13 +9,12 @@
 <Minimap />
 
 <div
-	class="nobar anchor-none relative flex h-full snap-y scroll-pb-48 flex-col overflow-y-auto transition-all lg:data-widen:px-24"
+	class="nobar anchor-none relative flex h-full flex-col overflow-y-auto transition-all lg:data-widen:px-24"
 	bind:this={messagesElement.val}
 	data-widen={sidebarOpen.val ? undefined : ''}
 >
 	<div class="min-h-16 grow snap-start"></div>
 	<MessagePagination />
-	<div class="min-h-1 snap-end"></div>
 
 	<div class="sticky bottom-1 z-10 mt-4 flex snap-end justify-center">
 		<MessageInput />
