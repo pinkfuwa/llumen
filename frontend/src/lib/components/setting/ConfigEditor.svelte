@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { checkConfig } from '../../api/model.svelte';
-	import Toml from '../codemirror/Toml.svelte';
+	import Toml from '../editor/TomlEditor.svelte';
 	import Warning from './Warning.svelte';
 	import { CircleCheck } from '@lucide/svelte';
 	import { fade } from 'svelte/transition';

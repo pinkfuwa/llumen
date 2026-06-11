@@ -15,11 +15,11 @@ export function getThemeName(x: Theme) {
 
 export function getThemeStyle(x: Theme) {
 	const styleMap: Record<BundledTheme, string> = {
-		'github-light': 'background-color:#fff;color:#24292e',
-		'github-dark': 'background-color:#24292e;color:#e1e4e8',
-		'vitesse-dark': 'background-color:#121212;color:#dbd7caee',
-		'vitesse-light': 'background-color:#ffffff;color:#393a34',
-		dracula: 'background-color:#282A36;color:#F8F8F2'
+		'github-light': 'background-color:#fff;color:#24292e;caret-color:#24292e',
+		'github-dark': 'background-color:#24292e;color:#e1e4e8;caret-color:#e1e4e8',
+		'vitesse-dark': 'background-color:#121212;color:#dbd7caee;caret-color:#dbd7caee',
+		'vitesse-light': 'background-color:#ffffff;color:#393a34;caret-color:#393a34',
+		dracula: 'background-color:#282A36;color:#F8F8F2;caret-color:#F8F8F2'
 	};
 	return styleMap[getThemeName(x)];
 }

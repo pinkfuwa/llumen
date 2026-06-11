@@ -1,43 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { EditorState } from '@codemirror/state';
-import { autocompletion, type Completion } from '@codemirror/autocomplete';
-import { tomlCompletion, setModelIds } from './completion';
+import { tomlCompletion, setModelIds, type CompletionOption } from './completion';
 import { writable } from 'svelte/store';
 
-function createState(text: string): { state: EditorState; pos: number } {
+function getCompletions(text: string) {
 	const pos = text.indexOf('|');
 	if (pos === -1) throw new Error('Test string must contain | for cursor position');
 	const cleanText = text.replace('|', '');
-	const state = EditorState.create({
-		doc: cleanText,
-		extensions: [autocompletion({ override: [tomlCompletion] })]
-	});
-	return { state, pos };
-}
-
-function getCompletions(text: string) {
-	const { state, pos } = createState(text);
-	const context = {
-		state,
-		pos,
-		explicit: true,
-		matchBefore: (regexp: RegExp) => {
-			const line = state.doc.lineAt(pos);
-			const textBefore = state.sliceDoc(line.from, pos);
-			const match = textBefore.match(new RegExp(regexp.source + '$'));
-			if (!match) return null;
-			return {
-				from: pos - match[0].length,
-				to: pos,
-				text: match[0]
-			};
-		}
-	};
-	return tomlCompletion(context as never);
+	return tomlCompletion({ text: cleanText, pos });
 }
 
 function completionLabels(result: ReturnType<typeof getCompletions>): string[] {
-	return result?.options.map((option: Completion) => option.label) ?? [];
+	return result?.options.map((option: CompletionOption) => option.label) ?? [];
 }
 
 describe('TOML Completion', () => {

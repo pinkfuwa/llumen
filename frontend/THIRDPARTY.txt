@@ -8,55 +8,6 @@ Generated from package.json and pnpm-lock.yaml.
 License: MIT
 Repository: https://github.com/chenglou/pretext
 --------------------------------------------------------------------------------
-@codemirror/autocomplete@6.20.3
-
-License: MIT
-Repository: git+https://code.haverbeke.berlin/codemirror/autocomplete
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
---------------------------------------------------------------------------------
-@codemirror/commands@6.10.3
-
-License: MIT
-Repository: https://github.com/codemirror/commands
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
---------------------------------------------------------------------------------
-@codemirror/language@6.12.3
-
-License: MIT
-Repository: https://github.com/codemirror/language
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
---------------------------------------------------------------------------------
-@codemirror/legacy-modes@6.5.3
-
-License: MIT
-Repository: git+https://code.haverbeke.berlin/codemirror/legacy-modes
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
---------------------------------------------------------------------------------
-@codemirror/state@6.6.0
-
-License: MIT
-Repository: https://github.com/codemirror/state
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
---------------------------------------------------------------------------------
-@codemirror/view@6.43.0
-
-License: MIT
-Repository: git+https://code.haverbeke.berlin/codemirror/view
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
---------------------------------------------------------------------------------
-@lezer/highlight@1.2.3
-
-License: MIT
-Repository: https://github.com/lezer-parser/highlight
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
---------------------------------------------------------------------------------
 @sveltejs/adapter-static@3.0.10
 
 License: MIT
@@ -68,13 +19,6 @@ License: MIT
 Repository: https://github.com/huntabyte/bits-ui
 Publisher: Hunter Johnston
 Email: https://github.com/huntabyte
---------------------------------------------------------------------------------
-codemirror@6.0.2
-
-License: MIT
-Repository: https://github.com/codemirror/basic-setup
-Publisher: Marijn Haverbeke
-Email: marijn@haverbeke.berlin
 --------------------------------------------------------------------------------
 fetch-event-stream@0.1.6
 
