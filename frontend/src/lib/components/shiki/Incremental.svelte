@@ -8,12 +8,10 @@
 
 	let {
 		text = '',
-		lang = 'text',
-		incremental = true
+		lang = 'text'
 	}: {
 		text?: string;
 		lang?: string;
-		incremental?: boolean;
 	} = $props();
 
 	let themeName = $derived(getThemeName(preference.value.theme));
@@ -28,6 +26,11 @@
 	$effect(() => {
 		if (lang === 'text') return;
 		let stopped = false;
+
+		lines = [];
+		currentLineSpans = '';
+		prevPushedLength = 0;
+		tokenizer = null;
 
 		(async () => {
 			if (stopped) return;
@@ -73,7 +76,7 @@
 	}
 
 	$effect(() => {
-		if (!tokenizer || !incremental) return;
+		if (!tokenizer) return;
 
 		const remaining = text.slice(prevPushedLength);
 		if (remaining.length === 0) return;
