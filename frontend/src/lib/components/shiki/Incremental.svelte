@@ -5,6 +5,8 @@
 	import { buildTokenHtml } from './incremental';
 	import { type BundledLanguage } from './shiki.bundle';
 	import { ShikiStreamTokenizer } from '@shikijs/stream';
+	import type { ShikiStreamTokenizerEnqueueResult } from '@shikijs/stream';
+	import type { ThemedToken } from 'shiki';
 
 	let {
 		text = '',
@@ -19,9 +21,8 @@
 
 	let lines = $state<string[]>([]);
 	let currentLineSpans = $state('');
-	let tokenizer: any = null;
-
-	let prevPushedLength = 0;
+	let tokenizer = $state<ShikiStreamTokenizer | null>(null);
+	let prevPushedLength = $state(0);
 
 	$effect(() => {
 		if (lang === 'text') return;
@@ -60,7 +61,7 @@
 		};
 	});
 
-	function processStable(tokens: any[]) {
+	function processStable(tokens: ThemedToken[]) {
 		for (const t of tokens) {
 			const parts = t.content.split('\n');
 			for (let i = 0; i < parts.length; i++) {
@@ -78,11 +79,18 @@
 	$effect(() => {
 		if (!tokenizer) return;
 
+		if (text.length < prevPushedLength) {
+			lines = [];
+			currentLineSpans = '';
+			prevPushedLength = 0;
+			return;
+		}
+
 		const remaining = text.slice(prevPushedLength);
 		if (remaining.length === 0) return;
 
 		prevPushedLength = text.length;
-		tokenizer.enqueue(remaining).then((result: any) => {
+		tokenizer.enqueue(remaining).then((result: ShikiStreamTokenizerEnqueueResult) => {
 			processStable(result.stable);
 		});
 	});
