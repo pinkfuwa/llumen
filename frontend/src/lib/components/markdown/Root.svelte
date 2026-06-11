@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Parser from './Parser.svelte';
-	import { parseSync } from './vendor/renderer';
-	import { parser, parser_write, parser_end } from './vendor/smd';
-	import { createAstRenderer } from './vendor/renderer';
-	import type { AstNode } from './vendor/types';
+	import { parseSync } from './parser/renderer';
+	import { parser, parser_write, parser_end } from './parser/smd';
+	import { createAstRenderer } from './parser/renderer';
+	import type { AstNode } from './parser/types';
 
 	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
 

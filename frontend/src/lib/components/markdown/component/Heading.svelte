@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { HeadingNode } from '../vendor/types';
+	import type { HeadingNode } from '../parser/types';
 	import type { Snippet } from 'svelte';
 	import RawMarker from './RawMarker.svelte';
 

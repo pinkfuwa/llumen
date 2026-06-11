@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TextNode } from '../vendor/types';
+	import type { TextNode } from '../parser/types';
 
 	let { node }: { node: TextNode } = $props();
 

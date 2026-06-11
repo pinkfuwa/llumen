@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { InlineCodeNode } from '../vendor/types';
+	import type { InlineCodeNode } from '../parser/types';
 	import RawMarker from './RawMarker.svelte';
 
 	let { node }: { node: InlineCodeNode } = $props();

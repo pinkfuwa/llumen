@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseSync } from '../vendor/renderer';
-import { AstNodeType } from '../vendor/types';
+import { parseSync } from '../parser/renderer';
+import { AstNodeType } from '../parser/types';
 import type {
 	ParagraphNode,
 	TextNode,
@@ -10,7 +10,7 @@ import type {
 	TableCellNode,
 	LatexBlockNode,
 	AstNode
-} from '../vendor/types';
+} from '../parser/types';
 
 function flattenText(nodes: AstNode[]): string {
 	let result = '';

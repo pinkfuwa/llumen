@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { LinkNode } from '../vendor/types';
+	import type { LinkNode } from '../parser/types';
 	import type { Snippet } from 'svelte';
 	import RawMarker from './RawMarker.svelte';
 

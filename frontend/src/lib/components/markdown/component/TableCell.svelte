@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TableCellNode } from '../vendor/types';
+	import type { TableCellNode } from '../parser/types';
 	import type { Snippet } from 'svelte';
 
 	let { node, children }: { node: TableCellNode; children: Snippet } = $props();

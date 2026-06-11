@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { LatexInlineNode } from '../vendor/types';
+	import type { LatexInlineNode } from '../parser/types';
 	import LatexComponent from '../../latex/Latex.svelte';
 	import RawMarker from './RawMarker.svelte';
 

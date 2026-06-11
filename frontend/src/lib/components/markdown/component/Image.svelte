@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ImageNode } from '../vendor/types';
+	import type { ImageNode } from '../parser/types';
 	import { BookX } from '@lucide/svelte';
 	import RawMarker from './RawMarker.svelte';
 
