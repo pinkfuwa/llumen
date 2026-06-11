@@ -94,11 +94,6 @@ License: MIT
 Repository: https://github.com/mermaid-js/mermaid
 Publisher: Knut Sveidqvist
 --------------------------------------------------------------------------------
-runed@0.37.1
-
-License: MIT
-Repository: https://github.com/svecosystem/runed
---------------------------------------------------------------------------------
 svelte-intl-precompile@0.12.3
 
 License: ISC

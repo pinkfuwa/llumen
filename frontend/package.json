@@ -31,7 +31,6 @@
 		"fetch-event-stream": "^0.1.6",
 		"katex": "^0.16.46",
 		"mermaid": "^11.15.0",
-		"runed": "^0.37.1",
 		"svelte-intl-precompile": "^0.12.3",
 		"workbox-window": "^7.4.1"
 	},
