@@ -1,6 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { tomlCompletion, setModelIds, type CompletionOption } from './completion';
-import { writable } from 'svelte/store';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('$lib/api', () => {
+	const modelIds: { val: string[] | undefined } = { val: undefined };
+	return { modelIds };
+});
+
+import { tomlCompletion, type CompletionOption } from './completion';
+import { modelIds } from '$lib/api';
 
 function getCompletions(text: string) {
 	const pos = text.indexOf('|');
@@ -15,15 +21,13 @@ function completionLabels(result: ReturnType<typeof getCompletions>): string[] {
 
 describe('TOML Completion', () => {
 	beforeEach(() => {
-		setModelIds(
-			writable([
-				'anthropic/claude-3-5-sonnet-20241022',
-				'anthropic/claude-3-opus-20240229',
-				'openai/gpt-4-turbo-preview',
-				'openai/gpt-3.5-turbo',
-				'google/gemini-pro'
-			])
-		);
+		modelIds.val = [
+			'anthropic/claude-3-5-sonnet-20241022',
+			'anthropic/claude-3-opus-20240229',
+			'openai/gpt-4-turbo-preview',
+			'openai/gpt-3.5-turbo',
+			'google/gemini-pro'
+		];
 	});
 
 	it('completes provider/model ids for model_id', () => {

@@ -1,4 +1,4 @@
-import { get, writable, type Readable } from 'svelte/store';
+import { modelIds } from '$lib/api';
 
 export const TOP_LEVEL_FIELDS = ['model_id', 'display_name', 'task_model_id'];
 export const CAPABILITY_FIELDS = [
@@ -27,12 +27,6 @@ const STRING_VALUE_FIELDS = new Map([
 	['reasoning', REASONING_FIELD_VALUES],
 	['web', WEB_OPTIONS]
 ]);
-
-let modelIds: Readable<string[]> = writable([]);
-
-export function setModelIds(models: Readable<string[]>) {
-	modelIds = models;
-}
 
 export interface CompletionOption {
 	label: string;
@@ -213,7 +207,7 @@ function completeModelId(
 	lineText: string,
 	lineStart: number
 ): CompletionResult | null {
-	const models = get(modelIds);
+	const models = modelIds.val ?? [];
 	const prefix = parsed.valueBeforeCursor;
 	const { from: valueStart, to: valueEnd } = getValueRange(parsed, pos, lineText, lineStart);
 

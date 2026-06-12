@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { preference } from '$lib/preference/index.svelte';
-	import { modelIds } from '$lib/api/model.svelte';
-	import { toStore } from 'svelte/store';
-	import { tomlCompletion, setModelIds, type CompletionOption } from './completion';
+	import { tomlCompletion, type CompletionOption } from './completion';
 	import Autocomplete from './Autocomplete.svelte';
 	import { getThemeName, getThemeStyle } from '$lib/components/shiki/shiki';
-	import type { BundledTheme } from '$lib/components/shiki/shiki.bundle';
+	import type { BundledTheme, codeToHtml } from '$lib/components/shiki/shiki.bundle';
 
 	let {
 		value = $bindable('# defaultConfig'),
@@ -15,8 +13,7 @@
 	let textarea = $state<HTMLTextAreaElement | null>(null);
 	let overlay = $state<HTMLDivElement | null>(null);
 	let html = $state('');
-	let ready = $state(false);
-	let codeToHtml: (code: string, options: { lang: string; theme: BundledTheme }) => Promise<string>;
+	let bundle = import('$lib/components/shiki/shiki.bundle');
 
 	let showAutocomplete = $state(false);
 	let completions = $state<CompletionOption[]>([]);
@@ -29,21 +26,18 @@
 	let themeStyle = $derived(getThemeStyle(preference.value.theme));
 
 	$effect(() => {
-		setModelIds(toStore(() => modelIds.val ?? []));
-	});
+		let args: Parameters<typeof codeToHtml> = [value, { lang: 'toml', theme: themeName }];
 
-	$effect(() => {
-		import('$lib/components/shiki/shiki.bundle').then((m) => {
-			codeToHtml = m.codeToHtml;
-			ready = true;
-		});
-	});
+		let stopped = false;
 
-	$effect(() => {
-		if (!ready) return;
-		codeToHtml(value, { lang: 'toml', theme: themeName }).then((r: string) => {
-			html = r;
+		bundle.then(async (m) => {
+			let result = await m.codeToHtml(...args);
+			if (!stopped) html = result;
 		});
+
+		return () => {
+			stopped = true;
+		};
 	});
 
 	$effect(() => {
