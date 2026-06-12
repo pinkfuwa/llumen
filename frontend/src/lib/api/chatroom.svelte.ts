@@ -189,13 +189,20 @@ $effect.root(() => {
 	$effect(() => {
 		const chatId = getChatId();
 		if (chatId === undefined) return;
+
+		let stopped = false;
+
 		APIFetch<ChatReadResp, ChatReadReq>({
 			path: 'chat/read',
 			body: { id: chatId },
 			token: true
 		}).then((resp) => {
-			if (resp) currentRoom.val = resp;
+			if (!stopped && resp) currentRoom.val = resp;
 		});
+
+		return () => {
+			stopped = true;
+		};
 	});
 });
 

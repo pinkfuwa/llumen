@@ -25,7 +25,7 @@
 </div>
 <div
 	data-state={addition ? 'show' : 'hide'}
-	class="shrink-0 grow overflow-hidden transition-[max-height] duration-300 ease-out data-[state=hide]:max-h-0 data-[state=show]:max-h-32"
+	class="shrink-0 overflow-hidden transition-[max-height] duration-300 ease-out data-[state=hide]:max-h-0 data-[state=show]:max-h-32"
 >
 	<Button
 		href="/chat/new"

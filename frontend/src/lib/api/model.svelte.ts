@@ -31,7 +31,9 @@ export interface Capabilty {
 	video: boolean;
 }
 
+// user created model
 export const models = $state<{ val?: ModelList[] }>({});
+// list of all possible model id
 export const modelIds = $state<{ val?: string[] }>({});
 
 export const defaultModelConfig = [
@@ -110,19 +112,26 @@ export async function syncModel(req: ModelWriteReq): Promise<MutationStatus> {
 
 $effect.root(() => {
 	$effect(() => {
-		fetchModel();
-	});
-});
+		let stopped = false;
 
-$effect.root(() => {
-	$effect(() => {
+		APIFetch<ModelListResp, Record<string, never>>({
+			path: 'model/list',
+			body: {},
+			token: true
+		}).then((x) => {
+			if (!stopped) models.val = x?.list;
+		});
+
 		APIFetch<ModelIdsResp, Record<string, never>>({
 			path: 'model/ids',
 			body: {},
 			token: true
 		}).then((x) => {
-			modelIds.val = x?.ids;
+			if (!stopped) modelIds.val = x?.ids;
 		});
-		fetchModel();
+
+		return () => {
+			stopped = true;
+		};
 	});
 });

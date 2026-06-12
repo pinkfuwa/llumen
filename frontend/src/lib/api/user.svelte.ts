@@ -70,20 +70,22 @@ export async function deleteUser(req: UserDeleteReq): Promise<MutationStatus> {
 
 $effect.root(() => {
 	$effect(() => {
+		let stopped = false;
+
 		APIFetch<UserListResp, Record<string, never>>({
 			path: 'user/list',
 			body: {},
 			token: true
 		}).then((x) => {
-			users.val = x;
+			if (!stopped) users.val = x;
 		});
-	});
-});
 
-$effect.root(() => {
-	$effect(() => {
 		APIFetch<UserReadResp, UserReadReq>({ path: 'user/read', body: {}, token: true }).then((x) => {
-			currentUser.val = x;
+			if (!stopped) currentUser.val = x;
 		});
+
+		return () => {
+			stopped = true;
+		};
 	});
 });
