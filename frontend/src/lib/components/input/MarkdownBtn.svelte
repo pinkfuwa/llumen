@@ -3,12 +3,10 @@
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { t } from 'svelte-intl-precompile';
 	import { isEditing } from './state.svelte';
-
-	const markdownBtnStyle = 'hidden rounded-md p-1 hover:bg-interactive-hover md:block';
 </script>
 
 <Tooltip
-	class={markdownBtnStyle}
+	class="hidden rounded-md p-1 hover:bg-interactive-hover md:block"
 	onclick={() => (isEditing.val = !isEditing.val)}
 	text={isEditing.val ? $t('chat.markdown_mode.disable') : $t('chat.markdown_mode.enable')}
 >

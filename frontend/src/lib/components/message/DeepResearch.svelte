@@ -10,13 +10,12 @@
 		open = $bindable(false),
 		streaming = false
 	} = $props<{ plan: Deep; open?: boolean; streaming?: boolean }>();
-
-	const triggerStyle =
-		'flex flex-row flex-nowrap rounded p-2 cursor-pointer duration-150 hover:bg-interactive-hover';
 </script>
 
 <Collapsible.Root bind:open>
-	<Collapsible.Trigger class={triggerStyle}>
+	<Collapsible.Trigger
+		class="flex cursor-pointer flex-row flex-nowrap rounded p-2 duration-150 hover:bg-interactive-hover"
+	>
 		<Atom class="mr-2" />
 		<span> {$t('chat.research_agent')} </span>
 	</Collapsible.Trigger>

@@ -14,14 +14,13 @@
 		streaming?: boolean;
 	}>();
 
-	const triggerStyle =
-		'flex flex-row flex-nowrap rounded p-1 cursor-pointer duration-150 hover:bg-interactive-hover';
-
 	let lastProgress = $derived(step.progress.filter((m) => m.t == 'text').at(-1));
 </script>
 
 <Collapsible.Root bind:open>
-	<Collapsible.Trigger class={triggerStyle}>
+	<Collapsible.Trigger
+		class="flex cursor-pointer flex-row flex-nowrap rounded p-1 duration-150 hover:bg-interactive-hover"
+	>
 		{#if step.kind == StepKind.Code}
 			<ChartSpline class="mr-2" />
 		{:else if step.need_search}

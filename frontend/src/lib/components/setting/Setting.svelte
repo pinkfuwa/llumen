@@ -11,13 +11,8 @@
 	import OpenrouterEdit from './tabs/openrouter/OpenrouterEdit.svelte';
 	import { t } from 'svelte-intl-precompile';
 
-	const dialogStyle =
-		'fixed inset-0 z-20 m-2 flex max-w-4xl rounded-xl border border-border bg-popover p-3 font-mono text-foreground fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:m-auto md:h-[min(80vh,48rem)] md:w-full';
 	const tabStyle =
 		'cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-interactive-hover data-[state=active]:bg-interactive-selection data-[state=active]:text-primary';
-	const linkStyle = 'rounded px-3 py-2 text-left duration-150 hover:bg-interactive-hover';
-	const btnRowStyle =
-		'cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-interactive-hover';
 
 	let { open = $bindable() } = $props();
 	let value = $state('account');
@@ -30,7 +25,9 @@
 		<Dialog.Overlay
 			class="fixed inset-0 z-20 backdrop-blur-md fade-in-100 fade-out-0 data-[state=closed]:animate-out data-[state=open]:animate-in"
 		/>
-		<Dialog.Content class={dialogStyle}>
+		<Dialog.Content
+			class="fixed inset-0 z-20 m-2 flex max-w-4xl rounded-xl border border-border bg-popover p-3 font-mono text-foreground fade-in fade-out zoom-in zoom-out data-[state=closed]:animate-out data-[state=open]:animate-in md:m-auto md:h-[min(80vh,48rem)] md:w-full"
+		>
 			<Dialog.Close
 				class="absolute top-5 right-5 rounded-md focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden active:scale-[0.98]"
 			>
@@ -63,12 +60,16 @@
 						</Tabs.Trigger>
 					</div>
 					<div class="flex flex-col space-y-2">
-						<a class={linkStyle} href="https://github.com/pinkfuwa/llumen" target="_blank">
+						<a
+							class="rounded px-3 py-2 text-left duration-150 hover:bg-interactive-hover"
+							href="https://github.com/pinkfuwa/llumen"
+							target="_blank"
+						>
 							<Star class="inline-block h-5 w-5 md:mr-2" />
 							<span class="hidden md:inline-block"> {$t('setting.github_star')} </span>
 						</a>
 						<button
-							class={btnRowStyle}
+							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-interactive-hover"
 							onclick={() => {
 								token.value = undefined;
 							}}

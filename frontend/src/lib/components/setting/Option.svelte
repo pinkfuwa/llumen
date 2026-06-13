@@ -4,9 +4,6 @@
 	import { Collapsible } from 'bits-ui';
 	import Radio from '$lib/ui/Radio.svelte';
 
-	const triggerStyle =
-		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
-
 	let {
 		title,
 		selected = $bindable<string>(''),
@@ -28,7 +25,9 @@
 </div>
 
 <Collapsible.Root class="md:hidden">
-	<Collapsible.Trigger class={triggerStyle}>
+	<Collapsible.Trigger
+		class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover"
+	>
 		<span>{title}</span>
 		<ChevronDown />
 	</Collapsible.Trigger>

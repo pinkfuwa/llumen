@@ -8,9 +8,6 @@
 	import type { MutationStatus } from '$lib/api';
 	import { t } from 'svelte-intl-precompile';
 
-	const triggerStyle =
-		'flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover';
-
 	let open = $state(false);
 	let password = $state('');
 	let passwordCheck = $state('');
@@ -53,7 +50,9 @@
 </div>
 
 <Collapsible.Root bind:open class="md:hidden">
-	<Collapsible.Trigger class={triggerStyle}>
+	<Collapsible.Trigger
+		class="flex w-full flex-row flex-nowrap justify-between rounded p-2 text-lg duration-150 hover:bg-interactive-hover"
+	>
 		<span>{$t('setting.change_password')}</span>
 		<ChevronDown />
 	</Collapsible.Trigger>

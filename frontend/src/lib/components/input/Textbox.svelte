@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { default as Markdown } from '$lib/components/markdown/Root.svelte';
 
-	const editorStyle =
-		'editor field-sizing-content max-h-96 flex-grow resize-none overflow-auto rounded-md bg-input p-4 data-[state=hide]:hidden md:max-h-[60vh]';
 	import { onDestroy } from 'svelte';
 	import { shouldSubmitOnEnter } from './submitOnEnter.svelte';
 	import { stringWidthWithWrap } from '$lib/string-width';
@@ -95,7 +93,7 @@
 </script>
 
 <textarea
-	class={editorStyle}
+	class="editor field-sizing-content max-h-96 flex-grow resize-none overflow-auto rounded-md bg-input p-4 data-[state=hide]:hidden md:max-h-[60vh]"
 	bind:value={inputContent.val}
 	{placeholder}
 	{rows}

@@ -9,15 +9,14 @@
 	let displayName = $derived(toolname === 'Default Tool' ? $t('chat.default_tool') : toolname);
 
 	let open = $state(false);
-
-	const triggerStyle =
-		'flex flex-row flex-nowrap items-center rounded p-2 cursor-pointer duration-150 hover:bg-interactive-hover';
 </script>
 
 <Accordion.Root type="multiple">
 	<Accordion.Item>
 		<Accordion.Header>
-			<Accordion.Trigger class={triggerStyle}>
+			<Accordion.Trigger
+				class="flex cursor-pointer flex-row flex-nowrap items-center rounded p-2 duration-150 hover:bg-interactive-hover"
+			>
 				<ToolCase class="mr-2" />
 				{#if !open}
 					<span class="mr-1"> {$t('chat.calling')} </span>

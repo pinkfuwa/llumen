@@ -4,9 +4,6 @@
 	import { t } from 'svelte-intl-precompile';
 	let { content, open = $bindable(false) }: { content: string; open?: boolean } = $props();
 
-	const triggerStyle =
-		'flex flex-row flex-nowrap rounded p-2 cursor-pointer duration-150 hover:bg-interactive-hover';
-
 	// svelte-ignore state_referenced_locally
 	let lines = $state(content.split('\n'));
 	// svelte-ignore state_referenced_locally
@@ -28,7 +25,9 @@
 </script>
 
 <Collapsible.Root bind:open>
-	<Collapsible.Trigger class={triggerStyle}>
+	<Collapsible.Trigger
+		class="flex cursor-pointer flex-row flex-nowrap rounded p-2 duration-150 hover:bg-interactive-hover"
+	>
 		<Brain class="mr-2" />
 		<span>
 			{$t('chat.reasoning')}
