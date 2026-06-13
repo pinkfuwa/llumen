@@ -8,10 +8,6 @@ function isPositiveNumber(value: unknown): value is number {
 	return typeof value === 'number' && value > 0 && value < Infinity;
 }
 
-function toArray(value: ArrayLike<unknown>): unknown[] {
-	return Array.from ? Array.from(value) : Array.prototype.slice.call(value);
-}
-
 function getStringFromCharCode(dataView: DataView, start: number, length: number): string {
 	let str = '';
 	for (let i = start; i < start + length; i++) {

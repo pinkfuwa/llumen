@@ -259,7 +259,6 @@ const Handlers: {
 		const firstMsg = messages.val.at(0);
 		if (!firstMsg || !firstMsg.stream || firstMsg.inner.t !== 'assistant') return;
 		if (!deepState) throw new Error('deepState is not initialized');
-		const lastChunk = firstMsg.inner.c.at(-1)!;
 		deepState.currentStepIndex = stepIndex as number;
 		consumeDiscreteChunk();
 	},

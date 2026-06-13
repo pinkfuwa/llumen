@@ -26,58 +26,6 @@ describe('gesture detection', () => {
 		vi.restoreAllMocks();
 	});
 
-	function simulateSwipe(
-		startX: number,
-		startY: number,
-		endX: number,
-		endY: number,
-		delay: number = 100
-	): void {
-		const touchStart = new TouchEvent('touchstart', {
-			touches: [
-				{
-					clientX: startX,
-					clientY: startY,
-					identifier: 0,
-					target: element
-				} as unknown as Touch
-			],
-			bubbles: true
-		});
-		element.dispatchEvent(touchStart);
-
-		// Simulate some time passing and movement
-		setTimeout(() => {
-			const touchMove = new TouchEvent('touchmove', {
-				touches: [
-					{
-						clientX: endX,
-						clientY: endY,
-						identifier: 0,
-						target: element
-					} as unknown as Touch
-				],
-				bubbles: true
-			});
-			element.dispatchEvent(touchMove);
-		}, delay / 2);
-
-		setTimeout(() => {
-			const touchEnd = new TouchEvent('touchend', {
-				changedTouches: [
-					{
-						clientX: endX,
-						clientY: endY,
-						identifier: 0,
-						target: element
-					} as unknown as Touch
-				],
-				bubbles: true
-			});
-			element.dispatchEvent(touchEnd);
-		}, delay);
-	}
-
 	it('should detect left swipe with fast gesture', () => {
 		cleanup = createSwipeGesture(element, {
 			onSwipe: onSwipe as (direction: SwipeDirection) => void

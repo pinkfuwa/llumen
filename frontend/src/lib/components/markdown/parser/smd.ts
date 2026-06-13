@@ -122,22 +122,6 @@ function add_text(p: Parser): void {
 	p.text = '';
 }
 
-function ensure_paragraph(p: Parser): void {
-	switch (p.token) {
-		case LINE_BREAK:
-		case DOCUMENT:
-		case BLOCKQUOTE:
-		case LIST_ORDERED:
-		case LIST_UNORDERED:
-			add_token(p, PARAGRAPH);
-	}
-}
-
-function push_text(p: Parser, text: string): void {
-	ensure_paragraph(p);
-	p.text += text;
-}
-
 function end_token(p: Parser): void {
 	p.len -= 1;
 	p.token = p.tokens[p.len];
