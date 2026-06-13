@@ -2,28 +2,28 @@
 	import { SquarePen, Check, X, Trash2 } from '@lucide/svelte';
 	import FileGroup from '$lib/components/common/FileGroup.svelte';
 	import { Markdown } from '$lib/components/markdown';
-	import { messages, deleteMessage } from '$lib/api/message.svelte';
+	import { syncMessage, deleteMessage, streaming, type MutationStatus } from '$lib/api';
 	import { shouldSubmitOnEnter } from '$lib/components/input/submitOnEnter.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
 	let {
 		content = $bindable(''),
 		files = [] as Array<{ name: string; id: number }>,
-		onupdate = (() => {}) as (text: string, files: Array<{ name: string; id: number }>) => void,
-		// streaming means the message just being updated(editing)
-		messageId
+		id: id
 	}: {
 		content: string;
 		files?: Array<{ name: string; id: number }>;
 		onupdate?: (text: string, files: Array<{ name: string; id: number }>) => void;
-		messageId: number;
+		id: number;
 	} = $props();
 
-	// TODO: use component lib
+	let submissionStatus = $state<MutationStatus>('untried');
 	let isEditing = $state(false);
 	let editBuffer = $state(content);
 	let filesBuffer = $state<Array<{ name: string; id: number }>>([]);
 	let editFiles = $state<Array<{ name: string; id: number }>>([]);
+
+	let disabled = $derived(streaming.val || submissionStatus == 'pending');
 
 	$effect(() => {
 		if (isEditing) return;
@@ -32,31 +32,20 @@
 		filesBuffer = [...files];
 	});
 
-	// bind to markdown height when rendering
-	let markdownHeight = $state(0);
-	// save height when not rendering
-	let renderHeight = $state(0);
-	$effect(() => {
-		if (isEditing) return;
-		renderHeight = Math.max(24, markdownHeight);
-	});
-
 	const actualHeight = $derived.by(() => {
 		const contentHeight = (content.split('\n').length + 1) * 24;
 		return Math.max(contentHeight, renderHeight);
 	});
 
-	let btnGroup = $state<null | HTMLDivElement>(null);
+	// bind to markdown height when rendering
+	let markdownHeight = $state(0);
+	// save height when not rendering
+	let renderHeight = $state(0);
 
-	// Keep the edit UI open but block submit while a stream is active (e.g., other tab sends a message).
-	let editLocked = $derived(messages.val[0]?.stream ?? false);
-
-	async function handleDelete() {
-		await deleteMessage(messageId);
-	}
-
-	const messageStyle =
-		'rounded-md bg-muted p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]';
+	$effect(() => {
+		if (isEditing) return;
+		renderHeight = Math.max(24, markdownHeight);
+	});
 
 	let virtualKeyboard = $state(false);
 	if ('virtualKeyboard' in navigator) {
@@ -69,15 +58,20 @@
 	}
 
 	function submitEdit() {
-		if (editLocked) return;
 		isEditing = false;
-		onupdate(content, editFiles);
+		submissionStatus = 'pending';
+		syncMessage(id, content, editFiles).then((x) => {
+			submissionStatus = x;
+		});
 	}
 </script>
 
-<div class="group/files mt-4 w-full px-[5vw] lg:px-20 2xl:px-36" id={`${messageId}`}>
+<div class="group/files mt-4 w-full px-[5vw] lg:px-20 2xl:px-36" id={`${id}`}>
 	<div class="flex justify-end">
-		<div class={messageStyle} data-state={isEditing ? 'edit' : 'text'}>
+		<div
+			class="rounded-md bg-muted p-4 wrap-break-word data-[state=edit]:w-full data-[state=text]:max-w-full data-[state=edit]:md:w-[calc(100%-2rem)] data-[state=text]:md:max-w-[calc(100%-2rem)]"
+			data-state={isEditing ? 'edit' : 'text'}
+		>
 			{#if files.length != 0}
 				{@const separator = isEditing || content.trim().length > 0}
 				<div class="mb-2 overflow-auto{separator ? ' border-b border-border pb-2' : ''}">
@@ -112,7 +106,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="mt-1 flex justify-end" bind:this={btnGroup}>
+	<div class="mt-1 flex justify-end">
 		<Button
 			class="p-2 data-[state=close]:hidden"
 			onclick={() => {
@@ -130,7 +124,7 @@
 			onclick={submitEdit}
 			data-state={isEditing ? 'open' : 'close'}
 			borderless
-			disabled={editLocked}
+			{disabled}
 		>
 			<Check class="h-6 w-6" />
 		</Button>
@@ -148,10 +142,12 @@
 		</Button>
 		<Button
 			class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
-			onclick={handleDelete}
+			onclick={() => {
+				deleteMessage(id);
+			}}
 			data-state={isEditing ? 'open' : 'close'}
 			borderless
-			disabled={editLocked}
+			{disabled}
 		>
 			<Trash2 class="h-6 w-6" />
 		</Button>

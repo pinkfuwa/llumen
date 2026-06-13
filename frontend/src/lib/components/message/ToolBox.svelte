@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { ToolCase } from '@lucide/svelte';
 	import { Accordion } from 'bits-ui';
-	import { slide } from 'svelte/transition';
 	import Badge from '$lib/ui/Badge.svelte';
 	import { t } from 'svelte-intl-precompile';
 

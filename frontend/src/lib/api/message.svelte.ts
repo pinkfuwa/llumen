@@ -514,45 +514,46 @@ export async function deleteMessage(id: number): Promise<MutationStatus> {
 	return 'failed';
 }
 
-export async function syncMessage(
+export function syncMessage(
 	msgId: number,
 	text: string,
 	files: Array<{ id: number; name: string }>
 ): Promise<MutationStatus> {
+	let token_ = token.value?.value;
 	const chatId = getChatId();
-	if (chatId === undefined) return 'failed';
+	if (chatId === undefined) return Promise.resolve('failed');
 
 	const room = currentRoom.val;
-	console.log(room);
 	if (!room || !room.model_id) {
 		displayError('internal', 'select model first');
-		return 'failed';
+		return Promise.resolve('failed');
 	}
+	return (async () => {
+		await APIFetch<MessageDeleteReq, MessageDeleteReq>({
+			path: 'message/delete',
+			body: { id: msgId },
+			token: token_
+		});
 
-	await APIFetch<MessageDeleteReq, MessageDeleteReq>({
-		path: 'message/delete',
-		body: { id: msgId },
-		token: true
-	});
+		const firstKeepIdx = firstLtIdx(messages.val, msgId);
+		if (firstKeepIdx === messages.val.length) messages.val.splice(0);
+		else messages.val.splice(0, firstKeepIdx);
 
-	const firstKeepIdx = firstLtIdx(messages.val, msgId);
-	if (firstKeepIdx === messages.val.length) messages.val.splice(0);
-	else messages.val.splice(0, firstKeepIdx);
+		const resp = await APIFetch<MessageCreateResp, MessageCreateReq>({
+			path: 'message/create',
+			body: {
+				chat_id: chatId,
+				model_id: room.model_id!,
+				mode: room.mode,
+				text,
+				files
+			},
+			token: token_
+		});
+		if (resp) pushUserMessage(resp.user_id, text, files);
 
-	const resp = await APIFetch<MessageCreateResp, MessageCreateReq>({
-		path: 'message/create',
-		body: {
-			chat_id: chatId,
-			model_id: room.model_id,
-			mode: room.mode,
-			text,
-			files
-		},
-		token: true
-	});
-	if (resp) pushUserMessage(resp.user_id, text, files);
-
-	return resp ? 'success' : 'failed';
+		return resp ? 'success' : 'failed';
+	})();
 }
 
 $effect.root(() => {

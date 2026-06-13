@@ -6,8 +6,9 @@
 	import { onDestroy } from 'svelte';
 	import { shouldSubmitOnEnter } from './submitOnEnter.svelte';
 	import { stringWidthWithWrap } from '$lib/string-width';
-	import { inputContent, isEditing } from './state.svelte';
+	import { inputContent, isEditing, submitting } from './state.svelte';
 	import { submit } from './state.svelte';
+	import { streaming } from '$lib/api';
 
 	let input = $state<null | HTMLElement>(null);
 	let inputWidth = $state(0);
@@ -15,13 +16,13 @@
 
 	let {
 		minRow = 1,
-		placeholder = '',
-		disabled = false
+		placeholder = ''
 	}: {
 		minRow?: number;
 		placeholder?: string;
-		disabled?: boolean;
 	} = $props();
+
+	let disabled = $derived(submitting.val || streaming.val);
 
 	$effect(() => {
 		if (!input) return;
@@ -103,7 +104,7 @@
 	aria-label="type message"
 	data-state={isEditing.val ? 'show' : 'hide'}
 	onkeypress={(event) => {
-		if (shouldSubmitOnEnter(event, { virtualKeyboard })) submit();
+		if (!disabled && shouldSubmitOnEnter(event, { virtualKeyboard })) submit();
 	}}
 ></textarea>
 <div

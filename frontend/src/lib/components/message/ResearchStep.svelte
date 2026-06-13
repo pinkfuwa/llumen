@@ -3,7 +3,6 @@
 	import { FlaskConical, ChartSpline, TextSearch } from '@lucide/svelte';
 	import { Collapsible } from 'bits-ui';
 	import { Markdown } from '$lib/components/markdown';
-	import { t } from 'svelte-intl-precompile';
 
 	let {
 		step,

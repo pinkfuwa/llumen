@@ -1,18 +1,9 @@
 <script lang="ts">
-	import { messages, syncMessage } from '$lib/api/message.svelte';
+	import { messages } from '$lib/api';
 	import ResponseBox from './ResponseBox.svelte';
 	import ResponseEdit from './ResponseEdit.svelte';
 	import User from './User.svelte';
 	import Chunks from './Chunks.svelte';
-
-	async function handleUpdate(
-		messageId: number,
-		text: string,
-		updatedFiles: Array<{ name: string; id: number }>
-	) {
-		// FIXME: there is only one messags array, which we can use data-as-API concept to avoid prop drilling
-		await syncMessage(messageId, text, updatedFiles);
-	}
 </script>
 
 {#each messages.val.toReversed() as msg (msg.id)}
@@ -20,12 +11,7 @@
 	{#if msg.inner.t == 'user'}
 		{@const content = msg.inner.c.text}
 		{@const files = msg.inner.c.files}
-		<User
-			{content}
-			{files}
-			messageId={msg.id}
-			onupdate={(text, updatedFiles) => handleUpdate(msg.id, text, updatedFiles)}
-		/>
+		<User {content} {files} id={msg.id} />
 	{:else if msg.inner.t == 'assistant'}
 		{@const chunks = msg.inner.c}
 		<ResponseBox>
