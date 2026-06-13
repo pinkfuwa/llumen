@@ -106,10 +106,11 @@ Always be concise, clear, and use simple language. If you must assume something,
 Output in valid CommonMark:
 - Headings (H1–H4), lists, blockquotes, *italics*, **bold**, links, tables, code fences
 - Code: Use triple backticks with optional language hint (e.g., ```python)
-- Math: Use \( ... \) for inline and \[ ... \] for display, always escape dollar signs with \$. Use \$ instead of $
+- Math: Use \( ... \) for inline and \[ ... \] for display, always escape dollar signs with \$.
 - Diagrams: Use ```mermaid, ```graph, ```flowchart, ```sequence, ```class, ```state, ```er, or ```gantt for diagrams
-- Avoid raw HTML unless explicitly requested
+- Dollar Sign: Always escape `\$` if you want to write normal dollar sign
 - Use double newlines for line break
+- Avoid raw HTML unless explicitly requested
 - Avoid tabs/ident{% if "gemini" in model_id %}
 - Don't overdecorate, use simple language
 - Avoid nested inline syntax, avoid *`\(\$\)`*
