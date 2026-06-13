@@ -245,3 +245,28 @@ export async function compressImage(file: File, options: CompressorOptions = {})
 export function isImageFile(file: File): boolean {
 	return isImageType(file.type);
 }
+
+const COMPRESSIBLE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/avif']);
+
+let avifDetectionPromise: Promise<boolean> | undefined = undefined;
+
+async function detectAvifEncodeSupport(): Promise<boolean> {
+	// Smallest valid AVIF file, from https://stackoverflow.com/questions/71680803/
+	const AVIF_DATA_URI =
+		'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=';
+	return new Promise((resolve) => {
+		const img = new Image();
+		img.onload = () => resolve(true);
+		img.onerror = () => resolve(false);
+		img.src = AVIF_DATA_URI;
+	});
+}
+
+export async function isCompressibleImage(file: File): Promise<boolean> {
+	if (!COMPRESSIBLE_MIME_TYPES.has(file.type)) return false;
+	if (file.type !== 'image/avif') return true;
+	if (!avifDetectionPromise) {
+		avifDetectionPromise = detectAvifEncodeSupport();
+	}
+	return avifDetectionPromise;
+}

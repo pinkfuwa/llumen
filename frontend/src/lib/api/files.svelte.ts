@@ -1,6 +1,6 @@
 import { RawAPIFetch, APIFetch } from './http.svelte';
 import type { FileUploadResp, FileRefreshReq, FileRefreshResp } from './types';
-import { compressImage, isImageFile } from '$lib/image';
+import { compressImage, isCompressibleImage } from '$lib/image';
 import { displayError } from '$lib/error.svelte';
 import { untrack } from 'svelte';
 import { token } from '$lib/rune.svelte';
@@ -143,15 +143,18 @@ export function createUploadPipeline(
 
 			const controller = new AbortController();
 
-			const prepare: Promise<File> =
-				isImageFile(file) && file.size > COMPRESS_SIZE_THRESHOLD
-					? compressImage(file, { quality: 0.8 })
-							.catch(() => file)
-							.then((f) => {
-								controller.signal.throwIfAborted();
-								return f;
-							})
-					: Promise.resolve(file);
+			const prepare: Promise<File> = (async () => {
+				if ((await isCompressibleImage(file)) && file.size > COMPRESS_SIZE_THRESHOLD) {
+					try {
+						const f = await compressImage(file, { quality: 0.8 });
+						controller.signal.throwIfAborted();
+						return f;
+					} catch {
+						return file;
+					}
+				}
+				return file;
+			})();
 
 			const uploadP = prepare.then((f) => upload(f, controller.signal));
 
