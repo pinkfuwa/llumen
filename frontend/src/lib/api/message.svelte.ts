@@ -231,7 +231,6 @@ const Handlers: {
 				}
 			});
 		}
-		let plan = firstMsg.inner.c.at(-1)!.c as Deep;
 		if (deepState) {
 			cursor!.offset += byteLen(planChunk as string);
 		} else {
@@ -405,8 +404,6 @@ function startSSE(chatId: number, token: string) {
 					else {
 						(Handlers[resJson.t] as (data: any, chatId: number) => void)(resJson.c, chatId);
 					}
-				} else {
-					console.log(data);
 				}
 			}
 		} catch (e) {
@@ -519,7 +516,7 @@ export function syncMessage(
 	text: string,
 	files: Array<{ id: number; name: string }>
 ): Promise<MutationStatus> {
-	let token_ = token.value?.value;
+	let token_ = untrack(() => token.value?.value);
 	const chatId = getChatId();
 	if (chatId === undefined) return Promise.resolve('failed');
 

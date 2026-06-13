@@ -1,14 +1,9 @@
 <script lang="ts">
 	import { deleteUser, users, currentUser } from '$lib/api/user.svelte';
 	import CheckDelete from './CheckDelete.svelte';
-	import { t } from 'svelte-intl-precompile';
 
 	const data = $derived(users.val);
 	const userData = $derived(currentUser.val);
-
-	async function handleDelete(userId: number) {
-		await deleteUser({ user_id: userId });
-	}
 </script>
 
 {#if data == undefined}
@@ -22,7 +17,7 @@
 				>
 					{user.name}
 					{#if userData != undefined && user.id != userData?.user_id}
-						<CheckDelete ondelete={() => handleDelete(user.id)} />
+						<CheckDelete ondelete={() => deleteUser({ user_id: user.id })} />
 					{/if}
 				</li>
 			{/each}

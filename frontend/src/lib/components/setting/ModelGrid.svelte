@@ -2,14 +2,9 @@
 	import { deleteModel, models } from '$lib/api/model.svelte';
 	import CheckDelete from './CheckDelete.svelte';
 	import Button from '$lib/ui/Button.svelte';
-	import { t } from 'svelte-intl-precompile';
 
 	let { id = $bindable(), value = $bindable() }: { id?: number; value: string } = $props();
 	const data = $derived(models.val);
-
-	async function handleDelete(modelId: number) {
-		await deleteModel({ id: modelId });
-	}
 </script>
 
 {#if data == undefined}
@@ -25,7 +20,7 @@
 				}}
 			>
 				{model.display_name}
-				<CheckDelete ondelete={() => handleDelete(model.id)} />
+				<CheckDelete ondelete={() => deleteModel({ id: model.id })} />
 			</Button>
 		{/each}
 	</div>

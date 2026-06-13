@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Trash, TriangleAlert } from '@lucide/svelte';
 	import { Button } from 'bits-ui';
-	import { t } from 'svelte-intl-precompile';
 
 	let { ondelete }: { ondelete: () => void } = $props();
 	let checked = $state(false);

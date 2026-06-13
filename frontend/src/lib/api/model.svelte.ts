@@ -1,5 +1,6 @@
 import { APIFetch } from './http.svelte';
 import { token } from '$lib/rune.svelte';
+import { untrack } from 'svelte';
 
 import type {
 	ModelReadReq,
@@ -53,26 +54,16 @@ export async function readModel(id: number): Promise<ModelReadResp> {
 	}).then((x) => x ?? { raw: '' });
 }
 
-async function fetchModel(): Promise<void> {
-	APIFetch<ModelListResp, Record<string, never>>({
-		path: 'model/list',
-		body: {},
-		token: true
-	}).then((x) => {
-		models.val = x?.list;
-	});
-}
-
 export async function deleteModel(req: ModelDeleteReq): Promise<MutationStatus> {
+	const token_ = untrack(() => token.value?.value);
 	const res = await APIFetch<ModelDeleteResp, ModelDeleteReq>({
 		path: 'model/delete',
 		body: req,
-		token: token.value?.value
+		token: token_
 	});
 	if (!res || !res.deleted) return 'failed';
 
 	let modelIdx = models.val?.findIndex((m) => m.id == req.id);
-	console.log('to delete', modelIdx, models);
 	if (modelIdx !== undefined && models.val !== undefined) {
 		models.val.splice(modelIdx, 1);
 	}
@@ -80,15 +71,21 @@ export async function deleteModel(req: ModelDeleteReq): Promise<MutationStatus> 
 	return 'success';
 }
 
-export async function checkConfig(req: ModelCheckReq): Promise<ModelCheckResp | undefined> {
-	return APIFetch<ModelCheckResp, ModelCheckReq>({ path: 'model/check', body: req, token: true });
+export function checkConfig(req: ModelCheckReq): Promise<ModelCheckResp | undefined> {
+	const token_ = untrack(() => token.value?.value);
+	return APIFetch<ModelCheckResp, ModelCheckReq>({
+		path: 'model/check',
+		body: req,
+		token: token_
+	});
 }
 
 export async function createModel(req: ModelCreateReq): Promise<MutationStatus> {
+	const token_ = untrack(() => token.value?.value);
 	const res = await APIFetch<ModelCreateResp, ModelCreateReq>({
 		path: 'model/create',
 		body: req,
-		token: token.value?.value
+		token: token_
 	});
 	if (!res) return 'failed';
 
@@ -98,14 +95,21 @@ export async function createModel(req: ModelCreateReq): Promise<MutationStatus> 
 }
 
 export async function syncModel(req: ModelWriteReq): Promise<MutationStatus> {
+	const token_ = untrack(() => token.value?.value);
 	const res = await APIFetch<ModelWriteResp, ModelWriteReq>({
 		path: 'model/write',
 		body: req,
-		token: token.value?.value
+		token: token_
 	});
 	if (!res) return 'failed';
 
-	fetchModel();
+	APIFetch<ModelListResp, Record<string, never>>({
+		path: 'model/list',
+		body: {},
+		token: token_
+	}).then((x) => {
+		models.val = x?.list;
+	});
 
 	return 'success';
 }

@@ -13,7 +13,6 @@
 	}: {
 		content: string;
 		files?: Array<{ name: string; id: number }>;
-		onupdate?: (text: string, files: Array<{ name: string; id: number }>) => void;
 		id: number;
 	} = $props();
 
