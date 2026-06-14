@@ -962,7 +962,43 @@ export function parser_write(p: Parser, chunk: string): void {
 						continue;
 					}
 				}
-				if (char === '>') {
+				if (p.pending === '<' && (char === 'b' || char === '/')) {
+					p.pending = pending_with_char;
+					continue;
+				}
+				if (p.pending === '<b' && char === 'r') {
+					p.pending = pending_with_char;
+					continue;
+				}
+				if (p.pending === '<br' && char === '/') {
+					p.pending = pending_with_char;
+					continue;
+				}
+				if (p.pending === '<br' && char === '>') {
+					add_text(p);
+					p.token = p.tokens[p.len];
+					p.renderer.add_token(p.renderer.data, LINE_BREAK);
+					p.renderer.end_token(p.renderer.data);
+					p.pending = '';
+					continue;
+				}
+				if (p.pending === '<br/' && char === '>') {
+					add_text(p);
+					p.token = p.tokens[p.len];
+					p.renderer.add_token(p.renderer.data, LINE_BREAK);
+					p.renderer.end_token(p.renderer.data);
+					p.pending = '';
+					continue;
+				}
+				if (p.pending === '</' && char === 'b') {
+					p.pending = pending_with_char;
+					continue;
+				}
+				if (p.pending === '</b' && char === 'r') {
+					p.pending = pending_with_char;
+					continue;
+				}
+				if (p.pending === '</br' && char === '>') {
 					add_text(p);
 					p.token = p.tokens[p.len];
 					p.renderer.add_token(p.renderer.data, LINE_BREAK);
@@ -971,9 +1007,8 @@ export function parser_write(p: Parser, chunk: string): void {
 					continue;
 				}
 				p.token = p.tokens[p.len];
-				p.text += '<';
-				p.pending = p.pending.slice(1);
-				parser_write(p, char);
+				p.text += '<' + p.pending.slice(1);
+				p.pending = char;
 				continue;
 		}
 
@@ -1047,10 +1082,16 @@ export function parser_write(p: Parser, chunk: string): void {
 				break;
 			case '<':
 				if (p.token !== IMAGE && !is_block_eq(p.token) && p.token !== EQUATION_INLINE) {
-					add_text(p);
-					p.pending = pending_with_char;
-					p.token = MAYBE_BR;
-					continue;
+					if (
+						(char >= 'a' && char <= 'z') ||
+						(char >= 'A' && char <= 'Z') ||
+						char === '/'
+					) {
+						add_text(p);
+						p.pending = pending_with_char;
+						p.token = MAYBE_BR;
+						continue;
+					}
 				}
 				break;
 			case '`':
