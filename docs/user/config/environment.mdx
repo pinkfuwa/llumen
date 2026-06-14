@@ -18,9 +18,33 @@ Llumen uses environment variables for configuration. No config files needed!
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `API_BASE` | Custom API endpoint | `https://openrouter.ai/api` |
+| `OPENAI_API_BASE` | Alias for `API_BASE` | — |
 | `DATA_PATH` | Storage directory | `.` (current dir) |
-| `BIND_ADDR` | Network socket | `0.0.0.0:80` |
-| `TRUSTED_HEADER` | middleware auth | None |
+| `BIND_ADDR` | Network socket | `0.0.0.0:8001` |
+| `TRUSTED_HEADER` | HTTP header for SSO/proxy auth | None |
+| `FORCE_OPENROUTER_MODE` | Force OpenRouter mode | `false` |
+| `RUST_LOG` | Log level filter | `info` |
+
+## CLI Usage
+
+Llumen ships with an optional `cli` feature (enabled in the release build). All flags
+mirror their corresponding environment variable.
+
+| Flag | Short | Env Var | Default | Description |
+|------|-------|---------|---------|-------------|
+| `--api-key` | `-k` | `API_KEY` | (required) | API key for OpenRouter / OpenAI |
+| `--api-base` | `-b` | `API_BASE` | `https://openrouter.ai/api` | Custom API endpoint |
+| `--force-openrouter` | `-f` | `FORCE_OPENROUTER_MODE` | `false` | Force OpenRouter mode |
+| `--data-path` | `-d` | `DATA_PATH` | `.` | Data directory |
+| `--bind` | `-a` | `BIND_ADDR` | `0.0.0.0:8001` | Server listen address |
+| `--trusted-header` | `-H` | `TRUSTED_HEADER` | None | HTTP header for SSO/proxy auth |
+| `--log-level` | `-l` | `RUST_LOG` | `info` | Log level filter |
+
+```bash
+# Examples
+llumen -k "sk-or-v1-..." -b "https://openrouter.ai/api" -a "127.0.0.1:8001"
+llumen --api-key "sk-..." --bind "0.0.0.0:8080" --log-level "debug"
+```
 
 ## Docker Configuration
 
@@ -123,12 +147,12 @@ data/
 
 **Listen on all interfaces (default):**
 ```bash
-BIND_ADDR=0.0.0.0:80
+BIND_ADDR=0.0.0.0:8001
 ```
 
 **Localhost only:**
 ```bash
-BIND_ADDR=127.0.0.1:80
+BIND_ADDR=127.0.0.1:8001
 ```
 
 **Custom port:**

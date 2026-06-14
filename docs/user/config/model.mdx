@@ -7,14 +7,6 @@ description: "Model settings and capabilities"
 
 Llumen allows you to configure individual models with specific capabilities and parameters. This enables fine-tuned control over how each AI model behaves.
 
-## Configuration Format
-
-Model configurations are stored in TOML format. Each model has:
-- **Display name** - Human-readable name shown in UI
-- **Model ID** - Identifier used by the API provider
-- **Capabilities** - What the model supports(optional)
-- **Parameters** - Inference settings(optional)
-
 ## Basic Configuration
 
 ### Minimal Example
@@ -32,18 +24,22 @@ display_name = "Claude 4.5 Sonnet"
 model_id = "anthropic/claude-4.5-sonnet"
 
 [capability]
-image = true # upload image
-audio = false # upload audio
-ocr = "Mistral"
+image = true
+audio = false
+video = true
 tool = true
 json = true
-reasoning = "high"  # Enable with high effort (options: true/false/low/medium/high/none/auto)
+reasoning = "high"
 
 [parameter]
 temperature = 0.7
 top_p = 0.9
 top_k = 40
 repeat_penalty = 1.1
+
+[media_gen]
+image_model = "sourceful/riverflow-v2-fast"
+video_model = "google/veo-3.1-lite"
 ```
 
 ### Task Model
@@ -53,31 +49,87 @@ You can optionally specify a separate model for internal tasks like title genera
 ```toml
 display_name = "Claude 4.5 Sonnet"
 model_id = "anthropic/claude-4.5-sonnet"
-task_model_id = "openai/gpt-4o-mini"  # Cheaper model for title generation
+task_model_id = "openai/gpt-4o-mini"
 ```
 
 When `task_model_id` is omitted, the primary model is used for all tasks.
 
-## Model Capabilities
+## Capability
 
-Configure what features the model supports, image generation are always auto-detect(openrouter only).
+Configure what features the model supports. Image generation are always auto-detect (openrouter only).
 
 <Note>
 You don't need this if you are using openrouter.
 Openrouter API allow llumen to detect it for you.
 </Note>
 
-### Input/Upload
+### Multi-modality Input
 
-Set `image`, `audio` to true to override auto-detection
+| Field | Type | Description |
+|-------|------|-------------|
+| `image` | `bool` | Upload image input |
+| `audio` | `bool` | Upload audio input |
+| `video` | `bool` | Upload video input |
 
-### Structured output
+### Tool Use
 
-- When set to true: deep research mode will be more accurate. Eliminate error like `"Here is research..." is not a valid plan`. 
-- When set to false: deep research mode will retry once if error.
-- When not set: Llumen will guess its support
+| Field | Type | Description |
+|-------|------|-------------|
+| `tool` | `bool` | Enable function calling (search, deep research) |
 
-### OCR Engine
+Controls whether the model can call external functions. When enabled, search and deep research modes become available.
+
+- When `true`: search/deep research modes enabled.
+- When `false`: normal mode only.
+- When not set: Llumen will guess its support.
+
+### Structured Output
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `json` | `bool` | Enable structured output (JSON mode) |
+
+Controls whether the model supports structured/JSON output. When enabled, deep research mode can enforce structured responses for more reliable parsing.
+
+- When `true`: deep research mode will be more accurate. Eliminate error like `"Here is research..." is not a valid plan`.
+- When `false`: deep research mode will retry once if error.
+- When not set: Llumen will guess its support.
+
+### Thinking
+
+Enable or configure reasoning effort for models that support extended thinking.
+
+**Boolean values (backward compatible):**
+
+```toml
+[capability]
+reasoning = true   # Enable reasoning with default effort
+reasoning = false  # Disable reasoning
+```
+
+**String values (effort levels):**
+
+```toml
+[capability]
+reasoning = "low"      # Low reasoning effort
+reasoning = "medium"   # Medium reasoning effort
+reasoning = "high"     # High reasoning effort
+reasoning = "none"     # Disable reasoning
+reasoning = "auto"     # Use provider's default
+```
+
+- When set to `"high"`, `"medium"`, `"low"`: Enable reasoning with specified effort level
+- When set to `"none"`: Disable reasoning
+- When set to `"auto"`: Use the model's default reasoning behavior
+- When set to `true`: Enable reasoning with default effort
+- When set to `false`: Disable reasoning
+- When not set: Llumen will guess its support, enable if supported
+
+<Note>
+Llumen does not support interleaved thinking due to the limitation of chat completion API.
+</Note>
+
+### OCR
 
 ```toml
 [capability]
@@ -97,49 +149,7 @@ All options are case-insensitive. You can use any naming convention:
 - `"Text"`: Alias for Cloudflare AI (deprecated, redirects to Cloudflare)
 - `"Native"`: Uses model's built-in file input (if supported)
 
-### Tool Use
-
-- When set to true: search/deep research mode will be enable. 
-- When set to false: normal mode only.
-- When not set: Llumen will guess its support
-
-### Reasoning
-
-Enable or configure reasoning effort for models that support extended thinking.
-
-**Boolean values (backward compatible):**
-
-```toml
-[capability]
-reasoning = true   # Enable reasoning with default effort
-reasoning = false  # Disable reasoning
-```
-
-**String values (effort levels):**
-
-```toml
-[capability]
-reasoning = "low"      # Low reasoning effort
-reasoning = "medium"   # Medium reasoning effort  
-reasoning = "high"     # High reasoning effort
-reasoning = "none"     # Disable reasoning
-reasoning = "auto"     # Use provider's default
-```
-
-All string values are case-insensitive: `"Low"`, `"LOW"`, `"low"` all work.
-
-- When set to `"high"`, `"medium"`, `"low"`: Enable reasoning with specified effort level
-- When set to `"none"`: Disable reasoning
-- When set to `"auto"`: Use the model's default reasoning behavior
-- When set to `true`: Enable reasoning with default effort
-- When set to `false`: Disable reasoning
-- When not set: Llumen will guess its support, enable if supported
-
-<Note>
-Llumen support interleaved thinking(If model support it)
-</Note>
-
-## Model Parameters
+## Parameter
 
 Fine-tune inference behavior:
 
@@ -147,7 +157,7 @@ Fine-tune inference behavior:
 
 ```toml
 [parameter]
-temperature = 0.7  # Range: 0.0 - 2.0
+temperature = 0.7  # Range: 0.0 - 1.0
 ```
 
 **Examples:**
@@ -157,7 +167,7 @@ temperature = 0.7  # Range: 0.0 - 2.0
 temperature = 0.2
 
 # For creative writing
-temperature = 0.9
+temperature = 0.7
 
 # For balanced chat
 temperature = 0.7
@@ -185,7 +195,7 @@ Controls diversity by limiting token selection:
 
 ```toml
 [parameter]
-top_k = 40  # Range: 1 - 100+
+top_k = 40  # Range: 0 - 100
 ```
 
 ### Repeat Penalty
@@ -201,6 +211,16 @@ Reduces repetition in responses:
 - **1.1** - Light penalty (recommended)
 - **1.2-1.3** - Moderate penalty
 - **1.5+** - Strong penalty (may affect quality)
+
+## Media Generation
+
+Configure dedicated models for image and video generation. When omitted, the primary model is used.
+
+```toml
+[media_gen]
+image_model = "sourceful/riverflow-v2-fast"
+video_model = "google/veo-3.1-lite"
+```
 
 ## Configuring Models in Llumen
 
