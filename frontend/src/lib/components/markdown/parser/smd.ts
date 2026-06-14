@@ -338,7 +338,9 @@ export function parser_write(p: Parser, chunk: string): void {
 							p.pending = char;
 							continue;
 						}
-						end_tokens_to_len(p, p.blockquote_idx);
+						if (char !== '>' && char !== ' ' && char !== '\t') {
+							end_tokens_to_len(p, p.blockquote_idx);
+						}
 						clear_root_pending(p);
 						p.blockquote_idx = 0;
 						p.fence_start = 0;
@@ -369,6 +371,7 @@ export function parser_write(p: Parser, chunk: string): void {
 							add_token(p, BLOCKQUOTE);
 						} else {
 							p.blockquote_idx = next_blockquote_idx;
+							p.token = BLOCKQUOTE;
 						}
 
 						clear_root_pending(p);
@@ -499,6 +502,14 @@ export function parser_write(p: Parser, chunk: string): void {
 
 				if (p.token === LINE_BREAK) {
 					p.text = '';
+					const bq_idx = idx_of_token(p, BLOCKQUOTE, 0);
+					if (bq_idx !== -1) {
+						end_tokens_to_len(p, bq_idx - 1);
+						p.token = p.tokens[p.len];
+						clear_root_pending(p);
+						parser_write(p, to_write);
+						continue;
+					}
 					p.token = p.tokens[p.len];
 					p.renderer.add_token(p.renderer.data, LINE_BREAK);
 					p.renderer.end_token(p.renderer.data);
