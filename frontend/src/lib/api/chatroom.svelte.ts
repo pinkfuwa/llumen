@@ -212,6 +212,14 @@ $effect.root(() => {
 
 		leftExhausted = false;
 		rightExhausted = false;
+
+		if (globalThis.document.visibilityState === 'visible') {
+			const token_ = token.value?.value;
+			const element = paginateElement.val;
+			if (element && token_) {
+				ensurePaginated(element, token_);
+			}
+		}
 	});
 });
 
