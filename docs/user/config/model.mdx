@@ -56,10 +56,10 @@ When `task_model_id` is omitted, the primary model is used for all tasks.
 
 ## Capability
 
-Configure what features the model supports. Image generation are always auto-detect (openrouter only).
+Configure what features the model supports.
 
 <Note>
-You don't need this if you are using openrouter.
+You don't need specify capability if you are using openrouter.
 Openrouter API allow llumen to detect it for you.
 </Note>
 
@@ -67,9 +67,9 @@ Openrouter API allow llumen to detect it for you.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `image` | `bool` | Upload image input |
-| `audio` | `bool` | Upload audio input |
-| `video` | `bool` | Upload video input |
+| `image` | `bool` | image input |
+| `audio` | `bool` | audio input |
+| `video` | `bool` | video input |
 
 ### Tool Use
 
@@ -136,12 +136,7 @@ Llumen does not support interleaved thinking due to the limitation of chat compl
 ocr = "Mistral"  # Options: "Native", "Text", "Mistral", "Cloudflare", "Disabled"
 ```
 
-All options are case-insensitive. You can use any naming convention:
-- `"Native"`, `"native"`, `"NATIVE"`, `"native_ocr"`, `"nativeocr"`
-- `"Text"`, `"text"`, `"TEXT"`, `"text_ocr"`, `"textocr"`, `"tesseract"`
-- `"Mistral"`, `"mistral"`, `"MISTRAL"`, `"mistral_ocr"`, `"mistralocr"`
-- `"Cloudflare"`, `"cloudflare"`, `"CLOUDFLARE"`, `"cloudflare_ai"`, `"cloudflareai"`
-- `"Disabled"`, `"disabled"`, `"DISABLED"`, `"none"`, `"false"`, `"no"`
+All options are case-insensitive.
 
 **Engine differences:**
 - `"Cloudflare"` (free): Converts PDFs to markdown using Cloudflare Workers AI
