@@ -1082,11 +1082,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				break;
 			case '<':
 				if (p.token !== IMAGE && !is_block_eq(p.token) && p.token !== EQUATION_INLINE) {
-					if (
-						(char >= 'a' && char <= 'z') ||
-						(char >= 'A' && char <= 'Z') ||
-						char === '/'
-					) {
+					if ((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char === '/') {
 						add_text(p);
 						p.pending = pending_with_char;
 						p.token = MAYBE_BR;

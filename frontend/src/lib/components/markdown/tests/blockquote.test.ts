@@ -69,7 +69,7 @@ describe('blockquote edge cases', () => {
 		expect(nodes[0].type).toBe(AstNodeType.Blockquote);
 		expect(nodes[1].type).toBe(AstNodeType.Paragraph);
 		expect(flattenText((nodes[1] as ParagraphNode).children)).toBe('c');
-	});// known issue: table inside blockquote does not close on single newline (tables handle > internally)
+	}); // known issue: table inside blockquote does not close on single newline (tables handle > internally)
 
 	it('text after blockquote followed by blockquote on single newline produces two blockquotes', () => {
 		const nodes = parseSync('> a\n> b\nc\n> d');
