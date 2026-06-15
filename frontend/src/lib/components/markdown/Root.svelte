@@ -1,31 +1,21 @@
 <script lang="ts">
-	import Parser from './Parser.svelte';
 	import { parseSync, createAstRenderer } from './parser/renderer';
 	import { parser, parser_write } from './parser/smd';
-	import type { AstNode } from './parser/types';
+	import type { AstNode, Parser as SMDParser } from './parser/types';
 	import { useThrottle } from '$lib/throttle.svelte';
 	import { untrack } from 'svelte';
+	import Parser from './Parser.svelte';
 
 	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
 
-	let rootChildren: AstNode[] = $state([]);
-	let nodes = $derived(rootChildren);
+	let nodes: AstNode[] = $state([]);
 
-	// it's nullable because parsing rendering is bounded to rootChildren
-	let p: ReturnType<typeof parser> | null = null;
+	let p: SMDParser = parser(createAstRenderer(nodes).renderer);
 	let prevLength = 0;
 
-	function ensureParser() {
-		if (p) return;
-		const { renderer } = createAstRenderer(rootChildren);
-		p = parser(renderer);
-		prevLength = 0;
-	}
-
 	function resetParser() {
-		p = null;
 		prevLength = 0;
-		rootChildren.splice(0);
+		nodes.splice(0);
 	}
 
 	function doStreamingParse(currentSource: string) {
@@ -33,7 +23,6 @@
 			if (currentSource.length < prevLength) {
 				untrack(() => resetParser());
 			}
-			untrack(() => ensureParser());
 			const delta = currentSource.slice(prevLength);
 			if (delta.length > 0) {
 				untrack(() => parser_write(p!, delta));
@@ -49,13 +38,15 @@
 		try {
 			untrack(() => resetParser());
 			const result = parseSync(currentSource + '\n');
+
 			untrack(() => {
-				rootChildren = result;
+				nodes.splice(0);
+				nodes.push(...result);
 			});
 		} catch (error) {
 			console.error('Parse error:', error);
 			untrack(() => {
-				rootChildren = [];
+				nodes.splice(0);
 			});
 		}
 	}
