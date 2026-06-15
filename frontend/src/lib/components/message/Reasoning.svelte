@@ -36,6 +36,8 @@
 	<Collapsible.Content
 		class="py-2 whitespace-pre-wrap slide-out-to-start-2 fade-in fade-out slide-in-from-top-2 data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
-		{content}
+		{#each lines as line}
+			{line}
+		{/each}
 	</Collapsible.Content>
 </Collapsible.Root>

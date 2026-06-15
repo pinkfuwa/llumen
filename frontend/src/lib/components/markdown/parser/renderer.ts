@@ -50,27 +50,31 @@ import {
 import { parser, parser_write, parser_end, heading_to_level } from './smd';
 
 interface StackEntry {
-	type: AstNodeType;
 	token: number;
-	children: AstNode[];
+	node: AstNode;
 	textBuf: string;
 	language?: string;
 	url?: string;
 	start?: number;
 	checked?: boolean;
 	rowCount: number;
-	id: number;
+	closed: boolean;
 }
 
-function flushText(entry: StackEntry, nodeIdCounter: { val: number }): void {
+function flushText(entry: StackEntry): void {
 	if (entry.textBuf.length === 0) return;
-	const id = ++nodeIdCounter.val;
-	entry.children.push({
-		type: AstNodeType.Text,
-		start: id,
-		end: id,
-		content: entry.textBuf
-	} as TextNode);
+	const children = entry.node.children!;
+	const last = children.length > 0 ? children[children.length - 1] : null;
+	if (last?.type === AstNodeType.Text) {
+		(last as TextNode).content += entry.textBuf;
+	} else {
+		children.push({
+			type: AstNodeType.Text,
+			start: 0,
+			end: 0,
+			content: entry.textBuf
+		} as TextNode);
+	}
 	entry.textBuf = '';
 }
 
@@ -134,88 +138,88 @@ function tokenToNodeType(token: number): AstNodeType {
 	}
 }
 
-function finalizeNode(entry: StackEntry, _nodeIdCounter: { val: number }): AstNode {
-	const base = { start: entry.id, end: entry.id };
-
-	switch (entry.type) {
+function finalizeNodeInPlace(entry: StackEntry): void {
+	const node = entry.node;
+	switch (node.type) {
 		case AstNodeType.Heading: {
-			const level = heading_to_level(entry.token);
-			return { ...base, type: AstNodeType.Heading, level, children: entry.children } as HeadingNode;
+			(node as HeadingNode).level = heading_to_level(entry.token);
+			break;
 		}
 		case AstNodeType.CodeBlock: {
 			let content = '';
-			for (const child of entry.children) {
+			for (const child of node.children!) {
 				if (child.type === AstNodeType.Text) content += (child as TextNode).content;
 			}
-			return {
-				...base,
-				type: AstNodeType.CodeBlock,
-				language: entry.language,
-				content,
-				closed: true
-			} as CodeBlockNode;
+			(node as CodeBlockNode).content = content;
+			(node as CodeBlockNode).closed = entry.closed;
+			(node as CodeBlockNode).language = entry.language;
+			break;
 		}
 		case AstNodeType.InlineCode: {
 			let content = '';
-			for (const child of entry.children) {
+			for (const child of node.children!) {
 				if (child.type === AstNodeType.Text) content += (child as TextNode).content;
 			}
-			return { ...base, type: AstNodeType.InlineCode, content } as AstNode;
+			(node as any).content = content;
+			break;
 		}
 		case AstNodeType.Image: {
 			let alt = '';
-			for (const child of entry.children) {
+			for (const child of node.children!) {
 				if (child.type === AstNodeType.Text) alt += (child as TextNode).content;
 			}
-			return { ...base, type: AstNodeType.Image, url: entry.url || '', alt } as AstNode;
+			(node as any).url = entry.url || '';
+			(node as any).alt = alt;
+			break;
 		}
 		case AstNodeType.Link: {
-			return {
-				...base,
-				type: AstNodeType.Link,
-				url: entry.url || '#',
-				children: entry.children
-			} as AstNode;
+			(node as any).url = entry.url || '#';
+			break;
 		}
-		case AstNodeType.LatexBlock: {
-			let content = '';
-			for (const child of entry.children) {
-				if (child.type === AstNodeType.Text) content += (child as TextNode).content;
-			}
-			return { ...base, type: AstNodeType.LatexBlock, content } as AstNode;
-		}
+		case AstNodeType.LatexBlock:
 		case AstNodeType.LatexInline: {
 			let content = '';
-			for (const child of entry.children) {
+			for (const child of node.children!) {
 				if (child.type === AstNodeType.Text) content += (child as TextNode).content;
 			}
-			return { ...base, type: AstNodeType.LatexInline, content } as AstNode;
+			(node as any).content = content;
+			break;
 		}
 		case AstNodeType.TableRow: {
-			const isHeader = entry.rowCount === 0;
-			return { ...base, type: AstNodeType.TableRow, isHeader, children: entry.children } as AstNode;
+			(node as any).isHeader = entry.rowCount === 0;
+			break;
 		}
 		case AstNodeType.OrderedList: {
-			return {
-				...base,
-				type: AstNodeType.OrderedList,
-				startNumber: entry.start,
-				children: entry.children
-			} as AstNode;
+			(node as any).startNumber = entry.start;
+			break;
 		}
 		case AstNodeType.Text: {
 			const text = entry.checked != null ? (entry.checked ? '[x] ' : '[ ] ') : '';
-			return { ...base, type: AstNodeType.Text, content: text } as AstNode;
+			(node as TextNode).content = text;
+			break;
 		}
-		default:
-			return { ...base, type: entry.type, children: entry.children } as AstNode;
 	}
 }
 
-export function createAstRenderer(): { renderer: Renderer; getResult: () => AstNode[] } {
-	const nodeIdCounter = { val: 0 };
+function getTableEntry(stack: StackEntry[]): StackEntry | undefined {
+	for (let i = stack.length - 1; i >= 0; i--) {
+		if (stack[i].node.type === AstNodeType.Table) return stack[i];
+	}
+	return undefined;
+}
+
+export function createAstRenderer(rootChildren: AstNode[] = []): {
+	renderer: Renderer;
+	getResult: () => AstNode[];
+} {
 	const stack: StackEntry[] = [
-		{ type: AstNodeType.Paragraph, token: DOCUMENT, children: [], textBuf: '', rowCount: 0, id: 0 }
+		{
+			token: DOCUMENT,
+			node: { type: AstNodeType.Paragraph, start: 0, end: 0, children: rootChildren },
+			textBuf: '',
+			rowCount: 0,
+			closed: true
+		}
 	];
 
 	const renderer: Renderer = {
@@ -223,42 +227,52 @@ export function createAstRenderer(): { renderer: Renderer; getResult: () => AstN
 		add_token(_data: RendererData, token: number): void {
 			if (token === DOCUMENT) return;
 
-			flushText(stack[stack.length - 1], nodeIdCounter);
+			const parent = stack[stack.length - 1];
+			flushText(parent);
 
 			if (token === TABLE_ROW) {
-				const tableEntry = getTableEntry();
+				const tableEntry = getTableEntry(stack);
 				if (tableEntry) tableEntry.rowCount += 1;
 			}
 
 			const nodeType = tokenToNodeType(token);
-			const entry: StackEntry = {
-				type: nodeType,
-				token,
-				children: [],
-				textBuf: '',
-				rowCount: 0,
-				id: ++nodeIdCounter.val
-			};
-			stack.push(entry);
+			const children: AstNode[] = [];
+			const node: AstNode =
+				nodeType === AstNodeType.CodeBlock
+					? ({
+							type: nodeType,
+							start: 0,
+							end: 0,
+							children,
+							content: '',
+							closed: false
+						} as unknown as AstNode)
+					: { type: nodeType, start: 0, end: 0, children };
+			parent.node.children!.push(node);
+			const proxiedNode = parent.node.children![parent.node.children!.length - 1] as AstNode;
+
+			stack.push({ token, node: proxiedNode, textBuf: '', rowCount: 0, closed: false });
 		},
 		end_token(_data: RendererData): void {
 			if (stack.length <= 1) return;
 			const entry = stack.pop()!;
-			flushText(entry, nodeIdCounter);
-
-			const node = finalizeNode(entry, nodeIdCounter);
-			stack[stack.length - 1].children.push(node);
+			flushText(entry);
+			entry.closed = true;
+			finalizeNodeInPlace(entry);
 		},
 		add_text(_data: RendererData, text: string): void {
 			const current = stack[stack.length - 1];
 			if (current.token === DOCUMENT) return;
 			if (
-				current.type === AstNodeType.LineBreak ||
-				current.type === AstNodeType.HorizontalRule ||
-				current.type === AstNodeType.Text
+				current.node.type === AstNodeType.LineBreak ||
+				current.node.type === AstNodeType.HorizontalRule ||
+				current.node.type === AstNodeType.Text
 			)
 				return;
 			current.textBuf += text;
+			if (current.node.type === AstNodeType.CodeBlock) {
+				(current.node as CodeBlockNode).content += text;
+			}
 		},
 		set_attr(_data: RendererData, type: number, value: string): void {
 			const current = stack[stack.length - 1];
@@ -271,6 +285,9 @@ export function createAstRenderer(): { renderer: Renderer; getResult: () => AstN
 					break;
 				case LANG:
 					current.language = value;
+					if (current.node.type === AstNodeType.CodeBlock) {
+						(current.node as CodeBlockNode).language = value;
+					}
 					break;
 				case START:
 					current.start = parseInt(value, 10) || undefined;
@@ -282,20 +299,14 @@ export function createAstRenderer(): { renderer: Renderer; getResult: () => AstN
 		}
 	};
 
-	function getTableEntry(): StackEntry | undefined {
-		for (let i = stack.length - 1; i >= 0; i--) {
-			if (stack[i].type === AstNodeType.Table) return stack[i];
-		}
-		return undefined;
-	}
-
 	function getResult(): AstNode[] {
 		while (stack.length > 1) {
 			const entry = stack.pop()!;
-			flushText(entry, nodeIdCounter);
-			stack[stack.length - 1].children.push(finalizeNode(entry, nodeIdCounter));
+			flushText(entry);
+			entry.closed = true;
+			finalizeNodeInPlace(entry);
 		}
-		return stack[0].children;
+		return rootChildren;
 	}
 
 	return { renderer, getResult };

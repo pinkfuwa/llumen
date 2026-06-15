@@ -66,7 +66,7 @@
 			const parts = t.content.split('\n');
 			for (let i = 0; i < parts.length; i++) {
 				if (i > 0) {
-					lines.push(...currentLineSpans);
+					lines.push(currentLineSpans);
 					currentLineSpans = '';
 				}
 				if (parts[i].length > 0) {
@@ -100,7 +100,7 @@
 	<Monochrome {text} />
 {:else}
 	<pre class="shiki {themeName}" style={themeStyle}><code
-			>{#each lines as line, i (i)}<div
+			>{#each lines as line}<div
 					class="line min-h-6">{@html line}</div>{/each}{#if currentLineSpans}<div
 					class="line min-h-6">{@html currentLineSpans}</div>{/if}</code
 		></pre>

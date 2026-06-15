@@ -11,9 +11,10 @@
 	let finalHtml = $state<string | null>(null);
 
 	$effect(() => {
-		finalHtml = null;
-
-		if (lang === 'text' || text.trim().length === 0) return;
+		if (lang === 'text' || text.trim().length === 0) {
+			finalHtml = null;
+			return;
+		}
 
 		let stopped = false;
 

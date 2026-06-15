@@ -1,35 +1,62 @@
 <script lang="ts">
 	import Parser from './Parser.svelte';
-	import { parseSync } from './parser/renderer';
-	import { parser, parser_write, parser_end } from './parser/smd';
-	import { createAstRenderer } from './parser/renderer';
+	import { parseSync, createAstRenderer } from './parser/renderer';
+	import { parser, parser_write } from './parser/smd';
 	import type { AstNode } from './parser/types';
 	import { useThrottle } from '$lib/throttle.svelte';
+	import { untrack } from 'svelte';
 
 	const { source, incremental = false }: { source: string; incremental?: boolean } = $props();
 
-	let children: { children: AstNode[] } = $state({ children: [] });
-	let nodes = $derived(children.children);
+	let rootChildren: AstNode[] = $state([]);
+	let nodes = $derived(rootChildren);
+
+	// it's nullable because parsing rendering is bounded to rootChildren
+	let p: ReturnType<typeof parser> | null = null;
+	let prevLength = 0;
+
+	function ensureParser() {
+		if (p) return;
+		const { renderer } = createAstRenderer(rootChildren);
+		p = parser(renderer);
+		prevLength = 0;
+	}
+
+	function resetParser() {
+		p = null;
+		prevLength = 0;
+		rootChildren.splice(0);
+	}
 
 	function doStreamingParse(currentSource: string) {
 		try {
-			const renderer = createAstRenderer();
-			const p = parser(renderer.renderer);
-			parser_write(p, currentSource);
-			parser_end(p);
-			children.children = renderer.getResult();
+			if (currentSource.length < prevLength) {
+				untrack(() => resetParser());
+			}
+			untrack(() => ensureParser());
+			const delta = currentSource.slice(prevLength);
+			if (delta.length > 0) {
+				untrack(() => parser_write(p!, delta));
+				prevLength = currentSource.length;
+			}
 		} catch (error) {
 			console.error('Streaming parse error:', error);
-			children.children = [];
+			untrack(() => resetParser());
 		}
 	}
 
 	function doFullParse(currentSource: string) {
 		try {
-			children.children = parseSync(currentSource + '\n');
+			untrack(() => resetParser());
+			const result = parseSync(currentSource + '\n');
+			untrack(() => {
+				rootChildren = result;
+			});
 		} catch (error) {
 			console.error('Parse error:', error);
-			children.children = [];
+			untrack(() => {
+				rootChildren = [];
+			});
 		}
 	}
 
@@ -41,6 +68,7 @@
 		if (incremental) {
 			throttledParse(source);
 		} else {
+			// todo: use parse_end to switch incremental parse
 			throttledParse.cancel();
 			doFullParse(source);
 		}
