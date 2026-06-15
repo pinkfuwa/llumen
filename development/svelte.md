@@ -49,3 +49,23 @@ Note: `{#key}` causes re-initialization, not prevents it.
 Without a key, Svelte uses index-based diffing — incorrect when items are inserted/removed/reordered.
 
 Note: key does not prevent re-initialization. When a new array is assigned, all items re-init regardless. Key only helps match items across renders when the same array is mutated in place.
+
+## Common Pitfall, svelte runtime compare Object
+> key does not prevent re-initialization
+
+If the array contain a object, svelte will compare the object with `==`, which means if the item is different, the component is updated.
+
+Example Failure:
+```
+let a = { val: 1 };
+let b = { val: 1 };
+
+let arr = $state<{val: number}[]>([a]);
+
+console.log(a==b); // false
+
+$effect(()=>{
+  // this update DOM!
+  arr[0] = b;
+});
+```
