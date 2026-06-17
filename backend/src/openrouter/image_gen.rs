@@ -33,6 +33,14 @@ impl AspectRatio {
             AspectRatio::R21x9 => "21:9",
         }
     }
+    fn to_size(self) -> Option<&'static str> {
+        match self {
+            AspectRatio::R1x1 => None,
+            AspectRatio::R9x16 => Some("1024x1792"),
+            AspectRatio::R16x9 => Some("1792x1024"),
+            _ => None,
+        }
+    }
 }
 
 pub struct ImageGenOutput {
@@ -45,19 +53,19 @@ pub struct ImageGenOutput {
 #[derive(Clone)]
 pub(super) struct ImageGenClient {
     api_key: String,
+    /// endpoint used by openrouter
     chat_completion_endpoint: String,
+    image_generation_endpoint: String,
     http_client: reqwest::Client,
 }
 
 impl ImageGenClient {
-    pub fn new(
-        api_key: String,
-        chat_completion_endpoint: String,
-        http_client: reqwest::Client,
-    ) -> Self {
+    pub fn new(api_key: String, base_url: String, http_client: reqwest::Client) -> Self {
+        let base_url = base_url.trim_end_matches('/').to_string();
         Self {
             api_key,
-            chat_completion_endpoint,
+            chat_completion_endpoint: format!("{}/v1/chat/completions", base_url),
+            image_generation_endpoint: format!("{}/v1/images/generations", base_url),
             http_client,
         }
     }
@@ -77,6 +85,58 @@ impl ImageGenClient {
                 files: reference_images,
             }
         }
+    }
+
+    pub(super) async fn send_image_gen_request(
+        &self,
+        model_id: String,
+        prompt: String,
+        aspect_ratio: AspectRatio,
+    ) -> Result<ImageGenOutput, Error> {
+        let req = raw::ImageGenApiReq {
+            model: model_id,
+            prompt,
+            n: Some(1),
+            size: aspect_ratio.to_size().map(str::to_string),
+            response_format: Some("b64_json".to_string()),
+        };
+
+        let body = serde_json::to_vec(&req)?;
+
+        let res = self
+            .http_client
+            .post(&self.image_generation_endpoint)
+            .bearer_auth(&self.api_key)
+            .headers(super::OPENROUTER_HEADERS.clone())
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .header(http::header::CONTENT_LENGTH, body.len())
+            .body(body)
+            .send()
+            .await?;
+
+        let json: raw::ImageGenApiResponse = res.json().await?;
+
+        if let Some(error) = json.error {
+            return Err(Error::from(error));
+        }
+
+        let images = json
+            .data
+            .into_iter()
+            .filter_map(|item| item.b64_json)
+            .map(|b64| GeneratedImage::from_b64_json(b64, "image/png"))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        if images.is_empty() {
+            return Err(Error::ImageGenNoImagesInResponse);
+        }
+
+        Ok(ImageGenOutput {
+            images,
+            text: None,
+            price: 0.0,
+            token: 0,
+        })
     }
 
     async fn send_complete_request(

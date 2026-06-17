@@ -820,7 +820,7 @@ pub struct VideoGenerationStatusResponse {
     pub error: Option<serde_json::Value>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ErrorInfo {
     pub message: String,
     pub code: Option<i32>,
@@ -861,4 +861,31 @@ pub struct EmbeddingResponse {
     pub price: f64,
     pub data: Vec<EmbeddingResult>,
     pub usage: Option<Usage>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ImageGenApiReq {
+    pub model: String,
+    pub prompt: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub n: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ImageGenApiData {
+    #[serde(default)]
+    pub b64_json: Option<String>,
+    #[serde(default)]
+    pub url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ImageGenApiResponse {
+    pub data: Vec<ImageGenApiData>,
+    #[serde(default)]
+    pub error: Option<ErrorInfo>,
 }

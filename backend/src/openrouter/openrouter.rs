@@ -75,11 +75,8 @@ impl Openrouter {
             http_client.clone(),
             is_custom_api,
         );
-        let image_gen = ImageGenClient::new(
-            api_key.clone(),
-            chat_completion_endpoint.clone(),
-            http_client.clone(),
-        );
+        let image_gen =
+            ImageGenClient::new(api_key.clone(), api_base.to_string(), http_client.clone());
         let video_gen = VideoGenClient::new(
             api_key.clone(),
             videos_endpoint.clone(),
@@ -193,10 +190,17 @@ impl Openrouter {
         reference_images: Vec<File>,
         aspect_ratio: AspectRatio,
     ) -> Result<super::ImageGenOutput, Error> {
-        if !self.is_custom_api {
-            self.listing.ensure(&model_id).await?;
+        if self.is_custom_api {
+            if !reference_images.is_empty() {
+                log::warn!("Custom API image generation does not support reference images.");
+            }
+            return self
+                .image_gen
+                .send_image_gen_request(model_id, prompt, aspect_ratio)
+                .await;
         }
 
+        self.listing.ensure(&model_id).await?;
         self.image_gen
             .image_generate(
                 &self.listing,

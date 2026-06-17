@@ -35,6 +35,16 @@ pub struct GeneratedImage {
 }
 
 impl GeneratedImage {
+    pub fn from_b64_json(b64_json: String, mime_type: impl Into<String>) -> Result<Self, Error> {
+        let data = BASE64_STANDARD
+            .decode(&b64_json)
+            .map_err(|_| Error::Incompatible("Failed to decode base64 image"))?;
+        Ok(Self {
+            data,
+            mime_type: mime_type.into(),
+        })
+    }
+
     pub fn from_raw_image(raw: raw::Image) -> Result<Self, Error> {
         let raw::ImageUrl { url } = raw.image_url;
         let data_url = url
