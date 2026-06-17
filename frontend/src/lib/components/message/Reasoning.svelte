@@ -37,7 +37,11 @@
 		class="py-2 whitespace-pre-wrap slide-out-to-start-2 fade-in fade-out slide-in-from-top-2 data-[state=close]:animate-out data-[state=open]:animate-in"
 	>
 		{#each lines as line}
-			{line + '\n'}
+			{@const chars = line.split('')}
+			{#each chars as char}
+				{char}
+			{/each}
+			{'\n'}
 		{/each}
 	</Collapsible.Content>
 </Collapsible.Root>

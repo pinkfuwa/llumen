@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { preference } from '$lib/preference/index.svelte';
-	import { bundle, getThemeName, getThemeStyle } from './shiki';
+	import { getHighlighter, getThemeName, getThemeStyle } from './shiki';
 	import Monochrome from './Monochrome.svelte';
 	import { buildTokenHtml } from './incremental';
-	import { type BundledLanguage } from './shiki.bundle';
 	import { ShikiStreamTokenizer } from '@shikijs/stream';
 	import type { ShikiStreamTokenizerEnqueueResult } from '@shikijs/stream';
 	import type { ThemedToken } from 'shiki';
@@ -36,21 +35,11 @@
 		(async () => {
 			if (stopped) return;
 
-			const localbundle = await bundle;
-
-			const h = await localbundle.createHighlighter({
-				themes: [themeName],
-				langs: []
-			});
-			if (stopped) return;
-
-			if (!h.getLoadedLanguages().includes(lang)) {
-				await h.loadLanguage(lang as BundledLanguage);
-			}
+			const highlighter = await getHighlighter(lang, themeName);
 			if (stopped) return;
 
 			tokenizer = new ShikiStreamTokenizer({
-				highlighter: h,
+				highlighter,
 				lang,
 				theme: themeName
 			});

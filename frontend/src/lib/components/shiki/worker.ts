@@ -1,13 +1,6 @@
 import type { ShikiWorkerRequest } from './types';
 import type { BundledLanguage } from './shiki.bundle';
-import { bundle } from './shiki';
-
-const localbundle = await bundle;
-
-let highlighter = await localbundle.createHighlighter({
-	themes: ['github-light', 'github-dark', 'vitesse-dark', 'vitesse-light', 'dracula'],
-	langs: []
-});
+import { getHighlighter } from './shiki';
 
 const loaded = new Set<string>();
 
@@ -15,6 +8,8 @@ self.onmessage = async (event: MessageEvent<ShikiWorkerRequest>) => {
 	const { code, lang, theme } = event.data;
 
 	try {
+		let highlighter = await getHighlighter(lang, theme);
+
 		if (!loaded.has(lang)) {
 			await highlighter.loadLanguage(lang as BundledLanguage);
 			loaded.add(lang);

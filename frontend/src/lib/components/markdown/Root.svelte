@@ -56,10 +56,11 @@
 	}, 100);
 
 	$effect(() => {
+		// finishing cause a full repaint, which is expected.
+		// Also markdown parse synchronized, so no flashing to user.
 		if (incremental) {
 			throttledParse(source);
 		} else {
-			// todo: use parse_end to switch incremental parse
 			throttledParse.cancel();
 			doFullParse(source);
 		}

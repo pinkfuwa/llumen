@@ -11,7 +11,7 @@
 
 	const language = $derived(node.language || 'text');
 	const content = $derived(node.content);
-	const shouldHighlight = $derived(node.closed);
+	const incremental = $derived(!node.closed);
 	const isMermaid = $derived(isMermaidLanguage(language));
 </script>
 
@@ -26,8 +26,8 @@
 		</Button>
 	{/if}
 	{#if isMermaid}
-		<Mermaid text={content} closed={shouldHighlight} />
+		<Mermaid text={content} closed={incremental} />
 	{:else}
-		<ShikiCode text={content} lang={language} incremental={!shouldHighlight} />
+		<ShikiCode text={content} lang={language} {incremental} />
 	{/if}
 </div>
