@@ -66,6 +66,12 @@ export const effective = new InputState();
 
 export const unsupportedFilesModalOpen = $state({ val: false });
 
+$effect.root(() => {
+	$effect(() => {
+		unsupportedFilesModalOpen.val = pendingFile.val.length > 0;
+	});
+});
+
 export let ensureUploaded: () => Promise<{ name: string; id: number }[]>;
 
 $effect.root(() => {
@@ -104,7 +110,6 @@ export function addFiles(newFiles: File[]) {
 	if (newUnsupported.length > 0) {
 		for (const f of supported) inputFiles.val.push(f);
 		pendingFile.val = newUnsupported;
-		unsupportedFilesModalOpen.val = true;
 	} else {
 		for (const f of supported) inputFiles.val.push(f);
 	}
