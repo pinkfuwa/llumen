@@ -114,7 +114,9 @@ export function APIFetch<D, P = any>(opts: RawFetchOptions<P>): Promise<D | unde
 			if (error) displayError(error.error, error.reason);
 			else return resJson as D;
 		} catch (_) {
-			if (!opts.signal?.aborted) displayError('API(typeshare)', 'maybe backend is disconnected');
+			if (res.status == 429) displayError('API(typeshare)', 'rate limit exceeded');
+			else if (!opts.signal?.aborted)
+				displayError('API(typeshare)', 'maybe backend is disconnected');
 		}
 	});
 }

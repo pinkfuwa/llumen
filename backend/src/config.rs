@@ -24,3 +24,7 @@ pub const UNBOUNDED_FILE_EXPIRATION_SECS: u32 = 3600;
 
 // max size in bytes for re-encoded images
 pub const MAX_REENCODE_IMAGE_SIZE: usize = 32 * 1024 * 1024;
+
+// Rate limit for /auth/login: max 20 attempts per 5 minutes (global)
+pub const LOGIN_RATE_LIMIT_MAX: u64 = 20;
+pub const LOGIN_RATE_LIMIT_WINDOW_SECS: u64 = 300;
