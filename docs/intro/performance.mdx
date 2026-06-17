@@ -11,57 +11,40 @@ When running AI on modest hardware, every millisecond and megabyte counts. Llume
 
 ### Minimum Specs
 
-These are the **absolute minimum** requirements:
+These are the default requirements:
 
 | Component | Requirement |
 |-----------|-------------|
 | CPU | 1 core, 1 GHz |
-| RAM | 256MB available |
+| RAM | 128MB available |
 | Storage | 50MB |
 | Network | 1 Mbps |
 
-**Example devices:**
-- Raspberry Pi 3B+
-- Old laptops (5+ years)
-- Budget VPS ($3-5/month)
-
 <Note>
-    50MB is insufficient if you plan to upload file.
+    Add more if you plan to store large file(generated image/video).
 </Note>
 
-## Optimization Tips
+## How Llumen optimize?
 
-### For Minimal Devices
-
-<Accordion title="Reduce memory usage">
-  - Set SQLite page cache size(default 128MB)
-  - Limit conversation history length
-  - Disable image generation
-  - Use text-only responses
-</Accordion>
-
-<Accordion title="Improve response time">
-  - Choose faster API providers
-  - Use smaller language models
-  - Enable response caching
-  - Optimize network path
-</Accordion>
+- Stream everything, we even write our serialization framework to send large file.
+- Paginate everything, we only fetch a small chunk of chatroom on large chatroom load.
+- Benchmark and configure everything, from sqlite buffer pool size to memory allocator.
 
 ## Trade-offs
 
 Llumen makes deliberate trade-offs for performance:
 
 ### What We Optimized For
-- ✅ Fast startup
-- ✅ Low memory usage
-- ✅ Small binary size
-- ✅ Efficient streaming
-- ✅ Mobile performance
+- Fast startup
+- Low memory usage
+- Small binary size
+- Efficient streaming
+- Mobile performance
 
 ### What We Don't Do
-- ❌ Built-in model hosting
-- ❌ Heavy analytics
-- ❌ Complex plugins
-- ❌ Bloated features
+- Built-in model hosting
+- Heavy analytics
+- Complex plugins
+- Bloated features
 
 This keeps llumen lean and fast for its core purpose.

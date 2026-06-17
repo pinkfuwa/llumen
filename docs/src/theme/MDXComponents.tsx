@@ -2,6 +2,7 @@ import React from "react";
 import MDXComponents from "@theme-original/MDXComponents";
 import { Card, CardGroup } from "@site/src/components/Card";
 import { Slide } from "@site/src/components/Slide";
+import { Scroll } from "@site/src/components/Scroll";
 import Admonition from "@theme/Admonition";
 
 // Mintlify compatibility components
@@ -45,6 +46,7 @@ export default {
   Card,
   CardGroup,
   Slide,
+  Scroll,
   Note,
   Warning,
   Info,

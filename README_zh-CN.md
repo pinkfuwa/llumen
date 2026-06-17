@@ -41,7 +41,7 @@ Llumen 走出了一条不同的路：**保有隐私，却不复杂**。您获得
 | 通用 API | 任何兼容 OpenAI Server（OpenRouter、本地模型等） |
 | 极小占用 | ~17MB 可执行文件，<128MB 内存使用 |
 
-[![视频预览](./docs/video.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
+[![Video preview](https://pinkfuwa.github.io/llumen/img/demo/llumen-light.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
 
 ## 快速开始
 
