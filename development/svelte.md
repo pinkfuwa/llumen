@@ -26,7 +26,7 @@ export class WidgetState {
 
 Omitting `this` silently references a module-scope variable.
 
-## `{#key}` — force destroy/recreate
+## `{#key}` - force destroy/recreate
 
 Destroys and recreates children when the expression changes. Use when a component needs to reset internal state that isn't reactive:
 
@@ -38,7 +38,7 @@ Destroys and recreates children when the expression changes. Use when a componen
 
 Note: `{#key}` causes re-initialization, not prevents it.
 
-## `{#each}` — always provide a key
+## `{#each}` - always provide a key
 
 ```svelte
 {#each items as item (item.id)}
@@ -46,7 +46,7 @@ Note: `{#key}` causes re-initialization, not prevents it.
 {/each}
 ```
 
-Without a key, Svelte uses index-based diffing — incorrect when items are inserted/removed/reordered.
+Without a key, Svelte uses index-based diffing - incorrect when items are inserted/removed/reordered.
 
 Note: key does not prevent re-initialization. When a new array is assigned, all items re-init regardless. Key only helps match items across renders when the same array is mutated in place.
 

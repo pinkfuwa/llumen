@@ -4,8 +4,8 @@
 
 `APIFetch`'s `token` option behaves differently depending on context (see `http.svelte.ts`):
 
-- **`token: true`** — pulls token reactively from the `token` rune. Only valid inside `$effect.tracking()` (reactive context). Used in `$effect`, `$derived`, and `.then()` callbacks within those scopes.
-- **`token: token.value?.value`** (a string) — passes the token value explicitly, breaking reactivity. Required in event handlers and other non-reactive contexts (mutation callbacks). When capturing token (or any signal) for mutations, wrap with `untrack()` from `svelte` to avoid establishing unwanted reactive dependencies.
+- **`token: true`** - pulls token reactively from the `token` rune. Only valid inside `$effect.tracking()` (reactive context). Used in `$effect`, `$derived`, and `.then()` callbacks within those scopes.
+- **`token: token.value?.value`** (a string) - passes the token value explicitly, breaking reactivity. Required in event handlers and other non-reactive contexts (mutation callbacks). When capturing token (or any signal) for mutations, wrap with `untrack()` from `svelte` to avoid establishing unwanted reactive dependencies.
 
 ### Rule of Thumb
 
@@ -41,8 +41,8 @@ export async function createUser(req: UserCreateReq): Promise<MutationStatus> {
 
 ### Per-Chat vs Per-Message Streaming
 
-- **Per-chat `streaming`** — boolean from `message.svelte.ts`. When true, blocks all submissions across the chat (used in `Textbox.svelte` and `User.svelte` `disabled`).
-- **Per-message `streaming`** — `msg.stream` boolean on individual messages. Enables slower incremental parsing for that message's rendering.
+- **Per-chat `streaming`** - boolean from `message.svelte.ts`. When true, blocks all submissions across the chat (used in `Textbox.svelte` and `User.svelte` `disabled`).
+- **Per-message `streaming`** - `msg.stream` boolean on individual messages. Enables slower incremental parsing for that message's rendering.
 
 ### Inline Short Functions
 
