@@ -3,10 +3,10 @@ const PASSWORD_HASH_ENCODE: &str =
     "$argon2id$v=19$m=16,t=2,p=1$aTg5eTNyMmRzLTA$FM4qzh9B/+DdCVOiQQruGw";
 
 const DEFAULT_MODEL_CONFIG: &str = r#"
-display_name="GPT-OSS 20B"
+display_name="Deepseek V4 Flash"
 # From https://openrouter.ai/models
 # don't put "online" suffix.
-model_id="openai/gpt-oss-20b"
+model_id="deepseek/deepseek-v4-flash"
 
 # For more settings, see https://pinkfuwa.github.io/llumen/user/config/model
 "#;

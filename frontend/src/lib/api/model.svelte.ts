@@ -38,10 +38,10 @@ export const models = $state<{ val?: ModelList[] }>({});
 export const modelIds = $state<{ val?: string[] }>({});
 
 export const defaultModelConfig = [
-	'display_name="GPT-OSS 20B"',
+	'display_name="Deepseek V4 Flash"',
 	'# From https://openrouter.ai/models',
 	'# don\'t put "online" suffix.',
-	'model_id="openai/gpt-oss-20b"',
+	'model_id="deepseek/deepseek-v4-flash"',
 	'',
 	'# For more settings, see https://pinkfuwa.github.io/llumen/user/config/model'
 ].join('\n');
