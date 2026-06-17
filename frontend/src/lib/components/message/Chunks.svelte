@@ -38,7 +38,6 @@
 			<Result content={nextChunk.c.response || ''} />
 		</ToolBox>
 		{#if nextChunk.t == 'tool_result'}
-			{JSON.stringify(nextChunk.c.files)}
 			{#each nextChunk.c.files as file}
 				{#if file.kind === 'video'}
 					<Video id={file.id} name={file.name} />
