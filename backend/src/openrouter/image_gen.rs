@@ -1,9 +1,12 @@
+//! Image generation via OpenRouter or native `/v1/images/generations`.
+
 use super::listing::ModelListing;
 use super::message::{File, GeneratedImage, Message};
 use super::raw;
 use super::Error;
 use stream_json::IntoSerializer;
 
+/// Supported image aspect ratios as width:height dimension pairs.
 #[derive(Debug, Clone, Copy)]
 pub enum AspectRatio {
     R1x1,
@@ -43,6 +46,7 @@ impl AspectRatio {
     }
 }
 
+/// Result of an image generation request.
 pub struct ImageGenOutput {
     pub images: Vec<GeneratedImage>,
     pub text: Option<String>,
@@ -51,21 +55,40 @@ pub struct ImageGenOutput {
 }
 
 #[derive(Clone)]
+pub enum ImageGenEndpoint {
+    /// endpoint used by openrouter
+    ChatCompletion(String),
+    ImageGeneration(String),
+}
+
+impl ImageGenEndpoint {
+    pub fn from_base_url(base_url: &str, is_custom_api: bool) -> Self {
+        if is_custom_api {
+            ImageGenEndpoint::ImageGeneration(format!(
+                "{}/v1/images/generations",
+                base_url.trim_end_matches('/')
+            ))
+        } else {
+            ImageGenEndpoint::ChatCompletion(format!(
+                "{}/v1/chat/completions",
+                base_url.trim_end_matches('/')
+            ))
+        }
+    }
+}
+
+#[derive(Clone)]
 pub(super) struct ImageGenClient {
     api_key: String,
-    /// endpoint used by openrouter
-    chat_completion_endpoint: String,
-    image_generation_endpoint: String,
+    endpoint: ImageGenEndpoint,
     http_client: reqwest::Client,
 }
 
 impl ImageGenClient {
-    pub fn new(api_key: String, base_url: String, http_client: reqwest::Client) -> Self {
-        let base_url = base_url.trim_end_matches('/').to_string();
+    pub fn new(api_key: String, endpoint: ImageGenEndpoint, http_client: reqwest::Client) -> Self {
         Self {
             api_key,
-            chat_completion_endpoint: format!("{}/v1/chat/completions", base_url),
-            image_generation_endpoint: format!("{}/v1/images/generations", base_url),
+            endpoint,
             http_client,
         }
     }
@@ -92,6 +115,7 @@ impl ImageGenClient {
         model_id: String,
         prompt: String,
         aspect_ratio: AspectRatio,
+        url: &str,
     ) -> Result<ImageGenOutput, Error> {
         let req = raw::ImageGenApiReq {
             model: model_id,
@@ -105,7 +129,7 @@ impl ImageGenClient {
 
         let res = self
             .http_client
-            .post(&self.image_generation_endpoint)
+            .post(url)
             .bearer_auth(&self.api_key)
             .headers(super::OPENROUTER_HEADERS.clone())
             .header(http::header::CONTENT_TYPE, "application/json")
@@ -141,12 +165,57 @@ impl ImageGenClient {
 
     async fn send_complete_request(
         &self,
-        req: raw::CompletionReq,
+        listing: &ModelListing,
+        model_id: String,
+        prompt: String,
+        reference_images: Vec<File>,
+        aspect_ratio: AspectRatio,
+        url: &str,
     ) -> Result<ImageGenOutput, Error> {
-        let (content_length, body) = Self::completion_body(req);
+        let model_id = model_id.split(':').next().unwrap_or(&model_id).to_string();
+
+        let capability = listing
+            .get(&model_id)
+            .await
+            .map(super::Capability::from)
+            .ok_or(Error::ImageGenModelNotFound)?;
+
+        if capability.text_output {
+            return Err(Error::ImageGenNotSupported);
+        }
+
+        if !reference_images.is_empty() && !capability.image_input {
+            return Err(Error::ImageGenReferenceImagesNotSupported);
+        }
+
+        let message = Self::build_message(prompt, reference_images);
+        let raw_message = message.to_raw_message(&model_id, &capability);
+
+        let request = raw::CompletionReq {
+            model: model_id,
+            messages: vec![raw_message],
+            stream: false,
+            temperature: None,
+            repeat_penalty: None,
+            top_k: None,
+            top_p: None,
+            max_tokens: None,
+            tools: Vec::new(),
+            plugins: Vec::new(),
+            usage: Some(raw::UsageReq { include: true }),
+            response_format: None,
+            reasoning: raw::Reasoning::default(),
+            modalities: vec!["image".to_string()],
+            session_id: None,
+            image_config: Some(serde_json::json!({
+                "aspect_ratio": aspect_ratio.as_str(),
+            })),
+        };
+
+        let (content_length, body) = Self::completion_body(request);
         let mut req_builder = self
             .http_client
-            .post(&self.chat_completion_endpoint)
+            .post(url)
             .bearer_auth(&self.api_key)
             .headers(super::OPENROUTER_HEADERS.clone())
             .header(http::header::CONTENT_TYPE, "application/json");
@@ -206,7 +275,12 @@ impl ImageGenClient {
         })
     }
 
-    pub async fn image_generate(
+    /// Generate a image
+    ///
+    /// when openrouter router is used, request route to chat completions with
+    /// modality. otherwise, request route to the OpenAI-compatible image
+    /// endpoint directly.
+    pub async fn generate(
         &self,
         listing: &ModelListing,
         model_id: String,
@@ -214,46 +288,22 @@ impl ImageGenClient {
         reference_images: Vec<File>,
         aspect_ratio: AspectRatio,
     ) -> Result<ImageGenOutput, Error> {
-        let model_id = model_id.split(':').next().unwrap_or(&model_id).to_string();
-
-        let capability = listing
-            .get(&model_id)
-            .await
-            .map(super::Capability::from)
-            .ok_or(Error::ImageGenModelNotFound)?;
-
-        if capability.text_output {
-            return Err(Error::ImageGenNotSupported);
+        match &self.endpoint {
+            ImageGenEndpoint::ChatCompletion(url) => {
+                self.send_complete_request(
+                    listing,
+                    model_id,
+                    prompt,
+                    reference_images,
+                    aspect_ratio,
+                    url,
+                )
+                .await
+            }
+            ImageGenEndpoint::ImageGeneration(url) => {
+                self.send_image_gen_request(model_id, prompt, aspect_ratio, url)
+                    .await
+            }
         }
-
-        if !reference_images.is_empty() && !capability.image_input {
-            return Err(Error::ImageGenReferenceImagesNotSupported);
-        }
-
-        let message = Self::build_message(prompt, reference_images);
-        let raw_message = message.to_raw_message(&model_id, &capability);
-
-        let request = raw::CompletionReq {
-            model: model_id,
-            messages: vec![raw_message],
-            stream: false,
-            temperature: None,
-            repeat_penalty: None,
-            top_k: None,
-            top_p: None,
-            max_tokens: None,
-            tools: Vec::new(),
-            plugins: Vec::new(),
-            usage: Some(raw::UsageReq { include: true }),
-            response_format: None,
-            reasoning: raw::Reasoning::default(),
-            modalities: vec!["image".to_string()],
-            session_id: None,
-            image_config: Some(serde_json::json!({
-                "aspect_ratio": aspect_ratio.as_str(),
-            })),
-        };
-
-        self.send_complete_request(request).await
     }
 }

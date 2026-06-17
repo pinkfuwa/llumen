@@ -1,3 +1,5 @@
+//! In-memory cache of model catalog.
+
 use std::collections::HashMap;
 use std::sync::Arc;
 

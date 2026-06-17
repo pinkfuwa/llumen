@@ -1,6 +1,9 @@
+//! High-level model descriptor and capability overrides.
+
 use super::option::Tool;
 use protocol::{OcrEngine, ReasoningEffort, ReasoningOption};
 
+/// Describes a model's capabilities — what it can do.
 #[derive(Clone, Default)]
 pub struct Capability {
     pub text_output: bool,
@@ -15,6 +18,8 @@ pub struct Capability {
     pub reasoning_effort: ReasoningEffort,
 }
 
+/// Capability overrides where each field is optional.
+/// `None` leaves the model's advertised capability unchanged.
 #[derive(Clone, Default)]
 pub struct MaybeCapability {
     pub text_output: Option<bool>,
@@ -39,6 +44,8 @@ impl From<ReasoningOption> for MaybeCapability {
     }
 }
 
+/// A resolved model descriptor with an identifier and optional parameter
+/// overrides.
 #[derive(Clone, Default)]
 pub struct Model {
     pub id: String,
@@ -51,11 +58,13 @@ pub struct Model {
 }
 
 impl Model {
+    /// Create a [`ModelBuilder`] with the given model identifier.
     pub fn builder(id: impl Into<String>) -> ModelBuilder {
         ModelBuilder::new(id)
     }
 }
 
+/// Builder for constructing a [`Model`] with optional parameter overrides.
 pub struct ModelBuilder {
     id: String,
     temperature: Option<f32>,
@@ -67,6 +76,8 @@ pub struct ModelBuilder {
 }
 
 impl ModelBuilder {
+    /// Create a new `ModelBuilder` with the given model identifier and all
+    /// fields defaulted.
     pub fn new(id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -79,6 +90,7 @@ impl ModelBuilder {
         }
     }
 
+    /// Pre-populate the builder from an existing [`Model`].
     pub fn from_model(model: &Model) -> Self {
         Self {
             id: model.id.clone(),
@@ -91,71 +103,85 @@ impl ModelBuilder {
         }
     }
 
+    /// Set the sampling temperature.
     pub fn temperature(mut self, temperature: f32) -> Self {
         self.temperature = Some(temperature);
         self
     }
 
+    /// Set the repetition penalty.
     pub fn repeat_penalty(mut self, repeat_penalty: f32) -> Self {
         self.repeat_penalty = Some(repeat_penalty);
         self
     }
 
+    /// Set the top-k sampling parameter.
     pub fn top_k(mut self, top_k: i32) -> Self {
         self.top_k = Some(top_k);
         self
     }
 
+    /// Set the top-p (nucleus) sampling parameter.
     pub fn top_p(mut self, top_p: f32) -> Self {
         self.top_p = Some(top_p);
         self
     }
 
+    /// Replace the list of tools with a new set.
     pub fn tools(mut self, tools: Vec<Tool>) -> Self {
         self.tools = tools;
         self
     }
 
+    /// Override the full capability set at once.
     pub fn capability(mut self, capability: MaybeCapability) -> Self {
         self.capability = capability;
         self
     }
 
+    /// Override the image-output capability.
     pub fn image_output(mut self, image_output: bool) -> Self {
         self.capability.image_output = Some(image_output);
         self
     }
 
+    /// Override the image-input capability.
     pub fn image_input(mut self, image_input: bool) -> Self {
         self.capability.image_input = Some(image_input);
         self
     }
 
+    /// Override the video-input capability.
     pub fn video_input(mut self, video_input: bool) -> Self {
         self.capability.video_input = Some(video_input);
         self
     }
 
+    /// Override the structured-output capability.
     pub fn structured_output(mut self, structured_output: bool) -> Self {
         self.capability.structured_output = Some(structured_output);
         self
     }
 
+    /// Override the OCR engine capability.
     pub fn ocr(mut self, ocr: OcrEngine) -> Self {
         self.capability.ocr = Some(ocr);
         self
     }
 
+    /// Override the audio capability.
     pub fn audio(mut self, audio: bool) -> Self {
         self.capability.audio = Some(audio);
         self
     }
 
+    /// Override the text-output capability.
     pub fn text_output(mut self, text_output: bool) -> Self {
         self.capability.text_output = Some(text_output);
         self
     }
 
+    /// Consume the builder and produce a [`Model`].
     pub fn build(self) -> Model {
         Model {
             id: self.id,

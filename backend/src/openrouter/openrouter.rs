@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::openrouter::image_gen::ImageGenEndpoint;
+
 use super::chat::ChatClient;
 use super::image_gen::{AspectRatio, ImageGenClient};
 use super::listing::{ModelListing, VideoModelListing};
@@ -11,6 +13,7 @@ use super::{CompletionOption, Error, File, Model, StreamCompletion};
 use http::header::CONTENT_TYPE;
 use stream_json::IntoSerializer;
 
+/// Client for interacting with OpenRouter and compatible APIs.
 pub struct Openrouter {
     pub(super) api_key: String,
     pub(super) embedding_endpoint: String,
@@ -24,6 +27,7 @@ pub struct Openrouter {
 }
 
 impl Openrouter {
+    /// Creates a new `Openrouter` client.
     pub fn new(
         api_key: impl AsRef<str>,
         api_base: impl AsRef<str>,
@@ -75,8 +79,11 @@ impl Openrouter {
             http_client.clone(),
             is_custom_api,
         );
-        let image_gen =
-            ImageGenClient::new(api_key.clone(), api_base.to_string(), http_client.clone());
+        let image_gen = ImageGenClient::new(
+            api_key.clone(),
+            ImageGenEndpoint::from_base_url(api_base, is_custom_api),
+            http_client.clone(),
+        );
         let video_gen = VideoGenClient::new(
             api_key.clone(),
             videos_endpoint.clone(),
@@ -96,18 +103,22 @@ impl Openrouter {
         }
     }
 
+    /// Returns `true` if the configured API base is not an OpenRouter endpoint.
     pub fn is_custom_api(&self) -> bool {
         self.is_custom_api
     }
 
+    /// Returns the list of available model IDs.
     pub async fn get_model_ids(&self) -> Vec<String> {
         self.listing.get_model_ids().await
     }
 
+    /// Returns the list of available video generation model IDs.
     pub async fn get_video_model_ids(&self) -> Vec<String> {
         self.video_listing.get_model_ids().await
     }
 
+    /// Returns the capability description for a given video model.
     pub async fn get_video_model_capability(
         &self,
         model_id: &str,
@@ -124,6 +135,7 @@ impl Openrouter {
             .ok_or(Error::VideoGenModelNotFound)
     }
 
+    /// Returns the capability flags for the given model.
     pub async fn get_capability(&self, model: &Model) -> super::Capability {
         if !self.is_custom_api {
             let _ = self.listing.ensure(&model.id).await;
@@ -132,6 +144,7 @@ impl Openrouter {
         self.chat.get_capability(&self.listing, model).await
     }
 
+    /// Streams a chat completion with incremental deltas.
     pub async fn stream(
         &self,
         model: Model,
@@ -150,6 +163,7 @@ impl Openrouter {
             .await
     }
 
+    /// Sends a non-streaming chat completion request.
     pub async fn complete(
         &self,
         messages: Vec<Message>,
@@ -165,6 +179,8 @@ impl Openrouter {
             .await
     }
 
+    /// Sends a chat completion and deserializes the response into a structured
+    /// type.
     pub async fn structured<T>(
         &self,
         messages: Vec<Message>,
@@ -183,6 +199,7 @@ impl Openrouter {
             .await
     }
 
+    /// Generates an image using the specified model and prompt.
     pub async fn image_generate(
         &self,
         model_id: String,
@@ -190,19 +207,9 @@ impl Openrouter {
         reference_images: Vec<File>,
         aspect_ratio: AspectRatio,
     ) -> Result<super::ImageGenOutput, Error> {
-        if self.is_custom_api {
-            if !reference_images.is_empty() {
-                log::warn!("Custom API image generation does not support reference images.");
-            }
-            return self
-                .image_gen
-                .send_image_gen_request(model_id, prompt, aspect_ratio)
-                .await;
-        }
-
         self.listing.ensure(&model_id).await?;
         self.image_gen
-            .image_generate(
+            .generate(
                 &self.listing,
                 model_id,
                 prompt,
@@ -212,6 +219,7 @@ impl Openrouter {
             .await
     }
 
+    /// Generates a video using the specified model and prompt.
     pub async fn video_generate(
         &self,
         model_id: String,
@@ -228,6 +236,8 @@ impl Openrouter {
             .await
     }
 
+    /// Generates embeddings for the given input strings using the specified
+    /// model.
     pub async fn embed(&self, model: &str, input: &[String]) -> Result<Embedding, Error> {
         if input.is_empty() {
             return Ok(Embedding {
@@ -274,6 +284,7 @@ impl Openrouter {
     }
 }
 
+/// Result of an embedding request.
 pub struct Embedding {
     pub price: f64,
     pub response: Vec<Vec<f32>>,

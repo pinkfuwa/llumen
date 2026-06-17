@@ -1,3 +1,5 @@
+//! SSE streaming of chat completions.
+
 use std::{collections::VecDeque, pin::Pin, task};
 
 use futures_util::{FutureExt};
@@ -9,6 +11,9 @@ use tokio_stream::{Stream, StreamExt};
 
 use super::{error::Error, raw, GeneratedImage, OPENROUTER_HEADERS};
 
+/// A single tool call accumulated from streaming delta chunks.
+/// Fields are built incrementally from the stream and are final after
+/// streaming completes.
 #[derive(Default, Clone, Debug)]
 pub struct ToolCall {
     pub id: String,
@@ -16,12 +21,15 @@ pub struct ToolCall {
     pub args: String,
 }
 
+/// Token usage and cost for a completion.
 #[derive(Default, Clone)]
 pub struct Usage {
     pub token: i64,
     pub cost: f64,
 }
 
+/// A streaming completion backed by an SSE event source.
+/// Accumulates tool calls, usage, images, and citations as chunks arrive.
 pub struct StreamCompletion {
     source: Pin<Box<dyn Stream<Item = Result<Event, EventStreamError<reqwest::Error>>> + Send>>,
     toolcalls: Vec<ToolCall>,
@@ -36,6 +44,8 @@ pub struct StreamCompletion {
     buffered: VecDeque<StreamCompletionResp>,
 }
 
+/// Final result collected from a completed `StreamCompletion`.
+/// Contains all tool calls, usage, response tokens, and metadata.
 pub struct StreamResult {
     pub toolcalls: Vec<ToolCall>,
     pub usage: Usage,
@@ -48,6 +58,8 @@ pub struct StreamResult {
 }
 
 impl StreamResult {
+    /// Returns the concatenated text of all `ResponseToken` entries,
+    /// filtering out reasoning and tool tokens.
     pub fn get_text(&self) -> String {
         self.responses
             .iter()
@@ -78,24 +90,6 @@ impl StreamCompletion {
         .to_string();
 
         let content_length = req.size();
-
-        // log::info!("content_length: {:?}", content_length);
-
-        // let mut debug_file = tokio::fs::File::options()
-        //     .write(true)
-        //     .create(true)
-        //     .open("./output.json")
-        //     .await
-        //     .unwrap();
-        // let mut req_stream = req.into_stream();
-
-        // while let Some(Ok(x)) = req_stream.next().await {
-        //     tokio::io::AsyncWriteExt::write_all(&mut debug_file, &x)
-        //         .await
-        //         .unwrap();
-        // }
-
-        // let body: Body = todo!();
 
         let body = Body::wrap_stream(req.into_stream());
 
@@ -335,6 +329,9 @@ impl StreamCompletion {
         }
     }
 
+    /// Advances the stream and returns the next completion chunk.
+    /// Internally buffers items so that one SSE event may produce multiple
+    /// chunks.
     pub async fn next(&mut self) -> Option<Result<StreamCompletionResp, Error>> {
         loop {
             // Return buffered items first
@@ -370,6 +367,9 @@ impl StreamCompletion {
         }
     }
 
+    /// Consumes the stream and returns the final `StreamResult`.
+    /// Determines the stop reason automatically: `ToolCalls` if any tool calls
+    /// were accumulated, otherwise the provider-reported reason.
     pub fn get_result(mut self) -> StreamResult {
         let stop_reason = match self.toolcalls.is_empty() {
             true => self.stop_reason.clone().unwrap_or(raw::FinishReason::Stop),
@@ -437,6 +437,9 @@ impl Stream for StreamCompletion {
     }
 }
 
+/// A single chunk yielded during streaming.
+/// Variants represent text tokens, reasoning tokens, tool-call tokens, and
+/// usage info.
 #[derive(Debug, Clone)]
 pub enum StreamCompletionResp {
     ReasoningToken(String),
@@ -453,6 +456,8 @@ pub enum StreamCompletionResp {
 }
 
 impl StreamCompletionResp {
+    /// Returns `true` if the chunk is a `ReasoningToken` or `ResponseToken`
+    /// containing an empty string. Tool and usage tokens are never empty.
     pub fn is_empty(&self) -> bool {
         match self {
             StreamCompletionResp::ReasoningToken(s) => s.is_empty(),
@@ -471,6 +476,7 @@ pub struct StreamWithOrderedTokens<S> {
 }
 
 impl<S> StreamWithOrderedTokens<S> {
+    /// Creates a new wrapper that filters out tool tokens during streaming.
     pub fn new(inner: S) -> Self {
         Self {
             inner,

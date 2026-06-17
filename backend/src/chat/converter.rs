@@ -16,10 +16,6 @@ use protocol::{AssistantChunk, MessageInner};
 
 use super::token::Token;
 
-// ---------------------------------------------------------------------------
-// SSE Adapter: Token → SseResp
-// ---------------------------------------------------------------------------
-
 /// Converts an internal streaming [`Token`] into the SSE response type sent to
 /// the frontend.  Returns `None` for tokens that should be suppressed (e.g.
 /// `Token::Empty`).

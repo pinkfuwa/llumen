@@ -1,3 +1,9 @@
+//! OpenRouter API client.
+//!
+//! Provides the [`Openrouter`] facade over chat, image, video, and embedding
+//! endpoints. Model capabilities are lazily fetched and cached in
+//! [`listing`] so the rest of the crate avoids repeated metadata calls.
+
 use std::sync::LazyLock;
 
 use reqwest::header::{HeaderMap, HeaderValue};
@@ -16,6 +22,7 @@ mod raw;
 mod stream;
 mod video_gen;
 
+/// Static headers sent with every OpenRouter API request for attribution.
 pub static OPENROUTER_HEADERS: LazyLock<HeaderMap> = LazyLock::new(|| {
     let mut headers = HeaderMap::new();
     headers.insert(

@@ -1,3 +1,5 @@
+//! Application-level message types and conversion.
+
 use protocol::OcrEngine;
 
 use super::{error::Error, raw};
@@ -6,6 +8,8 @@ use crate::utils::blob::BlobReader;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::engine::Engine;
 
+/// A file attached to a message, containing the file name, binary data, and
+/// optional MIME type.
 #[derive(Debug, Clone)]
 pub struct File {
     pub name: String,
@@ -35,6 +39,8 @@ pub struct GeneratedImage {
 }
 
 impl GeneratedImage {
+    /// Decodes a base64-encoded JSON string into a [`GeneratedImage`] with the
+    /// given MIME type.
     pub fn from_b64_json(b64_json: String, mime_type: impl Into<String>) -> Result<Self, Error> {
         let data = BASE64_STANDARD
             .decode(&b64_json)
@@ -45,6 +51,8 @@ impl GeneratedImage {
         })
     }
 
+    /// Extracts and decodes image data from a [`raw::Image`] data URL into a
+    /// [`GeneratedImage`].
     pub fn from_raw_image(raw: raw::Image) -> Result<Self, Error> {
         let raw::ImageUrl { url } = raw.image_url;
         let data_url = url
@@ -66,6 +74,8 @@ impl GeneratedImage {
     }
 }
 
+/// A tool invocation returned by the assistant, containing the call ID,
+/// function name, and arguments.
 #[derive(Debug, Clone)]
 pub struct MessageToolCall {
     pub id: String,
@@ -73,6 +83,8 @@ pub struct MessageToolCall {
     pub arguments: String,
 }
 
+/// The result of a tool call, including the call ID, text content, and
+/// associated file metadata.
 #[derive(Debug, Clone)]
 pub struct MessageToolResult {
     pub id: String,
@@ -80,6 +92,8 @@ pub struct MessageToolResult {
     pub files: Vec<protocol::FileMetadata>,
 }
 
+/// Application-level message variants: system, user, assistant, multipart user,
+/// tool call, and tool result.
 #[derive(Debug, Clone)]
 pub enum Message {
     System(String),
@@ -99,6 +113,9 @@ pub enum Message {
 }
 
 impl Message {
+    /// Converts this application-level message into the protocol-level
+    /// [`raw::Message`], filtering file parts based on the model's
+    /// capabilities.
     pub fn to_raw_message(
         self,
         target_model_id: &str,

@@ -1,5 +1,9 @@
+//! Parse OpenRouter annotation objects.
+
 use protocol::UrlCitation;
 
+/// Extract URL citations from annotations with `type: "url_citation"` returned
+/// by OpenRouter web-search server tool.
 pub fn extract_url_citations(annotations: &serde_json::Value) -> Vec<UrlCitation> {
     let Some(items) = annotations.as_array() else {
         return Vec::new();

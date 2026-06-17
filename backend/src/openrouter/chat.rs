@@ -1,3 +1,12 @@
+//! Chat-completion client.
+//!
+//! We use the chat-completion endpoint (not the Responses API) because:
+//! 1. OpenRouter already supports preserving thinking tokens on chat
+//!    completions.
+//! 2. Chat-completion has the broadest provider compatibility.
+//! 3. Interleaved thinking is not a priority.
+//! 4. The OpenRouter Responses API is still unstable.
+
 use protocol::ReasoningEffort;
 use stream_json::IntoSerializer;
 
@@ -12,6 +21,7 @@ pub(super) struct ChatClient {
     is_custom_api: bool,
 }
 
+/// Result of a non-streaming chat completion.
 pub struct ChatCompletion {
     pub price: f64,
     pub token: usize,
@@ -19,6 +29,7 @@ pub struct ChatCompletion {
 }
 
 impl ChatCompletion {
+    /// Create an empty `ChatCompletion` with zero cost and no response.
     pub fn new() -> Self {
         ChatCompletion {
             price: 0.0,
@@ -28,6 +39,7 @@ impl ChatCompletion {
     }
 }
 
+/// Result of a structured (JSON schema-constrained) chat completion.
 pub struct StructuredCompletion<T> {
     pub price: f64,
     pub token: usize,
