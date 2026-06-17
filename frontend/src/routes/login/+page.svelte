@@ -31,6 +31,7 @@
 <svelte:head>
 	<title>{$t('login.title')}</title>
 </svelte:head>
+
 <main class="bg-surface-base flex h-screen flex-col items-center justify-center">
 	<h2
 		class="mb-3 bg-gradient-to-r from-primary to-primary/50 bg-clip-text px-6 text-center text-4xl text-transparent"

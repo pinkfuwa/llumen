@@ -5,15 +5,17 @@
 	import { t } from 'svelte-intl-precompile';
 </script>
 
-{#if currentRoom.val && currentRoom.val?.title}
-	<title>
-		{currentRoom.val.title}
-	</title>
-{:else}
-	<title>
-		{$t('chat.title')}
-	</title>
-{/if}
+<svelte:head>
+	{#if currentRoom.val && currentRoom.val?.title}
+		<title>
+			{currentRoom.val.title}
+		</title>
+	{:else}
+		<title>
+			{$t('chat.title')}
+		</title>
+	{/if}
+</svelte:head>
 
 <div class="bg-chat relative flex h-screen w-screen flex-row">
 	<div class="z-20 h-full shrink-0">
