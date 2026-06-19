@@ -50,7 +50,8 @@ export async function readModel(id: number): Promise<ModelReadResp> {
 	return APIFetch<ModelReadResp, ModelReadReq>({
 		path: 'model/read',
 		body: { id },
-		token: true
+		token: true,
+		retry: true
 	}).then((x) => x ?? { raw: '' });
 }
 
@@ -76,7 +77,8 @@ export function checkConfig(req: ModelCheckReq): Promise<ModelCheckResp | undefi
 	return APIFetch<ModelCheckResp, ModelCheckReq>({
 		path: 'model/check',
 		body: req,
-		token: token_
+		token: token_,
+		retry: true
 	});
 }
 
@@ -106,7 +108,8 @@ export async function syncModel(req: ModelWriteReq): Promise<MutationStatus> {
 	APIFetch<ModelListResp, Record<string, never>>({
 		path: 'model/list',
 		body: {},
-		token: token_
+		token: token_,
+		retry: true
 	}).then((x) => {
 		models.val = x?.list;
 	});
@@ -121,7 +124,8 @@ $effect.root(() => {
 		APIFetch<ModelListResp, Record<string, never>>({
 			path: 'model/list',
 			body: {},
-			token: true
+			token: true,
+			retry: true
 		}).then((x) => {
 			if (!stopped) models.val = x?.list;
 		});
@@ -129,7 +133,8 @@ $effect.root(() => {
 		APIFetch<ModelIdsResp, Record<string, never>>({
 			path: 'model/ids',
 			body: {},
-			token: true
+			token: true,
+			retry: true
 		}).then((x) => {
 			if (!stopped) modelIds.val = x?.ids;
 		});

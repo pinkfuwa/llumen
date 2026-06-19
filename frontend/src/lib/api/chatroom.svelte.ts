@@ -87,7 +87,8 @@ async function ensurePaginated(target: HTMLElement, token_: string) {
 			const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>({
 				path: 'chat/paginate',
 				body: params,
-				token: token_
+				token: token_,
+				retry: true
 			});
 			if (!resp || resp.list.length === 0) {
 				rightExhausted = true;
@@ -103,7 +104,8 @@ async function ensurePaginated(target: HTMLElement, token_: string) {
 			const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>({
 				path: 'chat/paginate',
 				body: { t: 'limit', c: { id: anchor, order: ChatPaginateReqOrder.Gt } },
-				token: token_
+				token: token_,
+				retry: true
 			});
 			if (!resp || resp.list.length === 0) {
 				leftExhausted = true;
@@ -195,7 +197,8 @@ $effect.root(() => {
 		APIFetch<ChatReadResp, ChatReadReq>({
 			path: 'chat/read',
 			body: { id: chatId },
-			token: true
+			token: true,
+			retry: true
 		}).then((resp) => {
 			if (!stopped && resp) currentRoom.val = resp;
 		});

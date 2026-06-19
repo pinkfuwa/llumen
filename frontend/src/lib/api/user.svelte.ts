@@ -79,12 +79,18 @@ $effect.root(() => {
 		APIFetch<UserListResp, Record<string, never>>({
 			path: 'user/list',
 			body: {},
-			token: true
+			token: true,
+			retry: true
 		}).then((x) => {
 			if (!stopped) users.val = x;
 		});
 
-		APIFetch<UserReadResp, UserReadReq>({ path: 'user/read', body: {}, token: true }).then((x) => {
+		APIFetch<UserReadResp, UserReadReq>({
+			path: 'user/read',
+			body: {},
+			token: true,
+			retry: true
+		}).then((x) => {
 			if (!stopped) currentUser.val = x;
 		});
 

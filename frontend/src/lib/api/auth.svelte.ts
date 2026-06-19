@@ -48,7 +48,7 @@ export async function RenewToken(originalToken: string) {
 }
 
 $effect.root(() => {
-	APIFetch<HeaderAuthResp>({ path: 'auth/header', token: false }).then((res) => {
+	APIFetch<HeaderAuthResp>({ path: 'auth/header', token: false, retry: true }).then((res) => {
 		if (res && res.exp != undefined && res.token) {
 			applyToken({ token: res.token, exp: res.exp });
 		}

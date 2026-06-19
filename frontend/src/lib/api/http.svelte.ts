@@ -33,6 +33,17 @@ export interface RawFetchOptions<P = any> {
 	/** Optional `AbortSignal` for cancellation. */
 	signal?: AbortSignal;
 	/**
+	 * Retry on network error (fetch rejection) with exponential backoff.
+	 *
+	 * Only enable for idempotent queries (read/list/paginate). Never use for
+	 * mutations (create/update/delete) or streaming/SSE requests.
+	 *
+	 * Default `false`. Up to 3 retries with 200ms/400ms/800ms backoff.
+	 * Auth and other HTTP-status errors are not retried — only true network
+	 * failures (no response at all) trigger a retry.
+	 */
+	retry?: boolean;
+	/**
 	 * Token behaviour:
 	 * - `false` (default) - no `Authorization` header.
 	 * - `true` - reads `token` from the reactive store.
@@ -41,6 +52,24 @@ export interface RawFetchOptions<P = any> {
 	 * - A string - used verbatim as the `Authorization` header value.
 	 */
 	token?: boolean | string;
+}
+
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY = 200;
+
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+	return new Promise((resolve, reject) => {
+		if (signal?.aborted) return reject(new DOMException('Aborted', 'AbortError'));
+		const t = setTimeout(() => {
+			signal?.removeEventListener('abort', onAbort);
+			resolve();
+		}, ms);
+		const onAbort = () => {
+			clearTimeout(t);
+			reject(new DOMException('Aborted', 'AbortError'));
+		};
+		signal?.addEventListener('abort', onAbort, { once: true });
+	});
 }
 
 /**
@@ -53,6 +82,8 @@ export interface RawFetchOptions<P = any> {
  * @typeParam P - Request body type (default `any`).
  */
 export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response | undefined> {
+	const max_retries = opts.retry ? MAX_RETRIES : 1;
+
 	const path = opts.path;
 	const body = opts.body ?? null;
 	const method = opts.method ?? 'POST';
@@ -86,12 +117,26 @@ export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response
 		else fetchBody = JSON.stringify(body);
 	}
 
-	return fetch(apiBase + path, {
-		method,
-		headers,
-		body: fetchBody,
-		signal
-	});
+	let lastError: unknown;
+	return (async () => {
+		for (let attempt = 0; attempt <= max_retries; attempt++) {
+			if (opts.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+			try {
+				return fetch(apiBase + path, {
+					method,
+					headers,
+					body: fetchBody,
+					signal
+				});
+			} catch (err) {
+				if (opts.signal?.aborted) throw err;
+				lastError = err;
+				const isNetworkError = err instanceof TypeError;
+				if (!isNetworkError || attempt === max_retries) throw err;
+				await delay(RETRY_BASE_DELAY * 2 ** attempt, opts.signal);
+			}
+		}
+	})();
 }
 
 /**

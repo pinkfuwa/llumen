@@ -428,7 +428,8 @@ async function paginateOne(
 		path: 'message/paginate',
 		body: params,
 		signal: paginateChainAbort.signal,
-		token
+		token,
+		retry: true
 	});
 
 	if (!resp || resp.list.length === 0) return true;
