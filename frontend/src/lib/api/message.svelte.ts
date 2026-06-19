@@ -566,13 +566,16 @@ $effect.root(() => {
 			if (globalThis.document.visibilityState === 'visible') {
 				startSSE(chatId, token_!);
 			} else if (globalThis.document.visibilityState === 'hidden') {
-				sseController.abort('b');
+				sseController.abort();
 			}
 		}
 
 		globalThis.document.addEventListener('visibilitychange', onVisibilityChange);
 
-		return () => globalThis.document.removeEventListener('visibilitychange', onVisibilityChange);
+		return () => {
+			sseController.abort();
+			globalThis.document.removeEventListener('visibilitychange', onVisibilityChange);
+		};
 	});
 
 	$effect(() => {
