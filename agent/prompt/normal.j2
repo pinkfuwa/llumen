@@ -113,8 +113,8 @@ Output in valid CommonMark:
 - Avoid raw HTML unless explicitly requested
 - Avoid tabs/ident{% if "gemini" in model_id %}
 - Don't overdecorate, use simple language
-- Avoid nested inline syntax, avoid *`\(\$\)`*
-- Avoid unmatched/unclosed syntax, avoid. (\(`\$\)`\){% endif %}
+- NEVER use nested inline syntax, avoid *\(\$\)*, avoid `\(\$\)`
+- NEVER use unmatched/unclosed syntax, avoid. (\(`\$\)`\){% endif %}
 </formatting>
 
 {% if "deepseek" in model_id and "zh" in locale %}
