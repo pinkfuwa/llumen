@@ -1,9 +1,23 @@
 <script lang="ts">
+	import { currentRoom } from '$lib/api';
 	import { MessageInput, sidebarOpen, Minimap } from '$lib/components';
 	import MessagePagination from '$lib/components/message/Pagination.svelte';
 	import Hallucination from '$lib/components/common/Hallucination.svelte';
 	import { messagesElement } from '$lib/api';
+	import { t } from 'svelte-intl-precompile';
 </script>
+
+<svelte:head>
+	{#if currentRoom.val && currentRoom.val?.title}
+		<title>
+			{currentRoom.val.title}
+		</title>
+	{:else}
+		<title>
+			{$t('chat.title')}
+		</title>
+	{/if}
+</svelte:head>
 
 <Hallucination />
 <Minimap />
