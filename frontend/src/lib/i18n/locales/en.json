@@ -97,6 +97,7 @@
 	"chat.unsupported_files.hint": "Unsupported files may not be processed correctly by the model.",
 	"chat.unsupported_files.upload_all": "Upload All Anyway",
 	"chat.unsupported_files.upload_supported": "Upload Supported Only",
+	"mermaid.error": "Failed to render diagram",
 	"common.loading": "Loading",
 	"common.error": "Error",
 	"common.loading_editor": "Loading code editor...",

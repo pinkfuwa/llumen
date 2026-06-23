@@ -97,6 +97,7 @@
 	"chat.unsupported_files.hint": "不支持的文件可能无法被模型正确处理。",
 	"chat.unsupported_files.upload_all": "仍然上传所有",
 	"chat.unsupported_files.upload_supported": "仅上传支持的",
+	"mermaid.error": "无法渲染图表",
 	"common.loading": "加载中",
 	"common.error": "错误",
 	"common.loading_editor": "加载程序编辑器...",

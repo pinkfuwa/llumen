@@ -2,13 +2,15 @@
 	import './mermaid.css';
 	import { render } from './mermaid';
 	import { preference } from '$lib/preference/index.svelte';
+	import { t } from 'svelte-intl-precompile';
 	import Code from '../shiki/Code.svelte';
+	import Monochrome from '../shiki/Monochrome.svelte';
+	import { useThrottle } from '$lib/throttle.svelte';
 
-	let { text = '', closed = false } = $props<{ text?: string; closed?: boolean }>();
+	let { text = '', incremental = false } = $props<{ text?: string; incremental?: boolean }>();
 
 	let svg = $state<string | null>(null);
 	let error = $state<string | null>(null);
-	let rendering = $state(false);
 
 	let zoom = $state(1);
 	let panX = $state(0);
@@ -22,10 +24,8 @@
 	const containerHeight = $derived('clamp(300px, 65dvh, 600px)');
 
 	$effect(() => {
-		if (!closed || !text) {
+		if (incremental) {
 			svg = null;
-			error = null;
-			rendering = false;
 			zoom = 1;
 			panX = 0;
 			panY = 0;
@@ -35,22 +35,22 @@
 		void preference.value.theme.name;
 		void preference.value.theme.dark;
 
-		const timer = setTimeout(() => {
-			rendering = true;
-			error = null;
-			render(text)
-				.then((result) => {
-					svg = result;
-				})
-				.catch((e) => {
-					error = e.message;
-				})
-				.finally(() => {
-					rendering = false;
-				});
-		}, 300);
+		let stopped = false;
 
-		return () => clearTimeout(timer);
+		render(text)
+			.then((result) => {
+				if (stopped) return;
+				error = null;
+				svg = result;
+			})
+			.catch((e) => {
+				console.log('err', e);
+				error = e;
+			});
+
+		return () => {
+			stopped = true;
+		};
 	});
 
 	$effect(() => {
@@ -111,16 +111,19 @@
 	class="mermaid-container rounded-md border border-border"
 	style="height: {containerHeight}"
 >
-	{#if !closed || rendering || (!svg && !error)}
+	{#if incremental}
 		<div class="mermaid-scroll">
 			<Code {text} />
 		</div>
-	{:else if error}
-		<div class="mermaid-error">
-			<span class="mermaid-error-icon">△</span>
-			<span>{error}</span>
+	{:else if error != null}
+		<div class="flex h-full w-full flex-col items-center justify-center p-6">
+			<div class="p-2 text-xl font-semibold text-destructive">{$t('mermaid.error')}</div>
+
+			<div class="text-ellipsis whitespace-pre-wrap">
+				{error}
+			</div>
 		</div>
-	{:else}
+	{:else if svg}
 		<!-- svelte-ignore a11y_no_static_element_interactions a11y_no_noninteractive_tabindex -->
 		<div
 			class="mermaid-zoom-layer"
@@ -137,6 +140,10 @@
 			<div class="mermaid-svg" style="transform: translate({panX}px, {panY}px) scale({zoom})">
 				{@html svg}
 			</div>
+		</div>
+	{:else}
+		<div class="mermaid-pending">
+			<Monochrome {text} />
 		</div>
 	{/if}
 </div>

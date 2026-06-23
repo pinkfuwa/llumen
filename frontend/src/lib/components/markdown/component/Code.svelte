@@ -26,7 +26,7 @@
 		</Button>
 	{/if}
 	{#if isMermaid}
-		<Mermaid text={content} closed={incremental} />
+		<Mermaid text={content} {incremental} />
 	{:else}
 		<ShikiCode text={content} lang={language} {incremental} />
 	{/if}

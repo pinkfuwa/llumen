@@ -5,7 +5,7 @@
 </script>
 
 <div class="bg-chat relative grid h-screen w-screen grid-cols-2 gap-3 overflow-y-auto p-3">
-	<title>Test Markdown</title>
+	<title>Markdown Development</title>
 	<textarea
 		class="resize-none rounded-lg border border-border bg-card p-3 text-lg"
 		bind:value={content}

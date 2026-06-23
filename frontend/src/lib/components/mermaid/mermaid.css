@@ -27,3 +27,14 @@
 	height: 100%;
 	overflow-y: auto;
 }
+
+.mermaid-pending {
+	height: 100%;
+	overflow: hidden;
+}
+
+.mermaid-pending pre {
+	height: 100% !important;
+	margin: 0 !important;
+	overflow-y: auto;
+}
