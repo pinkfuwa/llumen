@@ -4,6 +4,6 @@
 	let { children }: { children: Snippet } = $props();
 </script>
 
-<p class="align-middle">
+<p class="mt-1 align-middle">
 	{@render children()}
 </p>

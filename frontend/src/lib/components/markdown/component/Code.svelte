@@ -15,7 +15,7 @@
 	const isMermaid = $derived(isMermaidLanguage(language));
 </script>
 
-<div class="group/codeblock relative">
+<div class="group/codeblock relative pt-3 pb-2">
 	{#if content.split('\n').length >= 2}
 		<Button
 			borderless

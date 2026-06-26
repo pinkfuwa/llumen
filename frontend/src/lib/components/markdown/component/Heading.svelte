@@ -15,7 +15,7 @@
 		const level = node.level - 1;
 		const size = level >= sizes.length ? sizes.at(-1)! : sizes[level];
 		const color = level >= colors.length ? colors.at(-1)! : colors[level];
-		return `${size} font-bold ${color}`;
+		return `${size} font-bold ${color} mb-1`;
 	});
 </script>
 
