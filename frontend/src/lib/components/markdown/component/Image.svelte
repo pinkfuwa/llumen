@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { ImageNode } from '../parser/types';
 	import { BookX } from '@lucide/svelte';
-	import RawMarker from './RawMarker.svelte';
 
 	let { node }: { node: ImageNode } = $props();
 
@@ -27,4 +26,3 @@
 		class="max-h-[70vh]"
 	/>
 {/if}
-<RawMarker text={`![${alt}](${url})`} block />

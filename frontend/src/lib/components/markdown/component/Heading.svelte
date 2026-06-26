@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { HeadingNode } from '../parser/types';
 	import type { Snippet } from 'svelte';
-	import RawMarker from './RawMarker.svelte';
 
 	let { node, children }: { node: HeadingNode; children: Snippet } = $props();
 
@@ -18,11 +17,8 @@
 		const color = level >= colors.length ? colors.at(-1)! : colors[level];
 		return `${size} font-bold ${color}`;
 	});
-
-	const prefix = $derived('#'.repeat(node.level) + ' ');
 </script>
 
 <h2 class={classname}>
-	<RawMarker text={prefix} />
 	{@render children()}
 </h2>

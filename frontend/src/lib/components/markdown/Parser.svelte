@@ -41,69 +41,76 @@
 </script>
 
 {#each nodes as node}
-	{#if node.type === AstNodeType.Heading}
-		<Heading node={node as HeadingNode}>
-			<Parser nodes={node.children || []} />
-		</Heading>
-	{:else if node.type === AstNodeType.Paragraph}
-		<Paragraph>
-			<Parser nodes={node.children || []} />
-		</Paragraph>
-	{:else if node.type === AstNodeType.CodeBlock}
-		<Code node={node as CodeBlockNode} />
-	{:else if node.type === AstNodeType.Blockquote}
-		<Blockquote>
-			<Parser nodes={node.children || []} />
-		</Blockquote>
-	{:else if node.type === AstNodeType.OrderedList || node.type === AstNodeType.UnorderedList}
-		<List node={node as OrderedListNode | UnorderedListNode}>
-			<Parser nodes={node.children || []} />
-		</List>
-	{:else if node.type === AstNodeType.ListItem}
-		<ListItem>
-			<Parser nodes={node.children || []} />
-		</ListItem>
-	{:else if node.type === AstNodeType.Table}
-		<Table>
-			<Parser nodes={node.children || []} />
-		</Table>
-	{:else if node.type === AstNodeType.TableRow}
-		<TableRow>
-			<Parser nodes={node.children || []} />
-		</TableRow>
-	{:else if node.type === AstNodeType.TableCell}
-		<TableCell node={node as TableCellNode}>
-			<Parser nodes={node.children || []} />
-		</TableCell>
-	{:else if node.type === AstNodeType.HorizontalRule}
-		<Hr />
-	{:else if node.type === AstNodeType.LatexBlock}
-		<Latex node={node as LatexBlockNode} />
-	{:else if node.type === AstNodeType.LatexInline}
-		<LatexSpan node={node as LatexInlineNode} />
-	{:else if node.type === AstNodeType.Bold}
-		<Strong>
-			<Parser nodes={node.children || []} />
-		</Strong>
-	{:else if node.type === AstNodeType.Italic}
-		<Italic>
-			<Parser nodes={node.children || []} />
-		</Italic>
-	{:else if node.type === AstNodeType.Strikethrough}
-		<Del>
-			<Parser nodes={node.children || []} />
-		</Del>
-	{:else if node.type === AstNodeType.InlineCode}
-		<Codespan node={node as InlineCodeNode} />
-	{:else if node.type === AstNodeType.Link}
-		<Link node={node as LinkNode}>
-			<Parser nodes={node.children || []} />
-		</Link>
-	{:else if node.type === AstNodeType.Image}
-		<Image node={node as ImageNode} />
-	{:else if node.type === AstNodeType.LineBreak}
-		<Br />
-	{:else if node.type === AstNodeType.Text}
-		<Text node={node as TextNode} />
-	{/if}
+	<span
+		style="display: contents"
+		data-offset-start={node.start}
+		data-offset-end={node.end}
+		data-offset-type={node.type}
+	>
+		{#if node.type === AstNodeType.Heading}
+			<Heading node={node as HeadingNode}>
+				<Parser nodes={node.children || []} />
+			</Heading>
+		{:else if node.type === AstNodeType.Paragraph}
+			<Paragraph>
+				<Parser nodes={node.children || []} />
+			</Paragraph>
+		{:else if node.type === AstNodeType.CodeBlock}
+			<Code node={node as CodeBlockNode} />
+		{:else if node.type === AstNodeType.Blockquote}
+			<Blockquote>
+				<Parser nodes={node.children || []} />
+			</Blockquote>
+		{:else if node.type === AstNodeType.OrderedList || node.type === AstNodeType.UnorderedList}
+			<List node={node as OrderedListNode | UnorderedListNode}>
+				<Parser nodes={node.children || []} />
+			</List>
+		{:else if node.type === AstNodeType.ListItem}
+			<ListItem>
+				<Parser nodes={node.children || []} />
+			</ListItem>
+		{:else if node.type === AstNodeType.Table}
+			<Table>
+				<Parser nodes={node.children || []} />
+			</Table>
+		{:else if node.type === AstNodeType.TableRow}
+			<TableRow>
+				<Parser nodes={node.children || []} />
+			</TableRow>
+		{:else if node.type === AstNodeType.TableCell}
+			<TableCell node={node as TableCellNode}>
+				<Parser nodes={node.children || []} />
+			</TableCell>
+		{:else if node.type === AstNodeType.HorizontalRule}
+			<Hr />
+		{:else if node.type === AstNodeType.LatexBlock}
+			<Latex node={node as LatexBlockNode} />
+		{:else if node.type === AstNodeType.LatexInline}
+			<LatexSpan node={node as LatexInlineNode} />
+		{:else if node.type === AstNodeType.Bold}
+			<Strong>
+				<Parser nodes={node.children || []} />
+			</Strong>
+		{:else if node.type === AstNodeType.Italic}
+			<Italic>
+				<Parser nodes={node.children || []} />
+			</Italic>
+		{:else if node.type === AstNodeType.Strikethrough}
+			<Del>
+				<Parser nodes={node.children || []} />
+			</Del>
+		{:else if node.type === AstNodeType.InlineCode}
+			<Codespan node={node as InlineCodeNode} />
+		{:else if node.type === AstNodeType.Link}
+			<Link node={node as LinkNode}>
+				<Parser nodes={node.children || []} />
+			</Link>
+		{:else if node.type === AstNodeType.Image}
+			<Image node={node as ImageNode} />
+		{:else if node.type === AstNodeType.LineBreak}
+			<Br />
+		{:else if node.type === AstNodeType.Text}
+			<Text node={node as TextNode} />
+		{/if}
+	</span>
 {/each}

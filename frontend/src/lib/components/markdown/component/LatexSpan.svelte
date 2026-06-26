@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { LatexInlineNode } from '../parser/types';
 	import LatexComponent from '../../latex/Latex.svelte';
-	import RawMarker from './RawMarker.svelte';
 
 	let { node }: { node: LatexInlineNode } = $props();
 
@@ -14,5 +13,4 @@
 	>
 		<LatexComponent text={content} />
 	</span>
-	<RawMarker text={`\\(${content}\\)`} />
 </span>

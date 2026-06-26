@@ -106,18 +106,26 @@ export function parser(renderer: Renderer): Parser {
 		indent_len: 0,
 		table_state: 0,
 		eq_open: 0,
-		maybe_link_text: ''
+		maybe_link_text: '',
+		pos: 0
 	};
 }
 
 export function parser_end(p: Parser): void {
 	if (p.pending.length > 0) {
-		parser_write(p, '\n');
+		parser_write(p, '\n', true);
 	}
 }
 
-function add_text(p: Parser): void {
+function add_text(p: Parser, atEnd = false): void {
 	if (p.text.length === 0) return;
+	// During loop: data.pos = trigger position, pending is at data.pos-1.
+	// At end: data.pos = last-char position, pending IS at data.pos.
+	const textStart = atEnd
+		? p.renderer.data.pos - p.text.length
+		: p.renderer.data.pos - p.text.length - p.pending.length;
+	p.renderer.data.textStart = textStart;
+	p.renderer.data.pendingLen = p.pending.length;
 	p.renderer.add_text(p.renderer.data, p.text);
 	p.text = '';
 }
@@ -125,6 +133,7 @@ function add_text(p: Parser): void {
 function end_token(p: Parser): void {
 	p.len -= 1;
 	p.token = p.tokens[p.len];
+	p.renderer.data.pos = p.pos;
 	p.renderer.end_token(p.renderer.data);
 }
 
@@ -139,6 +148,7 @@ function add_token(p: Parser, token: number): void {
 	p.len += 1;
 	p.tokens[p.len] = token;
 	p.token = token;
+	p.renderer.data.pos = p.pos;
 	p.renderer.add_token(p.renderer.data, token);
 }
 
@@ -287,8 +297,13 @@ function indent_width(s: string): number {
 	return w;
 }
 
-export function parser_write(p: Parser, chunk: string): void {
+export function parser_write(p: Parser, chunk: string, _recursive = false): void {
+	if (_recursive) {
+		p.pos = p.pos - chunk.length;
+	}
 	for (const char of chunk) {
+		p.renderer.data.pos = p.pos;
+		p.pos += 1;
 		if (p.token === NEWLINE) {
 			switch (char) {
 				case ' ':
@@ -305,7 +320,7 @@ export function parser_write(p: Parser, chunk: string): void {
 			p.token = p.tokens[p.len];
 
 			if (indent > 0) {
-				parser_write(p, ' '.repeat(indent));
+				parser_write(p, ' '.repeat(indent), true);
 			}
 		}
 
@@ -411,7 +426,7 @@ export function parser_write(p: Parser, chunk: string): void {
 						if ('_' !== p.pending[0] && ' ' === p.pending[1]) {
 							continue_or_add_list(p, LIST_UNORDERED);
 							add_list_item(p, 2);
-							parser_write(p, pending_with_char.slice(2));
+							parser_write(p, pending_with_char.slice(2), true);
 							continue;
 						}
 
@@ -436,7 +451,7 @@ export function parser_write(p: Parser, chunk: string): void {
 									add_token(p, PARAGRAPH);
 									clear_root_pending(p);
 									p.fence_start = 0;
-									parser_write(p, pending_with_char);
+									parser_write(p, pending_with_char, true);
 								}
 								continue;
 							case '\n': {
@@ -493,7 +508,7 @@ export function parser_write(p: Parser, chunk: string): void {
 						add_token(p, TABLE_ROW);
 
 						p.pending = '';
-						parser_write(p, char);
+						parser_write(p, char, true);
 
 						continue;
 				}
@@ -507,7 +522,7 @@ export function parser_write(p: Parser, chunk: string): void {
 						end_tokens_to_len(p, bq_idx - 1);
 						p.token = p.tokens[p.len];
 						clear_root_pending(p);
-						parser_write(p, to_write);
+						parser_write(p, to_write, true);
 						continue;
 					}
 					p.token = p.tokens[p.len];
@@ -528,7 +543,7 @@ export function parser_write(p: Parser, chunk: string): void {
 				}
 
 				clear_root_pending(p);
-				parser_write(p, to_write);
+				parser_write(p, to_write, true);
 				continue;
 			case TABLE:
 				if (p.table_state === 1) {
@@ -553,13 +568,13 @@ export function parser_write(p: Parser, chunk: string): void {
 						case '|':
 							add_token(p, TABLE_ROW);
 							p.pending = '';
-							parser_write(p, char);
+							parser_write(p, char, true);
 							continue;
 						case '\n':
 							end_token(p);
 							p.pending = '';
 							p.table_state = 0;
-							parser_write(p, char);
+							parser_write(p, char, true);
 							continue;
 					}
 				}
@@ -572,17 +587,17 @@ export function parser_write(p: Parser, chunk: string): void {
 						add_token(p, TABLE_CELL);
 						end_token(p);
 						p.pending = '';
-						parser_write(p, char);
+						parser_write(p, char, true);
 						continue;
 					case '\n':
 						end_token(p);
 						p.table_state = Math.min(p.table_state + 1, 2);
 						p.pending = '';
-						parser_write(p, char);
+						parser_write(p, char, true);
 						continue;
 					default:
 						add_token(p, TABLE_CELL);
-						parser_write(p, char);
+						parser_write(p, char, true);
 						continue;
 				}
 				break;
@@ -591,7 +606,7 @@ export function parser_write(p: Parser, chunk: string): void {
 					add_text(p);
 					end_token(p);
 					p.pending = '';
-					parser_write(p, char);
+					parser_write(p, char, true);
 					continue;
 				}
 				break;
@@ -662,7 +677,7 @@ export function parser_write(p: Parser, chunk: string): void {
 						p.pending = '';
 						add_text(p);
 						end_token(p);
-						parser_write(p, '\n');
+						parser_write(p, '\n', true);
 						continue;
 					case ' ':
 						p.text += p.pending;
@@ -700,7 +715,7 @@ export function parser_write(p: Parser, chunk: string): void {
 
 				p.token = p.tokens[p.len];
 				p.pending = '';
-				parser_write(p, pending_with_char);
+				parser_write(p, pending_with_char, true);
 				continue;
 			case STRONG_AST:
 			case STRONG_UND: {
@@ -782,7 +797,7 @@ export function parser_write(p: Parser, chunk: string): void {
 					p.token = p.tokens[p.len];
 					p.text += '$$';
 					p.pending = '';
-					parser_write(p, char);
+					parser_write(p, char, true);
 				}
 				continue;
 			case EQUATION_BLOCK_DOLLAR:
@@ -857,7 +872,7 @@ export function parser_write(p: Parser, chunk: string): void {
 					p.pending = pending_with_char;
 				} else {
 					p.token = p.tokens[p.len];
-					parser_write(p, char);
+					parser_write(p, char, true);
 				}
 				continue;
 			case MAYBE_LINK:
@@ -867,7 +882,7 @@ export function parser_write(p: Parser, chunk: string): void {
 						p.token = p.tokens[p.len];
 						p.pending = '';
 						add_token(p, LINK);
-						parser_write(p, saved);
+						parser_write(p, saved, true);
 						p.text += p.pending;
 						p.pending = '';
 						add_text(p);
@@ -877,13 +892,13 @@ export function parser_write(p: Parser, chunk: string): void {
 						add_text(p);
 						p.token = p.tokens[p.len];
 						p.pending = '';
-						parser_write(p, p.maybe_link_text);
+						parser_write(p, p.maybe_link_text, true);
 						p.text += p.pending;
 						p.pending = '';
 						add_text(p);
 						p.text = ']';
 						add_text(p);
-						parser_write(p, char);
+						parser_write(p, char, true);
 					}
 					continue;
 				}
@@ -897,11 +912,11 @@ export function parser_write(p: Parser, chunk: string): void {
 					p.pending = '';
 					p.text = '[';
 					add_text(p);
-					parser_write(p, p.maybe_link_text + p.text);
+					parser_write(p, p.maybe_link_text + p.text, true);
 					p.text += p.pending;
 					p.pending = '';
 					add_text(p);
-					parser_write(p, char);
+					parser_write(p, char, true);
 					continue;
 				}
 				p.maybe_link_text += p.pending;
@@ -1059,7 +1074,7 @@ export function parser_write(p: Parser, chunk: string): void {
 						add_text(p);
 						end_token(p);
 						p.pending = '';
-						parser_write(p, pending_with_char);
+						parser_write(p, pending_with_char, true);
 						continue;
 					case HEADING_1:
 					case HEADING_2:
@@ -1262,5 +1277,5 @@ export function parser_write(p: Parser, chunk: string): void {
 		p.pending = char;
 	}
 
-	add_text(p);
+	add_text(p, true);
 }

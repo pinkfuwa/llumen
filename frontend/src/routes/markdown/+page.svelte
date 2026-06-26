@@ -10,9 +10,7 @@
 		class="resize-none rounded-lg border border-border bg-card p-3 text-lg"
 		bind:value={content}
 	></textarea>
-	<div class="overflow-y-auto rounded-lg border border-dashed border-border p-3 pt-1">
-		<div class="w-full">
-			<Markdown source={content} />
-		</div>
+	<div class="overflow-y-auto rounded-lg border border-dashed border-border pt-1">
+		<Markdown source={content} class="w-full p-3" />
 	</div>
 </div>

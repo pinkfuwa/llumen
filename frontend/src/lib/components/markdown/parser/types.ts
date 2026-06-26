@@ -67,11 +67,15 @@ export interface Parser {
 	table_state: number;
 	eq_open: number;
 	maybe_link_text: string;
+	pos: number;
 }
 
 export interface RendererData {
 	nodes: unknown[];
 	index: number;
+	pos: number;
+	pendingLen: number;
+	textStart: number;
 }
 
 export interface Renderer {

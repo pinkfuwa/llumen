@@ -53,6 +53,8 @@ interface StackEntry {
 	token: number;
 	node: AstNode;
 	textBuf: string;
+	textStart: number;
+	textEnd: number;
 	language?: string;
 	url?: string;
 	start?: number;
@@ -67,11 +69,12 @@ function flushText(entry: StackEntry): void {
 	const last = children.length > 0 ? children[children.length - 1] : null;
 	if (last?.type === AstNodeType.Text) {
 		(last as TextNode).content += entry.textBuf;
+		(last as TextNode).end = entry.textEnd;
 	} else {
 		children.push({
 			type: AstNodeType.Text,
-			start: 0,
-			end: 0,
+			start: entry.textStart,
+			end: entry.textEnd,
 			content: entry.textBuf
 		} as TextNode);
 	}
@@ -217,14 +220,16 @@ export function createAstRenderer(rootChildren: AstNode[] = []): {
 			token: DOCUMENT,
 			node: { type: AstNodeType.Paragraph, start: 0, end: 0, children: rootChildren },
 			textBuf: '',
+			textStart: 0,
+			textEnd: 0,
 			rowCount: 0,
 			closed: true
 		}
 	];
 
 	const renderer: Renderer = {
-		data: { nodes: [], index: 0 },
-		add_token(_data: RendererData, token: number): void {
+		data: { nodes: [], index: 0, pos: 0, pendingLen: 0, textStart: 0 },
+		add_token(data: RendererData, token: number): void {
 			if (token === DOCUMENT) return;
 
 			const parent = stack[stack.length - 1];
@@ -241,26 +246,39 @@ export function createAstRenderer(rootChildren: AstNode[] = []): {
 				nodeType === AstNodeType.CodeBlock
 					? ({
 							type: nodeType,
-							start: 0,
+							start: data.pos,
 							end: 0,
 							children,
 							content: '',
 							closed: false
 						} as unknown as AstNode)
-					: { type: nodeType, start: 0, end: 0, children };
+					: { type: nodeType, start: data.pos, end: 0, children };
 			parent.node.children!.push(node);
 			const proxiedNode = parent.node.children![parent.node.children!.length - 1] as AstNode;
 
-			stack.push({ token, node: proxiedNode, textBuf: '', rowCount: 0, closed: false });
+			stack.push({
+				token,
+				node: proxiedNode,
+				textBuf: '',
+				textStart: 0,
+				textEnd: 0,
+				language: undefined,
+				url: undefined,
+				start: undefined,
+				checked: undefined,
+				rowCount: 0,
+				closed: false
+			});
 		},
-		end_token(_data: RendererData): void {
+		end_token(data: RendererData): void {
 			if (stack.length <= 1) return;
 			const entry = stack.pop()!;
 			flushText(entry);
+			entry.node.end = data.pos;
 			entry.closed = true;
 			finalizeNodeInPlace(entry);
 		},
-		add_text(_data: RendererData, text: string): void {
+		add_text(data: RendererData, text: string): void {
 			const current = stack[stack.length - 1];
 			if (current.token === DOCUMENT) return;
 			if (
@@ -269,7 +287,11 @@ export function createAstRenderer(rootChildren: AstNode[] = []): {
 				current.node.type === AstNodeType.Text
 			)
 				return;
+			if (current.textBuf.length === 0) {
+				current.textStart = data.textStart;
+			}
 			current.textBuf += text;
+			current.textEnd = data.textStart + text.length;
 			if (current.node.type === AstNodeType.CodeBlock) {
 				(current.node as CodeBlockNode).content += text;
 			}

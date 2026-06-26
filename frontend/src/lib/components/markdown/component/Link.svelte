@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { LinkNode } from '../parser/types';
 	import type { Snippet } from 'svelte';
-	import RawMarker from './RawMarker.svelte';
 
 	let { node, children }: { node: LinkNode; children: Snippet } = $props();
 
@@ -10,7 +9,6 @@
 </script>
 
 <span class="pb-1">
-	<RawMarker text="[" />
 	<a
 		href={url}
 		{title}
@@ -20,5 +18,4 @@
 	>
 		{@render children()}
 	</a>
-	<RawMarker text={`](${url})`} />
 </span>
