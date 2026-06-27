@@ -4,20 +4,27 @@
 	import { t } from 'svelte-intl-precompile';
 	import Monochrome from '../shiki/Monochrome.svelte';
 	import { getThemeStyle } from '../shiki/shiki';
+	import type { HTMLAttributes } from 'svelte/elements';
 
 	let { text = '', incremental = false } = $props<{ text?: string; incremental?: boolean }>();
+
+	const deadZone = 35;
 
 	let svg = $state<string | null>(null);
 	let error = $state<string | null>(null);
 
+	let isDragging = $state(false);
+	let containerEl = $state<HTMLDivElement>();
+
 	let zoom = $state(1);
 	let panX = $state(0);
 	let panY = $state(0);
-	let isDragging = $state(false);
 
-	let containerEl = $state<HTMLDivElement>();
 	let startX = 0;
 	let startY = 0;
+
+	let deltaX = 0;
+	let deltaY = 0;
 
 	const containerHeight = $derived('clamp(300px, 65dvh, 600px)');
 
@@ -69,12 +76,13 @@
 		return () => cancelAnimationFrame(id);
 	});
 
-	import type { HTMLAttributes } from 'svelte/elements';
+	let focus = $state(false);
 
 	const events: Partial<HTMLAttributes<HTMLDivElement>> = {
 		onwheel(e: WheelEvent) {
+			if (!focus) return;
 			e.preventDefault();
-			const newZoom = Math.max(0.2, Math.min(5, zoom * (1 + -e.deltaY * 0.001)));
+			const newZoom = Math.max(0.32, Math.min(5, zoom * (1 + -e.deltaY * 0.001)));
 			const rect = containerEl!.getBoundingClientRect();
 			const mx = e.clientX - rect.left;
 			const my = e.clientY - rect.top;
@@ -83,27 +91,34 @@
 			zoom = newZoom;
 		},
 		onpointerdown(e: PointerEvent) {
+			deltaX = 0;
+			deltaY = 0;
+
+			if (!focus) return;
 			isDragging = true;
 			startX = e.clientX - panX;
 			startY = e.clientY - panY;
 			(e.target as HTMLElement).setPointerCapture(e.pointerId);
 		},
 		onpointermove(e: PointerEvent) {
+			deltaX += e.movementX;
+			deltaY += e.movementY;
+
 			if (!isDragging) return;
 			panX = e.clientX - startX;
 			panY = e.clientY - startY;
 		},
+		onpointerleave() {
+			focus = false;
+		},
 		onpointercancel() {
 			isDragging = false;
 		},
-		onpointerup() {
+		onpointerup(e) {
 			isDragging = false;
-		},
-
-		ondblclick() {
-			zoom = 1;
-			panX = 0;
-			panY = 0;
+			if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < deadZone) {
+				focus = !focus;
+			}
 		}
 	};
 
@@ -113,8 +128,10 @@
 
 <div
 	bind:this={containerEl}
-	class="relative overflow-hidden rounded-md border border-border bg-card p-2"
+	class="relative overflow-hidden rounded-md border border-border bg-card p-2 data-focus:ring-4 data-focus:ring-ring"
 	style="height: {containerHeight}; {themeStyle}"
+	role="group"
+	data-focus={focus ? '' : undefined}
 >
 	{#if displayText}
 		<div class="h-full overflow-y-auto">
@@ -137,7 +154,7 @@
 			{...events}
 		>
 			<div
-				class="pointer-events-none absolute top-0 left-0 h-full! origin-center"
+				class="pointer-events-none absolute top-0 left-0 h-full! origin-top-left"
 				style="transform: translate({panX}px, {panY}px) scale({zoom})"
 			>
 				{@html svg}
