@@ -11,6 +11,6 @@
 		bind:value={content}
 	></textarea>
 	<div class="overflow-y-auto rounded-lg border border-dashed border-border pt-1">
-		<Markdown source={content} class="w-full p-3" />
+		<Markdown source={content} class="w-full p-3" copy />
 	</div>
 </div>

@@ -5,5 +5,5 @@
 </script>
 
 <div class="space-y-2">
-	<Markdown source={content} incremental={streaming} />
+	<Markdown source={content} incremental={streaming} copy />
 </div>

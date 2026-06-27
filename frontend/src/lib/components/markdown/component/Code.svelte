@@ -15,7 +15,12 @@
 	const isMermaid = $derived(isMermaidLanguage(language));
 </script>
 
-<div class="group/codeblock relative pt-3 pb-2">
+<div
+	class="group/codeblock relative pt-3 pb-2"
+	oncopy={(event: ClipboardEvent) => {
+		event.stopPropagation();
+	}}
+>
 	{#if content.split('\n').length >= 2}
 		<Button
 			borderless

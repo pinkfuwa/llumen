@@ -11,8 +11,9 @@
 	const {
 		source,
 		incremental = false,
-		class: className
-	}: { source: string; incremental?: boolean; class?: string } = $props();
+		class: className,
+		copy = false
+	}: { source: string; incremental?: boolean; class?: string; copy?: boolean } = $props();
 
 	let nodes: AstNode[] = $state([]);
 	let containerRef: HTMLDivElement | undefined = $state();
@@ -97,7 +98,7 @@
 <div
 	bind:this={containerRef}
 	class={className ? `${className} space-y-2` : 'space-y-2'}
-	oncopy={handleCopy}
+	oncopy={copy ? handleCopy : undefined}
 >
 	<Parser {nodes} />
 </div>

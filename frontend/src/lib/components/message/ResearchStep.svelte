@@ -37,7 +37,7 @@
 
 		<div class="my-1 space-y-1 border-l-4 pl-3 hover:border-accent">
 			{#if lastProgress != undefined}
-				<Markdown source={lastProgress.c || ''} incremental={streaming} />
+				<Markdown source={lastProgress.c || ''} incremental={streaming} copy />
 			{/if}
 		</div>
 	</Collapsible.Content>
