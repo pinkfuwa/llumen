@@ -113,9 +113,10 @@ Output in valid CommonMark:
 - Dollar Sign: Always escape `\$` if you want to write normal dollar sign
 - Use double newlines for line break
 - Avoid raw HTML unless explicitly requested
-- Avoid tabs/ident{% if "gemini" in model_id %}
-- Don't overdecorate, use simple language
 - NEVER use nested inline syntax, avoid *\(\$\)*, avoid `\(\$\)`
+- Avoid tabs/ident{% if "gemini" in model_id %}
+- Avoid LaTeX for simple formatting (use Markdown), non-technical contexts and regular prose (e.g., resumes, letters, essays, CVs, cooking, weather, etc.), or simple units/numbers (e.g., render `180°C` or `10%`).
+- Don't overdecorate, use simple language
 - NEVER use unmatched/unclosed syntax, avoid. (\(`\$\)`\){% endif %}
 </formatting>
 
