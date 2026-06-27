@@ -24,6 +24,12 @@ export default defineConfig({
 		format: 'es'
 	},
 	server: {
-		allowedHosts: ['.trycloudflare.com'] // allows example.com, foo.example.com, etc.
+		allowedHosts: ['.trycloudflare.com'],
+		proxy: {
+			'/api': {
+				target: 'http://localhost:8001',
+				changeOrigin: true
+			}
+		}
 	}
 });

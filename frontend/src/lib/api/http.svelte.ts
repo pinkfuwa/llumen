@@ -3,12 +3,13 @@ import type { Error as APIError } from './types';
 import { token } from '$lib/rune.svelte';
 import { dev } from '$app/environment';
 
-export const apiBase = dev
-	? (() => {
-			const { protocol, hostname } = new URL(window.location.href);
-			return `${protocol}//${hostname}:8001/api/`;
-		})()
-	: '/api/';
+function getDevAPIBase(): string {
+	const { protocol, hostname } = new URL(window.location.href);
+	if (hostname.includes('ngrok')) return `${protocol}//${hostname}/api/`;
+	return `${protocol}//${hostname}:8001/api/`;
+}
+
+export const apiBase = dev ? getDevAPIBase() : '/api/';
 
 export function getError(data: any): APIError | undefined {
 	if (typeof data === 'object' && data !== null && 'error' in data) {
