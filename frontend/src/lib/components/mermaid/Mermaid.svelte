@@ -138,11 +138,13 @@
 		onpointercancel() {
 			isDragging = false;
 		},
-		onpointerup() {
-			isDragging = false;
+		onclick() {
 			if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < deadZone) {
 				focus = !focus;
 			}
+		},
+		onpointerup() {
+			isDragging = false;
 		}
 	};
 
