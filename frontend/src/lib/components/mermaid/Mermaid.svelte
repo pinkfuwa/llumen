@@ -13,8 +13,9 @@
 	let svg = $state<string | null>(null);
 	let error = $state<string | null>(null);
 
-	let isDragging = $state(false);
+	let dragging = $state(false);
 	let containerEl = $state<HTMLDivElement>();
+	let touchCount = 0;
 
 	let zoom = $state(1);
 	let panX = $state(0);
@@ -25,6 +26,9 @@
 
 	let deltaX = 0;
 	let deltaY = 0;
+
+	let originalZoom = 0;
+	let touchGap = 0;
 
 	let innerW = 0;
 	let innerH = 0;
@@ -93,6 +97,14 @@
 
 	let focus = $state(false);
 
+	function getStablizedTouches(touches: TouchList) {
+		const result = [];
+		for (let i = 0; i < touches.length; i++) {
+			result.push(touches[i]);
+		}
+		return result.sort((a, b) => a.clientX - b.clientX);
+	}
+
 	const events: Partial<HTMLAttributes<HTMLDivElement>> = {
 		onwheel(e: WheelEvent) {
 			if (!focus) return;
@@ -105,7 +117,8 @@
 			panY = my - ((my - panY) / zoom) * newZoom;
 			zoom = newZoom;
 		},
-		onpointerdown(e: PointerEvent) {
+		ontouchstart(e) {
+			touchCount = e.touches.length;
 			deltaX = 0;
 			deltaY = 0;
 
@@ -119,16 +132,70 @@
 			containerW = containerEl!.clientWidth;
 			containerH = containerEl!.clientHeight;
 
-			isDragging = true;
+			const touches = getStablizedTouches(e.touches);
+
+			if (touches.length == 2) {
+				touchGap =
+					(touches[0].clientX - touches[1].clientX) ** 2 +
+					(touches[0].clientY - touches[1].clientY) ** 2;
+				originalZoom = zoom;
+			} else if (touches.length == 1) {
+				dragging = true;
+				startX = touches[0].clientX - panX;
+				startY = touches[0].clientY - panY;
+			}
+			e.preventDefault();
+		},
+		ontouchmove(e) {
+			const touches = getStablizedTouches(e.touches);
+			deltaX += touches[0].clientX - startX;
+			deltaY += touches[0].clientY - startY;
+			if (!dragging) return;
+
+			if (touches.length == 2) {
+				const newGap =
+					(touches[0].clientX - touches[1].clientX) ** 2 +
+					(touches[0].clientY - touches[1].clientY) ** 2;
+				zoom = originalZoom * Math.sqrt(newGap / touchGap);
+			} else if (touches.length == 1) {
+				dragging = true;
+				panX = touches[0].clientX - startX;
+				panY = touches[0].clientY - startY;
+			}
+			// from https://w3c.github.io/touch-events/#event-touchmove
+			// prevenDefault does not stop mouse event.
+			e.preventDefault();
+		},
+		ontouchend(e) {
+			touchCount -= e.touches.length;
+			dragging = false;
+			// preventDefault cancel the onclick event, which is unwanted.
+		},
+		onpointerdown(e) {
+			deltaX = 0;
+			deltaY = 0;
+
+			if (!focus) return;
+			const svgElem = containerEl!.querySelector('svg');
+			if (svgElem) {
+				innerW = svgElem.clientWidth;
+				innerH = svgElem.clientHeight;
+			}
+
+			containerW = containerEl!.clientWidth;
+			containerH = containerEl!.clientHeight;
+
+			dragging = true;
 			startX = e.clientX - panX;
 			startY = e.clientY - panY;
 			(e.target as HTMLElement).setPointerCapture(e.pointerId);
 		},
-		onpointermove(e: PointerEvent) {
+		onpointermove(e) {
+			if (touchCount > 0) return;
 			deltaX += e.movementX;
 			deltaY += e.movementY;
 
-			if (!isDragging) return;
+			if (!dragging) return;
 			panX = e.clientX - startX;
 			panY = e.clientY - startY;
 		},
@@ -136,15 +203,15 @@
 			focus = false;
 		},
 		onpointercancel() {
-			isDragging = false;
+			dragging = false;
+		},
+		onpointerup() {
+			dragging = false;
 		},
 		onclick() {
 			if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < deadZone) {
 				focus = !focus;
 			}
-		},
-		onpointerup() {
-			isDragging = false;
 		}
 	};
 
@@ -173,10 +240,12 @@
 		</div>
 	{:else if svg}
 		<div
-			class="absolute inset-0 h-full w-full touch-none overflow-hidden select-none"
-			style="cursor: {isDragging ? 'grabbing' : 'grab'}"
+			class="absolute inset-0 h-full w-full cursor-grab overflow-hidden select-none data-dragging:cursor-grabbing data-focus:touch-none"
+			style="cursor: {dragging ? 'grabbing' : 'grab'}"
 			role="img"
 			tabindex="-1"
+			data-focus={focus ? '' : undefined}
+			data-dragging={dragging ? '' : undefined}
 			{...events}
 		>
 			<div
