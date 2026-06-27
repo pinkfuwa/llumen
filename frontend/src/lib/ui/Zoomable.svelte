@@ -149,6 +149,9 @@
 
 		if (!focused) return;
 
+		// Prevent sidebar swipe gesture (listens on document.body) from tracking
+		e.stopPropagation();
+
 		const t = sortedTouches(e.touches);
 
 		if (t.length >= 2) {
