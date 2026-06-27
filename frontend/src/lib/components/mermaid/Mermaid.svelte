@@ -26,7 +26,13 @@
 	let deltaX = 0;
 	let deltaY = 0;
 
-	const containerHeight = $derived('clamp(300px, 65dvh, 600px)');
+	let innerW = 0;
+	let innerH = 0;
+
+	let containerW = 0;
+	let containerH = 0;
+
+	const cssContainerHeight = $derived('clamp(300px, 65dvh, 600px)');
 
 	$effect(() => {
 		if (incremental) {
@@ -64,16 +70,25 @@
 		const id = requestAnimationFrame(() => {
 			const svgElem = el.querySelector('svg');
 			if (!svgElem) return;
-			const svgW = Number(svgElem.getAttribute('width')) || svgElem.clientWidth || 0;
-			const svgH = Number(svgElem.getAttribute('height')) || svgElem.clientHeight || 0;
-			const cw = el.clientWidth;
-			const ch = el.clientHeight;
-			const fit = Math.min(cw / (svgW || 1), ch / (svgH || 1), 2);
+			innerW = svgElem.clientWidth;
+			innerH = svgElem.clientHeight;
+			containerW = el.clientWidth;
+			containerH = el.clientHeight;
+			const fit = Math.min(containerW / (innerW || 1), containerH / (innerH || 1), 2);
 			zoom = Math.max(0.2, fit);
-			panX = (cw - svgW * fit) / 2;
-			panY = (ch - svgH * fit) / 2;
+			panX = (containerW - innerW * fit) / 2;
+			panY = (containerW - innerH * fit) / 2;
 		});
 		return () => cancelAnimationFrame(id);
+	});
+
+	$effect(() => {
+		function limitRange(value: number, min: number, max: number, gap: number): number {
+			return Math.max(min - gap, Math.min(max + gap, value));
+		}
+
+		panX = limitRange(panX, -innerW * zoom, containerW, -20);
+		panY = limitRange(panY, -innerH * zoom, containerH, -20);
 	});
 
 	let focus = $state(false);
@@ -95,6 +110,15 @@
 			deltaY = 0;
 
 			if (!focus) return;
+			const svgElem = containerEl!.querySelector('svg');
+			if (svgElem) {
+				innerW = svgElem.clientWidth;
+				innerH = svgElem.clientHeight;
+			}
+
+			containerW = containerEl!.clientWidth;
+			containerH = containerEl!.clientHeight;
+
 			isDragging = true;
 			startX = e.clientX - panX;
 			startY = e.clientY - panY;
@@ -114,7 +138,7 @@
 		onpointercancel() {
 			isDragging = false;
 		},
-		onpointerup(e) {
+		onpointerup() {
 			isDragging = false;
 			if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < deadZone) {
 				focus = !focus;
@@ -129,7 +153,7 @@
 <div
 	bind:this={containerEl}
 	class="relative overflow-hidden rounded-md border border-border bg-card p-2 data-focus:ring-4 data-focus:ring-ring"
-	style="height: {containerHeight}; {themeStyle}"
+	style="height: {cssContainerHeight}; {themeStyle}"
 	role="group"
 	data-focus={focus ? '' : undefined}
 >
