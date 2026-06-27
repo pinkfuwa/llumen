@@ -1,11 +1,9 @@
 <script lang="ts">
-	import './mermaid.css';
 	import { render } from './mermaid';
 	import { preference } from '$lib/preference/index.svelte';
 	import { t } from 'svelte-intl-precompile';
-	import Code from '../shiki/Code.svelte';
 	import Monochrome from '../shiki/Monochrome.svelte';
-	import { useThrottle } from '$lib/throttle.svelte';
+	import { getThemeStyle } from '../shiki/shiki';
 
 	let { text = '', incremental = false } = $props<{ text?: string; incremental?: boolean }>();
 
@@ -71,49 +69,56 @@
 		return () => cancelAnimationFrame(id);
 	});
 
-	function handleWheel(e: WheelEvent) {
-		e.preventDefault();
-		const newZoom = Math.max(0.2, Math.min(5, zoom * (1 + -e.deltaY * 0.001)));
-		const rect = containerEl!.getBoundingClientRect();
-		const mx = e.clientX - rect.left;
-		const my = e.clientY - rect.top;
-		panX = mx - ((mx - panX) / zoom) * newZoom;
-		panY = my - ((my - panY) / zoom) * newZoom;
-		zoom = newZoom;
-	}
+	import type { HTMLAttributes } from 'svelte/elements';
 
-	function handlePointerDown(e: PointerEvent) {
-		isDragging = true;
-		startX = e.clientX - panX;
-		startY = e.clientY - panY;
-		(e.target as HTMLElement).setPointerCapture(e.pointerId);
-	}
+	const events: Partial<HTMLAttributes<HTMLDivElement>> = {
+		onwheel(e: WheelEvent) {
+			e.preventDefault();
+			const newZoom = Math.max(0.2, Math.min(5, zoom * (1 + -e.deltaY * 0.001)));
+			const rect = containerEl!.getBoundingClientRect();
+			const mx = e.clientX - rect.left;
+			const my = e.clientY - rect.top;
+			panX = mx - ((mx - panX) / zoom) * newZoom;
+			panY = my - ((my - panY) / zoom) * newZoom;
+			zoom = newZoom;
+		},
+		onpointerdown(e: PointerEvent) {
+			isDragging = true;
+			startX = e.clientX - panX;
+			startY = e.clientY - panY;
+			(e.target as HTMLElement).setPointerCapture(e.pointerId);
+		},
+		onpointermove(e: PointerEvent) {
+			if (!isDragging) return;
+			panX = e.clientX - startX;
+			panY = e.clientY - startY;
+		},
+		onpointercancel() {
+			isDragging = false;
+		},
+		onpointerup() {
+			isDragging = false;
+		},
 
-	function handlePointerMove(e: PointerEvent) {
-		if (!isDragging) return;
-		panX = e.clientX - startX;
-		panY = e.clientY - startY;
-	}
+		ondblclick() {
+			zoom = 1;
+			panX = 0;
+			panY = 0;
+		}
+	};
 
-	function handlePointerUp() {
-		isDragging = false;
-	}
-
-	function handleDblClick() {
-		zoom = 1;
-		panX = 0;
-		panY = 0;
-	}
+	const displayText = $derived(incremental || (error == null && !svg));
+	const themeStyle = $derived(displayText ? getThemeStyle(preference.value.theme) : '');
 </script>
 
 <div
 	bind:this={containerEl}
-	class="mermaid-container rounded-md border border-border"
-	style="height: {containerHeight}"
+	class="relative overflow-hidden rounded-md border border-border bg-card p-2"
+	style="height: {containerHeight}; {themeStyle}"
 >
-	{#if incremental}
-		<div class="mermaid-scroll">
-			<Code {text} />
+	{#if displayText}
+		<div class="h-full overflow-y-auto">
+			<Monochrome {text} />
 		</div>
 	{:else if error != null}
 		<div class="flex h-full w-full flex-col items-center justify-center p-6">
@@ -124,26 +129,21 @@
 			</div>
 		</div>
 	{:else if svg}
-		<!-- svelte-ignore a11y_no_static_element_interactions a11y_no_noninteractive_tabindex -->
 		<div
-			class="mermaid-zoom-layer"
+			class="absolute inset-0 h-full w-full touch-none overflow-hidden select-none"
 			style="cursor: {isDragging ? 'grabbing' : 'grab'}"
 			role="img"
 			tabindex="-1"
-			onwheel={handleWheel}
-			onpointerdown={handlePointerDown}
-			onpointermove={handlePointerMove}
-			onpointerup={handlePointerUp}
-			onpointercancel={handlePointerUp}
-			ondblclick={handleDblClick}
+			{...events}
 		>
-			<div class="mermaid-svg" style="transform: translate({panX}px, {panY}px) scale({zoom})">
+			<div
+				class="pointer-events-none absolute top-0 left-0 h-full! origin-center"
+				style="transform: translate({panX}px, {panY}px) scale({zoom})"
+			>
 				{@html svg}
 			</div>
 		</div>
 	{:else}
-		<div class="mermaid-pending">
-			<Monochrome {text} />
-		</div>
+		<span>This is a bug</span>
 	{/if}
 </div>

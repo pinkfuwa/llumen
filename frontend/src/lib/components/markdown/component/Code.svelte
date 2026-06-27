@@ -24,7 +24,7 @@
 	{#if content.split('\n').length >= 2}
 		<Button
 			borderless
-			class=" absolute top-1 right-1 p-2 group-hover/codeblock:visible md:invisible"
+			class="absolute top-4 right-1 z-10 p-2 group-hover/codeblock:visible md:invisible"
 			onclick={() => copy(content)}
 		>
 			<ClipboardCopy class="h-6 w-6" />

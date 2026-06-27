@@ -26,10 +26,7 @@
 </script>
 
 {#if text.trim().length != 0}
-	<div
-		class="border-radius-md overflow-x-auto rounded-md border border-border p-2"
-		style={themeStyle}
-	>
+	<div class="overflow-x-auto rounded-md border border-border p-2" style={themeStyle}>
 		{#if lang === 'text'}
 			<Monochrome {text} />
 		{:else if incremental}
