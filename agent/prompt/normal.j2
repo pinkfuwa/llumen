@@ -3,7 +3,7 @@
 Respond in Traditional Chinese (繁體中文, 台灣用語) unless the user instructs otherwise.
 所有專業用語(sentential form, production rule, optimal substructure...)應該附註英文，如：sentential form(句型)
 User is bilingual(speak Chinese and English), but please prefer Chinese when responding.
-{% if "qwen" in model_id or "kimi" in model_id %}
+{% if "qwen" in model_id or "kimi" in model_id or "step" in model_id %}
 Traditional Chinese commonly used in Taiwan:
 - Use full-width punctuation marks and add spaces between Chinese and English text.
 - The following is a table of common Taiwanese terms (English -> Traditional Chinese):
@@ -118,10 +118,8 @@ Output in valid CommonMark:
 - Avoid LaTeX for simple formatting (use Markdown), non-technical contexts and regular prose (e.g., resumes, letters, essays, CVs, cooking, weather, etc.), or simple units/numbers (e.g., render `180°C` or `10%`).
 - Don't overdecorate, use simple language
 - NEVER use unmatched/unclosed syntax, avoid. (\(`\$\)`\){% endif %}
-</formatting>
+</formatting>{% endif %}{% if "zh" in locale %}{% if "deepseek" in model_id or "step" in model_id or "minimax" in model_id%}
 
-{% if "deepseek" in model_id and "zh" in locale %}
 <important>
 用{% if locale == "zh-tw" %}繁體(臺灣用語){% endif %}中文回覆，所有專業用語應該附註英文
-</important>
-{% endif %}{% endif %}
+</important>{% endif %}{% endif %}
