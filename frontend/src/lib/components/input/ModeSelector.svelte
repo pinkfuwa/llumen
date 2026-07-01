@@ -3,10 +3,10 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { t } from 'svelte-intl-precompile';
 	import { effective, overridingMode } from './state.svelte';
-	import { ChatMode as Mode } from '$lib/api/types';
+	import { ChatMode, ChatMode as Mode } from '$lib/api/types';
 
 	function setMode(nextMode: Mode) {
-		overridingMode.val = nextMode;
+		overridingMode.val = effective.mode == nextMode ? ChatMode.Normal : nextMode;
 	}
 
 	const searchDisabled = $derived(!effective.allowMode.search_enabled);
