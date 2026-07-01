@@ -80,6 +80,15 @@ describe('TOML Completion', () => {
 		expect(completionLabels(result)).toContain('false');
 	});
 
+	it('applies reasoning booleans bare and strings quoted', () => {
+		const result = getCompletions('[capability]\nreasoning = |');
+		const opts = result?.options ?? [];
+		const applyOf = (label: string) => opts.find((o) => o.label === label)?.apply ?? null;
+		expect(applyOf('true')).toBe('true');
+		expect(applyOf('false')).toBe('false');
+		expect(applyOf('high')).toBe('"high"');
+	});
+
 	it('supports media_gen table header and fields', () => {
 		const result = getCompletions('[media|');
 		expect(completionLabels(result)).toContain('[media_gen]');

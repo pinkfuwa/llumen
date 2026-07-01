@@ -64,11 +64,13 @@ function buildValueCompletionOptions(
 	info: string,
 	wrapInQuotes: boolean
 ): CompletionOption[] {
+	const isBooleanLiteral = (value: string) => value === 'true' || value === 'false';
+
 	return values.map((value) => ({
 		label: value,
-		type: value === 'true' || value === 'false' ? 'keyword' : 'variable',
+		type: isBooleanLiteral(value) ? 'keyword' : 'variable',
 		info,
-		apply: quoted || !wrapInQuotes ? value : `"${value}"`
+		apply: quoted || !wrapInQuotes || isBooleanLiteral(value) ? value : `"${value}"`
 	}));
 }
 
