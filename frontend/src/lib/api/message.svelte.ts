@@ -23,7 +23,7 @@ import type {
 import { displayError } from '$lib/error.svelte';
 import { untrack } from 'svelte';
 import { dev } from '$app/environment';
-import { chatrooms, currentRoom, getChatId } from './chatroom.svelte';
+import { currentRoom, getChatId, setRoomTitle } from './chatroom.svelte';
 import { token } from '$lib/rune.svelte';
 import type { MutationStatus } from '.';
 
@@ -199,8 +199,7 @@ const Handlers: {
 	},
 
 	title(data, chatId) {
-		// FIXME: binary search
-		chatrooms.val.find((e) => e.id === chatId)!.name = data;
+		setRoomTitle(chatId, data);
 		consumeDiscreteChunk();
 	},
 

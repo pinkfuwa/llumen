@@ -34,6 +34,7 @@ export const paginateElement = $state<{ val?: HTMLElement }>({ val: undefined })
 let leftExhausted = false;
 let rightExhausted = false;
 let paginateRunning = false;
+let roomRefreshSignal = $state(0);
 
 function findEntryIdx(arr: Entry[], id: number): number {
 	let lo = 0,
@@ -138,13 +139,26 @@ export function deleteEntry(id: number): Promise<MutationStatus> {
 	});
 }
 
+export function setRoomTitle(id: number, title: string) {
+	const idx = findEntryIdx(chatrooms.val, id);
+	if (idx < chatrooms.val.length && chatrooms.val[idx].id === id) {
+		chatrooms.val[idx].name = title;
+	}
+	if (id === getChatId() && currentRoom.val) {
+		currentRoom.val = { ...currentRoom.val, title };
+	}
+}
+
 export function syncEntry(id: number, title: string): Promise<MutationStatus> {
 	return APIFetch<ChatUpdateResp, ChatUpdateReq>({
 		path: 'chat/write',
 		body: { chat_id: id, title },
 		token: token.value?.value
 	}).then((resp) => {
-		if (resp?.wrote) return 'success' as MutationStatus;
+		if (resp?.wrote) {
+			setRoomTitle(id, title);
+			return 'success' as MutationStatus;
+		}
 		return 'failed' as MutationStatus;
 	});
 }
@@ -190,6 +204,7 @@ export function haltCompletion(params: { id: number }): Promise<unknown> {
 $effect.root(() => {
 	$effect(() => {
 		const chatId = getChatId();
+		void roomRefreshSignal;
 		if (chatId === undefined) return;
 
 		let stopped = false;
@@ -200,7 +215,9 @@ $effect.root(() => {
 			token: true,
 			retry: true
 		}).then((resp) => {
-			if (!stopped && resp) currentRoom.val = resp;
+			if (stopped || !resp) return;
+			currentRoom.val = resp;
+			if (resp.title !== undefined) setRoomTitle(chatId, resp.title);
 		});
 
 		return () => {
@@ -222,6 +239,7 @@ $effect.root(() => {
 			if (element && token_) {
 				ensurePaginated(element, token_);
 			}
+			roomRefreshSignal++;
 		}
 	});
 });

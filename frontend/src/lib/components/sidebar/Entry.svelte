@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Trash2, OctagonX } from '@lucide/svelte';
 	import Button from '$lib/ui/Button.svelte';
-	import { deleteEntry, syncEntry, type MutationStatus } from '$lib/api';
+	import { deleteEntry, syncEntry, currentRoom, type MutationStatus } from '$lib/api';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { t } from 'svelte-intl-precompile';
@@ -14,8 +14,16 @@
 	let status = $state<MutationStatus>('untried');
 	let disabled = $derived(status == 'pending');
 
+	let wasSelected = false;
 	$effect(() => {
 		if (name.trim().length == 0) name = $t('chat.default_title');
+	});
+	$effect(() => {
+		if (selected && !wasSelected) {
+			const title = currentRoom.val?.title;
+			if (title !== undefined && title !== name) name = title;
+		}
+		wasSelected = selected;
 	});
 </script>
 

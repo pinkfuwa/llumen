@@ -11,6 +11,7 @@ export {
 	createRoom,
 	deleteEntry,
 	syncEntry,
+	setRoomTitle,
 	haltCompletion,
 	type Entry as Chatroom
 } from './chatroom.svelte';
