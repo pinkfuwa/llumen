@@ -1,22 +1,23 @@
 <script lang="ts">
-	import { currentRoom } from '$lib/api';
+	import { chatrooms } from '$lib/api';
 	import { MessageInput, sidebarOpen, Minimap } from '$lib/components';
 	import MessagePagination from '$lib/components/message/Pagination.svelte';
 	import Hallucination from '$lib/components/common/Hallucination.svelte';
 	import { messagesElement } from '$lib/api';
+	import { page } from '$app/state';
 	import { t } from 'svelte-intl-precompile';
+
+	let title = $derived.by(() => {
+		const id = page.params.id;
+		if (!id) return $t('chat.title');
+		return chatrooms.val.find((e) => e.id === Number(id))?.name ?? $t('chat.title');
+	});
 </script>
 
 <svelte:head>
-	{#if currentRoom.val && currentRoom.val?.title}
-		<title>
-			{currentRoom.val.title}
-		</title>
-	{:else}
-		<title>
-			{$t('chat.title')}
-		</title>
-	{/if}
+	<title>
+		{title}
+	</title>
 </svelte:head>
 
 <Hallucination />

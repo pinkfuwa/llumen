@@ -64,7 +64,7 @@
 		{#if streaming.val}
 			<Stop />
 		{:else}
-			<Send onclick={submit} />
+			<Send onclick={submit} disabled={!effective.roomLoaded} />
 		{/if}
 	</div>
 	<div class="flex flex-row items-center justify-between">

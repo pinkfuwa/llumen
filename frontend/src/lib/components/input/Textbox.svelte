@@ -4,7 +4,7 @@
 	import { onDestroy } from 'svelte';
 	import { shouldSubmitOnEnter } from './submitOnEnter.svelte';
 	import { stringWidthWithWrap } from '$lib/string-width';
-	import { inputContent, isEditing, submitting } from './state.svelte';
+	import { inputContent, isEditing, submitting, effective } from './state.svelte';
 	import { submit } from './state.svelte';
 	import { streaming } from '$lib/api';
 
@@ -20,7 +20,7 @@
 		placeholder?: string;
 	} = $props();
 
-	let disabled = $derived(submitting.val || streaming.val);
+	let disabled = $derived(submitting.val || streaming.val || !effective.roomLoaded);
 
 	$effect(() => {
 		if (!input) return;

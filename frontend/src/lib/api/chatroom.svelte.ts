@@ -35,6 +35,7 @@ let leftExhausted = false;
 let rightExhausted = false;
 let paginateRunning = false;
 let roomRefreshSignal = $state(0);
+let lastFetchedChatId: number | undefined;
 
 function findEntryIdx(arr: Entry[], id: number): number {
 	let lo = 0,
@@ -206,6 +207,11 @@ $effect.root(() => {
 		const chatId = getChatId();
 		void roomRefreshSignal;
 		if (chatId === undefined) return;
+
+		if (chatId !== lastFetchedChatId) {
+			currentRoom.val = undefined;
+			lastFetchedChatId = chatId;
+		}
 
 		let stopped = false;
 

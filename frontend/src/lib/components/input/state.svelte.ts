@@ -33,6 +33,7 @@ export const allowedUnsupportedFiles = $state<{ val: File[] }>({ val: [] });
 export const isEditing = $state({ val: true });
 
 export class InputState {
+	roomLoaded = $derived(page.route.id === '/chat/new' || currentRoom.val !== undefined);
 	modelId = $derived.by(() => {
 		const ov = overridingModelId.val;
 		if (ov !== undefined) return ov;
@@ -130,6 +131,7 @@ export function onModeChange(newMode: ChatMode) {
 export async function submit() {
 	if (submitting.val) return;
 	if (streaming.val) return;
+	if (!effective.roomLoaded) return;
 	if (effective.modelId == null) return;
 	if (inputContent.val === '' && inputFiles.val.length === 0) return;
 
