@@ -78,7 +78,7 @@ fn detect_audio_format(data: &[u8], mime_type: Option<&str>, name: &str) -> Opti
     }
 }
 
-fn detect_image_format(data: &[u8]) -> Option<String> {
+pub(super) fn detect_image_format(data: &[u8]) -> Option<String> {
     if infer::image::is_png(data) {
         Some("png".to_string())
     } else if infer::image::is_jpeg(data) {
@@ -888,4 +888,51 @@ pub struct ImageGenApiResponse {
     pub data: Vec<ImageGenApiData>,
     #[serde(default)]
     pub error: Option<ErrorInfo>,
+}
+
+#[derive(Default, stream_json::IntoSerializer)]
+pub struct OpenrouterImageGenReq {
+    pub model: String,
+    pub prompt: String,
+    #[stream(skip_serialize_if = "Option::is_none")]
+    pub aspect_ratio: Option<String>,
+    #[stream(skip_serialize_if = "Vec::is_empty")]
+    pub input_references: Vec<OpenrouterImageInputRef>,
+}
+
+#[derive(stream_json::IntoSerializer)]
+pub struct OpenrouterImageInputRef {
+    pub image_url: OpenrouterImageInputUrl,
+}
+
+#[derive(stream_json::IntoSerializer)]
+pub struct OpenrouterImageInputUrl {
+    pub url: Base64EmbedURL<BlobReader>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OpenrouterImageGenResponse {
+    #[serde(default)]
+    pub data: Vec<OpenrouterImageGenData>,
+    #[serde(default)]
+    pub usage: Option<OpenrouterImageUsage>,
+    #[serde(default)]
+    pub error: Option<ErrorInfo>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OpenrouterImageGenData {
+    pub b64_json: String,
+    #[serde(default)]
+    pub media_type: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OpenrouterImageUsage {
+    #[serde(default)]
+    pub total_tokens: i64,
+    #[serde(default)]
+    pub cost: Option<f64>,
+    #[serde(default)]
+    pub cost_details: Option<DetailCost>,
 }

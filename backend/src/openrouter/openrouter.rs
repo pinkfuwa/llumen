@@ -207,7 +207,9 @@ impl Openrouter {
         reference_images: Vec<File>,
         aspect_ratio: AspectRatio,
     ) -> Result<super::ImageGenOutput, Error> {
-        self.listing.ensure(&model_id).await?;
+        if !self.is_custom_api {
+            self.listing.ensure(&model_id).await?;
+        }
         self.image_gen
             .generate(
                 &self.listing,

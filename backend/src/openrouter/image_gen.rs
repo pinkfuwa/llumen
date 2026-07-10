@@ -1,10 +1,11 @@
-//! Image generation via OpenRouter or native `/v1/images/generations`.
+//! Image generation via OpenRouter `/v1/images` or OpenAI-compatible
+//! `/v1/images/generations`.
 
 use super::listing::ModelListing;
-use super::message::{File, GeneratedImage, Message};
+use super::message::{File, GeneratedImage};
 use super::raw;
 use super::Error;
-use stream_json::IntoSerializer;
+use stream_json::{Base64EmbedURL, IntoSerializer};
 
 /// Supported image aspect ratios as width:height dimension pairs.
 #[derive(Debug, Clone, Copy)]
@@ -56,23 +57,19 @@ pub struct ImageGenOutput {
 
 #[derive(Clone)]
 pub enum ImageGenEndpoint {
-    /// endpoint used by openrouter
-    ChatCompletion(String),
+    /// OpenRouter dedicated image endpoint (`/v1/images`).
+    OpenrouterImage(String),
+    /// OpenAI-compatible image generation endpoint (`/v1/images/generations`).
     ImageGeneration(String),
 }
 
 impl ImageGenEndpoint {
     pub fn from_base_url(base_url: &str, is_custom_api: bool) -> Self {
+        let base = base_url.trim_end_matches('/');
         if is_custom_api {
-            ImageGenEndpoint::ImageGeneration(format!(
-                "{}/v1/images/generations",
-                base_url.trim_end_matches('/')
-            ))
+            ImageGenEndpoint::ImageGeneration(format!("{base}/v1/images/generations"))
         } else {
-            ImageGenEndpoint::ChatCompletion(format!(
-                "{}/v1/chat/completions",
-                base_url.trim_end_matches('/')
-            ))
+            ImageGenEndpoint::OpenrouterImage(format!("{base}/v1/images"))
         }
     }
 }
@@ -93,21 +90,42 @@ impl ImageGenClient {
         }
     }
 
-    fn completion_body(req: raw::CompletionReq) -> (Option<usize>, reqwest::Body) {
+    fn completion_body(req: raw::OpenrouterImageGenReq) -> (Option<usize>, reqwest::Body) {
         let size = req.size();
         let body = reqwest::Body::wrap_stream(req.into_stream());
         (size, body)
     }
 
-    fn build_message(prompt: String, reference_images: Vec<File>) -> Message {
-        if reference_images.is_empty() {
-            Message::User(prompt)
-        } else {
-            Message::MultipartUser {
-                text: prompt,
-                files: reference_images,
-            }
-        }
+    fn map_reference_image(file: File) -> Result<raw::OpenrouterImageInputRef, Error> {
+        let File {
+            data,
+            mime_type,
+            name: _,
+        } = file;
+        let data_len = data.len();
+
+        let mime = mime_type
+            .as_deref()
+            .and_then(|m| {
+                let lower = m.to_ascii_lowercase();
+                if lower.starts_with("image/") {
+                    Some(lower)
+                } else {
+                    None
+                }
+            })
+            .or_else(|| {
+                super::raw::detect_image_format(data.as_ref()).map(|f| format!("image/{f}"))
+            })
+            .unwrap_or_else(|| "image/png".to_string());
+
+        let embed_file = Base64EmbedURL::new(data, data_len, mime).map_err(|_| {
+            Error::Incompatible("Failed to encode image reference for image generation")
+        })?;
+
+        Ok(raw::OpenrouterImageInputRef {
+            image_url: raw::OpenrouterImageInputUrl { url: embed_file },
+        })
     }
 
     pub(super) async fn send_image_gen_request(
@@ -163,7 +181,7 @@ impl ImageGenClient {
         })
     }
 
-    async fn send_complete_request(
+    async fn send_openrouter_image_request(
         &self,
         listing: &ModelListing,
         model_id: String,
@@ -188,28 +206,16 @@ impl ImageGenClient {
             return Err(Error::ImageGenReferenceImagesNotSupported);
         }
 
-        let message = Self::build_message(prompt, reference_images);
-        let raw_message = message.to_raw_message(&model_id, &capability);
+        let input_references = reference_images
+            .into_iter()
+            .map(Self::map_reference_image)
+            .collect::<Result<Vec<_>, Error>>()?;
 
-        let request = raw::CompletionReq {
+        let request = raw::OpenrouterImageGenReq {
             model: model_id,
-            messages: vec![raw_message],
-            stream: false,
-            temperature: None,
-            repeat_penalty: None,
-            top_k: None,
-            top_p: None,
-            max_tokens: None,
-            tools: Vec::new(),
-            plugins: Vec::new(),
-            usage: Some(raw::UsageReq { include: true }),
-            response_format: None,
-            reasoning: raw::Reasoning::default(),
-            modalities: vec!["image".to_string()],
-            session_id: None,
-            image_config: Some(serde_json::json!({
-                "aspect_ratio": aspect_ratio.as_str(),
-            })),
+            prompt,
+            aspect_ratio: Some(aspect_ratio.as_str().to_string()),
+            input_references,
         };
 
         let (content_length, body) = Self::completion_body(request);
@@ -225,43 +231,31 @@ impl ImageGenClient {
         }
 
         let res = req_builder.body(body).send().await.map_err(Error::Http)?;
-        let json = res
-            .json::<raw::CompletionResponse>()
-            .await
-            .map_err(Error::Http)?;
+        let json: raw::OpenrouterImageGenResponse = res.json().await.map_err(Error::Http)?;
 
         if let Some(error) = json.error {
             return Err(Error::from(error));
         }
 
-        let (token, price) = json
+        let (price, token) = json
             .usage
             .map(|usage| {
-                (
-                    usage.total_tokens,
-                    usage
-                        .cost_details
-                        .and_then(|details| details.upstream_inference_cost)
-                        .unwrap_or(usage.cost),
-                )
+                let cost = usage
+                    .cost_details
+                    .and_then(|details| details.upstream_inference_cost)
+                    .unwrap_or(usage.cost.unwrap_or(0.0));
+                (cost, usage.total_tokens as usize)
             })
             .unwrap_or_default();
 
-        let choice =
-            json.choices
-                .unwrap_or_default()
-                .into_iter()
-                .next()
-                .ok_or(Error::MalformedResponse(
-                    "No choices in completion response",
-                ))?;
-
-        let images = choice
-            .message
-            .images
+        let images = json
+            .data
             .into_iter()
-            .map(GeneratedImage::from_raw_image)
-            .collect::<Result<Vec<_>, _>>()?;
+            .map(|item| {
+                let mime_type = item.media_type.unwrap_or("image/png".to_string());
+                GeneratedImage::from_b64_json(item.b64_json, mime_type)
+            })
+            .collect::<Result<Vec<_>, Error>>()?;
 
         if images.is_empty() {
             return Err(Error::ImageGenNoImagesInResponse);
@@ -269,17 +263,17 @@ impl ImageGenClient {
 
         Ok(ImageGenOutput {
             images,
-            text: choice.message.content,
+            text: None,
             price,
-            token: token.unwrap_or_default() as usize,
+            token,
         })
     }
 
-    /// Generate a image
+    /// Generate an image.
     ///
-    /// when openrouter router is used, request route to chat completions with
-    /// modality. otherwise, request route to the OpenAI-compatible image
-    /// endpoint directly.
+    /// When using OpenRouter, requests are sent to the dedicated `/v1/images`
+    /// endpoint. For custom (OpenAI-compatible) APIs, requests go to
+    /// `/v1/images/generations`.
     pub async fn generate(
         &self,
         listing: &ModelListing,
@@ -289,8 +283,8 @@ impl ImageGenClient {
         aspect_ratio: AspectRatio,
     ) -> Result<ImageGenOutput, Error> {
         match &self.endpoint {
-            ImageGenEndpoint::ChatCompletion(url) => {
-                self.send_complete_request(
+            ImageGenEndpoint::OpenrouterImage(url) => {
+                self.send_openrouter_image_request(
                     listing,
                     model_id,
                     prompt,
