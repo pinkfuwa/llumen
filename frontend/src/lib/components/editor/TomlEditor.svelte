@@ -132,6 +132,10 @@
 		if (['ArrowUp', 'ArrowDown', 'Enter', 'Tab', 'Escape'].includes(e.key)) {
 			e.preventDefault();
 		}
+		if (e.key === 'Escape') {
+			e.stopPropagation();
+			closeAutocomplete();
+		}
 	}
 
 	function selectOption(opt: CompletionOption) {
