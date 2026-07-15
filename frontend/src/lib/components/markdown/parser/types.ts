@@ -67,6 +67,7 @@ export interface Parser {
 	table_state: number;
 	eq_open: number;
 	maybe_link_text: string;
+	maybe_link_start: number;
 	pos: number;
 }
 

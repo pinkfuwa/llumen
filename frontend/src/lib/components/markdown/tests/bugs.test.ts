@@ -9,6 +9,7 @@ import type {
 	TableRowNode,
 	TableCellNode,
 	LatexBlockNode,
+	LinkNode,
 	AstNode
 } from '../parser/types';
 
@@ -463,5 +464,92 @@ describe('latex delimiter matching', () => {
 		expect((children[2] as TextNode).content).toBe(' c ');
 		expect(children[3].type).toBe(AstNodeType.LatexInline);
 		expect((children[3] as any).content).toBe(' d ');
+	});
+});
+
+describe('regression: MAYBE_LINK source offsets', () => {
+	function firstText(nodes: AstNode[]): TextNode | undefined {
+		for (const n of nodes) {
+			if (n.type === AstNodeType.Text) return n as TextNode;
+			if (n.children) {
+				const t = firstText(n.children);
+				if (t) return t;
+			}
+		}
+		return undefined;
+	}
+
+	it('footnote-style [^1]: emits text starting at source position 0', () => {
+		const src = '[^1]: GitHub repository';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const text = para.children!.find((c) => c.type === AstNodeType.Text) as TextNode;
+		expect(text.start).toBe(0);
+		const idx = text.content.indexOf('GitHub');
+		expect(src.slice(text.start + idx, text.start + idx + 'GitHub'.length)).toBe('GitHub');
+	});
+
+	it('offsets map a mid-text selection back to the correct source span', () => {
+		const src = '[^1]: GitHub repository';
+		const nodes = parseSync(src);
+		const text = firstText(nodes)!;
+		const word = 'GitHub';
+		const idx = text.content.indexOf(word);
+		const start = text.start + idx;
+		const end = start + word.length;
+		expect(src.slice(start, end)).toBe(word);
+	});
+
+	it('preserves correct offsets when [ is not at the start of the line', () => {
+		const src = 'pre [^1]: GitHub repository';
+		const nodes = parseSync(src);
+		const text = firstText(nodes)!;
+		expect(text.start).toBe(0);
+		const idx = text.content.indexOf('GitHub');
+		expect(src.slice(text.start + idx, text.start + idx + 'GitHub'.length)).toBe('GitHub');
+	});
+
+	it('real link [foo](url) has Link.start and inner text at correct positions', () => {
+		const src = '[foo](http://x) GitHub';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const link = para.children!.find((c) => c.type === AstNodeType.Link) as LinkNode;
+		expect(link.start).toBe(0);
+		const linkText = link.children!.find((c) => c.type === AstNodeType.Text) as TextNode;
+		expect(linkText.start).toBe(1);
+		expect(linkText.content).toBe('foo');
+		expect(src.slice(linkText.start, linkText.start + 'foo'.length)).toBe('foo');
+	});
+
+	it('real link with prefix keeps Link relative to its real source position', () => {
+		const src = 'x [foo](u) y';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const link = para.children!.find((c) => c.type === AstNodeType.Link) as LinkNode;
+		expect(link.start).toBe(2);
+		const linkText = link.children!.find((c) => c.type === AstNodeType.Text) as TextNode;
+		expect(linkText.start).toBe(3);
+		expect(src.slice(linkText.start, linkText.start + 'foo'.length)).toBe('foo');
+	});
+
+	it('abandoned [ across newline keeps all literal chars (does not drop pending)', () => {
+		const src = '[^1\nnext';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const first = para.children![0] as TextNode;
+		expect(first.type).toBe(AstNodeType.Text);
+		expect(first.start).toBe(0);
+		expect(first.content).toBe('[^1');
+		expect(src.slice(first.start, first.start + first.content.length)).toBe('[^1');
+	});
+
+	it('closed-but-not-link [^1] keeps literal text at position 0', () => {
+		const src = '[^1]\nnext';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const first = para.children![0] as TextNode;
+		expect(first.start).toBe(0);
+		expect(first.content).toBe('[^1]');
+		expect(src.slice(first.start, first.start + first.content.length)).toBe('[^1]');
 	});
 });

@@ -107,6 +107,7 @@ export function parser(renderer: Renderer): Parser {
 		table_state: 0,
 		eq_open: 0,
 		maybe_link_text: '',
+		maybe_link_start: 0,
 		pos: 0
 	};
 }
@@ -879,25 +880,42 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 				if (']' === p.pending) {
 					if ('(' === char) {
 						const saved = p.maybe_link_text;
+						const len = saved.length;
+						const start = p.maybe_link_start;
+						p.maybe_link_start = 0;
 						p.token = p.tokens[p.len];
 						p.pending = '';
+						p.pos = start;
+						p.renderer.data.pos = start;
 						add_token(p, LINK);
+						p.pos = start + 1 + len;
 						parser_write(p, saved, true);
 						p.text += p.pending;
 						p.pending = '';
+						p.renderer.data.pos = start + 1 + len;
 						add_text(p);
+						p.pos = start + len + 3;
 						p.pending = '](';
 					} else {
+						const len = p.maybe_link_text.length;
+						const start = p.maybe_link_start;
+						p.maybe_link_start = 0;
+						p.pending = '';
+						p.renderer.data.pos = start + 1;
 						p.text = '[';
 						add_text(p);
 						p.token = p.tokens[p.len];
-						p.pending = '';
+						p.pos = start + 1 + len;
 						parser_write(p, p.maybe_link_text, true);
 						p.text += p.pending;
 						p.pending = '';
+						p.renderer.data.pos = start + 1 + len;
 						add_text(p);
+						p.renderer.data.pos = start + 1 + len + 1;
 						p.text = ']';
 						add_text(p);
+						p.pos = start + len + 3;
+						p.renderer.data.pos = start + len + 2;
 						parser_write(p, char, true);
 					}
 					continue;
@@ -908,14 +926,23 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 					continue;
 				}
 				if ('\n' === char) {
+					const len = p.maybe_link_text.length;
+					const start = p.maybe_link_start;
+					p.maybe_link_start = 0;
+					const held = p.pending;
 					p.token = p.tokens[p.len];
 					p.pending = '';
+					p.renderer.data.pos = start + 1;
 					p.text = '[';
 					add_text(p);
-					parser_write(p, p.maybe_link_text + p.text, true);
+					p.pos = start + 1 + len + 1;
+					parser_write(p, p.maybe_link_text + held, true);
 					p.text += p.pending;
 					p.pending = '';
+					p.renderer.data.pos = start + 1 + len + 1;
 					add_text(p);
+					p.pos = start + len + 3;
+					p.renderer.data.pos = start + len + 2;
 					parser_write(p, char, true);
 					continue;
 				}
@@ -1232,6 +1259,7 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 					']' !== char
 				) {
 					add_text(p);
+					p.maybe_link_start = p.renderer.data.pos - 1;
 					p.token = MAYBE_LINK;
 					p.maybe_link_text = '';
 					p.pending = char;
