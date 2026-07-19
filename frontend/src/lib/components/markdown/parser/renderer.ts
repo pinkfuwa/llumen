@@ -32,11 +32,14 @@ import {
 	EQUATION_BLOCK_DOLLAR,
 	EQUATION_BLOCK_BRACKET,
 	EQUATION_INLINE,
+	FOOTNOTE_REF,
+	FOOTNOTE_DEF,
 	HREF,
 	SRC,
 	LANG,
 	START,
 	CHECKED,
+	LABEL,
 	type Renderer,
 	type RendererData
 } from './types';
@@ -45,7 +48,9 @@ import {
 	type AstNode,
 	type HeadingNode,
 	type CodeBlockNode,
-	type TextNode
+	type TextNode,
+	type FootnoteRefNode,
+	type FootnoteDefNode
 } from './types';
 import { parser, parser_write, parser_end, heading_to_level } from './smd';
 
@@ -59,6 +64,7 @@ interface StackEntry {
 	url?: string;
 	start?: number;
 	checked?: boolean;
+	label?: string;
 	rowCount: number;
 	closed: boolean;
 }
@@ -134,6 +140,10 @@ function tokenToNodeType(token: number): AstNodeType {
 			return AstNodeType.LatexBlock;
 		case EQUATION_INLINE:
 			return AstNodeType.LatexInline;
+		case FOOTNOTE_REF:
+			return AstNodeType.FootnoteRef;
+		case FOOTNOTE_DEF:
+			return AstNodeType.FootnoteDef;
 		case CHECKBOX:
 			return AstNodeType.Text;
 		default:
@@ -177,6 +187,14 @@ function finalizeNodeInPlace(entry: StackEntry): void {
 		}
 		case AstNodeType.Link: {
 			(node as any).url = entry.url || '#';
+			break;
+		}
+		case AstNodeType.FootnoteRef: {
+			(node as FootnoteRefNode).label = entry.label || '';
+			break;
+		}
+		case AstNodeType.FootnoteDef: {
+			(node as FootnoteDefNode).label = entry.label || '';
 			break;
 		}
 		case AstNodeType.LatexBlock:
@@ -316,6 +334,9 @@ export function createAstRenderer(rootChildren: AstNode[] = []): {
 					break;
 				case CHECKED:
 					current.checked = true;
+					break;
+				case LABEL:
+					current.label = value;
 					break;
 			}
 		}

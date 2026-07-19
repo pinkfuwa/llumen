@@ -10,6 +10,8 @@ import type {
 	TableCellNode,
 	LatexBlockNode,
 	LinkNode,
+	FootnoteRefNode,
+	FootnoteDefNode,
 	AstNode
 } from '../parser/types';
 
@@ -479,12 +481,15 @@ describe('regression: MAYBE_LINK source offsets', () => {
 		return undefined;
 	}
 
-	it('footnote-style [^1]: emits text starting at source position 0', () => {
+	it('footnote-style [^1]: emits FootnoteDef at source position 0', () => {
 		const src = '[^1]: GitHub repository';
 		const nodes = parseSync(src);
 		const para = nodes[0] as ParagraphNode;
+		const def = para.children!.find((c) => c.type === AstNodeType.FootnoteDef) as FootnoteDefNode;
+		expect(def.start).toBe(0);
+		expect(def.label).toBe('1');
+		expect(src.slice(def.start, def.end)).toBe('[^1]:');
 		const text = para.children!.find((c) => c.type === AstNodeType.Text) as TextNode;
-		expect(text.start).toBe(0);
 		const idx = text.content.indexOf('GitHub');
 		expect(src.slice(text.start + idx, text.start + idx + 'GitHub'.length)).toBe('GitHub');
 	});
@@ -503,8 +508,14 @@ describe('regression: MAYBE_LINK source offsets', () => {
 	it('preserves correct offsets when [ is not at the start of the line', () => {
 		const src = 'pre [^1]: GitHub repository';
 		const nodes = parseSync(src);
-		const text = firstText(nodes)!;
-		expect(text.start).toBe(0);
+		const def = (nodes[0] as ParagraphNode).children!.find(
+			(c) => c.type === AstNodeType.FootnoteDef
+		) as FootnoteDefNode;
+		expect(def.start).toBe(4);
+		expect(def.label).toBe('1');
+		const text = (nodes[0] as ParagraphNode).children!.find(
+			(c) => c.type === AstNodeType.Text && (c as TextNode).content.includes('GitHub')
+		) as TextNode;
 		const idx = text.content.indexOf('GitHub');
 		expect(src.slice(text.start + idx, text.start + idx + 'GitHub'.length)).toBe('GitHub');
 	});
@@ -543,13 +554,124 @@ describe('regression: MAYBE_LINK source offsets', () => {
 		expect(src.slice(first.start, first.start + first.content.length)).toBe('[^1');
 	});
 
-	it('closed-but-not-link [^1] keeps literal text at position 0', () => {
+	it('closed-but-not-link [^1] parses as FootnoteRef at position 0', () => {
 		const src = '[^1]\nnext';
 		const nodes = parseSync(src);
 		const para = nodes[0] as ParagraphNode;
-		const first = para.children![0] as TextNode;
+		const first = para.children![0] as FootnoteRefNode;
+		expect(first.type).toBe(AstNodeType.FootnoteRef);
 		expect(first.start).toBe(0);
-		expect(first.content).toBe('[^1]');
-		expect(src.slice(first.start, first.start + first.content.length)).toBe('[^1]');
+		expect(first.label).toBe('1');
+		expect(src.slice(first.start, first.end)).toBe('[^1]');
+	});
+});
+
+describe('regression: footnote parsing', () => {
+	it('inline [^id] reference produces a FootnoteRef with the id', () => {
+		const src = 'See [^foo] here.';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const ref = para.children!.find((c) => c.type === AstNodeType.FootnoteRef) as FootnoteRefNode;
+		expect(ref).toBeDefined();
+		expect(ref.label).toBe('foo');
+		expect(ref.start).toBe(4);
+		expect(ref.end).toBe(10);
+		expect(src.slice(ref.start, ref.end)).toBe('[^foo]');
+	});
+
+	it('definition [^id]: produces a FootnoteDef consuming the colon', () => {
+		const src = '[^bar]: the definition';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const def = para.children!.find((c) => c.type === AstNodeType.FootnoteDef) as FootnoteDefNode;
+		expect(def).toBeDefined();
+		expect(def.label).toBe('bar');
+		expect(src.slice(def.start, def.end)).toBe('[^bar]:');
+		const text = para.children!.find((c) => c.type === AstNodeType.Text) as TextNode;
+		expect(text.content.startsWith(' ')).toBe(true);
+		expect(text.content.trim()).toBe('the definition');
+	});
+
+	it('empty [^] falls back to literal text, not a footnote', () => {
+		const src = 'x [^] y';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const hasRef = para.children!.some((c) => c.type === AstNodeType.FootnoteRef);
+		const hasDef = para.children!.some((c) => c.type === AstNodeType.FootnoteDef);
+		expect(hasRef).toBe(false);
+		expect(hasDef).toBe(false);
+		const text = flattenText(para.children!);
+		expect(text).toBe('x [^] y');
+	});
+
+	it('abandoned footnote [^id across newline keeps literal chars', () => {
+		const src = '[^id\nnext';
+		const nodes = parseSync(src);
+		const para = nodes[0] as ParagraphNode;
+		const first = para.children![0] as TextNode;
+		expect(first.type).toBe(AstNodeType.Text);
+		expect(first.content).toBe('[^id');
+		expect(src.slice(first.start, first.start + first.content.length)).toBe('[^id');
+	});
+
+	it('[^ at EOF keeps literal chars (does not drop)', () => {
+		const src = 'text [^';
+		const nodes = parseSync(src);
+		expect(flattenText(nodes)).toBe('text [^');
+	});
+
+	it('text after a FootnoteRef maps selection back to the correct source span', () => {
+		const src = ' [^1] Github ';
+		const nodes = parseSync(src + '\n');
+		const para = nodes[0] as ParagraphNode;
+		expect(para.start).toBe(1);
+		const text = para.children!.find((c) => c.type === AstNodeType.Text) as TextNode;
+		const idx = text.content.indexOf('Github');
+		const start = text.start + idx;
+		const end = start + 'Github'.length;
+		expect(src.slice(start, end)).toBe('Github');
+	});
+
+	it('footnote definition: every char maps to correct source (real-world input)', () => {
+		const src =
+			'[^1]: GitHub repository：ShiYu0318/RAGency，專案 README、Testing、RAG design 與 Evaluation sections。  ';
+		const nodes = parseSync(src + '\n');
+		const allText: TextNode[] = [];
+		function collect(nodes: AstNode[]) {
+			for (const n of nodes) {
+				if (n.type === AstNodeType.Text) allText.push(n as TextNode);
+				if (n.children) collect(n.children);
+			}
+		}
+		collect(nodes);
+		for (const text of allText) {
+			for (let i = 0; i < text.content.length; i++) {
+				const sourcePos = text.start + i;
+				expect(src[sourcePos]).toBe(text.content[i]);
+			}
+		}
+	});
+
+	it('selecting "thub" after a FootnoteRef copies "thub" not "hub"', () => {
+		const src = ' [^1] Github ';
+		const nodes = parseSync(src + '\n');
+		const para = nodes[0] as ParagraphNode;
+		const text = para.children!.find((c) => c.type === AstNodeType.Text) as TextNode;
+		// "thub" starts at index 2 in " Github "
+		const idx = text.content.indexOf('thub');
+		const start = text.start + idx;
+		const end = start + 'thub'.length;
+		expect(src.slice(start, end)).toBe('thub');
+	});
+
+	it('every character in text after FootnoteRef maps to the correct source position', () => {
+		const src = ' [^1] Github ';
+		const nodes = parseSync(src + '\n');
+		const para = nodes[0] as ParagraphNode;
+		const text = para.children!.find((c) => c.type === AstNodeType.Text) as TextNode;
+		for (let i = 0; i < text.content.length; i++) {
+			const sourcePos = text.start + i;
+			expect(src[sourcePos]).toBe(text.content[i]);
+		}
 	});
 });

@@ -12,7 +12,9 @@
 		type InlineCodeNode,
 		type LinkNode,
 		type ImageNode,
-		type TextNode
+		type TextNode,
+		type FootnoteRefNode,
+		type FootnoteDefNode
 	} from './parser/types';
 
 	import Blockquote from './component/Blockquote.svelte';
@@ -20,6 +22,8 @@
 	import Code from './component/Code.svelte';
 	import Codespan from './component/Codespan.svelte';
 	import Del from './component/Del.svelte';
+	import FootnoteDef from './component/FootnoteDef.svelte';
+	import FootnoteRef from './component/FootnoteRef.svelte';
 	import Heading from './component/Heading.svelte';
 	import Hr from './component/Hr.svelte';
 	import Image from './component/Image.svelte';
@@ -107,6 +111,10 @@
 			</Link>
 		{:else if node.type === AstNodeType.Image}
 			<Image node={node as ImageNode} />
+		{:else if node.type === AstNodeType.FootnoteRef}
+			<FootnoteRef node={node as FootnoteRefNode} />
+		{:else if node.type === AstNodeType.FootnoteDef}
+			<FootnoteDef node={node as FootnoteDefNode} />
 		{:else if node.type === AstNodeType.LineBreak}
 			<Br />
 		{:else if node.type === AstNodeType.Text}

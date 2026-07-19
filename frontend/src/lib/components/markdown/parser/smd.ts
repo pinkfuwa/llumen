@@ -32,17 +32,21 @@ import {
 	EQUATION_BLOCK_DOLLAR,
 	EQUATION_BLOCK_BRACKET,
 	EQUATION_INLINE,
+	FOOTNOTE_REF,
+	FOOTNOTE_DEF,
 	NEWLINE,
 	MAYBE_URL,
 	MAYBE_TASK,
 	MAYBE_BR,
 	MAYBE_EQ_BLOCK,
 	MAYBE_LINK,
+	MAYBE_FOOTNOTE,
 	HREF,
 	SRC,
 	LANG,
 	CHECKED,
 	START,
+	LABEL,
 	type Parser,
 	type Renderer,
 	type RendererData
@@ -113,9 +117,7 @@ export function parser(renderer: Renderer): Parser {
 }
 
 export function parser_end(p: Parser): void {
-	if (p.pending.length > 0) {
-		parser_write(p, '\n', true);
-	}
+	parser_write(p, '\n', true);
 }
 
 function add_text(p: Parser, atEnd = false): void {
@@ -538,9 +540,15 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 						}
 					}
 					to_write = p.indent.slice(code_start) + pending_with_char;
+					const paraPos = p.pos;
+					p.pos = p.pos - to_write.length;
 					add_token(p, CODE_BLOCK);
+					p.pos = paraPos;
 				} else {
+					const paraPos = p.pos;
+					p.pos = p.pos - to_write.length;
 					add_token(p, PARAGRAPH);
+					p.pos = paraPos;
 				}
 
 				clear_root_pending(p);
@@ -949,6 +957,79 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 				p.maybe_link_text += p.pending;
 				p.pending = char;
 				continue;
+			case MAYBE_FOOTNOTE:
+				if (']' === p.pending) {
+					const start = p.maybe_link_start;
+					const label = p.maybe_link_text;
+					p.maybe_link_start = 0;
+					p.maybe_link_text = '';
+					p.token = p.tokens[p.len];
+					p.pending = '';
+					if (label.length === 0) {
+						p.renderer.data.pos = start + 1;
+						p.text = '[';
+						add_text(p);
+						p.pos = start + 2;
+						p.renderer.data.pos = start + 2;
+						p.text = '^]';
+						add_text(p);
+						p.pos = start + 4;
+						p.renderer.data.pos = start + 3;
+						parser_write(p, char, true);
+						continue;
+					}
+					if (':' === char) {
+						p.pos = start;
+						p.renderer.data.pos = start;
+						add_token(p, FOOTNOTE_DEF);
+						p.renderer.set_attr(p.renderer.data, LABEL, label);
+						p.pos = start + label.length + 4;
+						end_token(p);
+						p.pos = start + label.length + 4;
+						continue;
+					} else {
+						p.pos = start;
+						p.renderer.data.pos = start;
+						add_token(p, FOOTNOTE_REF);
+						p.renderer.set_attr(p.renderer.data, LABEL, label);
+						p.pos = start + label.length + 3;
+						end_token(p);
+						p.pos = start + label.length + 4;
+						parser_write(p, char, true);
+						continue;
+					}
+				}
+				if (']' === char) {
+					p.maybe_link_text += p.pending;
+					p.pending = ']';
+					continue;
+				}
+				if ('\n' === char) {
+					const len = p.maybe_link_text.length;
+					const start = p.maybe_link_start;
+					const held = p.pending;
+					const labelText = p.maybe_link_text;
+					p.maybe_link_start = 0;
+					p.maybe_link_text = '';
+					p.token = p.tokens[p.len];
+					p.pending = '';
+					p.renderer.data.pos = start + 2;
+					p.text = '[^';
+					add_text(p);
+					p.pos = start + 2 + len + 1;
+					parser_write(p, labelText + held, true);
+					p.text += p.pending;
+					p.pending = '';
+					p.renderer.data.pos = start + 2 + len + 1;
+					add_text(p);
+					p.pos = start + len + 4;
+					p.renderer.data.pos = start + len + 3;
+					parser_write(p, char, true);
+					continue;
+				}
+				p.maybe_link_text += p.pending;
+				p.pending = char;
+				continue;
 			case LINK:
 			case IMAGE:
 				if (']' === p.pending) {
@@ -1259,6 +1340,13 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 					']' !== char
 				) {
 					add_text(p);
+					if ('^' === char) {
+						p.maybe_link_start = p.renderer.data.pos - 1;
+						p.maybe_link_text = '';
+						p.token = MAYBE_FOOTNOTE;
+						p.pending = '';
+						continue;
+					}
 					p.maybe_link_start = p.renderer.data.pos - 1;
 					p.token = MAYBE_LINK;
 					p.maybe_link_text = '';
@@ -1281,6 +1369,8 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 				break;
 			case ' ':
 				if (p.pending.length === 1 && ' ' === char) {
+					p.text += p.pending;
+					p.pending = char;
 					continue;
 				}
 				break;

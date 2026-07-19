@@ -57,12 +57,12 @@ export function getSourceOffset(
 		if (offset === 0) {
 			return s;
 		}
-		if (offset >= el.childNodes.length) {
-			return e;
-		}
-		const child = el.childNodes[offset];
+		const child = node.childNodes[offset];
 		if (child) {
 			return getSourceOffset(child, 0, containerRef);
+		}
+		if (offset >= node.childNodes.length) {
+			return e;
 		}
 		return s;
 	}

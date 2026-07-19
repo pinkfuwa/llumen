@@ -32,12 +32,15 @@ export const DOCUMENT = 1,
 	EQUATION_INLINE = 31,
 	EQUATION_BLOCK_DOLLAR = 32,
 	EQUATION_BLOCK_BRACKET = 33,
+	FOOTNOTE_REF = 34,
+	FOOTNOTE_DEF = 35,
 	NEWLINE = 101,
 	MAYBE_URL = 102,
 	MAYBE_TASK = 103,
 	MAYBE_BR = 104,
 	MAYBE_EQ_BLOCK = 105,
-	MAYBE_LINK = 106;
+	MAYBE_LINK = 106,
+	MAYBE_FOOTNOTE = 107;
 
 export type Token = number;
 
@@ -45,7 +48,8 @@ export const HREF = 1,
 	SRC = 2,
 	LANG = 4,
 	CHECKED = 8,
-	START = 16;
+	START = 16,
+	LABEL = 32;
 
 export type Attr = number;
 
@@ -110,7 +114,9 @@ export enum AstNodeType {
 	Link = 'Link',
 	Image = 'Image',
 	LatexInline = 'LatexInline',
-	LineBreak = 'LineBreak'
+	LineBreak = 'LineBreak',
+	FootnoteRef = 'FootnoteRef',
+	FootnoteDef = 'FootnoteDef'
 }
 
 export interface AstNode {
@@ -231,6 +237,16 @@ export interface ImageNode extends AstNode {
 
 export interface LineBreakNode extends AstNode {
 	type: AstNodeType.LineBreak;
+}
+
+export interface FootnoteRefNode extends AstNode {
+	type: AstNodeType.FootnoteRef;
+	label: string;
+}
+
+export interface FootnoteDefNode extends AstNode {
+	type: AstNodeType.FootnoteDef;
+	label: string;
 }
 
 export interface RegionBoundary {
