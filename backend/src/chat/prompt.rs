@@ -40,6 +40,25 @@ impl Prompt {
     pub fn new() -> Result<Self> {
         let mut env = Environment::new();
 
+        // Shared include templates — registered with their file paths as
+        // names so {% include 'includes/language.j2' %} resolves correctly.
+        let include_templates = vec![
+            ("includes/language.j2", "includes/language.j2"),
+            (
+                "includes/language_zh_terms.j2",
+                "includes/language_zh_terms.j2",
+            ),
+            ("includes/de_ai.j2", "includes/de_ai.j2"),
+            ("includes/formatting.j2", "includes/formatting.j2"),
+        ];
+
+        for (name, path) in include_templates {
+            let src = load_template(path)?;
+            let src: &'static str = Box::leak(src.into_boxed_str());
+            env.add_template(name, src)
+                .with_context(|| format!("failed to parse template: {path}"))?;
+        }
+
         #[cfg(not(feature = "deep-research"))]
         let templates = vec![
             ("normal", "normal.j2"),

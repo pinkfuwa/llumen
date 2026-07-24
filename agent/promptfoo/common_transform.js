@@ -1,3 +1,6 @@
+const path = require("path");
+const nunjucks = require("nunjucks");
+
 const DEFAULT_TIME = "Monday, 12:00, 15 December 2025";
 const DEFAULT_TITLE_PREFIX =
   "Please generate a concise title, starting with a emoji";
@@ -17,6 +20,17 @@ const DEFAULT_VIDEO_PARAMETERS = [
   "generate_audio",
   "reference_file_names",
 ];
+
+const PROMPT_DIR = path.resolve(__dirname, "../prompt");
+
+const renderWithIncludes = (templateStr, vars) => {
+  if (!templateStr || typeof templateStr !== "string") {
+    return templateStr;
+  }
+  const env = nunjucks.configure(PROMPT_DIR, { autoescape: false });
+  const rendered = env.renderString(templateStr, vars);
+  return `{% raw %}${rendered}{% endraw %}`;
+};
 
 const TRIM_REGEX = /^[\n \t`\"'*#]+|[\n \t`\"'*#]+$/g;
 
@@ -145,9 +159,18 @@ const transformNormalVars = (vars, context) => {
     DEFAULT_VIDEO_PARAMETERS,
   );
 
+  const systemTemplate = String(vars.system_template || "");
+  const contextTemplate = String(vars.context_template || "");
+
   return {
     ...vars,
     ...renderVars,
+    system_template: systemTemplate
+      ? renderWithIncludes(systemTemplate, renderVars)
+      : "",
+    context_template: contextTemplate
+      ? renderWithIncludes(contextTemplate, renderVars)
+      : "",
     user_query: userQuery,
     image_model_id: vars.image_model_id || DEFAULT_IMAGE_MODEL_ID,
     video_model_id: vars.video_model_id || DEFAULT_VIDEO_MODEL_ID,
@@ -171,9 +194,18 @@ const transformMediaVars = (vars, context) => {
     DEFAULT_VIDEO_PARAMETERS,
   );
 
+  const systemTemplate = String(vars.system_template || "");
+  const contextTemplate = String(vars.context_template || "");
+
   return {
     ...vars,
     ...renderVars,
+    system_template: systemTemplate
+      ? renderWithIncludes(systemTemplate, renderVars)
+      : "",
+    context_template: contextTemplate
+      ? renderWithIncludes(contextTemplate, renderVars)
+      : "",
     user_query: userQuery,
     image_model_id: vars.image_model_id || DEFAULT_IMAGE_MODEL_ID,
     video_model_id: vars.video_model_id || DEFAULT_VIDEO_MODEL_ID,
@@ -190,9 +222,14 @@ const transformTitleVars = (vars, context) => {
   const assistantAnswer = truncateChars(String(vars.agent_answer || ""), 300);
   const userPrefix = vars.user_prefix || DEFAULT_TITLE_PREFIX;
 
+  const systemTemplate = String(vars.system_template || "");
+
   return {
     ...vars,
     ...renderVars,
+    system_template: systemTemplate
+      ? renderWithIncludes(systemTemplate, renderVars)
+      : "",
     user_query: userQuery,
     assistant_truncated: assistantAnswer,
     user_prefix: userPrefix,

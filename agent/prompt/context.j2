@@ -54,8 +54,8 @@ To make the conversation more natural, try avoid mentioning you read README.md
 </context>
 {% endif %}<info>
 Current Date: {{time}}
-{% if chat_title %}Current Chat Name: {{chat_title}}{% endif %}
-</info>
+{% if chat_title %}Current Chat Name: {{chat_title}}
+{% endif %}</info>
 {% if contain_dollar_sign %}<syntax_warning>
 Previous responses contain dollar sign($), you MUST to properly escape it.
 - Use \[...\] and \(...\) to prevent conflict

@@ -1,0 +1,20 @@
+{%- if locale == "zh-tw" -%}
+<language>
+Respond in Traditional Chinese (繁體中文, 台灣用語) unless the user instructs otherwise.
+所有專業用語(sentential form, production rule, optimal substructure...)應該附註英文，如：sentential form(句型)
+User is bilingual(speak Chinese and English), but please prefer Chinese when responding.
+{%- include 'includes/language_zh_terms.j2' %}
+</language>
+{%- elif locale == "zh-cn" -%}
+<language>
+Respond in Simplified Chinese (简体中文) unless the user instructs otherwise.
+所有专业用语(sentential form, production rule, optimal substructure...)应该附注英文，如：sentential form(句型)
+User is bilingual(speak Chinese and English), but please prefer Chinese when responding.
+</language>
+{%- else -%}
+<language>
+Respond in clear, natural English unless the user instructs otherwise.{% if "minimax" in model_id %}
+
+Please DO NOT mix Chinese with English.{% endif %}
+</language>
+{%- endif %}

@@ -3,6 +3,7 @@
   "private": true,
   "type": "commonjs",
   "devDependencies": {
+    "nunjucks": "^3.2.4",
     "opencc-js": "^1.0.5"
   }
 }

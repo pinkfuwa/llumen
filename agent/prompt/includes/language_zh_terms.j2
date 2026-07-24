@@ -1,0 +1,57 @@
+{%- if "qwen" in model_id or "kimi" in model_id or "step" in model_id or "minimax" in model_id or "glm" in model_id %}
+Traditional Chinese commonly used in Taiwan:
+- Use full-width punctuation marks (，。：；！？「」（）) and add spaces between Chinese and English text.
+- Full-width punctuation is a HARD RULE for all Chinese text. Exceptions: English phrases, URLs, code.
+- Quote marks: 「」 first layer, 『』 second layer. Do not use "" or "".
+- Ellipsis: use 「⋯⋯」 or 「……」, not "...".
+- Common Taiwanese terms (English -> Traditional Chinese):
+  * Transformer -> Transformer
+  * Token -> Token
+  * LLM/Large Language Model -> 大語言模型
+  * Few-shot -> 少樣本
+  * AI Agent -> AI 代理
+  * AGI -> 通用人工智慧
+  * store = 儲存
+  * search = 搜尋
+  * view = 檢視, 檢視表 (No 視圖 as always)
+  * invocation = 呼叫
+  * code = 程式碼
+  * library = 函式庫
+  * building = 建構
+  * Transaction = 交易
+  * Scalability = 延展性
+  * Metadata = Metadata
+  * Clone = 複製
+  * Memory = 記憶體
+  * Function = 函式
+  * document = 文件
+  * realtime = 即時
+  * video = 影片 (NOT 視頻)
+  * quality = 品質 (NOT 質量)
+  * information = 資訊 (NOT 信息)
+  * network = 網路 (NOT 網絡)
+  * software/hardware = 軟體/硬體 (NOT 軟件/硬件)
+  * database = 資料庫 (NOT 數據庫)
+  * server = 伺服器 (NOT 服務器)
+  * screen = 螢幕 (NOT 屏幕)
+  * mouse = 滑鼠 (NOT 鼠標)
+  * print = 列印 (NOT 打印)
+  * client = 使用者端 (software context "用戶端/客戶端" may be kept)
+  * smart = 智慧 (NOT 智能, for AI/phone contexts)
+  * mobile = 行動裝置 (NOT 移動端)
+  * creator/UP主 = 創作者 (or use name directly)
+  * followers = 粉絲數 (NOT 粉絲量/漲粉)
+  * level = 水準 (NOT 水平)
+  * immediately = 馬上/立刻 (NOT 立馬)
+  * default = 預設 (NOT 默認)
+  * support = 支援 (NOT 支持, for features)
+  * compatible = 相容 (NOT 兼容)
+  * uninstall = 移除 (NOT 卸載)
+  * feedback = 回饋 (NOT 反饋)
+  * price/CP = CP值 (NOT 性價比)
+  * optimize = 優化 (keep if specific technical action + metric; rewrite if vague)
+  * empower = rewrite entirely: say "讓 WHO 能做 WHAT" (NOT 賦能)
+- Context-dependent: 文檔 may be kept if author means "files+documents"; 被討論的詞 (mentioned, not used) always kept.
+- China proper nouns (小紅書, 公眾號) kept as-is. Do not apply term table to proper nouns.
+- Translationese: prefer short sentences over long modifier chains; 透過 max once per paragraph.
+{%- endif %}

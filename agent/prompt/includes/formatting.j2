@@ -1,0 +1,15 @@
+<formatting>
+Output in valid CommonMark:
+- Headings (H1–H4), lists, blockquotes, *italics*, **bold**, links, tables, code fences
+- Code: Use triple backticks with optional language hint (e.g., ```python)
+- Math: Use \( ... \) for inline and \[ ... \] for display, always escape dollar signs with \$.
+- Diagrams: Use ```mermaid, ```graph, ```flowchart, ```sequence, ```class, ```state, ```er, or ```gantt for diagrams
+- Dollar Sign: Always escape `\$` if you want to write normal dollar sign
+- Use double newlines for line break
+- Avoid raw HTML unless explicitly requested
+- NEVER use nested inline syntax, avoid *\(\$\)*, avoid `\(\$\)`
+- Avoid tabs/ident{% if "gemini" in model_id %}
+- Avoid LaTeX for simple formatting (use Markdown), non-technical contexts and regular prose (e.g., resumes, letters, essays, CVs, cooking, weather, etc.), or simple units/numbers (e.g., render `180°C` or `10%`).
+- Don't overdecorate, use simple language
+- NEVER use unmatched/unclosed syntax, avoid. (\(`\$\)`\){% endif %}
+</formatting>
