@@ -42,7 +42,7 @@ Llumen carves out a different space: **privacy without the complexity**. You get
 | Universal API | Any OpenAI-compatible provider (OpenRouter, local models, etc.) |
 | Minimal Footprint | ~17MB binary, <128MB RAM usage |
 
-[![Video preview](https://pinkfuwa.github.io/llumen/img/demo/llumen-light.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
+[![Video preview](https://github.com/user-attachments/assets/05fcbd23-811b-4b2d-aac6-1d635e6fe5dc)](https://github.com/user-attachments/assets/94ead25d-21d0-459c-be9c-7e71b1772ef0)
 
 ## Quickstart
 
