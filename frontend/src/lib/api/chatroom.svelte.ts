@@ -70,6 +70,8 @@ async function ensurePaginated(target: HTMLElement, token_: string) {
 			});
 		});
 		if (!leftNeeded && !rightNeeded) break;
+
+		let mutated = false;
 		if (rightNeeded) {
 			let params: ChatPaginateReq;
 			if (chatrooms.val.length === 0) {
@@ -78,7 +80,7 @@ async function ensurePaginated(target: HTMLElement, token_: string) {
 					pid !== undefined && !isNaN(+pid) && page.route.id?.startsWith('/chat') ? +pid : 0;
 				params =
 					pivotId !== 0
-						? { t: 'limit', c: { id: pivotId, order: ChatPaginateReqOrder.Lt } }
+						? { t: 'limit', c: { id: pivotId + 1, order: ChatPaginateReqOrder.Lt } }
 						: { t: 'limit', c: { order: ChatPaginateReqOrder.Lt } };
 			} else {
 				params = {
@@ -94,30 +96,32 @@ async function ensurePaginated(target: HTMLElement, token_: string) {
 			});
 			if (!resp || resp.list.length === 0) {
 				rightExhausted = true;
-				break;
+			} else {
+				chatrooms.val.push(...resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })));
+				mutated = true;
 			}
-			chatrooms.val.push(...resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })));
-		} else if (leftNeeded) {
+		}
+		if (leftNeeded && !mutated) {
 			const anchor = chatrooms.val.at(0)?.id;
 			if (anchor === undefined) {
 				leftExhausted = true;
-				break;
+			} else {
+				const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>({
+					path: 'chat/paginate',
+					body: { t: 'limit', c: { id: anchor, order: ChatPaginateReqOrder.Gt } },
+					token: token_,
+					retry: true
+				});
+				if (!resp || resp.list.length === 0) {
+					leftExhausted = true;
+				} else {
+					const distanceFromBottom = target.scrollHeight - target.scrollTop;
+					chatrooms.val.unshift(
+						...resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })).reverse()
+					);
+					target.scrollTop = target.scrollHeight - distanceFromBottom;
+				}
 			}
-			const resp = await APIFetch<ChatPaginateResp, ChatPaginateReq>({
-				path: 'chat/paginate',
-				body: { t: 'limit', c: { id: anchor, order: ChatPaginateReqOrder.Gt } },
-				token: token_,
-				retry: true
-			});
-			if (!resp || resp.list.length === 0) {
-				leftExhausted = true;
-				break;
-			}
-			const distanceFromBottom = target.scrollHeight - target.scrollTop;
-			chatrooms.val.unshift(
-				...resp.list.map((x) => ({ id: x.id, name: x.title ?? 'New Chat' })).reverse()
-			);
-			target.scrollTop = target.scrollHeight - distanceFromBottom;
 		}
 	}
 	paginateRunning = false;
