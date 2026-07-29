@@ -38,10 +38,14 @@ export const models = $state<{ val?: ModelList[] }>({});
 export const modelIds = $state<{ val?: string[] }>({});
 
 export const defaultModelConfig = [
-	'display_name="Deepseek V4 Flash"',
+	'display_name="Kimi K3"',
 	'# From https://openrouter.ai/models',
 	'# don\'t put "online" suffix.',
-	'model_id="deepseek/deepseek-v4-flash"',
+	'model_id="moonshotai/kimi-k3"',
+	'',
+	'[media_gen]',
+	'image_model="openai/gpt-image-2"',
+	'video_model="x-ai/grok-imagine-video-1.5"',
 	'',
 	'# For more settings, see https://pinkfuwa.github.io/llumen/user/config/model'
 ].join('\n');
