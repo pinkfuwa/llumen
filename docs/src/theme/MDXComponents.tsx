@@ -6,29 +6,45 @@ import { Scroll } from "@site/src/components/Scroll";
 import Admonition from "@theme/Admonition";
 
 // Mintlify compatibility components
-const Note = ({ children }) => <Admonition type="note">{children}</Admonition>;
-const Warning = ({ children }) => (
-  <Admonition type="warning">{children}</Admonition>
+const Note = ({ children }: { children: React.ReactNode }) => (
+  <Admonition type="note" children={children} />
 );
-const Info = ({ children }) => <Admonition type="info">{children}</Admonition>;
-const Tip = ({ children }) => <Admonition type="tip">{children}</Admonition>;
+const Warning = ({ children }: { children: React.ReactNode }) => (
+  <Admonition type="warning" children={children} />
+);
+const Info = ({ children }: { children: React.ReactNode }) => (
+  <Admonition type="info" children={children} />
+);
+const Tip = ({ children }: { children: React.ReactNode }) => (
+  <Admonition type="tip" children={children} />
+);
 
 // Tabs support - wrapper to convert Mintlify format to Docusaurus
 import DocTabs from "@theme/Tabs";
 import DocTabItem from "@theme/TabItem";
 
-const Tab = ({ title, children }) => (
-  <DocTabItem value={title} label={title}>
-    {children}
-  </DocTabItem>
+const Tab = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <DocTabItem value={title} label={title} children={children} />
 );
 
-const Tabs = ({ children }) => {
-  return <DocTabs>{children}</DocTabs>;
+const Tabs = ({ children }: { children: React.ReactNode }) => {
+  return <DocTabs children={children} />;
 };
 
 // Simple Accordion implementation
-const Accordion = ({ title, children }) => (
+const Accordion = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
   <details style={{ marginBottom: "1rem" }}>
     <summary
       style={{ cursor: "pointer", fontWeight: "bold", padding: "0.5rem 0" }}
@@ -39,7 +55,9 @@ const Accordion = ({ title, children }) => (
   </details>
 );
 
-const AccordionGroup = ({ children }) => <div>{children}</div>;
+const AccordionGroup = ({ children }: { children: React.ReactNode }) => (
+  <div>{children}</div>
+);
 
 export default {
   ...MDXComponents,
