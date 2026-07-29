@@ -3,7 +3,7 @@
 set -euo pipefail
 
 TARGET_TRIPLE=${1:?Target triple must be provided}
-CARGO_FEATURES=${2:-}
+CARGO_FEATURES=${2:-cli}
 
 echo "--- Preparing to build artifacts for Windows target: $TARGET_TRIPLE ---"
 

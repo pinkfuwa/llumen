@@ -50,7 +50,7 @@ fn build_frontend() -> Result<(), Box<dyn std::error::Error>> {
 
 fn build() -> Result<(), Box<dyn std::error::Error>> {
     build_frontend()?;
-    run_command("cargo", &["build", "--release"], None)?;
+    run_command("cargo", &["build", "--release", "--features", "cli"], None)?;
     Ok(())
 }
 

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 TARGET_TRIPLE=${1:-$(rustc -vV | grep 'host:' | awk '{print $2}')}
-CARGO_FEATURES=${2:-}
+CARGO_FEATURES=${2:-cli}
 
 echo "--- Preparing to build artifacts for target: $TARGET_TRIPLE ---"
 
