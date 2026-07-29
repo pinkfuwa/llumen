@@ -19,7 +19,8 @@ function defaultPreference(): Required<UserPreference> {
 	};
 }
 
-const preferenceChecker = (data: Required<UserPreference>) => typeof data.theme !== 'string';
+const preferenceChecker = (data: Required<UserPreference>) =>
+	typeof data.theme === 'object' && data.theme !== null && typeof data.theme.name === 'string';
 
 export const preference = localState<Required<UserPreference>>('preference', {
 	defaultValue: defaultPreference,
