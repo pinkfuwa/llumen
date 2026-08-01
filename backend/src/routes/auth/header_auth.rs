@@ -14,6 +14,7 @@ use crate::{AppState, errors::*};
 pub struct HeaderAuthResp {
     pub token: Option<String>,
     pub exp: Option<String>,
+    pub logout_url: Option<String>,
 }
 
 pub async fn route(
@@ -27,6 +28,7 @@ pub async fn route(
         return Ok(Json(HeaderAuthResp {
             token: None,
             exp: None,
+            logout_url: app.logout_url.clone(),
         }));
     }
 
@@ -43,5 +45,6 @@ pub async fn route(
     Ok(Json(HeaderAuthResp {
         token: Some(token),
         exp: Some(exp),
+        logout_url: app.logout_url.clone(),
     }))
 }

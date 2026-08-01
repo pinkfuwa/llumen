@@ -1,4 +1,4 @@
-import { token } from '$lib/rune.svelte';
+import { token, logoutUrl } from '$lib/rune.svelte';
 import { page } from '$app/state';
 import { goto } from '$app/navigation';
 import { APIFetch } from './http.svelte';
@@ -52,6 +52,7 @@ $effect.root(() => {
 		if (res && res.exp != undefined && res.token) {
 			applyToken({ token: res.token, exp: res.exp });
 		}
+		logoutUrl.val = res?.logout_url ?? undefined;
 	});
 });
 

@@ -46,6 +46,7 @@ services:
     environment:
       - "API_KEY=sk-or-<api-key>"
       - "TRUSTED_HEADER=Remote-User"
+      - "LOGOUT_URL=https://auth.example.com/logout"
     volumes:
       - "./data:/data"
     labels:
@@ -62,6 +63,10 @@ services:
           memory: 1G
     memswap_limit: 1G
 ```
+
+`LOGOUT_URL` pairs with `TRUSTED_HEADER`: when header-based SSO auth is in use,
+the logout button redirects to this URL so the SSO middleware (e.g. Authelia)
+can tear down its own session.
 
 ## With Reverse Proxy
 

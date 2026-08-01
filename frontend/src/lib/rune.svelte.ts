@@ -101,6 +101,8 @@ export type TokenInfo = { value: string; expireAt: string; renewAt: string };
 
 export const token: LocalStateHandle<TokenInfo | undefined> = localState('token', {});
 
+export const logoutUrl: { val: string | undefined } = $state({ val: undefined });
+
 let tokenLastSerialized = JSON.stringify($state.snapshot(token.value));
 
 $effect.root(() => {

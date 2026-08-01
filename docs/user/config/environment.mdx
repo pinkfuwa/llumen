@@ -22,6 +22,7 @@ Llumen uses environment variables for configuration. No config files needed!
 | `DATA_PATH` | Storage directory | `.` (current dir) |
 | `BIND_ADDR` | Network socket | `0.0.0.0:8001` |
 | `TRUSTED_HEADER` | HTTP header for SSO/proxy auth | None |
+| `LOGOUT_URL` | URL to redirect to on logout (SSO/proxy) | None |
 | `FORCE_OPENROUTER_MODE` | Force OpenRouter mode | `false` |
 | `RUST_LOG` | Log level filter | `info` |
 
@@ -38,6 +39,7 @@ mirror their corresponding environment variable.
 | `--data-path` | `-d` | `DATA_PATH` | `.` | Data directory |
 | `--bind` | `-a` | `BIND_ADDR` | `0.0.0.0:8001` | Server listen address |
 | `--trusted-header` | `-H` | `TRUSTED_HEADER` | None | HTTP header for SSO/proxy auth |
+| `--logout-url` | | `LOGOUT_URL` | None | URL to redirect to on logout (SSO/proxy) |
 | `--log-level` | `-l` | `RUST_LOG` | `info` | Log level filter |
 
 ```bash
