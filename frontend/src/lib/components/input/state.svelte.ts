@@ -3,7 +3,7 @@ import { currentRoom, createRoom, haltCompletion } from '$lib/api';
 import { models } from '$lib/api/model.svelte';
 import { createMessage, streaming } from '$lib/api/message.svelte';
 import { createUploadPipeline } from '$lib/api/files.svelte';
-import { getSupportedFileExtensions, separateFiles } from './fileTypes';
+import { getSupportedFileTypes, separateFiles } from './fileTypes';
 import { ChatMode } from '$lib/api/types';
 import { localState } from '$lib/rune.svelte';
 
@@ -60,7 +60,7 @@ export class InputState {
 			ocr_file_input: cap?.ocr_file_input === true
 		};
 	});
-	supportedMimes = $derived(getSupportedFileExtensions(this.currentModel ?? undefined));
+	supportedFileTypes = $derived(getSupportedFileTypes(this.currentModel ?? undefined));
 }
 
 export const effective = new InputState();
@@ -93,19 +93,15 @@ $effect.root(() => {
 	});
 });
 
-export function addFiles(newFiles: File[]) {
-	const mimes = effective.supportedMimes;
-	if (!mimes.length) {
+export async function addFiles(newFiles: File[]) {
+	if (!effective.currentModel) {
 		for (const f of newFiles) inputFiles.val.push(f);
 		return;
 	}
 
-	const { supported, unsupported } = separateFiles(newFiles, mimes);
+	const { supported, unsupported } = await separateFiles(newFiles, effective.supportedFileTypes);
 	const newUnsupported = unsupported.filter(
-		(u: File) =>
-			!allowedUnsupportedFiles.val.some(
-				(a: File) => a.name === u.name && a.size === u.size && a.lastModified === u.lastModified
-			)
+		(u: File) => !allowedUnsupportedFiles.val.some((a: File) => a.name === u.name)
 	);
 
 	if (newUnsupported.length > 0) {

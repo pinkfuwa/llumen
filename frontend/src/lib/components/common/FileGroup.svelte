@@ -2,16 +2,24 @@
 	let {
 		files = $bindable([] as Array<{ name: string; type?: string; id?: number }>),
 		deletable = false,
-		mimes = []
+		allowedUnsupported = [] as Array<{ name: string }>
 	}: {
 		files: Array<{ name: string; type?: string; id?: number }>;
 		deletable?: boolean;
-		mimes?: string[];
+		allowedUnsupported?: Array<{ name: string }>;
 	} = $props();
 
 	import { ArrowDownToLine, X, AlertTriangle } from '@lucide/svelte';
 	import { download } from '$lib/api/files.svelte';
-	import { isMimeSupported } from '../input/fileTypes';
+
+	function isAllowedUnsupported(file: { name: string }) {
+		return allowedUnsupported.some((candidate) => candidate.name === file.name);
+	}
+
+	function removeFile(index: number) {
+		files.splice(index, 1);
+		files = files;
+	}
 
 	async function downloadFile(fileId: number, fileName: string) {
 		let url = await download(fileId);
@@ -36,22 +44,11 @@
 				class="my-auto mr-2 shrink-0 cursor-pointer rounded-md p-1 duration-150 hover:bg-interactive-hover focus:ring-4 focus:ring-ring focus:outline-none"
 			>
 				{#if deletable}
-					{#if file.type && isMimeSupported(file.type, mimes)}
-						<X
-							class="h-7 w-7"
-							onclick={() => {
-								files.splice(i, 1);
-								files = files;
-							}}
-						/>
+					{#if isAllowedUnsupported(file)}
+						<AlertTriangle class="h-7 w-7 group-hover:hidden" onclick={() => removeFile(i)} />
+						<X class="hidden h-7 w-7 group-hover:block" onclick={() => removeFile(i)} />
 					{:else}
-						<AlertTriangle
-							class="h-7 w-7"
-							onclick={() => {
-								files.splice(i, 1);
-								files = files;
-							}}
-						/>
+						<X class="h-7 w-7" onclick={() => removeFile(i)} />
 					{/if}
 				{:else}
 					<ArrowDownToLine

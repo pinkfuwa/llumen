@@ -1,4 +1,4 @@
-interface CapabilityFileType {
+export interface CapabilityFileType {
 	image_input: boolean;
 	audio_input: boolean;
 	video_input: boolean;
@@ -6,8 +6,12 @@ interface CapabilityFileType {
 	ocr_file_input: boolean;
 }
 
-/** Mapping of capability flags to valid MIME‑type lists. */
-const IMAGE_TYPES = [
+export interface SupportedFileTypes {
+	mimes: string[];
+	extensions: string[];
+}
+
+const IMAGE_EXTENSIONS = [
 	'avif',
 	'webp',
 	'bmp',
@@ -23,98 +27,173 @@ const IMAGE_TYPES = [
 	'heif'
 ];
 
-const AUDIO_TYPES = ['audio/*', 'm4a', 'ogg'];
+const AUDIO_EXTENSIONS = ['m4a', 'ogg'];
 
-const VIDEO_TYPES = ['mp4', 'mpeg', 'mov', 'webm'];
+const VIDEO_EXTENSIONS = ['mp4', 'mpeg', 'mov', 'webm'];
 
-const NATIVE_TYPES: string[] = ['pdf'];
+const PDF_EXTENSIONS = ['pdf'];
 
-// file that will directly upload without any processing
-const LITERAL_TYPES = [
-	'md',
-	'txt',
-	'ts',
-	'rs',
-	'py',
-	'svelte',
-	'json',
-	'csv',
-	'c',
-	'cpp',
-	'h',
-	'hpp',
-	'toml',
-	'text',
-	'js'
-];
-
-const OCR_TYPES = ['pdf'];
-
-export function getSupportedFileExtensions(capability?: CapabilityFileType): string[] {
+export function getSupportedFileTypes(capability?: CapabilityFileType): SupportedFileTypes {
 	if (!capability) {
-		return [];
+		return { mimes: [], extensions: [] };
 	}
 
-	const parts: string[] = [];
-
-	parts.push(...LITERAL_TYPES);
+	const mimes: string[] = [];
+	const extensions: string[] = [];
 
 	if (capability.image_input) {
-		parts.push(...IMAGE_TYPES);
+		mimes.push('image/*');
+		extensions.push(...IMAGE_EXTENSIONS);
 	}
 
 	if (capability.audio_input) {
-		parts.push(...AUDIO_TYPES);
+		mimes.push('audio/*');
+		extensions.push(...AUDIO_EXTENSIONS);
 	}
 
 	if (capability.video_input) {
-		parts.push(...VIDEO_TYPES);
+		mimes.push('video/*');
+		extensions.push(...VIDEO_EXTENSIONS);
 	}
 
-	if (capability.native_file_input) {
-		parts.push(...NATIVE_TYPES);
+	if (capability.native_file_input || capability.ocr_file_input) {
+		mimes.push('application/pdf');
+		extensions.push(...PDF_EXTENSIONS);
 	}
 
-	if (capability.ocr_file_input) {
-		parts.push(...OCR_TYPES);
-	}
-
-	return parts;
+	return { mimes, extensions };
 }
 
-export function getAllFileMimes(): string[] {
-	return [...LITERAL_TYPES, ...IMAGE_TYPES, ...AUDIO_TYPES, ...VIDEO_TYPES, ...NATIVE_TYPES];
+function normalizeMime(mime: string): string {
+	return mime.split(';')[0]?.trim().toLowerCase() ?? '';
 }
 
 export function isMimeSupported(mime: string, mimes: string[]): boolean {
-	if (mimes.length === 0) return false;
+	if (!mime || mimes.length === 0) return false;
+
+	const normalized = normalizeMime(mime);
+	if (!normalized) return false;
 
 	return mimes.some((matcher) => {
-		if (matcher.endsWith('/*')) {
-			let category = matcher.slice(0, -2);
-			return mime.includes(category);
+		const candidate = matcher.toLowerCase();
+		if (candidate.endsWith('/*')) {
+			return normalized.startsWith(candidate.slice(0, -1));
 		}
-		return mime.includes(matcher);
+		return normalized === candidate;
 	});
 }
 
-export function separateFiles(
+function fileExtension(name: string): string {
+	const base = name.split(/[/\\]/).pop() ?? name;
+	const dot = base.lastIndexOf('.');
+	if (dot <= 0 || dot === base.length - 1) return '';
+	return base.slice(dot + 1).toLowerCase();
+}
+
+export function isExtensionSupported(name: string, extensions: string[]): boolean {
+	if (extensions.length === 0) return false;
+	const ext = fileExtension(name);
+	return ext !== '' && extensions.includes(ext);
+}
+
+export function isFileTypeSupported(
+	file: { name: string; type?: string },
+	supported: SupportedFileTypes
+): boolean {
+	if (file.type && isMimeSupported(file.type, supported.mimes)) return true;
+	return isExtensionSupported(file.name, supported.extensions);
+}
+
+async function* fileChunks(file: File): AsyncGenerator<Uint8Array> {
+	if (typeof file.stream === 'function') {
+		const reader = file.stream().getReader();
+		try {
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) return;
+				if (value && value.byteLength > 0) yield value;
+			}
+		} finally {
+			reader.releaseLock();
+		}
+		return;
+	}
+
+	const buffer = new Uint8Array(await file.arrayBuffer());
+	if (buffer.byteLength > 0) yield buffer;
+}
+
+function looksLikeUtf16Le(bytes: Uint8Array): boolean {
+	return bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe;
+}
+
+function looksLikeUtf16Be(bytes: Uint8Array): boolean {
+	return bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff;
+}
+
+export async function isTextFile(file: File): Promise<boolean> {
+	if (file.size === 0) return true;
+
+	let utf16: TextDecoder | null = null;
+	const utf8 = new TextDecoder('utf-8', { fatal: true });
+	let first = true;
+
+	try {
+		for await (const chunk of fileChunks(file)) {
+			if (first) {
+				first = false;
+				if (looksLikeUtf16Le(chunk)) {
+					utf16 = new TextDecoder('utf-16le', { fatal: true });
+				} else if (looksLikeUtf16Be(chunk)) {
+					utf16 = new TextDecoder('utf-16be', { fatal: true });
+				}
+			}
+
+			if (utf16) {
+				utf16.decode(chunk, { stream: true });
+			} else {
+				if (chunk.includes(0)) return false;
+				utf8.decode(chunk, { stream: true });
+			}
+		}
+
+		if (utf16) {
+			utf16.decode();
+		} else {
+			utf8.decode();
+		}
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+export async function separateFiles(
 	files: File[],
-	mimes: string[]
-): {
+	supported: SupportedFileTypes
+): Promise<{
 	supported: File[];
 	unsupported: File[];
-} {
-	const supported: File[] = [];
-	const unsupported: File[] = [];
+}> {
+	const accepted: File[] = [];
+	const leftovers: File[] = [];
 
 	for (const file of files) {
-		if (isMimeSupported(file.type, mimes)) {
-			supported.push(file);
+		if (isFileTypeSupported(file, supported)) {
+			accepted.push(file);
+		} else {
+			leftovers.push(file);
+		}
+	}
+
+	const unsupported: File[] = [];
+	for (const file of leftovers) {
+		if (await isTextFile(file)) {
+			accepted.push(file);
 		} else {
 			unsupported.push(file);
 		}
 	}
 
-	return { supported, unsupported };
+	return { supported: accepted, unsupported };
 }
