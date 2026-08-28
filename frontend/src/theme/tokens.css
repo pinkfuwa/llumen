@@ -1,4 +1,5 @@
 @custom-variant dark (&:is([data-dark="true"] *));
+@custom-variant fine-hover (@media (pointer: fine) and (hover: hover));
 
 @theme inline {
 	--color-background: var(--background);

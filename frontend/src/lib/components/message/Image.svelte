@@ -87,7 +87,7 @@
 					role="button"
 					tabindex="0"
 					aria-label="download image"
-					class="visible absolute top-2 right-2 cursor-pointer rounded-lg bg-muted p-2 duration-150 hover:bg-interactive-hover md:invisible md:group-hover:visible{isDownloading
+					class="visible absolute top-2 right-2 cursor-pointer rounded-lg bg-muted p-2 duration-150 hover:bg-interactive-hover fine-hover:invisible fine-hover:group-hover:visible{isDownloading
 						? ' opacity-50'
 						: ''}"
 				>

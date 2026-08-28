@@ -7,7 +7,7 @@
 	let showUsage = $derived(token > 0);
 </script>
 
-<div class="flex justify-end space-x-1 duration-150 group-hover:visible md:invisible">
+<div class="flex justify-end space-x-1 duration-150 fine-hover:invisible fine-hover:group-hover:visible">
 	<div class="group/usage relative flex space-x-1">
 		{#if showUsage}
 			<CircleDollarSign
@@ -15,7 +15,7 @@
 			/>
 
 			<div
-				class="absolute top-0 right-13 flex h-10 w-sm items-center justify-end duration-150 group-hover/usage:visible md:invisible"
+				class="absolute top-0 right-13 flex h-10 w-sm items-center justify-end duration-150 fine-hover:invisible fine-hover:group-hover/usage:visible"
 			>
 				<div class="rounded-md bg-muted p-2 select-none">
 					{token} token/${cost.toFixed(4)}
