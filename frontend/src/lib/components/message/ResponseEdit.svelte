@@ -7,7 +7,9 @@
 	let showUsage = $derived(token > 0);
 </script>
 
-<div class="flex justify-end space-x-1 duration-150 fine-hover:invisible fine-hover:group-hover:visible">
+<div
+	class="flex justify-end space-x-1 duration-150 fine-hover:invisible fine-hover:group-hover:visible"
+>
 	<div class="group/usage relative flex space-x-1">
 		{#if showUsage}
 			<CircleDollarSign
