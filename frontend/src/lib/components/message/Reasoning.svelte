@@ -21,8 +21,6 @@
 			lines = content.split('\n');
 			prefix = content;
 		}
-		if (lines.at(-1)==="")
-			lines.pop();
 	});
 </script>
 
