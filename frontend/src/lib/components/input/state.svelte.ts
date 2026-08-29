@@ -71,6 +71,18 @@ $effect.root(() => {
 	$effect(() => {
 		unsupportedFilesModalOpen.val = pendingFile.val.length > 0;
 	});
+	$effect(() => {
+		if (inputContent.val.length === 0) isEditing.val = true;
+	});
+	$effect(() => {
+		const mq = window.matchMedia('(width >= 48rem)');
+		const onChange = () => {
+			if (!mq.matches) isEditing.val = true;
+		};
+		mq.addEventListener('change', onChange);
+		onChange();
+		return () => mq.removeEventListener('change', onChange);
+	});
 });
 
 export let ensureUploaded: () => Promise<{ name: string; id: number }[]>;
