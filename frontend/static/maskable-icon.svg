@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
 	<rect width="512" height="512" fill="#222831" />
-	<g transform="translate(51.2 51.2) scale(0.7876923076923077)">
+	<g transform="translate(64 64) scale(0.7384615384615385)">
 		<g clip-path="url(#maskable-logo-clip)">
 			<rect x="4" width="512" height="512" rx="50" fill="#222831" />
 			<rect
