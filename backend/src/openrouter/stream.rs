@@ -132,6 +132,7 @@ impl StreamCompletion {
     }
 
     fn handle_choice(&mut self, choice: raw::Choice) -> Vec<StreamCompletionResp> {
+        self.stop_reason = choice.finish_reason.or(self.stop_reason.take());
         let delta = choice.delta;
 
         let content = delta.content.unwrap_or("".to_string());
@@ -190,10 +191,16 @@ impl StreamCompletion {
             None
         };
 
+        let mut responses = Vec::new();
+        if let Some(reasoning) = reasoning_token {
+            responses.push(reasoning);
+        }
+        if !content.is_empty() {
+            responses.push(StreamCompletionResp::ResponseToken(content));
+        }
+
         // Handle tool calls - support parallel tool calls
         if let Some(tool_calls) = delta.tool_calls {
-            let mut last_tool_token: Option<(usize, String, String)> = None;
-
             for call in tool_calls {
                 let index = call.index as usize;
 
@@ -222,52 +229,22 @@ impl StreamCompletion {
                     args_token = args;
                 }
 
-                // Track the last non-empty token
                 if !name_token.is_empty() || !args_token.is_empty() {
-                    last_tool_token = Some((index, name_token, args_token));
+                    responses.push(StreamCompletionResp::ToolToken {
+                        idx: index,
+                        name: name_token,
+                        args: args_token,
+                    });
                 }
-            }
-
-            if let Some((idx, name, args)) = last_tool_token {
-                // If we have both reasoning and tool call, emit reasoning first
-                let mut result = Vec::new();
-                if let Some(reasoning) = reasoning_token {
-                    result.push(reasoning);
-                }
-                result.push(StreamCompletionResp::ToolToken { idx, name, args });
-                return result;
             }
         }
 
-        // No tool calls, emit reasoning + content if present
-        if let Some(reasoning) = reasoning_token {
-            if content.is_empty() {
-                vec![reasoning]
-            } else {
-                vec![reasoning, StreamCompletionResp::ResponseToken(content)]
-            }
-        } else if let Some(reason) = choice.finish_reason {
-            self.stop_reason = Some(reason.clone());
-            match reason {
-                raw::FinishReason::Stop | raw::FinishReason::Length | raw::FinishReason::Error => {
-                    vec![StreamCompletionResp::ResponseToken(content)]
-                }
-                raw::FinishReason::ToolCalls => {
-                    // Return first tool call when finish_reason is ToolCalls
-                    // The full list is available in get_result()
-                    vec![StreamCompletionResp::ResponseToken(content)]
-                }
-            }
-        } else if !content.is_empty() {
-            vec![StreamCompletionResp::ResponseToken(content)]
-        } else {
-            vec![]
-        }
+        responses
     }
 
     fn handle_data(&mut self, data: &str) -> Result<Vec<StreamCompletionResp>, Error> {
         // this approach made it compatible with both openrouter and openai
-        if let Ok(resp) = serde_json::from_str::<raw::CompletionInfoResp>(data) {
+        let usage = if let Ok(resp) = serde_json::from_str::<raw::CompletionInfoResp>(data) {
             let cost = resp
                 .usage
                 .cost_details
@@ -277,14 +254,20 @@ impl StreamCompletion {
 
             self.usage.cost += cost;
             self.usage.token += resp.usage.total_tokens.unwrap_or(0);
-            return Ok(vec![StreamCompletionResp::Usage {
+            Some(StreamCompletionResp::Usage {
                 price: cost,
                 // cloak model may return null for total_tokens
                 token: resp.usage.total_tokens.map(|x| x as usize).unwrap_or(0),
-            }]);
-        }
+            })
+        } else {
+            None
+        };
 
-        let resp = serde_json::from_str::<raw::StreamCompletionResponse>(data)?;
+        let resp = match serde_json::from_str::<raw::StreamCompletionResponse>(data) {
+            Ok(response) => response,
+            Err(_) if usage.is_some() => return Ok(usage.into_iter().collect()),
+            Err(error) => return Err(error.into()),
+        };
 
         if let Some(model_id) = resp.model {
             let trimmed_id = model_id.split(":").next().unwrap_or("");
@@ -302,16 +285,13 @@ impl StreamCompletion {
             return Err(error.into());
         }
 
-        let choice = resp
-            .choices
-            .into_iter()
-            .next()
-            .ok_or(Error::Incompatible("No returned choices in completion"))?;
-
-        let responses = self.handle_choice(choice);
-        for resp in &responses {
-            self.responses.push(resp.clone());
-        }
+        let mut responses = match resp.choices.into_iter().next() {
+            Some(choice) => self.handle_choice(choice),
+            None if usage.is_some() => return Ok(usage.into_iter().collect()),
+            None => return Err(Error::Incompatible("No returned choices in completion")),
+        };
+        self.responses.extend(responses.iter().cloned());
+        responses.extend(usage);
         Ok(responses)
     }
 
@@ -522,5 +502,391 @@ impl<S: Stream<Item = Result<StreamCompletionResp, Error>> + Unpin> Stream
             }
             task::Poll::Pending => task::Poll::Pending,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{Value, json};
+
+    fn completion(events: Vec<Value>) -> StreamCompletion {
+        let events = events.into_iter().map(|data| {
+            Ok(Event {
+                data: data.to_string(),
+                ..Default::default()
+            })
+        });
+        StreamCompletion {
+            source: Box::pin(tokio_stream::iter(events)),
+            toolcalls: Vec::new(),
+            usage: Usage::default(),
+            stop_reason: None,
+            responses: Vec::new(),
+            annotations: None,
+            reasoning_details: None,
+            model_id: "test/model".to_string(),
+            images: Vec::new(),
+            citations: Vec::new(),
+            buffered: VecDeque::new(),
+        }
+    }
+
+    fn chunk(delta: Value, finish_reason: Value) -> Value {
+        json!({"id": "completion-test", "choices": [{
+            "index": 0, "delta": delta, "finish_reason": finish_reason
+        }]})
+    }
+
+    async fn drain(completion: &mut StreamCompletion) -> Result<Vec<StreamCompletionResp>, Error> {
+        let mut responses = Vec::new();
+        while let Some(response) = completion.next().await {
+            responses.push(response?);
+        }
+        Ok(responses)
+    }
+
+    fn tokens(responses: &[StreamCompletionResp]) -> Vec<Value> {
+        responses
+            .iter()
+            .map(|response| match response {
+                StreamCompletionResp::ResponseToken(text) => json!(["text", text]),
+                StreamCompletionResp::ReasoningToken(text) => json!(["reasoning", text]),
+                StreamCompletionResp::ToolToken { idx, name, args } => {
+                    json!(["tool", idx, name, args])
+                }
+                StreamCompletionResp::Usage { price, token } => json!(["usage", price, token]),
+            })
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn preserves_openrouter_interleaved_reasoning_and_finish_reason() -> Result<(), Error> {
+        let mut stream = completion(vec![
+            chunk(
+                json!({"reasoning_content": "Think", "content": "Hello"}),
+                json!(null),
+            ),
+            chunk(
+                json!({"reasoning": "Again", "content": "世界"}),
+                json!("length"),
+            ),
+        ]);
+        let responses = drain(&mut stream).await?;
+        let expected = vec![
+            json!(["reasoning", "Think"]),
+            json!(["text", "Hello"]),
+            json!(["reasoning", "Again"]),
+            json!(["text", "世界"]),
+        ];
+        assert_eq!(tokens(&responses), expected);
+        let result = stream.get_result();
+        assert_eq!(tokens(&result.responses), expected);
+        assert_eq!(result.get_text(), "Hello世界");
+        assert!(matches!(result.stop_reason, raw::FinishReason::Length));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preserves_openai_reasoning_before_non_interleaved_text() -> Result<(), Error> {
+        let mut stream = completion(vec![
+            chunk(json!({"reasoning_content": "Think"}), json!(null)),
+            chunk(json!({"reasoning_content": "Again"}), json!(null)),
+            chunk(json!({"content": "Hello"}), json!(null)),
+            chunk(json!({"content": "世界"}), json!("stop")),
+        ]);
+        let responses = drain(&mut stream).await?;
+        let expected = vec![
+            json!(["reasoning", "Think"]),
+            json!(["reasoning", "Again"]),
+            json!(["text", "Hello"]),
+            json!(["text", "世界"]),
+        ];
+        assert_eq!(tokens(&responses), expected);
+        let result = stream.get_result();
+        assert_eq!(tokens(&result.responses), expected);
+        assert_eq!(result.get_text(), "Hello世界");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preserves_extra_reasoning_after_server_search_for_non_interleaved_model()
+    -> Result<(), Error> {
+        let citation = json!({"type": "url_citation", "url_citation": {
+            "url": "https://example.com", "title": "Search result"
+        }});
+        let mut stream = StreamWithOrderedTokens::new(completion(vec![
+            chunk(json!({"reasoning": "Plan search"}), json!(null)),
+            chunk(json!({"content": "Searching. "}), json!(null)),
+            chunk(
+                json!({"annotations": [citation], "reasoning": "Evaluate search result"}),
+                json!(null),
+            ),
+            chunk(json!({"content": "Answer"}), json!("stop")),
+        ]));
+        let mut responses = Vec::new();
+        while let Some(response) = StreamExt::next(&mut stream).await {
+            responses.push(response?);
+        }
+        let expected = vec![
+            json!(["reasoning", "Plan search"]),
+            json!(["text", "Searching. "]),
+            json!(["reasoning", "Evaluate search result"]),
+            json!(["text", "Answer"]),
+        ];
+        assert_eq!(tokens(&responses), expected);
+        let result = stream.into_inner().get_result();
+        assert_eq!(tokens(&result.responses), expected);
+        assert_eq!(result.get_text(), "Searching. Answer");
+        assert!(result.toolcalls.is_empty());
+        assert_eq!(result.citations.len(), 1);
+        assert_eq!(result.citations[0].url, "https://example.com");
+        assert_eq!(result.citations[0].title.as_deref(), Some("Search result"));
+        assert!(matches!(result.stop_reason, raw::FinishReason::Stop));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn emits_every_parallel_tool_delta_and_accumulates_by_index() -> Result<(), Error> {
+        let mut stream = completion(vec![
+            chunk(
+                json!({"reasoning": "Plan", "tool_calls": [
+                    {"index": 0, "id": "first", "function": {"name": "sea", "arguments": "{\"q\":"}},
+                    {"index": 1, "id": "second", "function": {"name": "crawl", "arguments": "{\"url\":"}}
+                ]}),
+                json!(null),
+            ),
+            chunk(
+                json!({"tool_calls": [
+                    {"index": 1, "function": {"arguments": "\"https://example.com\"}"}},
+                    {"index": 0, "function": {"name": "rch", "arguments": "\"rust\"}"}}
+                ]}),
+                json!("stop"),
+            ),
+        ]);
+        assert_eq!(
+            tokens(&drain(&mut stream).await?),
+            vec![
+                json!(["reasoning", "Plan"]),
+                json!(["tool", 0, "sea", "{\"q\":"]),
+                json!(["tool", 1, "crawl", "{\"url\":"]),
+                json!(["tool", 1, "", "\"https://example.com\"}"]),
+                json!(["tool", 0, "rch", "\"rust\"}"]),
+            ]
+        );
+        let result = stream.get_result();
+        assert_eq!(result.toolcalls.len(), 2);
+        assert_eq!(result.toolcalls[0].id, "first");
+        assert_eq!(result.toolcalls[0].name, "search");
+        assert_eq!(result.toolcalls[0].args, r#"{"q":"rust"}"#);
+        assert_eq!(result.toolcalls[1].id, "second");
+        assert_eq!(result.toolcalls[1].name, "crawl");
+        assert_eq!(result.toolcalls[1].args, r#"{"url":"https://example.com"}"#);
+        assert!(matches!(result.stop_reason, raw::FinishReason::ToolCalls));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn retains_content_in_a_tool_call_chunk() -> Result<(), Error> {
+        let mut stream = completion(vec![chunk(
+            json!({
+                "content": "Searching", "tool_calls": [{
+                    "index": 0, "id": "call", "function": {"name": "search", "arguments": "{}"}
+                }]
+            }),
+            json!("tool_calls"),
+        )]);
+        let responses = drain(&mut stream).await?;
+        assert_eq!(
+            tokens(&responses),
+            vec![
+                json!(["text", "Searching"]),
+                json!(["tool", 0, "search", "{}"])
+            ]
+        );
+        assert_eq!(stream.get_result().get_text(), "Searching");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn processes_content_and_usage_from_the_same_event() -> Result<(), Error> {
+        let mut event = chunk(json!({"content": "Answer"}), json!("stop"));
+        event["model"] = json!("test/model");
+        event["usage"] = json!({"total_tokens": 7, "cost": 0.25});
+        let mut stream = completion(vec![event]);
+        assert_eq!(
+            tokens(&drain(&mut stream).await?),
+            vec![json!(["text", "Answer"]), json!(["usage", 0.25, 7])]
+        );
+        let result = stream.get_result();
+        assert_eq!(result.get_text(), "Answer");
+        assert_eq!(result.usage.token, 7);
+        assert_eq!(result.usage.cost, 0.25);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn handles_usage_only_events_and_nullable_token_counts() -> Result<(), Error> {
+        let mut stream = completion(vec![
+            json!({"id": "test", "model": "test/model", "usage": {
+                "total_tokens": 7, "cost": 1.0, "cost_details": {"upstream_inference_cost": 0.25}
+            }}),
+            json!({"id": "test", "model": "test/model", "usage": {"total_tokens": null, "cost": 0.5}}),
+        ]);
+        assert_eq!(
+            tokens(&drain(&mut stream).await?),
+            vec![json!(["usage", 0.25, 7]), json!(["usage", 0.5, 0])]
+        );
+        let result = stream.get_result();
+        assert_eq!(result.usage.token, 7);
+        assert_eq!(result.usage.cost, 0.75);
+        assert!(result.responses.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preserves_metadata_and_deduplicates_citations_across_events() -> Result<(), Error> {
+        let citation =
+            json!({"type": "url_citation", "url_citation": {"url": "https://example.com"}});
+        let mut stream = completion(vec![
+            chunk(
+                json!({"annotations": [citation.clone()], "reasoning_details": [{"text": "first"}]}),
+                json!(null),
+            ),
+            chunk(
+                json!({"annotations": [citation], "reasoning_details": [{"text": "second"}]}),
+                json!(null),
+            ),
+        ]);
+        assert!(drain(&mut stream).await?.is_empty());
+        let result = stream.get_result();
+        assert_eq!(result.citations.len(), 1);
+        assert_eq!(result.citations[0].url, "https://example.com");
+        assert_eq!(
+            result
+                .annotations
+                .as_ref()
+                .and_then(Value::as_array)
+                .map(Vec::len),
+            Some(2)
+        );
+        assert_eq!(
+            result.reasoning_details,
+            Some(json!({
+                "model_id": "test/model", "data": [{"text": "first"}, {"text": "second"}]
+            }))
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn skips_empty_choices_but_reports_upstream_errors() -> Result<(), Error> {
+        let mut stream = completion(vec![
+            json!({"id": "test", "choices": []}),
+            chunk(json!({"content": "Before error"}), json!(null)),
+            json!({"id": "test", "choices": [], "error": {"message": "Quota exceeded", "code": 429}}),
+        ]);
+        let first = stream.next().await.transpose()?;
+        assert!(
+            matches!(first, Some(StreamCompletionResp::ResponseToken(ref text)) if text == "Before error")
+        );
+        assert!(
+            matches!(stream.next().await, Some(Err(Error::Api { message, code: Some(429) })) if message == "Quota exceeded")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn reports_malformed_json() {
+        let mut stream = completion(Vec::new());
+        assert!(matches!(
+            stream.handle_data("not json"),
+            Err(Error::Serde(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn stream_trait_filters_empty_tokens_and_keeps_buffered_order() -> Result<(), Error> {
+        let mut stream = completion(vec![
+            chunk(json!({"content": ""}), json!(null)),
+            chunk(
+                json!({"reasoning": "Think", "content": "Answer"}),
+                json!(null),
+            ),
+            chunk(json!({}), json!("stop")),
+        ]);
+        let mut responses = Vec::new();
+        while let Some(response) = StreamExt::next(&mut stream).await {
+            responses.push(response?);
+        }
+        assert_eq!(
+            tokens(&responses),
+            vec![json!(["reasoning", "Think"]), json!(["text", "Answer"])]
+        );
+        assert_eq!(stream.get_result().responses.len(), 2);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn retains_each_reported_finish_reason() -> Result<(), Error> {
+        for reason in ["stop", "length", "error", "tool_calls"] {
+            let mut stream = completion(vec![chunk(json!({"content": "Answer"}), json!(reason))]);
+            drain(&mut stream).await?;
+            let result = stream.get_result();
+            let expected: raw::FinishReason = serde_json::from_value(json!(reason))?;
+            assert_eq!(
+                std::mem::discriminant(&result.stop_reason),
+                std::mem::discriminant(&expected)
+            );
+            assert_eq!(result.get_text(), "Answer");
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn skips_done_marker_and_defaults_missing_finish_reason() -> Result<(), Error> {
+        let mut stream = completion(Vec::new());
+        stream.source = Box::pin(tokio_stream::iter(vec![
+            Ok(Event {
+                data: chunk(json!({"content": "Answer"}), json!(null)).to_string(),
+                ..Default::default()
+            }),
+            Ok(Event {
+                data: "[DONE]".to_string(),
+                ..Default::default()
+            }),
+        ]));
+        assert_eq!(
+            tokens(&drain(&mut stream).await?),
+            vec![json!(["text", "Answer"])]
+        );
+        assert!(matches!(
+            stream.get_result().stop_reason,
+            raw::FinishReason::Stop
+        ));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn ordered_wrapper_filters_tools_and_propagates_errors() {
+        let source = tokio_stream::iter(vec![
+            Ok(StreamCompletionResp::ToolToken {
+                idx: 0,
+                name: "search".into(),
+                args: "{}".into(),
+            }),
+            Ok(StreamCompletionResp::ResponseToken("Answer".into())),
+            Err(Error::Incompatible("test error")),
+        ]);
+        let mut stream = StreamWithOrderedTokens::new(source);
+        assert!(
+            matches!(StreamExt::next(&mut stream).await, Some(Ok(StreamCompletionResp::ResponseToken(text))) if text == "Answer")
+        );
+        assert!(matches!(
+            StreamExt::next(&mut stream).await,
+            Some(Err(Error::Incompatible("test error")))
+        ));
+        assert!(StreamExt::next(&mut stream).await.is_none());
+        assert!(StreamExt::next(&mut stream).await.is_none());
     }
 }
