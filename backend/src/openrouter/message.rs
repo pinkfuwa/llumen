@@ -128,24 +128,23 @@ impl Message {
                 reasoning_details,
                 files,
             } => {
-                let mut reasoning_details_value = None;
-                if let Some(details) = reasoning_details {
-                    if let Some(obj) = details.as_object() {
-                        if let Some(model_id) = obj.get("model_id").and_then(|v| v.as_str()) {
-                            if target_model_id.starts_with(model_id) {
-                                reasoning_details_value = obj.get("data").cloned();
-                            }
+                let reasoning_details = reasoning_details
+                    .and_then(|details| {
+                        let stored_model_id = details.get("model_id")?.as_str()?;
+                        let stored_model_id = stored_model_id.split(':').next()?;
+                        let target_model_id = target_model_id.split(':').next()?;
+                        if stored_model_id.is_empty() || stored_model_id != target_model_id {
+                            return None;
                         }
-                    }
-                }
+                        details.get("data")?.as_array().cloned()
+                    })
+                    .unwrap_or_default();
                 if files.is_empty() {
                     return raw::Message {
                         role: raw::Role::Assistant,
                         content: Some(content),
                         annotations,
-                        reasoning_details: reasoning_details_value
-                            .map(|v| vec![v])
-                            .unwrap_or_default(),
+                        reasoning_details,
                         ..Default::default()
                     };
                 }
@@ -161,7 +160,7 @@ impl Message {
                     role: raw::Role::Assistant,
                     contents: Some(parts),
                     annotations,
-                    reasoning_details: reasoning_details_value.map(|v| vec![v]).unwrap_or_default(),
+                    reasoning_details,
                     ..Default::default()
                 }
             }
@@ -239,5 +238,244 @@ impl From<protocol::ModelCapability> for super::MaybeCapability {
             reasoning: capability.reasoning.map(|r| r.is_enabled()),
             reasoning_effort: capability.reasoning.map(|r| r.effort()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{json, Value};
+    use stream_json::IntoSerializer;
+
+    fn assistant(reasoning_details: Option<Value>) -> Message {
+        Message::Assistant {
+            content: "Answer 世界".to_string(),
+            annotations: None,
+            reasoning_details,
+            files: Vec::new(),
+        }
+    }
+
+    fn reasoning_blocks() -> Value {
+        json!([
+            {"type": "reasoning.text", "text": "Think", "index": 0},
+            {"type": "reasoning.encrypted", "data": "opaque", "index": 1}
+        ])
+    }
+
+    async fn serialize(message: raw::Message) -> anyhow::Result<Value> {
+        let body = reqwest::Body::wrap_stream(message.into_stream());
+        let bytes = axum::body::to_bytes(axum::body::Body::new(body), usize::MAX).await?;
+        Ok(serde_json::from_slice(&bytes)?)
+    }
+
+    #[tokio::test]
+    async fn serializes_system_and_user_roles() -> anyhow::Result<()> {
+        for (message, role) in [
+            (Message::System("Guide".to_string()), "system"),
+            (Message::User("Question".to_string()), "user"),
+        ] {
+            let content = match &message {
+                Message::System(content) | Message::User(content) => content.clone(),
+                _ => unreachable!(),
+            };
+            let message = message.to_raw_message("test/model", &Default::default());
+            assert_eq!(
+                serialize(message).await?,
+                json!({"role": role, "content": content})
+            );
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preserves_assistant_annotations_without_reasoning() -> anyhow::Result<()> {
+        let annotations =
+            json!([{"type": "url_citation", "url_citation": {"url": "https://example.com"}}]);
+        let mut message = assistant(None);
+        if let Message::Assistant {
+            annotations: value, ..
+        } = &mut message
+        {
+            *value = Some(annotations.clone());
+        }
+        let message = message.to_raw_message("test/model", &Default::default());
+        assert_eq!(
+            serialize(message).await?,
+            json!({
+                "role": "assistant", "content": "Answer 世界", "annotations": annotations
+            })
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn replays_reasoning_as_a_flat_array_in_original_order() -> anyhow::Result<()> {
+        let blocks = reasoning_blocks();
+        let message = assistant(Some(json!({"model_id": "test/model", "data": blocks})))
+            .to_raw_message("test/model", &Default::default());
+        assert_eq!(
+            serialize(message).await?,
+            json!({
+                "role": "assistant", "content": "Answer 世界", "reasoning_details": blocks
+            })
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn preserves_reasoning_across_routing_suffixes() {
+        for (stored, target) in [
+            ("test/model", "test/model:free"),
+            ("test/model:free", "test/model"),
+            ("test/model:free", "test/model:nitro"),
+        ] {
+            let blocks = reasoning_blocks();
+            let message = assistant(Some(json!({"model_id": stored, "data": blocks})))
+                .to_raw_message(target, &Default::default());
+            assert_eq!(
+                message.reasoning_details,
+                blocks.as_array().cloned().unwrap_or_default()
+            );
+        }
+    }
+
+    #[test]
+    fn omits_reasoning_for_other_models_including_prefix_collisions() {
+        for target in ["other/model", "test/model-v2", "test/model-extra:free"] {
+            let message = assistant(Some(json!({
+                "model_id": "test/model", "data": reasoning_blocks()
+            })))
+            .to_raw_message(target, &Default::default());
+            assert!(message.reasoning_details.is_empty(), "target: {target}");
+            assert_eq!(message.content.as_deref(), Some("Answer 世界"));
+        }
+    }
+
+    #[test]
+    fn omits_malformed_stored_reasoning() {
+        for details in [
+            Value::Null,
+            json!([]),
+            json!({"data": reasoning_blocks()}),
+            json!({"model_id": 42, "data": reasoning_blocks()}),
+            json!({"model_id": "", "data": reasoning_blocks()}),
+            json!({"model_id": "test/model"}),
+            json!({"model_id": "test/model", "data": null}),
+            json!({"model_id": "test/model", "data": "invalid"}),
+            json!({"model_id": "test/model", "data": {"text": "invalid"}}),
+        ] {
+            let message =
+                assistant(Some(details.clone())).to_raw_message("test/model", &Default::default());
+            assert!(message.reasoning_details.is_empty(), "details: {details}");
+            assert_eq!(message.content.as_deref(), Some("Answer 世界"));
+        }
+    }
+
+    #[tokio::test]
+    async fn omits_empty_reasoning_from_the_request() -> anyhow::Result<()> {
+        let message = assistant(Some(json!({"model_id": "test/model", "data": []})))
+            .to_raw_message("test/model", &Default::default());
+        assert_eq!(
+            serialize(message).await?,
+            json!({"role": "assistant", "content": "Answer 世界"})
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preserves_reasoning_and_annotations_in_multipart_assistant() -> anyhow::Result<()> {
+        let database =
+            redb::Database::builder().create_with_backend(redb::backends::InMemoryBackend::new())?;
+        let blob = crate::utils::blob::BlobDB::new(std::sync::Arc::new(database));
+        blob.insert(
+            1,
+            11,
+            tokio_stream::iter([bytes::Bytes::from_static(b"source text")]),
+        )
+        .await?;
+        let reader = blob
+            .get(1)
+            .ok_or_else(|| anyhow::anyhow!("test blob missing"))?;
+        let blocks = reasoning_blocks();
+        let annotations = json!([{"type": "file", "file": {"name": "source.txt"}}]);
+        let message = Message::Assistant {
+            content: "Answer".to_string(),
+            annotations: Some(annotations.clone()),
+            reasoning_details: Some(json!({"model_id": "test/model", "data": blocks})),
+            files: vec![File {
+                name: "source.txt".to_string(),
+                data: reader.into(),
+                mime_type: Some("text/plain".to_string()),
+            }],
+        }
+        .to_raw_message("test/model", &Default::default());
+        assert_eq!(
+            serialize(message).await?,
+            json!({
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "\nUploaded file: source.txt\n<content>\n"},
+                    {"type": "text", "text": "source text"},
+                    {"type": "text", "text": "\n</content>"},
+                    {"type": "text", "text": "Answer"}
+                ],
+                "annotations": annotations,
+                "reasoning_details": blocks
+            })
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn serializes_tool_calls_with_original_arguments() -> anyhow::Result<()> {
+        let arguments = "{\"query\": \"世界\"}";
+        let message = Message::ToolCall(MessageToolCall {
+            id: "call_1".to_string(),
+            name: "search".to_string(),
+            arguments: arguments.to_string(),
+        })
+        .to_raw_message("test/model", &Default::default());
+        assert_eq!(
+            serialize(message).await?,
+            json!({
+                "role": "assistant", "content": "",
+                "tool_calls": [{"id": "call_1", "type": "function",
+                    "function": {"name": "search", "arguments": arguments}}]
+            })
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn serializes_tool_results_with_optional_file_metadata() -> anyhow::Result<()> {
+        for files in [
+            Vec::new(),
+            vec![protocol::FileMetadata {
+                id: 7,
+                name: "result.txt".to_string(),
+                kind: Default::default(),
+                dimensions: None,
+            }],
+        ] {
+            let content = if files.is_empty() {
+                "Found 世界".to_string()
+            } else {
+                json!({"content": "Found 世界", "files": files}).to_string()
+            };
+            let message = Message::ToolResult(MessageToolResult {
+                id: "call_1".to_string(),
+                content: "Found 世界".to_string(),
+                files,
+            })
+            .to_raw_message("test/model", &Default::default());
+            assert_eq!(
+                serialize(message).await?,
+                json!({
+                    "role": "tool", "tool_call_id": "call_1", "content": content
+                })
+            );
+        }
+        Ok(())
     }
 }
