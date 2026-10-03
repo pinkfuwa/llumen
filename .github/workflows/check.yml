@@ -8,8 +8,28 @@ permissions:
   contents: read
 
 jobs:
+  check-push:
+    name: Check push source
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.filter.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check for an existing PR run
+        id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: bash .github/scripts/skip-duplicate-ci.sh
+
   backend-tests:
-    name: Backend tests
+    name: ${{ github.event_name == 'push' && 'Backend tests (push)' || 'Backend tests' }}
+    needs: check-push
+    if: ${{ !cancelled() && needs.check-push.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -18,7 +38,7 @@ jobs:
       - name: Get pnpm lockfile hash
         id: pnpm_lockfile_hash
         run: |
-          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Cache frontend node_modules
         uses: actions/cache@v5
@@ -51,7 +71,7 @@ jobs:
       - name: Get cargo lockfile hash
         id: lockfile_hash
         run: |
-          echo "cargo_lock_hash=$(sha256sum backend/Cargo.lock | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "cargo_lock_hash=$(sha256sum backend/Cargo.lock | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Cache backend target directory
         uses: actions/cache@v5
@@ -68,7 +88,9 @@ jobs:
         run: cargo test --workspace --exclude xtask
 
   frontend-tests:
-    name: Frontend tests
+    name: ${{ github.event_name == 'push' && 'Frontend tests (push)' || 'Frontend tests' }}
+    needs: check-push
+    if: ${{ !cancelled() && needs.check-push.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -77,7 +99,7 @@ jobs:
       - name: Get pnpm lockfile hash
         id: lockfile_hash
         run: |
-          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Cache frontend node_modules
         uses: actions/cache@v5
