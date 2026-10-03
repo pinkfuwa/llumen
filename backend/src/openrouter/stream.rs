@@ -561,7 +561,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn emits_reasoning_before_text_and_retains_finish_reason() -> Result<(), Error> {
+    async fn preserves_openrouter_interleaved_reasoning_and_finish_reason() -> Result<(), Error> {
         let mut stream = completion(vec![
             chunk(
                 json!({"reasoning_content": "Think", "content": "Hello"}),
@@ -572,18 +572,77 @@ mod tests {
                 json!("length"),
             ),
         ]);
-        assert_eq!(
-            tokens(&drain(&mut stream).await?),
-            vec![
-                json!(["reasoning", "Think"]),
-                json!(["text", "Hello"]),
-                json!(["reasoning", "Again"]),
-                json!(["text", "世界"]),
-            ]
-        );
+        let responses = drain(&mut stream).await?;
+        let expected = vec![
+            json!(["reasoning", "Think"]),
+            json!(["text", "Hello"]),
+            json!(["reasoning", "Again"]),
+            json!(["text", "世界"]),
+        ];
+        assert_eq!(tokens(&responses), expected);
         let result = stream.get_result();
+        assert_eq!(tokens(&result.responses), expected);
         assert_eq!(result.get_text(), "Hello世界");
         assert!(matches!(result.stop_reason, raw::FinishReason::Length));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preserves_openai_reasoning_before_non_interleaved_text() -> Result<(), Error> {
+        let mut stream = completion(vec![
+            chunk(json!({"reasoning_content": "Think"}), json!(null)),
+            chunk(json!({"reasoning_content": "Again"}), json!(null)),
+            chunk(json!({"content": "Hello"}), json!(null)),
+            chunk(json!({"content": "世界"}), json!("stop")),
+        ]);
+        let responses = drain(&mut stream).await?;
+        let expected = vec![
+            json!(["reasoning", "Think"]),
+            json!(["reasoning", "Again"]),
+            json!(["text", "Hello"]),
+            json!(["text", "世界"]),
+        ];
+        assert_eq!(tokens(&responses), expected);
+        let result = stream.get_result();
+        assert_eq!(tokens(&result.responses), expected);
+        assert_eq!(result.get_text(), "Hello世界");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preserves_extra_reasoning_after_server_search_for_non_interleaved_model()
+    -> Result<(), Error> {
+        let citation = json!({"type": "url_citation", "url_citation": {
+            "url": "https://example.com", "title": "Search result"
+        }});
+        let mut stream = StreamWithOrderedTokens::new(completion(vec![
+            chunk(json!({"reasoning": "Plan search"}), json!(null)),
+            chunk(json!({"content": "Searching. "}), json!(null)),
+            chunk(
+                json!({"annotations": [citation], "reasoning": "Evaluate search result"}),
+                json!(null),
+            ),
+            chunk(json!({"content": "Answer"}), json!("stop")),
+        ]));
+        let mut responses = Vec::new();
+        while let Some(response) = StreamExt::next(&mut stream).await {
+            responses.push(response?);
+        }
+        let expected = vec![
+            json!(["reasoning", "Plan search"]),
+            json!(["text", "Searching. "]),
+            json!(["reasoning", "Evaluate search result"]),
+            json!(["text", "Answer"]),
+        ];
+        assert_eq!(tokens(&responses), expected);
+        let result = stream.into_inner().get_result();
+        assert_eq!(tokens(&result.responses), expected);
+        assert_eq!(result.get_text(), "Searching. Answer");
+        assert!(result.toolcalls.is_empty());
+        assert_eq!(result.citations.len(), 1);
+        assert_eq!(result.citations[0].url, "https://example.com");
+        assert_eq!(result.citations[0].title.as_deref(), Some("Search result"));
+        assert!(matches!(result.stop_reason, raw::FinishReason::Stop));
         Ok(())
     }
 
