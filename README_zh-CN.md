@@ -23,23 +23,23 @@
 
 **大多数自托管界面是为服务器打造的，而非个人设备。** 它们功能强大，但往往需要大量资源和数小时的配置。
 
-Llumen 走出了一条不同的路：**保有隐私，却不复杂**。您获得真正需要的功能，并针对一般硬件(树莓派、旧笔记本、小型 VPS)进行优化，同时保留商业产品的大部分功能。
+Llumen 注重隐私，也让配置保持简单。针对树莓派、旧笔记本、小型 VPS 等普通硬件进行优化，同时保留商业产品的大部分功能。
 
 |  | 隐私 | 性能 | 配置 |
 | :--- | :--- | :--- | :--- |
-| **商业产品** (ChatGPT) | ❌ 仅限云端 | ✅ 高 | ✅ 零配置 |
-| **典型自托管** (Open WebUI) | ✅ 本地 | ✅ 高 | ❌ 地狱配置 |
+| **商业产品**（ChatGPT） | ❌ 仅限云端 | ✅ 高 | ✅ 零配置 |
+| **典型自托管**（Open WebUI） | ✅ 本地 | ✅ 高 | ❌ 配置繁琐 |
 | **llumen** | ✅ 本地 | ⚖️ 刚刚好 | ✅ 零配置 |
 
 ## 特色
 
-| 特色 | 您将获得 |
+| 特色 | 功能说明 |
 | :--- | :--- |
-| 速度 | 毫秒级冷启动，即时串流 |
-| 聊天模式 | 一般对话、网络搜索，以及深度研究(Agent) |
-| 丰富媒体 | PDF 上传、LaTeX 渲染、图片生成 |
-| 通用 API | 任何兼容 OpenAI Server（OpenRouter、本地模型等） |
-| 极小占用 | ~17MB 可执行文件，<128MB 内存使用 |
+| 速度 | 毫秒级冷启动，实时流式输出 |
+| 聊天模式 | 普通对话、网络搜索、深度研究（Agent） |
+| 多媒体 | PDF 上传、LaTeX 公式渲染、图片生成 |
+| 通用 API | 支持兼容 OpenAI API 的服务（OpenRouter、本地模型等） |
+| 资源占用 | 可执行文件大小 ~17MB，内存占用 <128MB |
 
 [![Video preview](https://pinkfuwa.github.io/llumen/img/demo/llumen-light.webp)](https://github.com/user-attachments/assets/4d46e649-bd33-4850-af2b-59527cc11618)
 
@@ -47,7 +47,7 @@ Llumen 走出了一条不同的路：**保有隐私，却不复杂**。您获得
 
 > **默认登录：** `admin` / `P@88w0rd`
 
-### Docker (30 秒快速安装)
+### Docker（30 秒快速安装）
 
 ```bash
 docker run -it --rm \
@@ -57,11 +57,11 @@ docker run -it --rm \
   ghcr.io/pinkfuwa/llumen:latest
 ```
 
-就这样。不需要配置文件。不需要 Python 依赖。
+不需要配置文件，也不需要安装 Python 依赖包。
 
-**想尝鲜最新功能？** 使用 `ghcr.io/pinkfuwa/llumen:nightly`
+想试用最新功能，可以使用 `ghcr.io/pinkfuwa/llumen:nightly`。
 
-请参阅 [./docs/sample](./docs/sample) 查看 docker-compose 示例。
+docker-compose 示例请见 [./docs/sample](./docs/sample)。
 
 ### 原生可执行文件
 
@@ -71,14 +71,14 @@ docker run -it --rm \
 
 请参阅 [BUILD.md](./BUILD.md) 获取详细编译说明。
 
-## 配置 (可选)
+## 配置（可选）
 
 | 变量 | 描述 | 默认值 |
 | :--- | :--- | :--- |
 | `API_KEY` | OpenRouter/OpenAI API 密钥 | *必填* |
 | `API_BASE` | 自定义 API Endpoint | `https://openrouter.ai/api` |
 | `DATA_PATH` | 存储文件夹 | `.` |
-| `BIND_ADDR` | 网络 Socket | `0.0.0.0:80` |
+| `BIND_ADDR` | socket address | `0.0.0.0:80` |
 
 ## 文档
 
