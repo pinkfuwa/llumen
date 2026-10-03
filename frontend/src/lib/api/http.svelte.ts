@@ -83,7 +83,7 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
  * @typeParam P - Request body type (default `any`).
  */
 export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response | undefined> {
-	const max_retries = opts.retry ? MAX_RETRIES : 1;
+	const max_retries = opts.retry ? MAX_RETRIES : 0;
 
 	const path = opts.path;
 	const body = opts.body ?? null;
@@ -118,12 +118,11 @@ export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response
 		else fetchBody = JSON.stringify(body);
 	}
 
-	let lastError: unknown;
 	return (async () => {
 		for (let attempt = 0; attempt <= max_retries; attempt++) {
 			if (opts.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 			try {
-				return fetch(apiBase + path, {
+				return await fetch(apiBase + path, {
 					method,
 					headers,
 					body: fetchBody,
@@ -131,7 +130,6 @@ export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response
 				});
 			} catch (err) {
 				if (opts.signal?.aborted) throw err;
-				lastError = err;
 				const isNetworkError = err instanceof TypeError;
 				if (!isNetworkError || attempt === max_retries) throw err;
 				await delay(RETRY_BASE_DELAY * 2 ** attempt, opts.signal);
@@ -152,17 +150,22 @@ export function RawAPIFetch<P = any>(opts: RawFetchOptions<P>): Promise<Response
  * @typeParam P - Request body type (default `any`).
  */
 export function APIFetch<D, P = any>(opts: RawFetchOptions<P>): Promise<D | undefined> {
-	return RawAPIFetch(opts).then(async (res) => {
-		if (res === undefined) return;
-		try {
-			const resJson: D | APIError = await res.json();
-			const error = getError(resJson);
-			if (error) displayError(error.error, error.reason);
-			else return resJson as D;
-		} catch (_) {
-			if (res.status == 429) displayError('API(typeshare)', 'rate limit exceeded');
-			else if (!opts.signal?.aborted)
-				displayError('API(typeshare)', 'maybe backend is disconnected');
-		}
-	});
+	return RawAPIFetch(opts)
+		.then(async (res) => {
+			if (res === undefined) return;
+			try {
+				const resJson: D | APIError = await res.json();
+				const error = getError(resJson);
+				if (error) displayError(error.error, error.reason);
+				else return resJson as D;
+			} catch (_) {
+				if (res.status == 429) displayError('API(typeshare)', 'rate limit exceeded');
+				else if (!opts.signal?.aborted)
+					displayError('API(typeshare)', 'maybe backend is disconnected');
+			}
+		})
+		.catch(() => {
+			if (!opts.signal?.aborted) displayError('API(typeshare)', 'maybe backend is disconnected');
+			return undefined;
+		});
 }
