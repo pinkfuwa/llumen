@@ -55,8 +55,8 @@ export async function download(id: number): Promise<string | undefined> {
 
 	let fail = !response || !response.ok;
 	if (!fail) {
-		let content_type = response!.headers.get('Content-Type');
-		fail = content_type == 'application/json';
+		const contentType = response!.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase();
+		fail = contentType === 'application/json';
 	}
 
 	if (fail) {
@@ -79,8 +79,8 @@ export async function downloadCompressed(id: number): Promise<string | undefined
 
 	let fail = !response || !response.ok;
 	if (!fail) {
-		let content_type = response!.headers.get('Content-Type');
-		fail = content_type == 'application/json';
+		const contentType = response!.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase();
+		fail = contentType === 'application/json';
 	}
 
 	if (fail) {
