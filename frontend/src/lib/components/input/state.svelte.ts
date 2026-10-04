@@ -145,12 +145,11 @@ export async function submit() {
 
 	submitting.val = true;
 	const text = inputContent.val;
-	const files = await ensureUploaded();
-	const mode = effective.mode;
-	const modelIdNum = parseInt(effective.modelId ?? '');
-
 	let ok = false;
 	try {
+		const files = await ensureUploaded();
+		const mode = effective.mode;
+		const modelIdNum = parseInt(effective.modelId ?? '');
 		const pid = page.params.id;
 		if (pid && !isNaN(+pid)) {
 			await createMessage({

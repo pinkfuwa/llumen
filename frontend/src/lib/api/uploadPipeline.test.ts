@@ -73,7 +73,9 @@ describe('upload queue', () => {
 		const second = deferred<UploadedFile>();
 		process.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
 		const result = queue.ready([file, other]);
+		await Promise.resolve();
 		second.resolve({ name: other.name, id: 2 });
+		await new Promise((resolve) => setTimeout(resolve, 0));
 		first.resolve({ name: file.name, id: 1 });
 		await expect(result).resolves.toEqual([
 			{ name: file.name, id: 1 },
@@ -122,7 +124,7 @@ describe('upload queue', () => {
 		const work = deferred<UploadedFile>();
 		process.mockResolvedValueOnce({ name: file.name, id: 1 }).mockReturnValueOnce(work.promise);
 		const result = queue.ready([file, other]);
-		await Promise.resolve();
+		await new Promise((resolve) => setTimeout(resolve, 0));
 		queue.update([other]);
 		work.resolve({ name: other.name, id: 2 });
 		await expect(result).resolves.toEqual([{ name: other.name, id: 2 }]);

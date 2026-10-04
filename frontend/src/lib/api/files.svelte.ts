@@ -108,11 +108,17 @@ export async function uploadFiles(
 	return results;
 }
 
+/**
+ * Starts uploads as selection changes within a Svelte effect scope.
+ * The returned function waits for a selection snapshot in order. Removed files
+ * and null upload results are omitted; other failures reject the call.
+ */
 export function createUploadPipeline(
 	fileGetter: () => File[]
 ): () => Promise<{ name: string; id: number }[]> {
 	const queue = createUploadQueue(async (file, signal) => {
 		const prepared = await prepareUploadFile(file, signal);
+		signal.throwIfAborted();
 		const id = await upload(prepared, signal);
 		return id === null ? null : { name: prepared.name, id };
 	});
