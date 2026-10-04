@@ -1,7 +1,7 @@
 import { RawAPIFetch, APIFetch } from './http.svelte';
 import type { FileUploadResp, FileRefreshReq, FileRefreshResp } from './types';
 import { prepareUploadFile } from './filePreparation';
-import { createUploadQueue } from './uploadPipeline';
+import { createFileUploads } from './fileUploads';
 import { displayError } from '$lib/error.svelte';
 import { untrack } from 'svelte';
 import { token } from '$lib/rune.svelte';
@@ -116,7 +116,7 @@ export async function uploadFiles(
 export function createUploadPipeline(
 	fileGetter: () => File[]
 ): () => Promise<{ name: string; id: number }[]> {
-	const queue = createUploadQueue(async (file, signal) => {
+	const uploads = createFileUploads(async (file, signal) => {
 		const prepared = await prepareUploadFile(file, signal);
 		signal.throwIfAborted();
 		const id = await upload(prepared, signal);
@@ -125,9 +125,9 @@ export function createUploadPipeline(
 
 	$effect(() => {
 		const files = [...fileGetter()];
-		untrack(() => queue.update(files));
+		untrack(() => uploads.setFiles(files));
 	});
-	$effect(() => () => queue.dispose());
+	$effect(() => () => uploads.close());
 
-	return () => queue.ready(untrack(() => [...fileGetter()]));
+	return () => uploads.waitForUploads(untrack(() => [...fileGetter()]));
 }
