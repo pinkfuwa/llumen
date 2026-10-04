@@ -23,7 +23,7 @@ export {
 	download,
 	downloadCompressed,
 	uploadFiles,
-	createUploadPipeline
+	watchSelectedFileUploads
 } from './files.svelte';
 
 // Message

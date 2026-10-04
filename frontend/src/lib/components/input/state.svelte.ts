@@ -2,7 +2,7 @@ import { page } from '$app/state';
 import { currentRoom, createRoom, haltCompletion } from '$lib/api';
 import { models } from '$lib/api/model.svelte';
 import { createMessage, streaming } from '$lib/api/message.svelte';
-import { createUploadPipeline } from '$lib/api/files.svelte';
+import { watchSelectedFileUploads } from '$lib/api/files.svelte';
 import { getSupportedFileTypes, separateFiles } from './fileTypes';
 import { ChatMode } from '$lib/api/types';
 import { localState } from '$lib/rune.svelte';
@@ -85,10 +85,10 @@ $effect.root(() => {
 	});
 });
 
-export let ensureUploaded: () => Promise<{ name: string; id: number }[]>;
+export let waitForSelectedUploads: () => Promise<{ name: string; id: number }[]>;
 
 $effect.root(() => {
-	ensureUploaded = createUploadPipeline(() => inputFiles.val);
+	waitForSelectedUploads = watchSelectedFileUploads(() => inputFiles.val);
 
 	$effect(() => {
 		const cap = effective.currentModel;
@@ -145,12 +145,11 @@ export async function submit() {
 
 	submitting.val = true;
 	const text = inputContent.val;
-	const files = await ensureUploaded();
-	const mode = effective.mode;
-	const modelIdNum = parseInt(effective.modelId ?? '');
-
 	let ok = false;
 	try {
+		const files = await waitForSelectedUploads();
+		const mode = effective.mode;
+		const modelIdNum = parseInt(effective.modelId ?? '');
 		const pid = page.params.id;
 		if (pid && !isNaN(+pid)) {
 			await createMessage({

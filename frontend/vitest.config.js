@@ -5,6 +5,7 @@ import path from 'path';
 export default defineConfig({
 	plugins: [sveltekit()],
 	resolve: {
+		conditions: ['browser'],
 		alias: {
 			$lib: path.resolve('src/lib')
 		}
