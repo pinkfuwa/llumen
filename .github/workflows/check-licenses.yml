@@ -6,6 +6,9 @@ on:
       - "backend/Cargo.lock"
       - "frontend/pnpm-lock.yaml"
   push:
+    branches:
+      - dev
+      - main
     paths:
       - "backend/Cargo.lock"
       - "frontend/pnpm-lock.yaml"
@@ -15,28 +18,8 @@ permissions:
   contents: read
 
 jobs:
-  check-push:
-    name: Check push source
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      skip: ${{ steps.filter.outputs.skip }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Check for an existing PR run
-        id: filter
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PUSH_BEFORE: ${{ github.event.before }}
-        run: bash .github/scripts/skip-duplicate-ci.sh
-
   check-backend-licenses:
-    name: ${{ github.event_name == 'push' && 'Check backend THIRDPARTY.toml (push)' || 'Check backend THIRDPARTY.toml' }}
-    needs: check-push
-    if: ${{ !cancelled() && needs.check-push.outputs.skip != 'true' }}
+    name: Check backend THIRDPARTY.toml
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -64,9 +47,7 @@ jobs:
           fi
 
   check-frontend-licenses:
-    name: ${{ github.event_name == 'push' && 'Check frontend THIRDPARTY.txt (push)' || 'Check frontend THIRDPARTY.txt' }}
-    needs: check-push
-    if: ${{ !cancelled() && needs.check-push.outputs.skip != 'true' }}
+    name: Check frontend THIRDPARTY.txt
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
