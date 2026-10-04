@@ -38,6 +38,10 @@ pub struct CliArgs {
     #[arg(short = 'H', long = "trusted-header", env = "TRUSTED_HEADER")]
     pub trusted_header: Option<String>,
 
+    /// URL to redirect to on logout, for SSO / proxy auth.
+    #[arg(long = "logout-url", env = "LOGOUT_URL")]
+    pub logout_url: Option<String>,
+
     /// Log level filter.
     #[arg(short = 'l', long = "log-level", env = "RUST_LOG", default_value_t = String::from("info"))]
     pub log_level: String,

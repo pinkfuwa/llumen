@@ -268,6 +268,7 @@ export interface FileUploadResp {
 export interface HeaderAuthResp {
 	token?: string;
 	exp?: string;
+	logout_url?: string;
 }
 
 export interface LoginReq {

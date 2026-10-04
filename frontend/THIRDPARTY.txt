@@ -32,7 +32,7 @@ katex@0.16.47
 License: MIT
 Repository: https://github.com/KaTeX/KaTeX
 --------------------------------------------------------------------------------
-mermaid@11.15.0
+mermaid@11.17.2
 
 License: MIT
 Repository: https://github.com/mermaid-js/mermaid

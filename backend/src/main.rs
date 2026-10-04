@@ -66,6 +66,7 @@ pub struct AppState {
     pub openrouter: Arc<crate::openrouter::Openrouter>,
     pub blob: Arc<BlobDB>,
     pub auth_header: Option<String>,
+    pub logout_url: Option<String>,
 }
 
 /// Handles graceful shutdown signals.
@@ -210,6 +211,7 @@ async fn main() {
         openrouter,
         blob,
         auth_header: env.auth_header,
+        logout_url: env.logout_url,
     });
 
     #[cfg(feature = "tracing")]

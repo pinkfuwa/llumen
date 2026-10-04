@@ -19,7 +19,6 @@ use toml::de;
 use super::context::{Context, StreamEndReason};
 use super::converter;
 use super::token::Token;
-use crate::config::TITLE_GENERATION_TEMPERATURE;
 use crate::openrouter;
 use crate::utils::model::ModelChecker;
 
@@ -847,7 +846,6 @@ impl CompletionSession {
         }
         let option = openrouter::CompletionOption::builder()
             .max_reasoning_tokens(512)
-            .temperature(TITLE_GENERATION_TEMPERATURE)
             .build();
 
         let result = self

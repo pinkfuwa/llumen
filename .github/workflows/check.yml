@@ -3,6 +3,9 @@ name: Status Check
 on:
   pull_request:
   push:
+    branches:
+      - dev
+      - main
 
 permissions:
   contents: read
@@ -11,6 +14,8 @@ jobs:
   backend-tests:
     name: Backend tests
     runs-on: ubuntu-latest
+    outputs:
+      line-coverage: ${{ steps.coverage.outputs.lines }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -18,7 +23,7 @@ jobs:
       - name: Get pnpm lockfile hash
         id: pnpm_lockfile_hash
         run: |
-          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Cache frontend node_modules
         uses: actions/cache@v5
@@ -51,25 +56,50 @@ jobs:
       - name: Get cargo lockfile hash
         id: lockfile_hash
         run: |
-          echo "cargo_lock_hash=$(sha256sum backend/Cargo.lock | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "cargo_lock_hash=$(sha256sum backend/Cargo.lock | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Cache backend target directory
         uses: actions/cache@v5
         with:
           path: backend/target
-          key: backend-target-${{ runner.os }}-${{ steps.lockfile_hash.outputs.cargo_lock_hash }}
+          key: backend-target-coverage-${{ runner.os }}-${{ steps.lockfile_hash.outputs.cargo_lock_hash }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
 
-      - name: Run cargo test
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov@0.9.1
+
+      - name: Run backend unit tests with coverage
         id: cargo_test
         working-directory: ./backend
-        run: cargo test --workspace --exclude xtask
+        run: |
+          mkdir -p target/coverage
+          cargo llvm-cov --workspace --exclude xtask --lib --bins --json --summary-only --output-path target/coverage/summary.json
+          cargo llvm-cov --workspace --exclude xtask --lib --bins --no-run --html --output-dir target/coverage
+
+      - name: Summarize backend coverage
+        id: coverage
+        run: |
+          bash .github/scripts/coverage-summary.sh backend backend/target/coverage/summary.json >> "$GITHUB_STEP_SUMMARY"
+          echo "lines=$(jq -r '.data[0].totals.lines.percent | (. * 100 | round) / 100' backend/target/coverage/summary.json)%" >> "$GITHUB_OUTPUT"
+
+      - name: Upload backend coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-unit-test-coverage
+          path: backend/target/coverage
+          if-no-files-found: error
 
   frontend-tests:
     name: Frontend tests
     runs-on: ubuntu-latest
+    outputs:
+      line-coverage: ${{ steps.coverage.outputs.lines }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -77,7 +107,7 @@ jobs:
       - name: Get pnpm lockfile hash
         id: lockfile_hash
         run: |
-          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "pnpm_lock_hash=$(sha256sum frontend/pnpm-lock.yaml | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Cache frontend node_modules
         uses: actions/cache@v5
@@ -127,7 +157,36 @@ jobs:
         working-directory: ./frontend
         run: pnpm lint
 
-      - name: Run vitest
+      - name: Run frontend unit tests with coverage
         id: vitest
         working-directory: ./frontend
-        run: pnpm exec vitest --run
+        run: pnpm test:coverage
+
+      - name: Test coverage summary
+        run: bash .github/scripts/coverage-summary.test.sh
+
+      - name: Summarize frontend coverage
+        id: coverage
+        run: |
+          bash .github/scripts/coverage-summary.sh frontend frontend/coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY"
+          echo "lines=$(jq -r '.total.lines.pct' frontend/coverage/coverage-summary.json)%" >> "$GITHUB_OUTPUT"
+
+      - name: Upload frontend coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-unit-test-coverage
+          path: frontend/coverage
+          if-no-files-found: error
+
+  coverage:
+    name: "Coverage: frontend ${{ needs.frontend-tests.outputs.line-coverage || 'unavailable' }}, backend ${{ needs.backend-tests.outputs.line-coverage || 'unavailable' }}"
+    needs: [frontend-tests, backend-tests]
+    if: ${{ !cancelled() && needs.frontend-tests.result == 'success' && needs.backend-tests.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display unit test line coverage
+        env:
+          FRONTEND_COVERAGE: ${{ needs.frontend-tests.outputs.line-coverage }}
+          BACKEND_COVERAGE: ${{ needs.backend-tests.outputs.line-coverage }}
+        run: |
+          printf '## Unit test line coverage\n\n| Frontend | Backend |\n| ---: | ---: |\n| %s | %s |\n' "$FRONTEND_COVERAGE" "$BACKEND_COVERAGE" >> "$GITHUB_STEP_SUMMARY"

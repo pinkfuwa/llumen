@@ -49,7 +49,7 @@
 		</a>
 	{/if}
 	<Button
-		class="mr-1 h-6 w-6 shrink-0 p-[0.15rem] text-foreground group-hover:block md:hidden"
+		class="mr-1 h-6 w-6 shrink-0 p-[0.15rem] text-foreground fine-hover:hidden fine-hover:group-hover:block"
 		borderless
 		{disabled}
 		onclick={async () => {

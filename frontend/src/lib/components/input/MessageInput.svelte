@@ -12,7 +12,15 @@
 	import { streaming } from '$lib/api/message.svelte';
 	import { FileUp } from '@lucide/svelte';
 	import { t } from 'svelte-intl-precompile';
-	import { inputContent, inputFiles, addFiles, submit, effective, isEditing } from './state.svelte';
+	import {
+		inputContent,
+		inputFiles,
+		addFiles,
+		submit,
+		effective,
+		isEditing,
+		allowedUnsupportedFiles
+	} from './state.svelte';
 
 	let {
 		large = false
@@ -56,7 +64,11 @@
 	{/if}
 	{#if inputFiles.val.length != 0}
 		<div class="mb-2 max-h-[60vh] overflow-y-auto border-b border-border pb-2">
-			<FileGroup files={inputFiles.val} mimes={effective.supportedMimes} deletable />
+			<FileGroup
+				files={inputFiles.val}
+				allowedUnsupported={allowedUnsupportedFiles.val}
+				deletable
+			/>
 		</div>
 	{/if}
 	<div class="flex flex-row items-center justify-between space-x-2 pr-2">

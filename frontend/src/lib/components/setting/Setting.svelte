@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Star, X } from '@lucide/svelte';
 	import { CircleUser, EthernetPort, LogOut, ShieldUser } from '@lucide/svelte';
-	import { token } from '$lib/rune.svelte';
+	import { token, logoutUrl } from '$lib/rune.svelte';
 	import { Dialog, Tabs } from 'bits-ui';
 	import SettingBtn from './SettingBtn.svelte';
 	import Account from './tabs/Account.svelte';
@@ -72,6 +72,9 @@
 							class="cursor-pointer rounded px-3 py-2 text-left duration-150 hover:bg-interactive-hover"
 							onclick={() => {
 								token.value = undefined;
+								if (logoutUrl.val) {
+									window.location.href = logoutUrl.val;
+								}
 							}}
 						>
 							<LogOut class="inline-block h-5 w-5 md:mr-2" />

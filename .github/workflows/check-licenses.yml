@@ -6,6 +6,9 @@ on:
       - "backend/Cargo.lock"
       - "frontend/pnpm-lock.yaml"
   push:
+    branches:
+      - dev
+      - main
     paths:
       - "backend/Cargo.lock"
       - "frontend/pnpm-lock.yaml"

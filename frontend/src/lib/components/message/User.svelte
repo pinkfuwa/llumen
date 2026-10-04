@@ -128,7 +128,7 @@
 			<Check class="h-6 w-6" />
 		</Button>
 		<Button
-			class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
+			class="p-2 data-[state=open]:hidden fine-hover:invisible fine-hover:group-hover/files:visible"
 			onclick={() => {
 				isEditing = true;
 				editBuffer = content;
@@ -140,7 +140,7 @@
 			<SquarePen class="h-6 w-6" />
 		</Button>
 		<Button
-			class="p-2 group-hover/files:visible data-[state=open]:hidden md:invisible"
+			class="p-2 data-[state=open]:hidden fine-hover:invisible fine-hover:group-hover/files:visible"
 			onclick={() => {
 				deleteMessage(id);
 			}}

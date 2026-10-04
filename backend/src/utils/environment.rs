@@ -20,6 +20,7 @@ pub struct Environment {
     pub data_path: PathBuf,
     pub bind_addr: String,
     pub auth_header: Option<String>,
+    pub logout_url: Option<String>,
     pub log_level: String,
 }
 
@@ -37,6 +38,7 @@ impl Environment {
         let data_path = PathBuf::from(dotenvy::var("DATA_PATH").unwrap_or_else(|_| ".".to_owned()));
         let bind_addr = dotenvy::var("BIND_ADDR").unwrap_or_else(|_| DEFAULT_BIND_ADDR.to_owned());
         let auth_header = dotenvy::var("TRUSTED_HEADER").ok();
+        let logout_url = dotenvy::var("LOGOUT_URL").ok();
         let log_level = dotenvy::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
 
         Self {
@@ -46,6 +48,7 @@ impl Environment {
             data_path,
             bind_addr,
             auth_header,
+            logout_url,
             log_level,
         }
     }
@@ -86,6 +89,11 @@ impl Environment {
             .clone()
             .or_else(|| dotenvy::var("TRUSTED_HEADER").ok());
 
+        let logout_url = cli
+            .logout_url
+            .clone()
+            .or_else(|| dotenvy::var("LOGOUT_URL").ok());
+
         let log_level = cli.log_level.clone();
 
         Self {
@@ -95,6 +103,7 @@ impl Environment {
             data_path,
             bind_addr,
             auth_header,
+            logout_url,
             log_level,
         }
     }
