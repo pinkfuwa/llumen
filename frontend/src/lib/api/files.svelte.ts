@@ -1,12 +1,12 @@
 import { RawAPIFetch, APIFetch } from './http.svelte';
 import type { FileUploadResp, FileRefreshReq, FileRefreshResp } from './types';
-import { compressImage, isCompressibleImage } from '$lib/image';
+import { prepareUploadFile } from './filePreparation';
+import { createUploadQueue } from './uploadPipeline';
 import { displayError } from '$lib/error.svelte';
 import { untrack } from 'svelte';
 import { token } from '$lib/rune.svelte';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
-const COMPRESS_SIZE_THRESHOLD = 2.5 * 1024 * 1024;
 
 export async function upload(file: File, signal?: AbortSignal): Promise<number | null> {
 	const formData = new FormData();
@@ -108,85 +108,20 @@ export async function uploadFiles(
 	return results;
 }
 
-function fileKey(file: File): string {
-	return `${file.name}-${file.size}`;
-}
-
-interface PendingEntry {
-	prepare: Promise<File>;
-	upload: Promise<number | null>;
-	controller: AbortController;
-	file: File;
-}
-
 export function createUploadPipeline(
 	fileGetter: () => File[]
 ): () => Promise<{ name: string; id: number }[]> {
-	let pending = $state<Map<string, PendingEntry>>(new Map());
-
-	$effect(() => {
-		const currentFiles = fileGetter();
-
-		const currentKeys = new Set(currentFiles.map(fileKey));
-
-		const next = new Map(untrack(() => pending));
-		for (const [key, entry] of untrack(() => pending)) {
-			if (!currentKeys.has(key)) {
-				next.delete(key);
-				entry.controller.abort();
-			}
-		}
-
-		for (const file of currentFiles) {
-			const key = fileKey(file);
-			if (next.has(key)) continue;
-
-			const controller = new AbortController();
-
-			const prepare: Promise<File> = (async () => {
-				if ((await isCompressibleImage(file)) && file.size > COMPRESS_SIZE_THRESHOLD) {
-					try {
-						const f = await compressImage(file, { quality: 0.8 });
-						controller.signal.throwIfAborted();
-						return f;
-					} catch {
-						return file;
-					}
-				}
-				return file;
-			})();
-
-			const uploadP = prepare.then((f) => upload(f, controller.signal));
-
-			next.set(key, { prepare, upload: uploadP, controller, file });
-		}
-
-		pending = next;
+	const queue = createUploadQueue(async (file, signal) => {
+		const prepared = await prepareUploadFile(file, signal);
+		const id = await upload(prepared, signal);
+		return id === null ? null : { name: prepared.name, id };
 	});
 
 	$effect(() => {
-		return () => {
-			for (const [, entry] of untrack(() => pending)) {
-				entry.controller.abort();
-			}
-		};
+		const files = [...fileGetter()];
+		untrack(() => queue.update(files));
 	});
+	$effect(() => () => queue.dispose());
 
-	return async function ensureReady(): Promise<{ name: string; id: number }[]> {
-		const currentFiles = untrack(() => fileGetter());
-		const results: { name: string; id: number }[] = [];
-
-		for (const file of currentFiles) {
-			const entry = untrack(() => pending.get(fileKey(file)));
-			if (!entry) continue;
-
-			const prepared = await entry.prepare;
-			const id = await entry.upload;
-			if (id !== null) {
-				results.push({ name: prepared.name, id });
-			}
-		}
-
-		return results;
-	};
+	return () => queue.ready(untrack(() => [...fileGetter()]));
 }
