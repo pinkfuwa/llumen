@@ -1,6 +1,9 @@
 allowBuilds:
   core-js: true
   core-js-pure: true
+minimumReleaseAgeExclude:
+  # Allow this security update during pnpm's 24-hour release delay.
+  - http-cache-semantics@4.3.0
 overrides:
   serialize-javascript: '>=7.0.5'
   minimatch: '>=10.2.3'
