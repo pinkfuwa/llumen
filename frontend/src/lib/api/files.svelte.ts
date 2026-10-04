@@ -109,12 +109,14 @@ export async function uploadFiles(
 }
 
 /**
- * Starts uploads as selection changes within a Svelte effect scope.
- * The returned function waits for a selection snapshot in order. Removed files
- * and null upload results are omitted; other failures reject the call.
+ * Starts uploads for selected files and aborts uploads for removed files.
+ * Must be called within a Svelte effect scope; destroying that scope aborts uploads.
+ * The returned function copies the selection and waits for those uploads. It returns
+ * uploaded files in selection order, excluding removed files and null results.
+ * Non-cancellation errors reject the returned promise with the original error.
  */
-export function createUploadPipeline(
-	fileGetter: () => File[]
+export function watchSelectedFileUploads(
+	getSelectedFiles: () => File[]
 ): () => Promise<{ name: string; id: number }[]> {
 	const uploads = createFileUploads(async (file, signal) => {
 		const prepared = await prepareUploadFile(file, signal);
@@ -124,10 +126,10 @@ export function createUploadPipeline(
 	});
 
 	$effect(() => {
-		const files = [...fileGetter()];
+		const files = [...getSelectedFiles()];
 		untrack(() => uploads.setFiles(files));
 	});
 	$effect(() => () => uploads.close());
 
-	return () => uploads.waitForUploads(untrack(() => [...fileGetter()]));
+	return () => uploads.waitForUploads(untrack(() => [...getSelectedFiles()]));
 }
