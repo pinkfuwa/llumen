@@ -4,6 +4,7 @@
 @import './theme/palettes/llumen.css';
 @import './theme/palettes/dracula.css';
 @import './theme/palettes/vitesse.css';
+@import './lib/ui/code/syntax.css';
 
 html {
 	background: var(--surface-background);

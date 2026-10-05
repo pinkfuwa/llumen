@@ -2,7 +2,7 @@
 	import type { CodeBlockNode } from '../parser/types';
 	import { ClipboardCopy } from '@lucide/svelte';
 	import { copy } from '$lib/copy.svelte';
-	import ShikiCode from '../../shiki/Code.svelte';
+	import HighlightedCode from '$lib/ui/code/Code.svelte';
 	import Mermaid from '../../mermaid/Mermaid.svelte';
 	import { isMermaidLanguage } from '../../mermaid/mermaid';
 	import Button from '$lib/ui/Button.svelte';
@@ -33,6 +33,6 @@
 	{#if isMermaid}
 		<Mermaid text={content} {incremental} />
 	{:else}
-		<ShikiCode text={content} lang={language} {incremental} />
+		<HighlightedCode text={content} lang={language} {incremental} />
 	{/if}
 </div>

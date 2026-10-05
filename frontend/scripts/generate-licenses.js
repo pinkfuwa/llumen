@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { exec } from 'child_process';
 import { promisify } from 'util';
 import { writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { init } from 'license-checker-rseidelsohn';
 
-const execAsync = promisify(exec);
+const collectLicenses = promisify(init);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..');
 const outputFile = join(projectRoot, 'THIRDPARTY.txt');
@@ -15,13 +15,11 @@ async function generateLicenses() {
 	console.log('Generating frontend third-party licenses...');
 
 	try {
-		// Run license-checker-rseidelsohn with JSON output
-		const { stdout } = await execAsync(
-			'pnpm exec license-checker-rseidelsohn --json --production --excludePrivatePackages',
-			{ cwd: projectRoot, maxBuffer: 10 * 1024 * 1024 }
-		);
-
-		const licenses = JSON.parse(stdout);
+		const licenses = await collectLicenses({
+			start: projectRoot,
+			production: true,
+			excludePrivatePackages: true
+		});
 		const entries = Object.entries(licenses).sort(([a], [b]) => a.localeCompare(b));
 
 		let output = `# Third-Party Licenses - Frontend

@@ -1,4 +1,13 @@
 [data-theme='vitesse'][data-dark='false'] {
+	--syntax-background: #fff;
+	--syntax-foreground: #393a34;
+	--syntax-keyword: #ab5959;
+	--syntax-string: #b56959;
+	--syntax-comment: #a0ada0;
+	--syntax-number: #2f798a;
+	--syntax-function: #59873a;
+	--syntax-type: #998418;
+
 	--background: #ffffff;
 	--foreground: #2c2c28;
 	--muted: #ecebeb;
@@ -71,6 +80,15 @@
 }
 
 [data-theme='vitesse'][data-dark='true'] {
+	--syntax-background: #121212;
+	--syntax-foreground: #dbd7caee;
+	--syntax-keyword: #cb7676;
+	--syntax-string: #c98a7d;
+	--syntax-comment: #758575;
+	--syntax-number: #4c9a91;
+	--syntax-function: #80a665;
+	--syntax-type: #d4976c;
+
 	--background: #121212;
 	--foreground: white;
 	--muted: #213121;

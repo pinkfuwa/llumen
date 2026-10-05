@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { preference } from '$lib/preference/index.svelte';
 	import { tomlCompletion, type CompletionOption } from './completion';
 	import Autocomplete from './Autocomplete.svelte';
-	import { getThemeName, getThemeStyle } from '$lib/components/shiki/shiki';
-	import type { BundledTheme, codeToHtml } from '$lib/components/shiki/shiki.bundle';
+	import CodeText from '$lib/ui/code/CodeText.svelte';
+	import { codeThemeStyle } from '$lib/ui/code/theme';
 
 	let {
 		value = $bindable('# defaultConfig'),
@@ -12,8 +11,6 @@
 
 	let textarea = $state<HTMLTextAreaElement | null>(null);
 	let overlay = $state<HTMLDivElement | null>(null);
-	let html = $state('');
-	let bundle = import('$lib/components/shiki/shiki.bundle');
 
 	let showAutocomplete = $state(false);
 	let completions = $state<CompletionOption[]>([]);
@@ -21,24 +18,6 @@
 	let cursorY = $state(0);
 	let completionStart = $state(0);
 	let completionEnd = $state(0);
-
-	let themeName = $derived(getThemeName(preference.value.theme) as BundledTheme);
-	let themeStyle = $derived(getThemeStyle(preference.value.theme));
-
-	$effect(() => {
-		let args: Parameters<typeof codeToHtml> = [value, { lang: 'toml', theme: themeName }];
-
-		let stopped = false;
-
-		bundle.then(async (m) => {
-			let result = await m.codeToHtml(...args);
-			if (!stopped) html = result;
-		});
-
-		return () => {
-			stopped = true;
-		};
-	});
 
 	$effect(() => {
 		if (!onchange) return;
@@ -83,7 +62,8 @@
 			'minHeight'
 		];
 		for (const p of props) {
-			(mirror.style as any)[p] = (cs as any)[p];
+			const property = p.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+			mirror.style.setProperty(property, cs.getPropertyValue(property));
 		}
 		mirror.style.position = 'absolute';
 		mirror.style.left = '-9999px';
@@ -167,36 +147,21 @@
 	});
 </script>
 
-<div class="relative grid w-full rounded-md border border-border" style={themeStyle}>
-	<style>
-		:global(.shiki) {
-			background: transparent !important;
-		}
-		.editor-overlay :global(pre.shiki) {
-			margin: 0;
-			padding: 0;
-			background: transparent !important;
-		}
-		.editor-overlay :global(pre.shiki code) {
-			display: block;
-		}
-	</style>
-	{#if html}
-		<div
-			bind:this={overlay}
-			class="editor-overlay pointer-events-none col-start-1 row-start-1 overflow-hidden p-2 font-mono"
-			style="tab-size:4"
-		>
-			{@html html}
-		</div>
-	{/if}
+<div class="relative grid w-full rounded-md border border-border" style={codeThemeStyle}>
+	<div
+		bind:this={overlay}
+		aria-hidden="true"
+		class="pointer-events-none col-start-1 row-start-1 overflow-hidden p-2 font-mono"
+	>
+		<CodeText text={value} lang="toml" incremental />
+	</div>
 	<textarea
 		bind:this={textarea}
 		bind:value
 		oninput={onInput}
 		onkeydown={onKeydown}
 		class="col-start-1 row-start-1 resize-none overflow-auto bg-transparent p-2 font-mono text-nowrap text-transparent caret-inherit focus:outline-none"
-		style="tab-size:4;field-sizing:content"
+		style="tab-size:4;field-sizing:content;line-height:1.5rem"
 		spellcheck="false"
 	></textarea>
 </div>

@@ -1,4 +1,13 @@
 [data-theme='dracula'][data-dark='false'] {
+	--syntax-background: #fff;
+	--syntax-foreground: #24292e;
+	--syntax-keyword: #d73a49;
+	--syntax-string: #032f62;
+	--syntax-comment: #6a737d;
+	--syntax-number: #005cc5;
+	--syntax-function: #6f42c1;
+	--syntax-type: #e36209;
+
 	--background: #f8f8f2;
 	--foreground: #1f1f2f;
 	--muted: #d8e9e2;
@@ -68,6 +77,15 @@
 }
 
 [data-theme='dracula'][data-dark='true'] {
+	--syntax-background: #282a36;
+	--syntax-foreground: #f8f8f2;
+	--syntax-keyword: #ff79c6;
+	--syntax-string: #f1fa8c;
+	--syntax-comment: #6272a4;
+	--syntax-number: #bd93f9;
+	--syntax-function: #50fa7b;
+	--syntax-type: #8be9fd;
+
 	--background: #14151f;
 	--foreground: #f8f8f2;
 	--muted: #282946;

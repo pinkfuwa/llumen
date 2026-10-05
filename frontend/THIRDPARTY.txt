@@ -8,6 +8,13 @@ Generated from package.json and pnpm-lock.yaml.
 License: MIT
 Repository: https://github.com/chenglou/pretext
 --------------------------------------------------------------------------------
+@speed-highlight/core@2.1.0
+
+License: CC0-1.0
+Repository: https://github.com/speed-highlight/core
+Publisher: matubu
+Email: hi@mathias.ninja
+--------------------------------------------------------------------------------
 @sveltejs/adapter-static@3.0.10
 
 License: MIT

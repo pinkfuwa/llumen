@@ -2,8 +2,8 @@
 	import { render } from './mermaid';
 	import { preference } from '$lib/preference/index.svelte';
 	import { t } from 'svelte-intl-precompile';
-	import Monochrome from '../shiki/Monochrome.svelte';
-	import { getThemeStyle } from '../shiki/shiki';
+	import Monochrome from '$lib/ui/code/CodeText.svelte';
+	import { codeThemeStyle } from '$lib/ui/code/theme';
 	import Zoomable from '$lib/ui/Zoomable.svelte';
 
 	let { text = '', incremental = false } = $props<{ text?: string; incremental?: boolean }>();
@@ -58,7 +58,7 @@
 	});
 
 	const displayText = $derived(incremental || (error == null && !svg));
-	const themeStyle = $derived(displayText ? getThemeStyle(preference.value.theme) : '');
+	const themeStyle = $derived(displayText ? codeThemeStyle : '');
 </script>
 
 <div

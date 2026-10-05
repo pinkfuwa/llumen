@@ -25,8 +25,7 @@ export default defineConfig({
 				'**/*.d.ts',
 				'**/tests/**',
 				'src/lib/api/types.ts',
-				'src/lib/i18n/generated/**',
-				'src/lib/components/shiki/shiki.bundle.ts'
+				'src/lib/i18n/generated/**'
 			],
 			reporter: ['text-summary', 'json-summary', 'html']
 		}

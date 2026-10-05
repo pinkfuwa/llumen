@@ -1,0 +1,31 @@
+::highlight(syntax-kwd),
+::highlight(syntax-oper) {
+	color: var(--syntax-keyword);
+}
+::highlight(syntax-str),
+::highlight(syntax-insert) {
+	color: var(--syntax-string);
+}
+::highlight(syntax-cmnt) {
+	color: var(--syntax-comment);
+}
+::highlight(syntax-num),
+::highlight(syntax-bool) {
+	color: var(--syntax-number);
+}
+::highlight(syntax-func),
+::highlight(syntax-section) {
+	color: var(--syntax-function);
+}
+::highlight(syntax-class),
+::highlight(syntax-type),
+::highlight(syntax-esc) {
+	color: var(--syntax-type);
+}
+::highlight(syntax-var) {
+	color: var(--syntax-foreground);
+}
+::highlight(syntax-err),
+::highlight(syntax-deleted) {
+	color: var(--destructive);
+}
