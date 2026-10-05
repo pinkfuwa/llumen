@@ -9,6 +9,7 @@
 		lang?: string;
 		incremental?: boolean;
 	} = $props();
+	const highlight = syntaxHighlight(() => ({ text, lang, incremental }));
 	let lines = $derived.by(() => {
 		let offset = 0;
 		return text.split('\n').map((text) => {
@@ -19,7 +20,7 @@
 	});
 </script>
 
-<pre class="code-text" {@attach syntaxHighlight(() => ({ text, lang, incremental }))}><code
+<pre class="code-text" {@attach highlight}><code
 		>{#each lines as line (line.offset)}<div class="code-line"><span data-code-offset={line.offset}
 					>{line.text}</span
 				></div>{/each}</code

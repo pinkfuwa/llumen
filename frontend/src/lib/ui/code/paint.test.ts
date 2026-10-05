@@ -29,9 +29,9 @@ describe('paint-only syntax decoration', () => {
 			'😀 x',
 			'\t你好'
 		]);
-		clearFirst();
+		clearFirst.clear();
 		expect(highlights.get('syntax-str')?.size).toBe(2);
-		clearSecond();
+		clearSecond.clear();
 		expect(highlights.size).toBe(0);
 	});
 
@@ -39,8 +39,27 @@ describe('paint-only syntax decoration', () => {
 		vi.stubGlobal('CSS', {});
 		const element = document.createElement('pre');
 		element.textContent = '<script>alert("text")</script>';
-		paintTokens(element, [{ start: 0, end: 6, type: 'kwd' }])();
+		paintTokens(element, [{ start: 0, end: 6, type: 'kwd' }]).clear();
 		expect(element.textContent).toBe('<script>alert("text")</script>');
 		expect(element.querySelector('script')).toBeNull();
+	});
+
+	it('restores collapsed live ranges on the same text node without coloring the appended suffix', () => {
+		const highlights = new Map<string, Set<Range>>();
+		vi.stubGlobal('CSS', { highlights });
+		vi.stubGlobal('Highlight', Set);
+		const element = document.createElement('pre');
+		element.innerHTML = '<span data-code-offset="0">const value</span>';
+		document.body.append(element);
+		const paint = paintTokens(element, [{ start: 0, end: 5, type: 'kwd' }]);
+		const range = Array.from(highlights.get('syntax-kwd')!)[0];
+		const node = element.firstChild!.firstChild as Text;
+		node.data += ' = 42;';
+		expect(range.toString()).toBe('');
+		paint.refresh();
+		expect(range.toString()).toBe('const');
+		expect(highlights.get('syntax-kwd')?.has(range)).toBe(true);
+		expect(range.endOffset).toBe(5);
+		expect(node.data).toBe('const value = 42;');
 	});
 });

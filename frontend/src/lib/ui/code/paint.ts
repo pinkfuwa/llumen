@@ -1,9 +1,13 @@
 import type { CodeToken } from './types';
 
-type PaintedRange = { range: Range; highlight: Highlight };
+type PaintedRange = { range: Range; highlight: Highlight; node: Text; start: number; end: number };
 
-export function paintTokens(element: HTMLElement, tokens: CodeToken[]): () => void {
-	if (!globalThis.CSS?.highlights || typeof Highlight === 'undefined') return () => {};
+export type CodePaint = { clear(): void; refresh(): void };
+
+export function paintTokens(element: HTMLElement, tokens: CodeToken[]): CodePaint {
+	if (!globalThis.CSS?.highlights || typeof Highlight === 'undefined') {
+		return { clear() {}, refresh() {} };
+	}
 	const lines = Array.from(element.querySelectorAll<HTMLElement>('[data-code-offset]'));
 	const painted: PaintedRange[] = [];
 	let lineIndex = 0;
@@ -33,14 +37,30 @@ export function paintTokens(element: HTMLElement, tokens: CodeToken[]): () => vo
 				CSS.highlights.set(name, highlight);
 			}
 			highlight.add(range);
-			painted.push({ range, highlight });
+			painted.push({ range, highlight, node, start, end });
 		}
 	}
-	return () => {
-		for (const { range, highlight } of painted) highlight.delete(range);
-		for (const token of tokens) {
-			const name = `syntax-${token.type}`;
-			if (CSS.highlights.get(name)?.size === 0) CSS.highlights.delete(name);
+	return {
+		clear() {
+			for (const { range, highlight } of painted) highlight.delete(range);
+			for (const token of tokens) {
+				const name = `syntax-${token.type}`;
+				if (CSS.highlights.get(name)?.size === 0) CSS.highlights.delete(name);
+			}
+		},
+		refresh() {
+			// Replacing character data collapses live ranges even when the text node survives.
+			for (const { range, node, start, end } of painted) {
+				if (
+					range.startContainer !== node ||
+					range.startOffset !== start ||
+					range.endContainer !== node ||
+					range.endOffset !== end
+				) {
+					range.setStart(node, start);
+					range.setEnd(node, end);
+				}
+			}
 		}
 	};
 }

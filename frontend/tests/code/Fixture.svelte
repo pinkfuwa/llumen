@@ -4,6 +4,7 @@
 	import TomlEditor from '$lib/components/editor/TomlEditor.svelte';
 	import Reasoning from '$lib/components/message/Reasoning.svelte';
 	import ChatViewport from '$lib/ui/ChatViewport.svelte';
+	import Markdown from '$lib/components/markdown/Root.svelte';
 	import { addMessages, init } from 'svelte-intl-precompile';
 	import { tick } from 'svelte';
 
@@ -16,11 +17,18 @@
 	let value = $state('[server]\nport = 8001\nname = "你好 😀"\n\n');
 	let longHistory = $state(false);
 	let reasoning = $state(false);
+	let markdownSource = $state<string | null>(null);
 
 	export async function update(source: string, language = 'js', streaming = true) {
+		markdownSource = null;
 		text = source;
 		lang = language;
 		incremental = streaming;
+		await tick();
+	}
+
+	export async function markdown(source: string) {
+		markdownSource = source;
 		await tick();
 	}
 
@@ -37,7 +45,13 @@
 			{#if longHistory}<div class="shrink-0" style="height:900px">Earlier history</div>{/if}
 			<div id="before">Before reasoning</div>
 			<Reasoning content={'Reasoning line\n'.repeat(12)} bind:open={reasoning} />
-			<div id="code"><Code {text} {lang} {incremental} /></div>
+			<div id="code">
+				{#if markdownSource !== null}
+					<Markdown source={markdownSource} incremental />
+				{:else}
+					<Code {text} {lang} {incremental} />
+				{/if}
+			</div>
 			<div id="after">After code</div>
 			{#snippet composer()}Composer{/snippet}
 		</ChatViewport>

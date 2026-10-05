@@ -19,7 +19,13 @@ const server = await createServer({
 	configFile: false,
 	plugins: [svelte(), tailwindcss()],
 	optimizeDeps: {
-		include: ['@speed-highlight/core/languages', '@speed-highlight/core/tokenize']
+		include: [
+			'@speed-highlight/core/languages',
+			'@speed-highlight/core/tokenize',
+			'mermaid',
+			'katex',
+			'@chenglou/pretext'
+		]
 	},
 	resolve: {
 		alias: {
@@ -122,16 +128,24 @@ try {
 	await call('Page.addScriptToEvaluateOnNewDocument', {
 		source: `
 		window.workerRequests = [];
+		window.heldSyntaxRequests = [];
 		const postMessage = Worker.prototype.postMessage;
 		Worker.prototype.postMessage = function(request) {
 			window.workerRequests.push(request);
+			if (window.pauseSyntaxWorker) {
+				window.heldSyntaxRequests.push({worker: this, request});
+				return;
+			}
 			return postMessage.call(this, request);
+		};
+		window.flushSyntaxRequests = () => {
+			for (const {worker, request} of window.heldSyntaxRequests.splice(0)) {
+				postMessage.call(worker, request);
+			}
 		};
 	`
 	});
-	await call('Page.navigate', {
-		url: `http://127.0.0.1:${address.port}/tests/code/index.html`
-	});
+	await call('Page.navigate', { url: `http://127.0.0.1:${address.port}/tests/code/index.html` });
 	for (let attempts = 0; attempts < 100; attempts++) {
 		if (
 			await evaluate<boolean>('Boolean(window.codeFixture && document.querySelector("#code pre"))')
@@ -309,6 +323,184 @@ try {
 	}
 	console.log(
 		'PASS: reasoning expands downward in short and long histories with anchoring disabled'
+	);
+
+	await evaluate('window.codeFixture.update("")');
+	const firstSnapshot = 'const greeting = "你好 😀"; // first';
+	const secondSnapshot = firstSnapshot + ' second';
+	const latestSnapshot = secondSnapshot + ' latest';
+	await evaluate('window.pauseSyntaxWorker = true');
+	const beforeFirst = await evaluate<number>('window.workerRequests.length');
+	await evaluate(`window.codeFixture.update(${JSON.stringify(firstSnapshot)}, 'js', true)`);
+	assert.equal(
+		await evaluate('window.workerRequests.length'),
+		beforeFirst + 1,
+		'First snapshot waited for an interval'
+	);
+	await evaluate('window.flushSyntaxRequests()');
+	for (let attempts = 0; attempts < 100; attempts++) {
+		if (
+			await evaluate(
+				'Array.from(CSS.highlights.get("syntax-kwd") ?? []).some(range => range.startContainer.parentElement.closest("#code") && range.toString() === "const")'
+			)
+		)
+			break;
+		await delay(20);
+	}
+	await evaluate(`(() => {
+		window.savedCodeElement = document.querySelector('#code pre');
+		window.savedTextNode = document.querySelector('#code [data-code-offset]').firstChild;
+		window.savedRanges = Array.from(CSS.highlights.values()).flatMap(highlight => Array.from(highlight)).filter(range => range.startContainer.parentElement.closest('#code'));
+		window.savedRangeText = window.savedRanges.map(range => range.toString());
+		window.retainedColors = () => window.savedRanges.every((range, index) =>
+			Array.from(CSS.highlights.values()).some(highlight => highlight.has(range)) && range.toString() === window.savedRangeText[index]);
+	})()`);
+	assert(await evaluate('window.savedRanges.length > 0'), 'Initial snapshot did not paint');
+	await evaluate(`(() => {
+		window.colorFrames = [];
+		window.samplePrefixColors = true;
+		const sample = () => {
+			if (!window.samplePrefixColors) return;
+			window.colorFrames.push(window.retainedColors());
+			requestAnimationFrame(sample);
+		};
+		requestAnimationFrame(sample);
+	})()`);
+	const beforeAppend = await evaluate<number>('window.workerRequests.length');
+	const pendingAppend = await evaluate<{
+		retained: boolean;
+		sameElement: boolean;
+		sameText: boolean;
+		requests: number;
+	}>(`(async () => {
+		await window.codeFixture.update(${JSON.stringify(secondSnapshot)}, 'js', true);
+		await window.codeFixture.update(${JSON.stringify(latestSnapshot)}, 'js', true);
+		return {
+			retained: window.retainedColors(),
+			sameElement: window.savedCodeElement === document.querySelector('#code pre'),
+			sameText: window.savedTextNode === document.querySelector('#code [data-code-offset]').firstChild,
+			requests: window.workerRequests.length
+		};
+	})()`);
+	assert(pendingAppend.retained, 'An append cleared existing colors or collapsed their ranges');
+	assert(
+		pendingAppend.sameElement && pendingAppend.sameText,
+		'An append recreated the code component or text node'
+	);
+	assert.equal(pendingAppend.requests, beforeAppend, 'An append bypassed the highlight interval');
+	assert.equal(
+		await evaluate('document.querySelector("#code [data-code-offset]").textContent'),
+		latestSnapshot
+	);
+	await delay(130);
+	assert.equal(
+		await evaluate('window.workerRequests.length'),
+		beforeAppend + 1,
+		'Append snapshots were not coalesced'
+	);
+	assert.equal(
+		await evaluate('window.workerRequests.at(-1).text'),
+		latestSnapshot,
+		'Interval used stale source'
+	);
+	assert(
+		await evaluate('window.retainedColors()'),
+		'Colors disappeared while the worker was paused'
+	);
+	assert(
+		await evaluate('window.colorFrames.length > 0 && window.colorFrames.every(Boolean)'),
+		'A rendered frame lost the colored prefix'
+	);
+	await evaluate('window.samplePrefixColors = false');
+	assert(
+		await evaluate(`window.savedRanges.every(range => range.endOffset <= ${firstSnapshot.length})`),
+		'Appended suffix inherited old colors'
+	);
+	await evaluate(`window.codeFixture.update(${JSON.stringify(latestSnapshot)}, 'js', false)`);
+	assert(
+		await evaluate('window.retainedColors()'),
+		'Closing the block cleared its existing colors'
+	);
+	await evaluate('window.flushSyntaxRequests()');
+	for (let attempts = 0; attempts < 100; attempts++) {
+		if (await evaluate('window.workerRequests.length > ' + (beforeAppend + 1))) break;
+		await delay(20);
+	}
+	assert.equal(await evaluate('window.workerRequests.at(-1).text'), latestSnapshot);
+	const beforeFinalHighlight = await evaluate('window.geometry()');
+	await evaluate('window.flushSyntaxRequests()');
+	for (let attempts = 0; attempts < 100; attempts++) {
+		if (
+			await evaluate(
+				'Array.from(CSS.highlights.get("syntax-cmnt") ?? []).some(range => range.startContainer.parentElement.closest("#code") && range.toString().endsWith("latest"))'
+			)
+		)
+			break;
+		await delay(20);
+	}
+	assert(
+		await evaluate(
+			'Array.from(CSS.highlights.get("syntax-cmnt") ?? []).some(range => range.startContainer.parentElement.closest("#code") && range.toString().endsWith("latest"))'
+		),
+		'Closed block did not receive final colors'
+	);
+	assert.deepEqual(
+		await evaluate('window.geometry()'),
+		beforeFinalHighlight,
+		'Final highlight caused reflow'
+	);
+	console.log(
+		'PASS: first snapshot is immediate; appends preserve colored ranges and component identity; interval uses latest text; closure keeps colors'
+	);
+
+	await evaluate('window.pauseSyntaxWorker = false');
+	const markdownStart = '```js\nconst answer = 1; // start';
+	await evaluate(`window.codeFixture.markdown(${JSON.stringify(markdownStart)})`);
+	for (let attempts = 0; attempts < 100; attempts++) {
+		if (
+			await evaluate(
+				'Array.from(CSS.highlights.get("syntax-kwd") ?? []).some(range => range.startContainer.parentElement.closest("#code") && range.toString() === "const")'
+			)
+		)
+			break;
+		await delay(20);
+	}
+	await evaluate('window.markdownCodeElement = document.querySelector("#code pre")');
+	assert(
+		await evaluate('Boolean(window.markdownCodeElement)'),
+		'Streaming Markdown did not form a code block'
+	);
+	await evaluate('window.pauseSyntaxWorker = true');
+	await evaluate(`window.codeFixture.markdown(${JSON.stringify(markdownStart + ' appended')})`);
+	await delay(130);
+	assert(
+		await evaluate('window.markdownCodeElement === document.querySelector("#code pre")'),
+		'Streaming Markdown recreated the code component'
+	);
+	assert(
+		await evaluate(
+			'Array.from(CSS.highlights.get("syntax-kwd") ?? []).some(range => range.startContainer.parentElement.closest("#code") && range.toString() === "const")'
+		),
+		'Streaming Markdown append erased the colored prefix'
+	);
+	await evaluate(
+		`window.codeFixture.markdown(${JSON.stringify(markdownStart + ' appended\n```\n')})`
+	);
+	await delay(130);
+	assert(
+		await evaluate('window.markdownCodeElement === document.querySelector("#code pre")'),
+		'Closing a Markdown fence recreated the code component'
+	);
+	assert(
+		await evaluate(
+			'Array.from(CSS.highlights.get("syntax-kwd") ?? []).some(range => range.startContainer.parentElement.closest("#code") && range.toString() === "const")'
+		),
+		'Closing a Markdown fence cleared the colored prefix'
+	);
+	await evaluate('window.pauseSyntaxWorker = false; window.flushSyntaxRequests()');
+	await delay(150);
+	console.log(
+		'PASS: actual streaming Markdown retains the code component and colored prefix through append and fence closure'
 	);
 
 	await call('Page.addScriptToEvaluateOnNewDocument', {
