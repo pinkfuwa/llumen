@@ -33,6 +33,10 @@ cargo xtask run
 
 This runs the backend on `http://127.0.0.1:8001` with development features enabled.
 
+The backend compiles without `frontend/build`. To develop the frontend separately,
+run `pnpm dev` from `frontend`; Vite proxies `/api` to the backend. Until frontend
+assets exist, the backend's SPA fallback returns `503`.
+
 ### 3. Build and Run Together
 
 ```bash

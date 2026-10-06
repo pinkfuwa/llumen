@@ -1,4 +1,4 @@
-//! Prompt rendering via minijinja + rust_embed_for_web.
+//! Prompt rendering via minijinja + compact-embed.
 //!
 //! Templates live in `agent/prompt/` and are embedded at compile time.
 //! Each render method populates locale/time/model variables and returns
@@ -6,20 +6,36 @@
 
 use anyhow::{Context as _, Result};
 use minijinja::Environment;
-use rust_embed_for_web::{EmbedableFile, RustEmbed};
+use compact_embed::Embed;
 use time::macros::format_description;
 
-#[derive(RustEmbed)]
-#[folder = "../agent/prompt"]
-#[gzip = false]
+#[derive(Embed)]
+#[embed(folder = "../agent/prompt", allow_missing = false, compression = false)]
 struct PromptAssets;
 
 fn load_template(name: &str) -> Result<String> {
     // FIXME: remove deep-research prompt if not enabled
     let file =
-        PromptAssets::get(name).with_context(|| format!("prompt template not found: {name}"))?;
-    let bytes = file.data();
+        PromptAssets::get(name)?.with_context(|| format!("prompt template not found: {name}"))?;
+    let bytes = file.data;
     Ok(std::str::from_utf8(bytes.as_ref())?.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prompt_templates_keep_original_bytes_and_load_in_minijinja() {
+        let asset = PromptAssets::get("normal.j2").unwrap().unwrap();
+        assert_eq!(asset.encoding, compact_embed::Encoding::Identity);
+        assert_eq!(
+            load_template("normal.j2").unwrap().as_bytes(),
+            asset.data.as_ref()
+        );
+        assert!(Prompt::new().is_ok());
+        assert!(load_template("missing.j2").is_err());
+    }
 }
 
 pub(crate) const TIME_FORMAT: &[time::format_description::BorrowedFormatItem<'static>] =

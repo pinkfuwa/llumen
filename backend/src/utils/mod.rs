@@ -1,3 +1,4 @@
+pub mod assets;
 pub mod blob;
 pub mod chat;
 #[cfg(feature = "cli")]

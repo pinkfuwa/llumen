@@ -51,9 +51,9 @@ stream-json = { git = "https://github.com/Eason0729/stream_json.git", rev = "251
 eventsource-stream = "0.2.3"
 imagesize = { version = "0.14.0", default-features = false, features = ["jpeg", "png", "webp"] }
 
-[dependencies.rust-embed-for-web]
-version = "11.3.0"
-default-features = false
+[dependencies.compact-embed]
+git = "https://github.com/Eason0729/compact-embed.git"
+rev = "fd3e5e6021b73e88ea1a3936f65da82367106ba6"
 
 [dependencies.image]
 version = "0.25.9"
@@ -129,3 +129,8 @@ optional = true
 [dependencies.tracing-subscriber]
 version = "0.3.20"
 optional = true
+
+[build-dependencies.compact-embed]
+git = "https://github.com/Eason0729/compact-embed.git"
+rev = "fd3e5e6021b73e88ea1a3936f65da82367106ba6"
+default-features = false
