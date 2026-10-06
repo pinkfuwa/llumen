@@ -13,11 +13,16 @@ export default defineConfig({
 			base: '/',
 			registerType: 'prompt',
 			workbox: {
-				navigateFallback: null
+				navigateFallback: null,
+				// The SPA has no prerendered pages when Workbox runs.
+				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,webmanifest}'],
+				modifyURLPrefix: { 'client/': '' }
 			}
 		})
 	],
 	build: {
+		// Lightning CSS rejects valid ::highlight() selectors (upstream #1300).
+		cssMinify: 'esbuild',
 		sourcemap: process.env.NOMAP !== 'T'
 	},
 	worker: {

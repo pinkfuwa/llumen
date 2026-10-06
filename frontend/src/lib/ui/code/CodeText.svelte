@@ -1,4 +1,5 @@
 <script lang="ts">
+	import './syntax.css';
 	import { syntaxHighlight } from './highlight.svelte';
 	let {
 		text = '',
