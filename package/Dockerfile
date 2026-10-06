@@ -15,10 +15,10 @@ ENV NOMAP=T
 RUN pnpm run build
 
 
-FROM --platform=$BUILDPLATFORM rust:1.90.0-slim-trixie AS backend-builder
+FROM --platform=$BUILDPLATFORM rust:1.99.0-slim-trixie AS backend-builder
 
 RUN apt update -y \
-    && apt install -y musl-tools pkg-config make perl curl xz-utils
+    && apt install -y musl-tools pkg-config make curl xz-utils
 
 COPY ./package/install-zig.sh /usr/local/bin/install-zig.sh
 RUN chmod +x /usr/local/bin/install-zig.sh
@@ -51,18 +51,13 @@ ARG FEATURES=""
 
 RUN --mount=type=cache,id=target,target=/compiler/target \
     if [ -n "$FEATURES" ]; then \
-        cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl --features "$FEATURES"; \
+        cargo zigbuild --locked -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl --features "$FEATURES"; \
     else \
-        cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl; \
+        cargo zigbuild --locked -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl; \
     fi && \
     mkdir -p /app/linux && \
     cp target/aarch64-unknown-linux-musl/release/backend /app/linux/arm64 && \
     cp target/x86_64-unknown-linux-musl/release/backend /app/linux/amd64
-
-FROM debian:trixie-slim AS ca
-RUN apt update -y \
-    && apt install -y ca-certificates tzdata \
-    && update-ca-certificates
 
 FROM scratch
 
@@ -80,8 +75,6 @@ WORKDIR /static
 WORKDIR /data
 WORKDIR /
 
-COPY --from=ca /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=ca /etc/localtime /etc/localtime
 COPY --from=backend-builder /app/${TARGETPLATFORM} /backend
 
 ENV DATA_PATH="/data"
