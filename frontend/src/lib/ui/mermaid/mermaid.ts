@@ -1,7 +1,3 @@
-import { getMermaidDarkMode, getMermaidThemeVariables } from './mermaid-theme';
-
-let mermaidInstance: Promise<typeof import('mermaid')> = import('mermaid');
-
 export const MERMAID_LANGUAGES = new Set([
 	'mermaid',
 	'graph',
@@ -10,10 +6,8 @@ export const MERMAID_LANGUAGES = new Set([
 	'class',
 	'state',
 	'er',
-	'gantt',
-	'pie',
-	'journey',
-	'git'
+	'xychart',
+	'xychart-beta'
 ]);
 
 export function isMermaidLanguage(lang: string | undefined): boolean {
@@ -21,22 +15,19 @@ export function isMermaidLanguage(lang: string | undefined): boolean {
 	return MERMAID_LANGUAGES.has(lang.toLowerCase());
 }
 
-let idCounter = 0;
-
 export async function render(code: string): Promise<string> {
-	const mermaidModule = await mermaidInstance;
-	const id = `mermaid-${++idCounter}`;
-
-	mermaidModule.default.initialize({
-		startOnLoad: false,
-		theme: 'base',
-		suppressErrorRendering: true,
-		darkMode: getMermaidDarkMode(),
-		themeVariables: getMermaidThemeVariables()
-	});
-
+	const { renderMermaidSVG } = await import('beautiful-mermaid');
 	const cleanCode = code.replaceAll(/^\s*style\s+\S+.*$/gm, '').trim();
 
-	const { svg } = await mermaidModule.default.render(id, cleanCode);
-	return svg.replaceAll('\\n', '<br/>');
+	return renderMermaidSVG(cleanCode, {
+		bg: 'var(--card)',
+		fg: 'var(--foreground)',
+		line: 'var(--muted-foreground)',
+		accent: 'var(--primary)',
+		muted: 'var(--muted-foreground)',
+		surface: 'var(--secondary)',
+		border: 'var(--mermaid-border)',
+		font: 'ui-sans-serif, system-ui, sans-serif',
+		transparent: true
+	});
 }

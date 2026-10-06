@@ -22,7 +22,7 @@ const server = await createServer({
 		include: [
 			'@speed-highlight/core/languages',
 			'@speed-highlight/core/tokenize',
-			'mermaid',
+			'beautiful-mermaid',
 			'katex',
 			'@chenglou/pretext'
 		]
@@ -501,6 +501,113 @@ try {
 	await delay(150);
 	console.log(
 		'PASS: actual streaming Markdown retains the code component and colored prefix through append and fence closure'
+	);
+
+	const diagramSource = '```mermaid\ngraph TD\nA[Start] --> B[End]';
+	await evaluate(`window.codeFixture.markdown(${JSON.stringify(diagramSource)})`);
+	assert(
+		await evaluate('!document.querySelector("#code [role=application] svg")'),
+		'Rendered an incomplete diagram'
+	);
+	assert(
+		await evaluate('document.querySelector("#code pre").textContent.includes("A[Start]")'),
+		'Streaming diagram source disappeared'
+	);
+	await evaluate(`window.codeFixture.markdown(${JSON.stringify(diagramSource + '\n```\n')})`);
+	for (let attempts = 0; attempts < 100; attempts++) {
+		if (await evaluate('Boolean(document.querySelector("#code [role=application] svg"))')) break;
+		await delay(100);
+	}
+	assert(
+		await evaluate('Boolean(document.querySelector("#code [role=application] svg"))'),
+		'Diagram did not render'
+	);
+	await evaluate(`(async () => {
+		await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+		window.diagramElement = document.querySelector('#code [role=application] svg');
+		window.diagramMarkup = window.diagramElement.innerHTML;
+		const zoomable = document.querySelector('#code [role="application"]');
+		zoomable.click();
+		await new Promise(resolve => requestAnimationFrame(resolve));
+		const bounds = zoomable.getBoundingClientRect();
+		zoomable.dispatchEvent(new WheelEvent('wheel', {
+			bubbles: true, cancelable: true, deltaY: -200,
+			clientX: bounds.x + bounds.width / 2, clientY: bounds.y + bounds.height / 2
+		}));
+		await new Promise(resolve => requestAnimationFrame(resolve));
+		window.diagramTransform = window.diagramElement.parentElement.style.transform;
+	})()`);
+	const diagramColors = new Set<string>();
+	for (const theme of ['llumen', 'dracula', 'vitesse']) {
+		for (const dark of ['false', 'true']) {
+			await evaluate(`(async () => {
+				const fixture = document.querySelector('.fixture');
+				fixture.dataset.theme = ${JSON.stringify(theme)};
+				fixture.dataset.dark = ${JSON.stringify(dark)};
+				await new Promise(resolve => requestAnimationFrame(resolve));
+			})()`);
+			assert(
+				await evaluate(
+					'window.diagramElement === document.querySelector("#code [role=application] svg")'
+				),
+				'Theme recreated the diagram SVG'
+			);
+			assert.equal(
+				await evaluate('window.diagramElement.innerHTML'),
+				await evaluate('window.diagramMarkup'),
+				'Theme rewrote diagram contents'
+			);
+			assert.equal(
+				await evaluate('window.diagramElement.parentElement.style.transform'),
+				await evaluate('window.diagramTransform'),
+				'Theme reset diagram pan or zoom'
+			);
+			diagramColors.add(
+				await evaluate<string>(`JSON.stringify({
+					text: getComputedStyle(window.diagramElement.querySelector('text')).fill,
+					border: getComputedStyle(window.diagramElement.querySelector('rect')).stroke,
+					edge: getComputedStyle(window.diagramElement.querySelector('polyline')).stroke
+				})`)
+			);
+			assert(
+				await evaluate(`getComputedStyle(window.diagramElement).getPropertyValue('--border').trim() ===
+					getComputedStyle(document.querySelector('.fixture')).getPropertyValue('--border').trim()`),
+				'Diagram border lost the app color through a circular CSS variable'
+			);
+		}
+	}
+	assert.equal(diagramColors.size, 6, 'Diagram colors did not follow all six theme variants');
+	console.log(
+		'PASS: completed diagrams use live CSS colors across six themes without replacing SVG or resetting zoom'
+	);
+
+	await evaluate('window.codeFixture.diagram("not a diagram")');
+	for (let attempts = 0; attempts < 100; attempts++) {
+		if (await evaluate('Boolean(document.querySelector("#code .text-destructive"))')) break;
+		await delay(20);
+	}
+	assert(await evaluate('Boolean(document.querySelector("#code .text-destructive"))'));
+	await evaluate('window.codeFixture.diagram("graph TD\\nA[Start] --> B[End]", true)');
+	assert(
+		await evaluate('Boolean(document.querySelector("#code pre"))'),
+		'Error hid new streaming source'
+	);
+	await evaluate('window.codeFixture.diagram("graph TD\\nA[Start] --> B[End]")');
+	for (let attempts = 0; attempts < 100; attempts++) {
+		if (await evaluate('Boolean(document.querySelector("#code [role=application] svg"))')) break;
+		await delay(20);
+	}
+	assert(
+		await evaluate('Boolean(document.querySelector("#code [role=application] svg"))'),
+		'Valid diagram did not recover'
+	);
+	await evaluate(
+		'window.codeFixture.markdown("```gantt\\nsection Tasks\\nBuild : 2026-01-01, 1d\\n```\\n")'
+	);
+	assert(await evaluate('Boolean(document.querySelector("#code pre"))'));
+	assert(await evaluate('!document.querySelector("#code [role=application] svg")'));
+	console.log(
+		'PASS: diagram errors recover through streaming; unsupported shorthand remains source text'
 	);
 
 	await call('Page.addScriptToEvaluateOnNewDocument', {

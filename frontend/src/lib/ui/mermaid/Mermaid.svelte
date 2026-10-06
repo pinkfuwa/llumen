@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { render } from './mermaid';
-	import { preference } from '$lib/preference/index.svelte';
 	import { t } from 'svelte-intl-precompile';
 	import Monochrome from '$lib/ui/code/CodeText.svelte';
 	import { codeThemeStyle } from '$lib/ui/code/theme';
@@ -19,13 +18,11 @@
 	const cssContainerHeight = $derived('clamp(300px, 65dvh, 600px)');
 
 	$effect(() => {
+		error = null;
 		if (incremental) {
 			svg = null;
 			return;
 		}
-
-		void preference.value.theme.name;
-		void preference.value.theme.dark;
 
 		let stopped = false;
 
@@ -35,9 +32,10 @@
 				error = null;
 				svg = result;
 			})
-			.catch((e) => {
-				console.log('err', e);
-				error = e;
+			.catch((cause: unknown) => {
+				if (stopped) return;
+				svg = null;
+				error = cause instanceof Error ? cause.message : String(cause);
 			});
 
 		return () => {
@@ -65,6 +63,7 @@
 	bind:this={containerEl}
 	class="relative overflow-hidden rounded-md border border-border bg-card p-2 data-focus:ring-4 data-focus:ring-ring"
 	style="height: {cssContainerHeight}; {themeStyle}"
+	style:--mermaid-border="var(--border)"
 	role="group"
 	data-focus={zoomableFocused ? '' : undefined}
 >
@@ -96,7 +95,5 @@
 				</div>
 			{/snippet}
 		</Zoomable>
-	{:else}
-		<span>This is a bug</span>
 	{/if}
 </div>

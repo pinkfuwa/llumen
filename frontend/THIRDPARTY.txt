@@ -20,6 +20,12 @@ Email: hi@mathias.ninja
 License: MIT
 Repository: https://github.com/sveltejs/kit
 --------------------------------------------------------------------------------
+beautiful-mermaid@1.1.3
+
+License: MIT
+Repository: https://github.com/lukilabs/beautiful-mermaid
+Publisher: Craft Docs
+--------------------------------------------------------------------------------
 bits-ui@2.18.1
 
 License: MIT
@@ -38,12 +44,6 @@ katex@0.16.47
 
 License: MIT
 Repository: https://github.com/KaTeX/KaTeX
---------------------------------------------------------------------------------
-mermaid@11.17.2
-
-License: MIT
-Repository: https://github.com/mermaid-js/mermaid
-Publisher: Knut Sveidqvist
 --------------------------------------------------------------------------------
 svelte-intl-precompile@0.12.3
 

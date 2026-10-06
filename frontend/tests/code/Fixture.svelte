@@ -5,10 +5,14 @@
 	import Reasoning from '$lib/components/message/Reasoning.svelte';
 	import ChatViewport from '$lib/ui/ChatViewport.svelte';
 	import Markdown from '$lib/components/markdown/Root.svelte';
+	import Mermaid from '$lib/ui/mermaid/Mermaid.svelte';
 	import { addMessages, init } from 'svelte-intl-precompile';
 	import { tick } from 'svelte';
 
-	addMessages('en', { chat: { reasoning: 'Reasoning' } });
+	addMessages('en', {
+		chat: { reasoning: 'Reasoning' },
+		mermaid: { error: 'Failed to render diagram' }
+	});
 	init({ fallbackLocale: 'en', initialLocale: 'en' });
 
 	let text = $state('// Initial source');
@@ -18,8 +22,11 @@
 	let longHistory = $state(false);
 	let reasoning = $state(false);
 	let markdownSource = $state<string | null>(null);
+	let diagramSource = $state<string | null>(null);
+	let diagramIncremental = $state(false);
 
 	export async function update(source: string, language = 'js', streaming = true) {
+		diagramSource = null;
 		markdownSource = null;
 		text = source;
 		lang = language;
@@ -28,7 +35,15 @@
 	}
 
 	export async function markdown(source: string) {
+		diagramSource = null;
 		markdownSource = source;
+		await tick();
+	}
+
+	export async function diagram(source: string, streaming = false) {
+		markdownSource = null;
+		diagramSource = source;
+		diagramIncremental = streaming;
 		await tick();
 	}
 
@@ -46,7 +61,9 @@
 			<div id="before">Before reasoning</div>
 			<Reasoning content={'Reasoning line\n'.repeat(12)} bind:open={reasoning} />
 			<div id="code">
-				{#if markdownSource !== null}
+				{#if diagramSource !== null}
+					<Mermaid text={diagramSource} incremental={diagramIncremental} />
+				{:else if markdownSource !== null}
 					<Markdown source={markdownSource} incremental />
 				{:else}
 					<Code {text} {lang} {incremental} />
