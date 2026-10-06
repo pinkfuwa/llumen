@@ -3,8 +3,8 @@
 	import { ClipboardCopy } from '@lucide/svelte';
 	import { copy } from '$lib/copy.svelte';
 	import HighlightedCode from '$lib/ui/code/Code.svelte';
-	import Mermaid from '../../mermaid/Mermaid.svelte';
-	import { isMermaidLanguage } from '../../mermaid/mermaid';
+	import Mermaid from '$lib/ui/mermaid/Mermaid.svelte';
+	import { isMermaidLanguage } from '$lib/ui/mermaid/mermaid';
 	import Button from '$lib/ui/Button.svelte';
 
 	let { node }: { node: CodeBlockNode } = $props();
