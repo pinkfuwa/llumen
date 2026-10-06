@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { render } from './mermaid';
 	import { t } from 'svelte-intl-precompile';
-	import Monochrome from '$lib/ui/code/CodeText.svelte';
-	import { codeThemeStyle } from '$lib/ui/code/theme';
 	import Zoomable from '$lib/ui/Zoomable.svelte';
 
 	let { text = '', incremental = false } = $props<{ text?: string; incremental?: boolean }>();
@@ -54,24 +52,17 @@
 		});
 		return () => cancelAnimationFrame(id);
 	});
-
-	const displayText = $derived(incremental || (error == null && !svg));
-	const themeStyle = $derived(displayText ? codeThemeStyle : '');
 </script>
 
 <div
 	bind:this={containerEl}
 	class="relative overflow-hidden rounded-md border border-border bg-card p-2 data-focus:ring-4 data-focus:ring-ring"
-	style="height: {cssContainerHeight}; {themeStyle}"
+	style="height: {cssContainerHeight}"
 	style:--mermaid-border="var(--border)"
 	role="group"
 	data-focus={zoomableFocused ? '' : undefined}
 >
-	{#if displayText}
-		<div class="h-full overflow-y-auto">
-			<Monochrome {text} />
-		</div>
-	{:else if error != null}
+	{#if !incremental && error != null}
 		<div class="flex h-full w-full flex-col items-center justify-center p-6">
 			<div class="p-2 text-xl font-semibold text-destructive">{$t('mermaid.error')}</div>
 
@@ -79,7 +70,7 @@
 				{error}
 			</div>
 		</div>
-	{:else if svg}
+	{:else if !incremental && svg}
 		<Zoomable
 			contentWidth={innerW}
 			contentHeight={innerH}

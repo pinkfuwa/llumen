@@ -510,8 +510,11 @@ try {
 		'Rendered an incomplete diagram'
 	);
 	assert(
-		await evaluate('document.querySelector("#code pre").textContent.includes("A[Start]")'),
-		'Streaming diagram source disappeared'
+		await evaluate(`(() => {
+			const box = document.querySelector('#code [role=group]');
+			return box && box.children.length === 0 && box.textContent.trim() === '' && box.clientHeight > 0;
+		})()`),
+		'Streaming diagram did not retain an empty box'
 	);
 	await evaluate(`window.codeFixture.markdown(${JSON.stringify(diagramSource + '\n```\n')})`);
 	for (let attempts = 0; attempts < 100; attempts++) {
@@ -589,8 +592,11 @@ try {
 	assert(await evaluate('Boolean(document.querySelector("#code .text-destructive"))'));
 	await evaluate('window.codeFixture.diagram("graph TD\\nA[Start] --> B[End]", true)');
 	assert(
-		await evaluate('Boolean(document.querySelector("#code pre"))'),
-		'Error hid new streaming source'
+		await evaluate(`(() => {
+			const box = document.querySelector('#code [role=group]');
+			return box && box.children.length === 0 && box.textContent.trim() === '';
+		})()`),
+		'Streaming diagram retained an error or source text'
 	);
 	await evaluate('window.codeFixture.diagram("graph TD\\nA[Start] --> B[End]")');
 	for (let attempts = 0; attempts < 100; attempts++) {
