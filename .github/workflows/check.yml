@@ -14,6 +14,11 @@ jobs:
   backend-tests:
     name: Backend tests
     runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: line-tables-only
+      CARGO_PROFILE_TEST_DEBUG: line-tables-only
+      CARGO_LLVM_COV_TARGET_DIR: target/llvm-cov-target
     outputs:
       line-coverage: ${{ steps.coverage.outputs.lines }}
     steps:
@@ -53,21 +58,25 @@ jobs:
         working-directory: ./frontend
         run: pnpm build
 
-      - name: Get cargo lockfile hash
-        id: lockfile_hash
-        run: |
-          echo "cargo_lock_hash=$(sha256sum backend/Cargo.lock | awk '{print $1}')" >> "$GITHUB_OUTPUT"
-
-      - name: Cache backend target directory
-        uses: actions/cache@v5
-        with:
-          path: backend/target
-          key: backend-target-coverage-${{ runner.os }}-${{ steps.lockfile_hash.outputs.cargo_lock_hash }}
-
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: llvm-tools-preview
+
+      - name: Remove unused runner toolchains
+        # rust-cache hashes every installed toolchain, including versions from the runner image.
+        run: |
+          active=$(rustup show active-toolchain | cut -d ' ' -f 1)
+          while read -r toolchain _; do
+            if [ "$toolchain" != "$active" ]; then rustup toolchain uninstall "$toolchain"; fi
+          done < <(rustup toolchain list)
+
+      - name: Cache backend dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target/llvm-cov-target
+          key: coverage-deep-research
+          cache-bin: false
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
@@ -79,8 +88,8 @@ jobs:
         working-directory: ./backend
         run: |
           mkdir -p target/coverage
-          cargo llvm-cov --workspace --exclude xtask --lib --bins --json --summary-only --output-path target/coverage/summary.json
-          cargo llvm-cov --workspace --exclude xtask --lib --bins --no-run --html --output-dir target/coverage
+          cargo llvm-cov --locked --workspace --exclude xtask --features deep-research --lib --bins --json --summary-only --output-path target/coverage/summary.json
+          cargo llvm-cov --locked --workspace --exclude xtask --features deep-research --lib --bins --no-run --html --output-dir target/coverage
 
       - name: Summarize backend coverage
         id: coverage
