@@ -1,5 +1,4 @@
-# support cross compiling only on x86_64 host
-# you should manifest resulting image for both x86_64 and aarch64
+# Zig cross-compiles both outputs from an amd64 or arm64 build host.
 FROM --platform=$BUILDPLATFORM node:22-slim AS frontend-builder
 
 ENV PNPM_HOME="/pnpm"
@@ -28,12 +27,6 @@ ENV PATH="/opt/zig:$PATH"
 
 WORKDIR /
 
-RUN --mount=type=cache,target=~/.cargo/bin/
-RUN --mount=type=cache,target=~/.cargo/registry/index/
-RUN --mount=type=cache,target=~/.cargo/registry/cache/
-RUN --mount=type=cache,target=~/.cargo/git/db/
-RUN --mount=type=cache,id=target,target=/compiler/target
-
 RUN cargo install --locked cargo-zigbuild
 
 RUN rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
@@ -50,6 +43,9 @@ COPY --from=frontend-builder /app/build ../frontend/build
 ARG FEATURES=""
 
 RUN --mount=type=cache,id=target,target=/compiler/target \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/root/.cache/zig \
     if [ -n "$FEATURES" ]; then \
         cargo zigbuild --locked -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl --features "$FEATURES"; \
     else \

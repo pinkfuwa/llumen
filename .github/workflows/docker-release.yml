@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -20,6 +20,27 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        id: buildx
+
+      - name: Cache Cargo build artifacts
+        uses: actions/cache@v5
+        id: cargo_cache
+        with:
+          path: .build-cache
+          key: docker-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/Cargo.lock', 'backend/**/Cargo.toml', 'backend/.cargo/config.toml', 'package/Dockerfile', 'package/install-zig.sh') }}-deep-research
+
+      - name: Restore Cargo cache mounts
+        uses: reproducible-containers/buildkit-cache-dance@ca04d1a0e0018e28a060ec9f87518ddc453b4460 # v3.3.0
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          cache-map: |
+            {
+              ".build-cache/target": {"target": "/compiler/target", "id": "target"},
+              ".build-cache/registry": "/usr/local/cargo/registry",
+              ".build-cache/git": "/usr/local/cargo/git",
+              ".build-cache/zig": "/root/.cache/zig"
+            }
+          skip-extraction: ${{ steps.cargo_cache.outputs.cache-hit }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
@@ -58,5 +79,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels || steps.meta-manual.outputs.labels }}
           build-args: |
             FEATURES=deep-research
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=docker-${{ runner.arch }}
+          cache-to: type=gha,scope=docker-${{ runner.arch }},mode=max
