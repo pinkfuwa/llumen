@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build-and-push-latest:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
