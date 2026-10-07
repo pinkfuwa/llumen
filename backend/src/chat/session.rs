@@ -148,6 +148,12 @@ impl CompletionSession {
 
         let model_config = <ModelConfig as ModelChecker>::from_toml(&model_entity.config)?;
 
+        let publisher = ctx
+            .channel
+            .clone()
+            .publish(chat_id)
+            .context("another session is already streaming on this chat")?;
+
         let history = Message::find()
             .filter(message::Column::ChatId.eq(chat_id))
             .order_by_asc(message::Column::Id)
@@ -174,12 +180,6 @@ impl CompletionSession {
             token_count: 0,
             inner: MessageInner::default(),
         };
-
-        let publisher = ctx
-            .channel
-            .clone()
-            .publish(chat_id)
-            .context("another session is already streaming on this chat")?;
 
         log::debug!(
             "session created: chat_id={}, user_id={}, model_id={}, msg_id={}",
@@ -741,13 +741,11 @@ impl CompletionSession {
         let mut chat_active: chat::ActiveModel = self.chat.clone().into();
         if model_changed {
             chat_active.model_id = Set(Some(self.model.id));
-            self.chat.model_id = Some(self.model.id);
         }
         if mode_changed {
             chat_active.mode = Set(self.mode);
-            self.chat.mode = self.mode;
         }
-        chat::Entity::update(chat_active).exec(&self.ctx.db).await?;
+        self.chat = chat::Entity::update(chat_active).exec(&self.ctx.db).await?;
 
         Ok(())
     }
@@ -890,5 +888,124 @@ impl TokenSink for CompletionSession {
         stream: impl tokio_stream::Stream<Item = Result<Token, openrouter::Error>> + Unpin + Send,
     ) -> Result<StreamEndReason> {
         self.put_stream(stream).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::blob::BlobDB;
+    use migration::MigratorTrait;
+
+    const MODEL_CONFIG: &str = "display_name = 'Test model'\nmodel_id = 'test/model'";
+
+    async fn context() -> Result<Arc<Context>> {
+        let mut options = ConnectOptions::new("sqlite::memory:");
+        options.max_connections(1).sqlx_logging(false);
+        let database = Database::connect(options).await?;
+        migration::Migrator::up(&database, None).await?;
+        user::Entity::delete_many().exec(&database).await?;
+        user::ActiveModel {
+            id: Set(1),
+            name: Set("test-user".to_string()),
+            password: Set(String::new()),
+            preference: Set(UserPreference {
+                theme: None,
+                locale: None,
+                submit_on_enter: None,
+            }),
+        }
+        .insert(&database)
+        .await?;
+        for id in [7, 8] {
+            entity_model::ActiveModel {
+                id: Set(id),
+                config: Set(MODEL_CONFIG.to_string()),
+            }
+            .insert(&database)
+            .await?;
+        }
+        chat::ActiveModel {
+            id: Set(42),
+            owner_id: Set(1),
+            model_id: Set(Some(7)),
+            mode: Set(ModeKind::Normal),
+            title: Set(Some("Original title".to_string())),
+        }
+        .insert(&database)
+        .await?;
+
+        let blobs =
+            redb::Database::builder().create_with_backend(redb::backends::InMemoryBackend::new())?;
+        Ok(Arc::new(Context::new(
+            database,
+            Arc::new(openrouter::Openrouter::new("", "http://127.0.0.1:0", false)),
+            Arc::new(BlobDB::new(Arc::new(blobs))),
+        )?))
+    }
+
+    #[tokio::test]
+    async fn rejects_a_second_session_without_inserting_an_orphan_message() -> Result<()> {
+        let context = context().await?;
+        let session = CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        let count = message::Entity::find().count(&context.db).await?;
+        let second = CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await;
+        let error = second.err().context("second session was accepted")?;
+        assert!(error.to_string().contains("already streaming"));
+        assert_eq!(message::Entity::find().count(&context.db).await?, count);
+        drop(session);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn releases_the_streaming_channel_when_placeholder_insertion_fails() -> Result<()> {
+        let context = context().await?;
+        context
+            .db
+            .execute_unprepared(
+                "CREATE TRIGGER reject_message BEFORE INSERT ON message
+             BEGIN SELECT RAISE(ABORT, 'message insertion failed'); END;",
+            )
+            .await?;
+        let result = CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await;
+        assert!(
+            result
+                .err()
+                .context("message insertion succeeded")?
+                .to_string()
+                .contains("message insertion failed")
+        );
+        assert_eq!(message::Entity::find().count(&context.db).await?, 0);
+        assert!(context.channel.publishable(42));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn synchronizes_model_and_mode_without_overwriting_the_title() -> Result<()> {
+        let context = context().await?;
+        let mut session =
+            CompletionSession::new(context.clone(), 1, 42, 8, ModeKind::Search).await?;
+        session.sync_chat_model().await?;
+        let saved = chat::Entity::find_by_id(42)
+            .one(&context.db)
+            .await?
+            .context("chat missing")?;
+        assert_eq!(saved.model_id, Some(8));
+        assert_eq!(saved.mode, ModeKind::Search);
+        assert_eq!(saved.title.as_deref(), Some("Original title"));
+        assert_eq!(session.chat, saved);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preserves_local_chat_state_when_model_synchronization_fails() -> Result<()> {
+        let context = context().await?;
+        let mut session =
+            CompletionSession::new(context.clone(), 1, 42, 8, ModeKind::Search).await?;
+        let original = session.chat.clone();
+        chat::Entity::delete_by_id(42).exec(&context.db).await?;
+        assert!(session.sync_chat_model().await.is_err());
+        assert_eq!(session.chat, original);
+        Ok(())
     }
 }
