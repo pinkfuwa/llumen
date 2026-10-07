@@ -1,4 +1,5 @@
 .git
+.build-cache
 **/target
 **/node_modules
 frontend/.svelte-kit

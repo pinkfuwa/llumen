@@ -27,15 +27,37 @@ jobs:
         run: |
           if [ -z "$(git log --since='2 days ago')" ]; then
             echo "No recent changes found in the last 2 days. Skipping build."
-            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "Recent changes found. Proceeding with build."
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Docker Buildx
         if: steps.git_log.outputs.changed == 'true'
         uses: docker/setup-buildx-action@v4
+        id: buildx
+
+      - name: Cache Cargo build artifacts
+        if: steps.git_log.outputs.changed == 'true'
+        uses: actions/cache@v5
+        id: cargo_cache
+        with:
+          path: .build-cache
+          key: docker-cargo-${{ runner.os }}-${{ hashFiles('backend/Cargo.lock', 'backend/**/Cargo.toml', 'backend/.cargo/config.toml', 'package/Dockerfile', 'package/install-zig.sh') }}-${{ inputs.features || 'default' }}
+
+      - name: Restore Cargo cache mounts
+        if: steps.git_log.outputs.changed == 'true'
+        uses: reproducible-containers/buildkit-cache-dance@ca04d1a0e0018e28a060ec9f87518ddc453b4460 # v3.3.0
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          cache-map: |
+            {
+              ".build-cache/target": {"target": "/compiler/target", "id": "target"},
+              ".build-cache/registry": "/usr/local/cargo/registry",
+              ".build-cache/git": "/usr/local/cargo/git"
+            }
+          skip-extraction: ${{ steps.cargo_cache.outputs.cache-hit }}
 
       - name: Login to GitHub Container Registry
         if: steps.git_log.outputs.changed == 'true'
