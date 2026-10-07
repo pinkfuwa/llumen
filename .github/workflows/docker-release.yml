@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     steps:
       - name: Checkout code
@@ -27,7 +27,7 @@ jobs:
         id: cargo_cache
         with:
           path: .build-cache
-          key: docker-cargo-${{ runner.os }}-${{ hashFiles('backend/Cargo.lock', 'backend/**/Cargo.toml', 'backend/.cargo/config.toml', 'package/Dockerfile', 'package/install-zig.sh') }}-deep-research
+          key: docker-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/Cargo.lock', 'backend/**/Cargo.toml', 'backend/.cargo/config.toml', 'package/Dockerfile', 'package/install-zig.sh') }}-deep-research
 
       - name: Restore Cargo cache mounts
         uses: reproducible-containers/buildkit-cache-dance@ca04d1a0e0018e28a060ec9f87518ddc453b4460 # v3.3.0
@@ -78,5 +78,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels || steps.meta-manual.outputs.labels }}
           build-args: |
             FEATURES=deep-research
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=docker-${{ runner.arch }}
+          cache-to: type=gha,scope=docker-${{ runner.arch }},mode=max

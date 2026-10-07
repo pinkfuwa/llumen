@@ -1,5 +1,4 @@
-# support cross compiling only on x86_64 host
-# you should manifest resulting image for both x86_64 and aarch64
+# Zig cross-compiles both outputs from an amd64 or arm64 build host.
 FROM --platform=$BUILDPLATFORM node:22-slim AS frontend-builder
 
 ENV PNPM_HOME="/pnpm"

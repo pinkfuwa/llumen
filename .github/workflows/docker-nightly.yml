@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build-and-push-latest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -44,7 +44,7 @@ jobs:
         id: cargo_cache
         with:
           path: .build-cache
-          key: docker-cargo-${{ runner.os }}-${{ hashFiles('backend/Cargo.lock', 'backend/**/Cargo.toml', 'backend/.cargo/config.toml', 'package/Dockerfile', 'package/install-zig.sh') }}-${{ inputs.features || 'default' }}
+          key: docker-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/Cargo.lock', 'backend/**/Cargo.toml', 'backend/.cargo/config.toml', 'package/Dockerfile', 'package/install-zig.sh') }}-${{ inputs.features || 'default' }}
 
       - name: Restore Cargo cache mounts
         if: steps.git_log.outputs.changed == 'true'
@@ -87,5 +87,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             FEATURES=${{ inputs.features || '' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=docker-${{ runner.arch }}
+          cache-to: type=gha,scope=docker-${{ runner.arch }},mode=max
