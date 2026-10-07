@@ -502,12 +502,12 @@ export async function deleteMessage(id: number): Promise<MutationStatus> {
 		body: { id },
 		token: token.value?.value
 	});
+	if (!resp?.deleted) return 'failed';
 	const firstKeepIdx = firstLtIdx(messages.val, id);
 	if (firstKeepIdx === messages.val.length) messages.val.splice(0);
 	else messages.val.splice(0, firstKeepIdx);
 
-	if (resp) return resp.deleted ? 'success' : 'failed';
-	return 'failed';
+	return 'success';
 }
 
 export function syncMessage(
@@ -525,11 +525,12 @@ export function syncMessage(
 		return Promise.resolve('failed');
 	}
 	return (async () => {
-		await APIFetch<MessageDeleteReq, MessageDeleteReq>({
+		const deleted = await APIFetch<MessageDeleteResp, MessageDeleteReq>({
 			path: 'message/delete',
 			body: { id: msgId },
 			token: token_
 		});
+		if (!deleted?.deleted) return 'failed';
 
 		const firstKeepIdx = firstLtIdx(messages.val, msgId);
 		if (firstKeepIdx === messages.val.length) messages.val.splice(0);
