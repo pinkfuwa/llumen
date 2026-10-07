@@ -168,6 +168,7 @@ impl BlobDB {
         S: Stream<Item = Result<bytes::Bytes, E>> + Send,
     {
         let (tx, mut rx) = tokio::sync::mpsc::channel::<bytes::Bytes>(1);
+        let (commit_tx, commit_rx) = tokio::sync::oneshot::channel::<()>();
 
         let db = self.clone();
         let write_task = tokio::task::spawn_blocking(move || {
@@ -180,8 +181,24 @@ impl BlobDB {
                 let mut wrote = 0;
 
                 while let Some(chunk) = rx.blocking_recv() {
+                    if chunk.len() > size - wrote {
+                        return Err(redb::Error::Io(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "upload exceeds declared size",
+                        )));
+                    }
                     writer[wrote..wrote + chunk.len()].copy_from_slice(&chunk);
                     wrote += chunk.len();
+                }
+
+                if commit_rx.blocking_recv().is_err() {
+                    return Ok(());
+                }
+                if wrote != size {
+                    return Err(redb::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "upload is shorter than declared size",
+                    )));
                 }
             }
 
@@ -189,22 +206,33 @@ impl BlobDB {
             Ok::<(), redb::Error>(())
         });
 
+        let mut stream_error = None;
+        let mut writer_closed = false;
         tokio::pin!(chunk_stream);
         while let Some(chunk) = chunk_stream.next().await {
             match chunk {
-                Err(e) => return Ok(Err(e)),
+                Err(e) => {
+                    stream_error = Some(e);
+                    break;
+                }
                 Ok(b) => {
-                    tx.send(b).await.map_err(|_| {
-                        redb::Error::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
-                            "write task failed",
-                        ))
-                    })?;
+                    if tx.send(b).await.is_err() {
+                        writer_closed = true;
+                        break;
+                    }
                 }
             }
         }
 
         drop(tx);
+        if stream_error.is_none() && !writer_closed {
+            // Cancellation or a failed stream must not commit a partial upload.
+            if commit_tx.send(()).is_err() {
+                log::debug!("blob writer stopped before upload completed");
+            }
+        } else {
+            drop(commit_tx);
+        }
 
         write_task.await.map_err(|_| {
             redb::Error::Io(std::io::Error::new(
@@ -213,7 +241,10 @@ impl BlobDB {
             ))
         })??;
 
-        Ok(Ok(()))
+        Ok(match stream_error {
+            Some(error) => Err(error),
+            None => Ok(()),
+        })
     }
 
     pub async fn insert<S>(&self, id: i32, size: usize, chunk_stream: S) -> Result<(), redb::Error>
@@ -237,6 +268,202 @@ impl BlobDB {
             table.remove(id)?;
         }
         txn.commit()?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn database() -> anyhow::Result<BlobDB> {
+        let database = Database::builder().create_with_backend(backends::InMemoryBackend::new())?;
+        Ok(BlobDB::new(Arc::new(database)))
+    }
+
+    #[tokio::test]
+    async fn stores_multiple_chunks_and_bounds_reader_head() -> anyhow::Result<()> {
+        let database = database()?;
+        assert!(database.get(1).is_none());
+        database
+            .insert(
+                1,
+                6,
+                tokio_stream::iter([
+                    Bytes::from_static(b"ab"),
+                    Bytes::new(),
+                    Bytes::from_static(b"cdef"),
+                ]),
+            )
+            .await?;
+        let reader = database
+            .get(1)
+            .ok_or_else(|| anyhow::anyhow!("missing blob"))?;
+        assert_eq!(reader.len(), 6);
+        assert_eq!(reader.head(0), b"");
+        assert_eq!(reader.head(3), b"abc");
+        assert_eq!(reader.head(usize::MAX), b"abcdef");
+        assert_eq!(
+            database.get_vectored(1).await.as_deref(),
+            Some(b"abcdef".as_slice())
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn download_stream_preserves_bytes_at_chunk_boundaries() -> anyhow::Result<()> {
+        for size in [
+            0,
+            1,
+            CHUNK_SIZE - 1,
+            CHUNK_SIZE,
+            CHUNK_SIZE + 1,
+            CHUNK_SIZE * 2 + 7,
+        ] {
+            let database = database()?;
+            let content: Vec<u8> = (0..size).map(|index| (index % 251) as u8).collect();
+            database
+                .insert(1, size, tokio_stream::iter([Bytes::from(content.clone())]))
+                .await?;
+            let reader = database
+                .get(1)
+                .ok_or_else(|| anyhow::anyhow!("missing blob"))?;
+            let mut stream = MmapStream::from(reader);
+            let mut received = Vec::new();
+            let mut lengths = Vec::new();
+            while let Some(chunk) = stream.next().await {
+                let chunk = chunk?;
+                lengths.push(chunk.len());
+                received.extend_from_slice(&chunk);
+            }
+            assert_eq!(received, content, "size {size}");
+            assert_eq!(lengths.len(), size.div_ceil(CHUNK_SIZE));
+            assert!(
+                lengths
+                    .iter()
+                    .all(|length| *length > 0 && *length <= CHUNK_SIZE)
+            );
+            assert!(stream.next().await.is_none());
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reader_keeps_its_snapshot_after_replacement_and_deletion() -> anyhow::Result<()> {
+        let database = database()?;
+        database
+            .insert(1, 3, tokio_stream::iter([Bytes::from_static(b"old")]))
+            .await?;
+        let reader = database
+            .get(1)
+            .ok_or_else(|| anyhow::anyhow!("missing blob"))?;
+        let reader = BlobReader::from(reader);
+        let cloned = reader.clone();
+        database
+            .insert(1, 3, tokio_stream::iter([Bytes::from_static(b"new")]))
+            .await?;
+        assert_eq!(
+            database.get_vectored(1).await.as_deref(),
+            Some(b"new".as_slice())
+        );
+        database.delete(1)?;
+        database.delete(1)?;
+        assert!(database.get(1).is_none());
+        drop(reader);
+        assert_eq!(cloned.len(), 3);
+        assert_eq!(cloned.as_ref(), b"old");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn failed_upload_rolls_back_and_preserves_the_original_blob() -> anyhow::Result<()> {
+        let database = database()?;
+        database
+            .insert(1, 3, tokio_stream::iter([Bytes::from_static(b"old")]))
+            .await?;
+        for id in [1, 2] {
+            let result = database
+                .insert_with_error(
+                    id,
+                    6,
+                    tokio_stream::iter([
+                        Ok(Bytes::from_static(b"part")),
+                        Err("upload interrupted"),
+                    ]),
+                )
+                .await?;
+            assert_eq!(result, Err("upload interrupted"));
+        }
+        assert_eq!(
+            database.get_vectored(1).await.as_deref(),
+            Some(b"old".as_slice())
+        );
+        assert!(database.get(2).is_none());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn incorrect_upload_sizes_roll_back_without_panicking() -> anyhow::Result<()> {
+        let database = database()?;
+        database
+            .insert(1, 3, tokio_stream::iter([Bytes::from_static(b"old")]))
+            .await?;
+        for size in [2, 4] {
+            for id in [1, 2] {
+                let error = database
+                    .insert(id, size, tokio_stream::iter([Bytes::from_static(b"abc")]))
+                    .await
+                    .expect_err("incorrect upload size must be rejected");
+                match error {
+                    redb::Error::Io(error) => {
+                        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+                    }
+                    error => panic!("unexpected storage error: {error}"),
+                }
+                assert_eq!(
+                    database.get_vectored(1).await.as_deref(),
+                    Some(b"old".as_slice())
+                );
+                assert!(database.get(2).is_none());
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn cancelled_upload_does_not_commit_a_partial_blob() -> anyhow::Result<()> {
+        let database = database()?;
+        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let upload = tokio::spawn({
+            let database = database.clone();
+            async move {
+                let chunks = tokio_stream::iter([
+                    Ok::<_, std::convert::Infallible>(Bytes::from_static(b"p")),
+                    Ok(Bytes::from_static(b"a")),
+                    Ok(Bytes::from_static(b"r")),
+                ])
+                .chain(futures_util::stream::once(async move {
+                    started_tx.send(()).expect("test receiver must be open");
+                    std::future::pending().await
+                }));
+                database.insert_with_error(1, 8, chunks).await
+            }
+        });
+        started_rx.await?;
+        upload.abort();
+        assert!(
+            upload
+                .await
+                .expect_err("upload should be cancelled")
+                .is_cancelled()
+        );
+        let inner = database.inner.clone();
+        tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
+            inner.begin_write()?.abort()?;
+            Ok(())
+        })
+        .await??;
+        assert!(database.get(1).is_none());
         Ok(())
     }
 }
