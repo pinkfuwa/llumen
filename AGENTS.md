@@ -3,7 +3,6 @@
 Privacy-focused LLM chat web-application optimized for minimal hardware (Raspberry Pi, old laptops).
 
 > You should read BUILD.md and `./.agents/development`.
-> It's important to check out pattern in similar module, you may also ask user to write one if confused.
 
 ## Architecture
 
@@ -52,4 +51,3 @@ Our project emphasizes performance and binary-size. We choose minimal dependency
 - If very complex logic changed, check `.github/workflows/check.yml` and try pass all CI tests.
 - If dependency changed, regenerate third-party licenses by `pnpm run generate-licenses` in frontend and `cargo xtask gen-license` in backend.
 - `pnpm build`, `cargo build` and `cargo test --release` is usually unnecessary.
-- DO NOT run `pnpm dev` or `cargo xtask run`, those are intended for user to run!
