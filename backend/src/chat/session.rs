@@ -896,8 +896,23 @@ mod tests {
     use super::*;
     use crate::utils::blob::BlobDB;
     use migration::MigratorTrait;
+    use futures_util::FutureExt;
+    use tokio_stream::StreamExt;
 
     const MODEL_CONFIG: &str = "display_name = 'Test model'\nmodel_id = 'test/model'";
+
+    async fn receive_tokens(
+        mut subscriber: impl tokio_stream::Stream<Item = Token> + Unpin,
+        count: usize,
+    ) -> Result<Vec<Token>> {
+        let tokens = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            (&mut subscriber).take(count).collect::<Vec<_>>(),
+        )
+        .await?;
+        assert!(subscriber.next().now_or_never().is_none());
+        Ok(tokens)
+    }
 
     async fn context() -> Result<Arc<Context>> {
         let mut options = ConnectOptions::new("sqlite::memory:");
@@ -944,6 +959,106 @@ mod tests {
         )?))
     }
 
+    fn record(id: i32, inner: MessageInner) -> message::Model {
+        message::Model {
+            id,
+            chat_id: 42,
+            price: 0.0,
+            token_count: 0,
+            inner,
+        }
+    }
+
+    fn user_message(text: &str) -> MessageInner {
+        MessageInner::User {
+            text: text.to_string(),
+            files: Vec::new(),
+        }
+    }
+
+    fn file_metadata(id: i32) -> FileMetadata {
+        FileMetadata {
+            id,
+            name: format!("file-{id}"),
+            kind: FileKind::User,
+            dimensions: None,
+        }
+    }
+
+    #[test]
+    fn collects_unique_file_ids_from_user_messages_and_tool_results() {
+        let history = [
+            record(
+                1,
+                MessageInner::User {
+                    text: "Attached files".to_string(),
+                    files: vec![file_metadata(9), file_metadata(3), file_metadata(9)],
+                },
+            ),
+            record(
+                2,
+                MessageInner::Assistant(vec![
+                    AssistantChunk::Text("Response".to_string()),
+                    AssistantChunk::ToolResult {
+                        id: "tool-1".to_string(),
+                        response: String::new(),
+                        files: vec![file_metadata(3), file_metadata(7)],
+                    },
+                ]),
+            ),
+            record(3, user_message("No files")),
+        ];
+        assert_eq!(
+            CompletionSession::collect_history_file_ids(&history),
+            [3, 7, 9]
+        );
+        assert!(CompletionSession::collect_history_file_ids(&[]).is_empty());
+    }
+
+    #[tokio::test]
+    async fn loads_ordered_history_and_creates_a_separate_assistant_placeholder() -> Result<()> {
+        let context = context().await?;
+        for message in [
+            record(20, user_message("Latest")),
+            record(10, user_message("First")),
+        ] {
+            message::ActiveModel::from(message)
+                .insert(&context.db)
+                .await?;
+        }
+        chat::ActiveModel {
+            id: Set(43),
+            owner_id: Set(1),
+            model_id: Set(Some(7)),
+            mode: Set(ModeKind::Normal),
+            title: Set(None),
+        }
+        .insert(&context.db)
+        .await?;
+        message::ActiveModel {
+            chat_id: Set(43),
+            ..message::ActiveModel::from(record(30, user_message("Another chat")))
+        }
+        .insert(&context.db)
+        .await?;
+        let session = CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        assert_eq!(
+            session
+                .history
+                .iter()
+                .map(|message| message.id)
+                .collect::<Vec<_>>(),
+            [10, 20]
+        );
+        assert_eq!(session.latest_user_message(), Some("Latest"));
+        assert!(session.message.id > 20);
+        assert_eq!(session.message.inner, MessageInner::default());
+        assert!(!context.channel.publishable(42));
+        drop(session);
+        assert!(context.channel.publishable(42));
+        Ok(())
+    }
+
     #[tokio::test]
     async fn rejects_a_second_session_without_inserting_an_orphan_message() -> Result<()> {
         let context = context().await?;
@@ -954,6 +1069,35 @@ mod tests {
         assert!(error.to_string().contains("already streaming"));
         assert_eq!(message::Entity::find().count(&context.db).await?, count);
         drop(session);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn rejects_missing_records_before_creating_an_assistant_message() -> Result<()> {
+        let context = context().await?;
+        for (user_id, chat_id, model_id, expected) in [
+            (99, 42, 7, "user not found"),
+            (1, 99, 7, "chat not found"),
+            (1, 42, 99, "model not found"),
+        ] {
+            let result = CompletionSession::new(
+                context.clone(),
+                user_id,
+                chat_id,
+                model_id,
+                ModeKind::Normal,
+            )
+            .await;
+            assert_eq!(
+                result
+                    .err()
+                    .context("invalid session was accepted")?
+                    .to_string(),
+                expected
+            );
+            assert_eq!(message::Entity::find().count(&context.db).await?, 0);
+            assert!(context.channel.publishable(42));
+        }
         Ok(())
     }
 
@@ -976,6 +1120,146 @@ mod tests {
                 .contains("message insertion failed")
         );
         assert_eq!(message::Entity::find().count(&context.db).await?, 0);
+        assert!(context.channel.publishable(42));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn loads_mime_types_for_history_files_and_updates_existing_entries() -> Result<()> {
+        let context = context().await?;
+        for (id, mime_type) in [(3, Some("image/png")), (7, None)] {
+            file::ActiveModel {
+                id: Set(id),
+                chat_id: Set(Some(42)),
+                owner_id: Set(Some(1)),
+                mime_type: Set(mime_type.map(str::to_string)),
+                valid_until: Set(None),
+            }
+            .insert(&context.db)
+            .await?;
+        }
+        message::ActiveModel::from(record(
+            1,
+            MessageInner::User {
+                text: "Files".to_string(),
+                files: vec![file_metadata(3), file_metadata(7), file_metadata(99)],
+            },
+        ))
+        .insert(&context.db)
+        .await?;
+        let mut session = CompletionSession::new(context, 1, 42, 7, ModeKind::Normal).await?;
+        assert_eq!(session.file_mime_type(3), Some("image/png"));
+        assert_eq!(session.file_mime_type(7), None);
+        assert_eq!(session.file_mime_type(99), None);
+        session.set_file_mime_type(3, Some("image/webp".to_string()));
+        session.set_file_mime_type(9, Some("video/mp4".to_string()));
+        assert_eq!(session.file_mime_type(3), Some("image/webp"));
+        assert_eq!(session.file_mime_type(9), Some("video/mp4"));
+        assert_eq!(
+            session
+                .file_mime_types
+                .iter()
+                .filter(|(id, _)| *id == 3)
+                .count(),
+            1
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn latest_user_message_skips_assistant_messages_and_respects_locale() -> Result<()> {
+        let mut session =
+            CompletionSession::new(context().await?, 1, 42, 7, ModeKind::Normal).await?;
+        assert_eq!(session.latest_user_message(), None);
+        assert_eq!(session.locale(), "en-US");
+        session.history = vec![
+            record(1, user_message("First")),
+            record(2, user_message("Latest")),
+            record(
+                3,
+                MessageInner::Assistant(vec![AssistantChunk::Text("Assistant reply".to_string())]),
+            ),
+        ];
+        session.user.preference.locale = Some("zh-TW".to_string());
+        assert_eq!(session.latest_user_message(), Some("Latest"));
+        assert_eq!(session.locale(), "zh-TW");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn inserts_context_before_the_last_user_query_without_reordering_history() -> Result<()> {
+        let context = context().await?;
+        let mut session =
+            CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        session.history = vec![
+            record(1, user_message("First query")),
+            record(
+                2,
+                MessageInner::Assistant(vec![AssistantChunk::Text("First reply".to_string())]),
+            ),
+            record(3, user_message("Latest query")),
+        ];
+        let messages =
+            session.assemble_messages(&context, openrouter::CompletionOption::default())?;
+        assert_eq!(messages.len(), 5);
+        assert!(matches!(
+            messages.first(),
+            Some(openrouter::Message::System(_))
+        ));
+        assert!(
+            matches!(messages.get(1), Some(openrouter::Message::User(text)) if text == "First query")
+        );
+        assert!(
+            matches!(messages.get(2), Some(openrouter::Message::Assistant { content, .. }) if content == "First reply")
+        );
+        assert!(
+            matches!(messages.get(3), Some(openrouter::Message::User(text)) if !text.trim().is_empty())
+        );
+        assert!(
+            matches!(messages.last(), Some(openrouter::Message::User(text)) if text == "Latest query")
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn saves_chunks_and_accumulated_usage_before_emitting_completion() -> Result<()> {
+        let context = context().await?;
+        let mut session =
+            CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        let message_id = session.message.id;
+        let subscriber = context.clone().subscribe(42, None);
+        session.add_chunk(AssistantChunk::Text("Hello".to_string()));
+        session.extend_chunks(vec![AssistantChunk::Reasoning("Thinking".to_string())]);
+        session.update_usage(0.25, 10);
+        session.update_usage(0.5, 20);
+        let expected = session.message.inner.clone();
+        session.save().await?;
+
+        let saved = message::Entity::find_by_id(message_id)
+            .one(&context.db)
+            .await?
+            .context("saved message missing")?;
+        assert_eq!(saved.inner, expected);
+        assert_eq!(saved.price, 0.75);
+        assert_eq!(saved.token_count, 30);
+        let tokens = receive_tokens(subscriber, 1).await?;
+        assert!(
+            matches!(tokens.as_slice(), [Token::Complete { message_id: id, cost, token: 30 }] if *id == message_id && *cost == 0.75)
+        );
+        assert!(context.channel.publishable(42));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn does_not_emit_completion_when_persistence_fails() -> Result<()> {
+        let context = context().await?;
+        let session = CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        let subscriber = context.clone().subscribe(42, None);
+        message::Entity::delete_by_id(session.message.id)
+            .exec(&context.db)
+            .await?;
+        assert!(session.save().await.is_err());
+        assert!(receive_tokens(subscriber, 0).await?.is_empty());
         assert!(context.channel.publishable(42));
         Ok(())
     }
@@ -1006,6 +1290,81 @@ mod tests {
         chat::Entity::delete_by_id(42).exec(&context.db).await?;
         assert!(session.sync_chat_model().await.is_err());
         assert_eq!(session.chat, original);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn skips_model_synchronization_and_title_generation_when_unchanged() -> Result<()> {
+        let context = context().await?;
+        let mut session =
+            CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        chat::Entity::delete_by_id(42).exec(&context.db).await?;
+        session.sync_chat_model().await?;
+        session.try_generate_title().await?;
+        assert_eq!(session.chat.title.as_deref(), Some("Original title"));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn adds_errors_to_both_the_live_stream_and_stored_message() -> Result<()> {
+        let context = context().await?;
+        let mut session =
+            CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        let subscriber = context.clone().subscribe(42, None);
+        session.add_error("Provider unavailable".to_string());
+        assert_eq!(
+            session.message.inner,
+            MessageInner::Assistant(vec![AssistantChunk::Error(
+                "Provider unavailable".to_string()
+            )])
+        );
+        drop(session);
+        assert!(
+            matches!(receive_tokens(subscriber, 1).await?.as_slice(), [Token::Error(error)] if error == "Provider unavailable")
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn publishes_stream_tokens_and_reports_upstream_errors() -> Result<()> {
+        let context = context().await?;
+        let mut session =
+            CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        let subscriber = context.clone().subscribe(42, None);
+        let reason = session
+            .put_stream(tokio_stream::iter([
+                Ok(Token::Assistant("Partial answer".to_string())),
+                Err(openrouter::Error::MalformedResponse("missing content")),
+                Ok(Token::Assistant("Must not appear".to_string())),
+            ]))
+            .await?;
+        assert!(matches!(reason, StreamEndReason::Exhausted));
+        drop(session);
+        let tokens = receive_tokens(subscriber, 2).await?;
+        assert!(
+            matches!(tokens.as_slice(), [Token::Assistant(text), Token::Error(error)] if text == "Partial answer" && error.contains("missing content"))
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn halts_while_waiting_for_an_upstream_token() -> Result<()> {
+        let context = context().await?;
+        let mut session =
+            CompletionSession::new(context.clone(), 1, 42, 7, ModeKind::Normal).await?;
+        let (reason, ()) = tokio::time::timeout(std::time::Duration::from_secs(1), async {
+            tokio::join!(
+                async {
+                    let reason = session.put_stream(tokio_stream::pending()).await;
+                    drop(session);
+                    reason
+                },
+                context.halt_session(42),
+            )
+        })
+        .await?;
+        assert!(matches!(reason?, StreamEndReason::Halt));
+        assert!(context.channel.publishable(42));
         Ok(())
     }
 }
