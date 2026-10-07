@@ -435,7 +435,7 @@ async function paginateOne(
 
 	messages.val.push(...resp.list);
 	target.scrollTop = target.scrollHeight - prevScrollHeight;
-	return true;
+	return false;
 }
 
 async function ensurePaginated(

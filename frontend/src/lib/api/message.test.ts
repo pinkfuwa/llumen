@@ -90,6 +90,55 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
+describe('message pagination', () => {
+	function mountPagination() {
+		vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+			queueMicrotask(() => callback(0));
+			return 1;
+		});
+		const target = document.createElement('div');
+		Object.defineProperty(target, 'clientHeight', { value: 100 });
+		paginateElement.val = target;
+		flushSync();
+		return target;
+	}
+
+	function page(id: number) {
+		return {
+			list: [
+				{ id, token_count: 0, price: 0, inner: { t: 'user', c: { text: String(id), files: [] } } }
+			]
+		};
+	}
+
+	it('loads older pages until the viewport is filled or the server returns an empty page', async () => {
+		request
+			.mockResolvedValueOnce(page(30))
+			.mockResolvedValueOnce(page(20))
+			.mockResolvedValueOnce({ list: [] });
+		mountPagination();
+
+		await vi.waitFor(() => expect(request).toHaveBeenCalledTimes(3));
+		expect(messages.val.map((message) => message.id)).toEqual([30, 20]);
+		expect(request.mock.calls.map(([options]) => options.body)).toEqual([
+			{ t: 'limit', c: { chat_id: 42, order: 'lt' } },
+			{ t: 'limit', c: { chat_id: 42, id: 30, order: 'lt' } },
+			{ t: 'limit', c: { chat_id: 42, id: 20, order: 'lt' } }
+		]);
+	});
+
+	it('stops requesting older messages after the server returns an empty page', async () => {
+		request.mockResolvedValue({ list: [] });
+		const target = mountPagination();
+		await vi.waitFor(() => expect(request).toHaveBeenCalledTimes(1));
+		target.dispatchEvent(new Event('scroll'));
+		await new Promise<void>((resolve) => queueMicrotask(resolve));
+
+		expect(request).toHaveBeenCalledTimes(1);
+		expect(messages.val).toEqual([]);
+	});
+});
+
 describe('message ordering and mutations', () => {
 	it('inserts messages in descending order and replaces duplicate IDs', () => {
 		for (const id of [20, 10, 30, 15]) pushUserMessage(id, String(id), []);
