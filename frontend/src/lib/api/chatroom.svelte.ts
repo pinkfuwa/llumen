@@ -133,7 +133,7 @@ export function deleteEntry(id: number): Promise<MutationStatus> {
 		body: { id },
 		token: token.value?.value
 	}).then((resp) => {
-		if (resp) {
+		if (resp?.deleted) {
 			const idx = findEntryIdx(chatrooms.val, id);
 			if (idx < chatrooms.val.length && chatrooms.val[idx].id === id) {
 				chatrooms.val.splice(idx, 1);
