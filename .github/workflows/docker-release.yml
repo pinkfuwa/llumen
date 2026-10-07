@@ -37,7 +37,8 @@ jobs:
             {
               ".build-cache/target": {"target": "/compiler/target", "id": "target"},
               ".build-cache/registry": "/usr/local/cargo/registry",
-              ".build-cache/git": "/usr/local/cargo/git"
+              ".build-cache/git": "/usr/local/cargo/git",
+              ".build-cache/zig": "/root/.cache/zig"
             }
           skip-extraction: ${{ steps.cargo_cache.outputs.cache-hit }}
 
