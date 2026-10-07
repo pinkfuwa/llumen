@@ -17,27 +17,29 @@ pub struct UserId(pub i32);
 
 pub struct Middleware;
 
-fn authenticate(headers: &HeaderMap, key: &SymmetricKey<V4>) -> Result<UserId, Json<Error>> {
-    let token = headers
-        .get(header::AUTHORIZATION)
-        .ok_or("cannot find token in authorization header")
-        .kind(ErrorKind::Unauthorized)?;
+impl Middleware {
+    fn authenticate(headers: &HeaderMap, key: &SymmetricKey<V4>) -> Result<UserId, Json<Error>> {
+        let token = headers
+            .get(header::AUTHORIZATION)
+            .ok_or("cannot find token in authorization header")
+            .kind(ErrorKind::Unauthorized)?;
 
-    let token = token.to_str().kind(ErrorKind::MalformedToken)?;
-    let token = UntrustedToken::<Local, V4>::try_from(token).kind(ErrorKind::MalformedToken)?;
-    let validation_rules = ClaimsValidationRules::new();
-    let token = local::decrypt(key, &token, &validation_rules, None, None)
-        .kind(ErrorKind::MalformedToken)?;
+        let token = token.to_str().kind(ErrorKind::MalformedToken)?;
+        let token = UntrustedToken::<Local, V4>::try_from(token).kind(ErrorKind::MalformedToken)?;
+        let validation_rules = ClaimsValidationRules::new();
+        let token = local::decrypt(key, &token, &validation_rules, None, None)
+            .kind(ErrorKind::MalformedToken)?;
 
-    let user_id = token
-        .payload_claims()
-        .and_then(|claims| claims.get_claim("uid"))
-        .and_then(|claim| claim.as_i64())
-        .ok_or("Missing claim")
-        .kind(ErrorKind::MalformedToken)?;
-    let user_id = i32::try_from(user_id).kind(ErrorKind::MalformedToken)?;
+        let user_id = token
+            .payload_claims()
+            .and_then(|claims| claims.get_claim("uid"))
+            .and_then(|claim| claim.as_i64())
+            .ok_or("Missing claim")
+            .kind(ErrorKind::MalformedToken)?;
+        let user_id = i32::try_from(user_id).kind(ErrorKind::MalformedToken)?;
 
-    Ok(UserId(user_id))
+        Ok(UserId(user_id))
+    }
 }
 
 impl FromRequestParts<Arc<AppState>> for Middleware {
@@ -47,7 +49,7 @@ impl FromRequestParts<Arc<AppState>> for Middleware {
         parts: &mut Parts,
         state: &Arc<AppState>,
     ) -> Result<Self, Self::Rejection> {
-        let user_id = authenticate(&parts.headers, &state.key)?;
+        let user_id = Self::authenticate(&parts.headers, &state.key)?;
 
         #[cfg(feature = "tracing")]
         {
@@ -87,7 +89,7 @@ mod tests {
 
     fn assert_malformed(headers: &HeaderMap, key: &SymmetricKey<V4>) {
         assert!(matches!(
-            authenticate(headers, key),
+            Middleware::authenticate(headers, key),
             Err(Json(Error {
                 error: ErrorKind::MalformedToken,
                 ..
@@ -100,8 +102,8 @@ mod tests {
         let key = key()?;
         for user_id in [1, 42, i32::MAX] {
             let headers = headers_for_user(json!(user_id), &key)?;
-            let authenticated =
-                authenticate(&headers, &key).map_err(|error| anyhow::anyhow!("{:?}", error))?;
+            let authenticated = Middleware::authenticate(&headers, &key)
+                .map_err(|error| anyhow::anyhow!("{:?}", error))?;
             assert_eq!(authenticated.0, user_id);
         }
         Ok(())
@@ -110,7 +112,7 @@ mod tests {
     #[test]
     fn rejects_missing_authorization() -> anyhow::Result<()> {
         assert!(matches!(
-            authenticate(&HeaderMap::new(), &key()?),
+            Middleware::authenticate(&HeaderMap::new(), &key()?),
             Err(Json(Error {
                 error: ErrorKind::Unauthorized,
                 ..
