@@ -29,8 +29,8 @@ import {
 	streaming,
 	syncMessage
 } from './message.svelte';
-import { ChatMode, FileKind } from './types';
-import type { SseResp } from './types';
+import { ChatMode, FileKind, StepKind } from './types';
+import type { Deep, SseResp } from './types';
 
 const request = vi.mocked(APIFetch);
 const streamRequest = vi.mocked(RawAPIFetch);
@@ -52,6 +52,16 @@ async function receive(batch: SseResp[]) {
 	streamRequest.mockResolvedValueOnce(new Response());
 	document.dispatchEvent(new Event('visibilitychange'));
 	await drained;
+}
+
+function start(id = 101): SseResp {
+	return { t: 'start', c: { id, user_msg_id: id - 1, version } };
+}
+
+function chunks() {
+	const message = messages.val[0];
+	if (message?.inner.t !== 'assistant') throw new Error('Expected an assistant message');
+	return message.inner.c;
 }
 
 beforeAll(() => {
@@ -234,5 +244,179 @@ describe('message ordering and mutations', () => {
 			body: { chat_id: 42, model_id: 3, mode: ChatMode.Search, text: 'edited', files },
 			token: 'secret'
 		});
+	});
+});
+
+describe('message SSE state', () => {
+	it('merges adjacent text and reasoning while preserving chunk order and identity', async () => {
+		pushUserMessage(100, 'question', []);
+		await receive([start(), { t: 'reasoning', c: '想' }]);
+		const message = messages.val[0];
+		const reasoning = chunks()[0];
+		await receive([
+			{ t: 'reasoning', c: '法' },
+			{ t: 'token', c: 'Hello' },
+			{ t: 'token', c: ' 世界🙂' },
+			{ t: 'reasoning', c: 'more' }
+		]);
+
+		expect(messages.val[0]).toBe(message);
+		expect(chunks()[0]).toBe(reasoning);
+		expect(chunks()).toEqual([
+			{ t: 'reasoning', c: '想法' },
+			{ t: 'text', c: 'Hello 世界🙂' },
+			{ t: 'reasoning', c: 'more' }
+		]);
+		expect(streaming.val).toBe(true);
+	});
+
+	it('resumes text from its UTF-8 byte offset', async () => {
+		await receive([start(), { t: 'token', c: '中🙂' }, { t: 'token', c: '文' }]);
+		await receive([]);
+
+		expect(streamRequest).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				path: 'chat/sse',
+				body: { id: 42, resume: { version, cursor: { index: 1, offset: 10 } } },
+				token: 'secret'
+			})
+		);
+	});
+
+	it('pairs tool results with calls and advances the cursor across discrete events', async () => {
+		const files = [{ id: 7, name: 'result.png', kind: FileKind.Image }];
+		const citations = [{ url: 'https://example.com', title: 'Source' }];
+		await receive([
+			start(),
+			{ t: 'tool_call', c: { name: 'search', args: '{"query":"hello"}' } },
+			{ t: 'tool_result', c: { content: 'found', files } },
+			{ t: 'image', c: 7 },
+			{ t: 'url_citation', c: citations },
+			{ t: 'title', c: 'A title' }
+		]);
+		const call = chunks()[0];
+		if (call.t !== 'tool_call') throw new Error('Expected a tool call');
+		expect(chunks()).toEqual([
+			{ t: 'tool_call', c: { id: call.c.id, name: 'search', arg: '{"query":"hello"}' } },
+			{ t: 'tool_result', c: { id: call.c.id, response: 'found', files } },
+			{ t: 'image', c: 7 },
+			{ t: 'url_citation', c: citations }
+		]);
+		expect(setRoomTitle).toHaveBeenCalledWith(42, 'A title');
+		await receive([]);
+		expect(streamRequest).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				body: { id: 42, resume: { version, cursor: { index: 5, offset: 1 } } }
+			})
+		);
+	});
+
+	it('clears stale messages on version changes and reconnects without a stale cursor', async () => {
+		await receive([start(), { t: 'token', c: 'old answer' }]);
+		await receive([{ t: 'version', c: ++version }]);
+
+		expect(messages.val).toEqual([]);
+		expect(streaming.val).toBe(false);
+		await receive([]);
+		expect(streamRequest).toHaveBeenLastCalledWith(expect.objectContaining({ body: { id: 42 } }));
+	});
+
+	it('preserves messages when the server repeats the current version', async () => {
+		await receive([start(), { t: 'token', c: 'answer' }]);
+		const message = messages.val[0];
+		await receive([{ t: 'version', c: version }]);
+
+		expect(messages.val[0]).toBe(message);
+		expect(streaming.val).toBe(true);
+	});
+
+	it('finalizes message usage and clears streaming and resume state', async () => {
+		pushUserMessage(100, 'question', []);
+		await receive([
+			start(),
+			{ t: 'token', c: 'answer' },
+			{ t: 'complete', c: { id: 101, token_count: 25, cost: 0.125, version } }
+		]);
+
+		expect(messages.val[0]).toMatchObject({ token_count: 25, price: 0.125, stream: false });
+		expect(messages.val[1].stream).toBe(false);
+		expect(streaming.val).toBe(false);
+		await receive([]);
+		expect(streamRequest).toHaveBeenLastCalledWith(expect.objectContaining({ body: { id: 42 } }));
+	});
+
+	it('adds stream errors to the active message and tracks their byte length', async () => {
+		await receive([start(), { t: 'error', c: '錯誤' }]);
+		expect(chunks()).toEqual([{ t: 'error', c: '錯誤' }]);
+		await receive([]);
+		expect(streamRequest).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				body: { id: 42, resume: { version, cursor: { index: 1, offset: 6 } } }
+			})
+		);
+	});
+
+	it('assembles fragmented deep plans and keeps step output separate from the report', async () => {
+		const plan: Deep = {
+			locale: 'zh-TW',
+			has_enough_context: false,
+			thought: 'research',
+			title: 'Plan',
+			steps: [
+				{
+					need_search: true,
+					title: 'Search',
+					description: 'Find sources',
+					kind: StepKind.Research,
+					progress: []
+				}
+			]
+		};
+		const serialized = JSON.stringify(plan);
+		const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		try {
+			await receive([
+				start(),
+				{ t: 'deep_plan', c: serialized.slice(0, 20) },
+				{ t: 'deep_plan', c: serialized.slice(20) },
+				{ t: 'deep_step_start', c: 0 },
+				{ t: 'deep_step_reasoning', c: 'Think' },
+				{ t: 'deep_step_reasoning', c: ' more' },
+				{ t: 'deep_step_token', c: 'Found' },
+				{ t: 'deep_step_token', c: ' sources' },
+				{ t: 'deep_report', c: 'Final' },
+				{ t: 'deep_report', c: ' report' }
+			]);
+		} finally {
+			warning.mockRestore();
+		}
+
+		expect(chunks()).toEqual([
+			{
+				t: 'deep_agent',
+				c: {
+					...plan,
+					steps: [
+						{
+							...plan.steps[0],
+							progress: [
+								{ t: 'reasoning', c: 'Think more' },
+								{ t: 'text', c: 'Found sources' }
+							]
+						}
+					]
+				}
+			},
+			{ t: 'text', c: 'Final report' }
+		]);
+	});
+
+	it('aborts an active request when the document becomes hidden', async () => {
+		await receive([start()]);
+		const signal = streamRequest.mock.calls.at(-1)?.[0].signal;
+		expect(signal?.aborted).toBe(false);
+		Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+		document.dispatchEvent(new Event('visibilitychange'));
+		expect(signal?.aborted).toBe(true);
 	});
 });
