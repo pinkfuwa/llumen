@@ -117,15 +117,14 @@ export function parser(renderer: Renderer): Parser {
 }
 
 export function parser_end(p: Parser): void {
-	parser_write(p, '\n', true);
+	parser_write(p, '\n');
 }
 
 function add_text(p: Parser, atEnd = false): void {
 	if (p.text.length === 0) return;
 	// During loop: data.pos = trigger position, pending is at data.pos-1.
-	// At end: data.pos = last-char position, pending IS at data.pos.
 	const textStart = atEnd
-		? p.renderer.data.pos - p.text.length
+		? p.pos - p.text.length - p.pending.length
 		: p.renderer.data.pos - p.text.length - p.pending.length;
 	p.renderer.data.textStart = textStart;
 	p.renderer.data.pendingLen = p.pending.length;
@@ -304,7 +303,8 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 	if (_recursive) {
 		p.pos = p.pos - chunk.length;
 	}
-	for (const char of chunk) {
+	for (let index = 0; index < chunk.length; index++) {
+		const char = chunk[index];
 		p.renderer.data.pos = p.pos;
 		p.pos += 1;
 		if (p.token === NEWLINE) {
