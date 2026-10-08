@@ -75,8 +75,7 @@ jobs:
 
       - name: Install Zig
         shell: bash
-        # TODO: Check if 0.15.0 is compatible
-        run: bash package/install-zig.sh 0.13.0 "$RUNNER_TEMP/zig"
+        run: bash package/install-zig.sh "$RUNNER_TEMP/zig"
 
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild

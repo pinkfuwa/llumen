@@ -21,7 +21,7 @@ RUN apt update -y \
 
 COPY ./package/install-zig.sh /usr/local/bin/install-zig.sh
 RUN chmod +x /usr/local/bin/install-zig.sh
-RUN install-zig.sh 0.15.1 /opt/zig
+RUN install-zig.sh /opt/zig
 
 ENV PATH="/opt/zig:$PATH"
 
