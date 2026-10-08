@@ -14,15 +14,21 @@ echo "--- Building frontend ---"
 (cd frontend && NOMAP=T pnpm build)
 
 echo "--- Building backend ---"
-CARGO_FEATURES_FLAG=""
+CARGO_FEATURES_ARGS=()
 if [ -n "$CARGO_FEATURES" ]; then
-  CARGO_FEATURES_FLAG="--features $CARGO_FEATURES"
+  CARGO_FEATURES_ARGS=(--features "$CARGO_FEATURES")
 fi
 
 if [[ "$TARGET_TRIPLE" == *"-msvc"* ]]; then
-  (cd backend && cargo build --release --target "$TARGET_TRIPLE" $CARGO_FEATURES_FLAG)
+  (cd backend && cargo build --release --target "$TARGET_TRIPLE" "${CARGO_FEATURES_ARGS[@]}")
 else
-  (cd backend && cargo zigbuild --release --target "$TARGET_TRIPLE" $CARGO_FEATURES_FLAG)
+  (
+    cd backend
+    # Mimalloc uses __DATE__/__TIME__; keep this Zig flag out of host MSVC builds.
+    TARGET_CFLAGS_VAR="CFLAGS_${TARGET_TRIPLE//-/_}"
+    export "$TARGET_CFLAGS_VAR=${!TARGET_CFLAGS_VAR:-${CFLAGS:-}} -Wno-error=date-time"
+    cargo zigbuild --release --target "$TARGET_TRIPLE" "${CARGO_FEATURES_ARGS[@]}"
+  )
 fi
 
 echo "--- Copying binary to artifacts directory ---"
