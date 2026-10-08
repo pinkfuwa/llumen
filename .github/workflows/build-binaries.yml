@@ -74,10 +74,9 @@ jobs:
         run: pnpm install
 
       - name: Install Zig
-        uses: mlugg/setup-zig@v2
+        shell: bash
         # TODO: Check if 0.15.0 is compatible
-        with:
-          version: "0.13.0"
+        run: bash package/install-zig.sh 0.13.0 "$RUNNER_TEMP/zig"
 
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild
@@ -97,13 +96,13 @@ jobs:
 
       - name: Upload release asset (Linux)
         if: matrix.platform == 'linux' && github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: artifacts/llumen-${{ matrix.target }}
 
       - name: Upload release asset (Windows)
         if: matrix.platform == 'windows' && github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: artifacts/llumen-${{ matrix.target }}.exe
 
