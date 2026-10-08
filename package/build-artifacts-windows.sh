@@ -22,7 +22,8 @@ fi
 if [[ "$TARGET_TRIPLE" == *"-msvc"* ]]; then
   (cd backend && cargo build --release --target "$TARGET_TRIPLE" "${CARGO_FEATURES_ARGS[@]}")
 else
-  (cd backend && cargo zigbuild --release --target "$TARGET_TRIPLE" "${CARGO_FEATURES_ARGS[@]}")
+  # Mimalloc uses __DATE__/__TIME__; Zig 0.15 rejects them by default.
+  (cd backend && CFLAGS="${CFLAGS:-} -Wno-error=date-time" cargo zigbuild --release --target "$TARGET_TRIPLE" "${CARGO_FEATURES_ARGS[@]}")
 fi
 
 echo "--- Copying binary to artifacts directory ---"
