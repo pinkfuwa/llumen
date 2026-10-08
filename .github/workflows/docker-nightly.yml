@@ -3,6 +3,11 @@ name: Nightly Docker
 on:
   workflow_dispatch:
     inputs:
+      publish:
+        description: "Push the built image to GitHub Container Registry"
+        required: true
+        default: true
+        type: boolean
       features:
         description: "Cargo features to enable (comma-separated)"
         required: false
@@ -48,7 +53,7 @@ jobs:
 
       - name: Restore Cargo cache mounts
         if: steps.git_log.outputs.changed == 'true'
-        uses: reproducible-containers/buildkit-cache-dance@ca04d1a0e0018e28a060ec9f87518ddc453b4460 # v3.3.0
+        uses: reproducible-containers/buildkit-cache-dance@v3.4.0
         with:
           builder: ${{ steps.buildx.outputs.name }}
           cache-map: |
@@ -61,7 +66,7 @@ jobs:
           skip-extraction: ${{ steps.cargo_cache.outputs.cache-hit }}
 
       - name: Login to GitHub Container Registry
-        if: steps.git_log.outputs.changed == 'true'
+        if: steps.git_log.outputs.changed == 'true' && inputs.publish
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -83,7 +88,7 @@ jobs:
           context: .
           file: ./package/Dockerfile
           platforms: "linux/amd64,linux/arm64"
-          push: true
+          push: ${{ inputs.publish }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |

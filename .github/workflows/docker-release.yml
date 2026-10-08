@@ -5,6 +5,12 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Push the built image to GitHub Container Registry"
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -30,7 +36,7 @@ jobs:
           key: docker-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/Cargo.lock', 'backend/**/Cargo.toml', 'backend/.cargo/config.toml', 'package/Dockerfile', 'package/install-zig.sh') }}-default
 
       - name: Restore Cargo cache mounts
-        uses: reproducible-containers/buildkit-cache-dance@ca04d1a0e0018e28a060ec9f87518ddc453b4460 # v3.3.0
+        uses: reproducible-containers/buildkit-cache-dance@v3.4.0
         with:
           builder: ${{ steps.buildx.outputs.name }}
           cache-map: |
@@ -43,6 +49,7 @@ jobs:
           skip-extraction: ${{ steps.cargo_cache.outputs.cache-hit }}
 
       - name: Login to GitHub Container Registry
+        if: github.event_name != 'workflow_dispatch' || inputs.publish
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -74,7 +81,7 @@ jobs:
           context: .
           file: ./package/Dockerfile
           platforms: "linux/amd64,linux/arm64"
-          push: true
+          push: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
           tags: ${{ steps.meta.outputs.tags || steps.meta-manual.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels || steps.meta-manual.outputs.labels }}
           cache-from: type=gha,scope=docker-${{ runner.arch }}
