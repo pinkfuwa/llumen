@@ -61,7 +61,9 @@ case "$zig_version" in
   0.15.1) archive_name="zig-$arch-$platform-$zig_version" ;;
 esac
 
-download_dir=$(mktemp -d)
+install_parent=$(dirname "$install_dir")
+mkdir -p "$install_parent"
+download_dir=$(mktemp -d "$install_parent/.zig-install.XXXXXX")
 trap 'rm -rf "$download_dir"' EXIT
 archive="$download_dir/zig.$extension"
 
@@ -70,19 +72,16 @@ curl --fail --location --retry 3 "https://ziglang.org/download/$zig_version/$arc
 printf '%s  %s\n' "$checksum" "$archive" | sha256sum --check
 
 if [ "$platform" = windows ]; then
-  export ZIG_ARCHIVE_PATH ZIG_EXTRACT_DIR
-  ZIG_ARCHIVE_PATH=$(cygpath -w "$archive")
-  ZIG_EXTRACT_DIR=$(cygpath -w "$download_dir")
-  powershell.exe -NoProfile -NonInteractive -Command - <<'POWERSHELL'
-$ErrorActionPreference = 'Stop'
-Expand-Archive -LiteralPath $env:ZIG_ARCHIVE_PATH -DestinationPath $env:ZIG_EXTRACT_DIR
-POWERSHELL
+  7z x -y "$(cygpath -w "$archive")" "-o$(cygpath -w "$download_dir")"
 else
   tar -xf "$archive" -C "$download_dir"
 fi
 
-mkdir -p "$install_dir"
-cp -a "$download_dir/$archive_name/." "$install_dir/"
+if [ -d "$install_dir" ]; then
+  cp -a "$download_dir/$archive_name/." "$install_dir/"
+else
+  mv "$download_dir/$archive_name" "$install_dir"
+fi
 
 if [ -n "${GITHUB_PATH:-}" ]; then
   install_dir=$(cd "$install_dir" && pwd -P)
