@@ -47,7 +47,7 @@ eventsource-stream = "0.2.3"
 [dependencies.clap]
 version = "4"
 default-features = false
-features = ["derive", "help", "usage", "error-context"]
+features = ["std", "derive", "env", "help", "usage", "error-context"]
 optional = true
 
 [dependencies.entity]
