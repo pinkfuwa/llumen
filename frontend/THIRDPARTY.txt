@@ -40,7 +40,7 @@ Repository: https://github.com/lukeed/fetch-event-stream
 Publisher: Luke Edwards
 Email: luke@lukeed.com
 --------------------------------------------------------------------------------
-katex@0.16.47
+katex@0.19.0
 
 License: MIT
 Repository: https://github.com/KaTeX/KaTeX
