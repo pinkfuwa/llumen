@@ -1,7 +1,10 @@
 ## Branching rule
-- main: manually tested nightly
-- release-candidate: candidate for next release
-- dev: untested nightly
+
+- `main`: latest release; documentation is deployed from this branch to GitHub Pages.
+- `release-candidate`: candidate for the next release.
+- `dev`: ongoing development (untested nightly); create contribution branches from here and target pull requests here, including documentation-only changes.
+
+See [CONTRIBUTING.md](../../CONTRIBUTING.md#pull-requests) for contributor guidance.
 
 ## How to release
 This is a personal project, we run slow release cycle, operate as following:
