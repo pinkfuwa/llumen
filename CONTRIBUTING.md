@@ -50,8 +50,6 @@ If any tests fail, please address them before submitting your pull request.
 - Ensure your code passes all tests and adheres to the project guidelines.
 - Submit a pull request targeting `dev` with a clear description of your changes. This also applies to documentation-only changes.
 
-We use `dev` for ongoing development. The `main` branch stays in sync with the latest release and is the source for the documentation deployed to GitHub Pages. Target `dev` so that unreleased changes and their documentation are reviewed together before they reach `main`.
-
 ## Conduct
 
 In all Llumen-related forums, we follow the [Rust Code of Conduct]. For escalation or moderation issues, please contact the project maintainers directly.
