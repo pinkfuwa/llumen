@@ -43,12 +43,12 @@ If any tests fail, please address them before submitting your pull request.
 
 ## Pull Requests
 
-- Fork the repository and create your branch from `main`.
+- Fork the repository and create your branch from `dev`.
 - Make your changes in logical, self-contained commits.
 - Add or update tests as appropriate.
 - Document user-facing or architectural changes in `docs/user.md` or `docs/design.md`.
 - Ensure your code passes all tests and adheres to the project guidelines.
-- Submit a pull request with a clear description of your changes.
+- Submit a pull request targeting `dev` with a clear description of your changes. This also applies to documentation-only changes.
 
 ## Conduct
 
