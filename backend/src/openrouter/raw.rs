@@ -717,6 +717,8 @@ pub enum VideoJobStatus {
     InProgress,
     Completed,
     Failed,
+    Cancelled,
+    Expired,
     #[serde(other)]
     Unknown,
 }
@@ -867,9 +869,25 @@ pub struct EmbeddingResult {
 
 #[derive(Deserialize)]
 pub struct EmbeddingResponse {
+    #[serde(default)]
     pub price: f64,
     pub data: Vec<EmbeddingResult>,
     pub usage: Option<Usage>,
+}
+
+#[cfg(test)]
+mod api_compatibility_tests {
+    #[test]
+    fn embedding_response_accepts_documented_usage_without_price() -> anyhow::Result<()> {
+        let response: super::EmbeddingResponse = serde_json::from_value(serde_json::json!({
+            "object":"list", "model":"openai/text-embedding-3-small",
+            "data":[{"object":"embedding","index":0,"embedding":[0.25, -0.5]}],
+            "usage":{"prompt_tokens":8,"total_tokens":8,"cost":0.0001}
+        }))?;
+        assert_eq!(response.data.len(), 1);
+        assert_eq!(response.data[0].embedding, vec![0.25, -0.5]);
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -911,6 +929,7 @@ pub struct OpenrouterImageGenReq {
 
 #[derive(stream_json::IntoSerializer)]
 pub struct OpenrouterImageInputRef {
+    pub r#type: &'static str,
     pub image_url: OpenrouterImageInputUrl,
 }
 

@@ -261,12 +261,17 @@ impl VideoGenClient {
             match status_response.status {
                 raw::VideoJobStatus::Pending | raw::VideoJobStatus::InProgress => continue,
                 raw::VideoJobStatus::Completed => return Ok(status_response),
-                raw::VideoJobStatus::Failed => {
+                raw::VideoJobStatus::Failed
+                | raw::VideoJobStatus::Cancelled
+                | raw::VideoJobStatus::Expired => {
                     let error_message = status_response
                         .error
                         .as_ref()
                         .map(Self::extract_video_error)
-                        .unwrap_or_else(|| "unknown error".to_string());
+                        .unwrap_or_else(|| {
+                            format!("job ended with status {:?}", status_response.status)
+                                .to_lowercase()
+                        });
                     return Err(Error::VideoGenJobFailed(error_message));
                 }
                 raw::VideoJobStatus::Unknown => {
@@ -396,9 +401,15 @@ impl VideoGenClient {
                 self.poll_until_done(&submit_response.polling_url, poll_interval, 1)
                     .await?
             }
-            raw::VideoJobStatus::Failed => {
+            raw::VideoJobStatus::Failed
+            | raw::VideoJobStatus::Cancelled
+            | raw::VideoJobStatus::Expired => {
                 return Err(Error::VideoGenJobFailed(
-                    "job failed immediately".to_string(),
+                    format!(
+                        "job ended immediately with status {:?}",
+                        submit_response.status
+                    )
+                    .to_lowercase(),
                 ));
             }
             raw::VideoJobStatus::Pending
@@ -428,5 +439,53 @@ impl VideoGenClient {
             videos: generated_videos,
             price,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn terminal_video_states_stop_polling() -> anyhow::Result<()> {
+        for status in ["failed", "cancelled", "expired"] {
+            for error in [
+                serde_json::Value::Null,
+                serde_json::json!("provider stopped the job"),
+            ] {
+                let router = axum::Router::new().route(
+                    "/job",
+                    axum::routing::get(move || {
+                        let error = error.clone();
+                        async move {
+                            axum::Json(serde_json::json!({
+                                "id":"job", "polling_url":"/job", "status":status, "error":error
+                            }))
+                        }
+                    }),
+                );
+                let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+                let endpoint = format!("http://{}/job", listener.local_addr()?);
+                let server = tokio::spawn(async move { axum::serve(listener, router).await });
+                let client = VideoGenClient::new(
+                    "test-key".into(),
+                    endpoint.clone(),
+                    reqwest::Client::new(),
+                );
+                let result = client.poll_until_done(&endpoint, Duration::ZERO, 1).await;
+                server.abort();
+                match result {
+                    Err(Error::VideoGenJobFailed(message)) => {
+                        assert!(
+                            message.contains(status)
+                                || message.contains("provider stopped the job"),
+                            "{message}"
+                        );
+                    }
+                    _ => anyhow::bail!("expected a terminal job error for {status}"),
+                }
+            }
+        }
+        Ok(())
     }
 }
