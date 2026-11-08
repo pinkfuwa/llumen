@@ -66,7 +66,7 @@ pub async fn route(
                     && caps.toolcall,
                 deep_research: cfg!(feature = "deep-research") && caps.toolcall,
                 display_name: config.display_name,
-                search_enabled: !app.openrouter.is_custom_api() || caps.toolcall,
+                search_enabled: caps.toolcall,
             }))
         }
         Err(reason) => Err(Json(Error {

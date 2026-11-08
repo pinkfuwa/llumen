@@ -183,11 +183,11 @@ impl ChatClient {
 
         if capability.toolcall {
             tools.extend(option.tools.into_iter().map(Into::into));
-        }
 
-        if !self.is_custom_api && option.web_plugin_search {
-            tools.push(raw::Tool::server_web_search());
-            tools.push(raw::Tool::server_web_fetch());
+            if option.web_plugin_search {
+                tools.push(raw::Tool::server_web_search());
+                tools.push(raw::Tool::server_web_fetch());
+            }
         }
 
         let request = raw::CompletionReq {
@@ -403,51 +403,5 @@ pub(super) fn check_message(message: &[super::message::Message]) {
             (None, None) => break,
             _ => panic!("Mismatched ToolCall and ToolResult IDs"),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn hosted_search_does_not_require_application_function_calls() -> anyhow::Result<()> {
-        for is_custom_api in [false, true] {
-            let http_client = reqwest::Client::new();
-            let endpoint = "http://127.0.0.1:0".to_string();
-            let listing = ModelListing::new(http_client.clone(), endpoint.clone(), String::new());
-            let client = ChatClient::new(String::new(), endpoint, http_client, is_custom_api);
-            let model = Model {
-                id: "test/model".into(),
-                capability: MaybeCapability {
-                    toolcall: Some(false),
-                    ..Default::default()
-                },
-                ..Default::default()
-            };
-            let (request, _) = client
-                .prepare_request(
-                    &listing,
-                    vec![super::super::Message::User("Search the web".into())],
-                    true,
-                    model,
-                    CompletionOption::builder().web_search(true).build(),
-                )
-                .await;
-            let body = reqwest::Body::wrap_stream(request.into_stream());
-            let bytes = axum::body::to_bytes(axum::body::Body::new(body), 8192).await?;
-            let value: serde_json::Value = serde_json::from_slice(&bytes)?;
-            if is_custom_api {
-                assert!(value["tools"].as_array().is_none_or(Vec::is_empty));
-            } else {
-                assert_eq!(
-                    value["tools"],
-                    serde_json::json!([
-                        {"type":"openrouter:web_search"}, {"type":"openrouter:web_fetch"}
-                    ])
-                );
-            }
-        }
-        Ok(())
     }
 }
