@@ -36,8 +36,10 @@ Any OpenAI-compatible API works:
 
 ```bash
 export API_KEY="your-key"
-export API_BASE="https://your-provider.com/v1"
+export API_BASE="https://your-provider.com"
 ```
+
+Leave `/v1` off `API_BASE`, because llumen adds it.
 
 **Tested Compatible services:**
 - Gemini(official OpenAI-compatible proxy)
@@ -63,8 +65,6 @@ export API_BASE="https://www.openllm.sh"
 
 The hosted API reaches subscriptions through one of your machines running OpenLLM, so that machine must be online. To call the OpenLLM daemon on the same machine instead, use `API_BASE="http://127.0.0.1:8787"` (`http://host.docker.internal:8787` from Docker).
 
-Leave `/v1` off `API_BASE`, because llumen adds it.
-
 3. Add each model in Settings. Use a model id from `/v1/models`, or `ultra`, `plus` or `lite` to fall back to the next model when a provider is rate limited. Set `json = false` for these three, because OpenLLM doesn't enforce strict `json_schema` output on them:
 
 ```toml
@@ -76,5 +76,3 @@ image = false
 tool = true
 json = false
 ```
-
-llumen logs `Failed to fetch video models` at startup with OpenLLM. Chat is not affected.
