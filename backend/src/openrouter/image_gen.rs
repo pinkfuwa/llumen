@@ -124,6 +124,7 @@ impl ImageGenClient {
         })?;
 
         Ok(raw::OpenrouterImageInputRef {
+            r#type: "image_url",
             image_url: raw::OpenrouterImageInputUrl { url: embed_file },
         })
     }
@@ -299,5 +300,42 @@ impl ImageGenClient {
                     .await
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn image_reference_includes_type_and_data_url() -> anyhow::Result<()> {
+        let database =
+            redb::Database::builder().create_with_backend(redb::backends::InMemoryBackend::new())?;
+        let blobs = crate::utils::blob::BlobDB::new(std::sync::Arc::new(database));
+        blobs
+            .insert(
+                1,
+                3,
+                tokio_stream::iter([bytes::Bytes::from_static(b"abc")]),
+            )
+            .await?;
+        let reference = ImageGenClient::map_reference_image(File {
+            name: "reference.png".into(),
+            mime_type: Some("image/png".into()),
+            data: blobs
+                .get(1)
+                .ok_or_else(|| anyhow::anyhow!("missing test blob"))?
+                .into(),
+        })?;
+        let body = reqwest::Body::wrap_stream(reference.into_stream());
+        let bytes = axum::body::to_bytes(axum::body::Body::new(body), 1024).await?;
+        let value: serde_json::Value = serde_json::from_slice(&bytes)?;
+        assert_eq!(
+            value,
+            serde_json::json!({
+                "type": "image_url", "image_url": {"url": "data:image/png;base64,YWJj"}
+            })
+        );
+        Ok(())
     }
 }
