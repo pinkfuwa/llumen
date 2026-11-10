@@ -17,6 +17,9 @@ pub struct CliArgs {
     pub api_key: Option<String>,
 
     /// API base URL.
+    /// May include the provider's version path (for example
+    /// `https://api.eu.edenai.run/v3`). If no version path is present, `/v1`
+    /// is appended.
     /// Can also be set via the OPENAI_API_BASE environment variable.
     #[arg(short = 'b', long = "api-base", env = "API_BASE")]
     pub api_base: Option<String>,

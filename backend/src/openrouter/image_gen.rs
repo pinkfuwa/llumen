@@ -1,5 +1,5 @@
-//! Image generation via OpenRouter `/v1/images` or OpenAI-compatible
-//! `/v1/images/generations`.
+//! Image generation via OpenRouter `{api_root}/images` or OpenAI-compatible
+//! `{api_root}/images/generations`.
 
 use super::listing::ModelListing;
 use super::message::{File, GeneratedImage};
@@ -57,19 +57,22 @@ pub struct ImageGenOutput {
 
 #[derive(Clone)]
 pub enum ImageGenEndpoint {
-    /// OpenRouter dedicated image endpoint (`/v1/images`).
+    /// OpenRouter dedicated image endpoint (`{api_root}/images`).
     OpenrouterImage(String),
-    /// OpenAI-compatible image generation endpoint (`/v1/images/generations`).
+    /// OpenAI-compatible image generation endpoint
+    /// (`{api_root}/images/generations`).
     ImageGeneration(String),
 }
 
 impl ImageGenEndpoint {
-    pub fn from_base_url(base_url: &str, is_custom_api: bool) -> Self {
-        let base = base_url.trim_end_matches('/');
+    /// Builds image endpoints from an already resolved API root (see
+    /// [`super::openrouter::api_root`]).
+    pub fn from_api_root(api_root: &str, is_custom_api: bool) -> Self {
+        let base = api_root.trim_end_matches('/');
         if is_custom_api {
-            ImageGenEndpoint::ImageGeneration(format!("{base}/v1/images/generations"))
+            ImageGenEndpoint::ImageGeneration(format!("{base}/images/generations"))
         } else {
-            ImageGenEndpoint::OpenrouterImage(format!("{base}/v1/images"))
+            ImageGenEndpoint::OpenrouterImage(format!("{base}/images"))
         }
     }
 }
@@ -271,9 +274,9 @@ impl ImageGenClient {
 
     /// Generate an image.
     ///
-    /// When using OpenRouter, requests are sent to the dedicated `/v1/images`
-    /// endpoint. For custom (OpenAI-compatible) APIs, requests go to
-    /// `/v1/images/generations`.
+    /// When using OpenRouter, requests are sent to the dedicated
+    /// `{api_root}/images` endpoint. For custom (OpenAI-compatible) APIs,
+    /// requests go to `{api_root}/images/generations`.
     pub async fn generate(
         &self,
         listing: &ModelListing,
@@ -298,6 +301,21 @@ impl ImageGenClient {
                 self.send_image_gen_request(model_id, prompt, aspect_ratio, url)
                     .await
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ImageGenEndpoint;
+
+    #[test]
+    fn builds_custom_endpoint_from_versioned_root() {
+        match ImageGenEndpoint::from_api_root("https://api.eu.edenai.run/v3", true) {
+            ImageGenEndpoint::ImageGeneration(url) => {
+                assert_eq!(url, "https://api.eu.edenai.run/v3/images/generations")
+            }
+            ImageGenEndpoint::OpenrouterImage(_) => panic!("expected custom image endpoint"),
         }
     }
 }
