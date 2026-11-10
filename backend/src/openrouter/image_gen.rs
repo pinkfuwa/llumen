@@ -92,7 +92,7 @@ impl ImageGenClient {
 
     fn completion_body(req: raw::OpenrouterImageGenReq) -> (Option<usize>, reqwest::Body) {
         let size = req.size();
-        let body = reqwest::Body::wrap_stream(req.into_stream());
+        let body = super::json_body(req);
         (size, body)
     }
 

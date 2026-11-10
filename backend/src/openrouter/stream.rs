@@ -4,7 +4,7 @@ use std::{collections::VecDeque, pin::Pin, task};
 
 use futures_util::{FutureExt};
 use http::header::CONTENT_TYPE;
-use reqwest::{Body, Client};
+use reqwest::Client;
 use eventsource_stream::{Event, Eventsource, EventStreamError};
 use stream_json::IntoSerializer;
 use tokio_stream::{Stream, StreamExt};
@@ -91,7 +91,7 @@ impl StreamCompletion {
 
         let content_length = req.size();
 
-        let body = Body::wrap_stream(req.into_stream());
+        let body = super::json_body(req);
 
         let mut builder = http_client
             .post(endpoint)
