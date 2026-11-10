@@ -17,7 +17,7 @@ Llumen uses environment variables for configuration. No config files needed!
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `API_BASE` | Custom API endpoint | `https://openrouter.ai/api` |
+| `API_BASE` | Custom API endpoint (may include a version path) | `https://openrouter.ai/api` |
 | `OPENAI_API_BASE` | Alias for `API_BASE` | - |
 | `DATA_PATH` | Storage directory | `.` (current dir) |
 | `BIND_ADDR` | Network socket | `0.0.0.0:8001` |
@@ -34,7 +34,7 @@ mirror their corresponding environment variable.
 | Flag | Short | Env Var | Default | Description |
 |------|-------|---------|---------|-------------|
 | `--api-key` | `-k` | `API_KEY` | (required) | API key for OpenRouter / OpenAI |
-| `--api-base` | `-b` | `API_BASE` | `https://openrouter.ai/api` | Custom API endpoint |
+| `--api-base` | `-b` | `API_BASE` | `https://openrouter.ai/api` | Custom API endpoint (may include a version path) |
 | `--force-openrouter` | `-f` | `FORCE_OPENROUTER_MODE` | `false` | Force OpenRouter mode |
 | `--data-path` | `-d` | `DATA_PATH` | `.` | Data directory |
 | `--bind` | `-a` | `BIND_ADDR` | `0.0.0.0:8001` | Server listen address |
@@ -106,6 +106,15 @@ Any OpenAI-compatible API works:
 ```bash
 export API_KEY="your-key"
 export API_BASE="https://your-endpoint.com/v1"
+```
+
+`API_BASE` may include the provider's full versioned path. When the path
+contains an API version (such as `/v1`, `/v3`, or `/v1beta`), llumen uses it
+as-is; otherwise it appends `/v1`. For example, Eden AI's EU endpoint:
+
+```bash
+export API_KEY="your-edenai-key"
+export API_BASE="https://api.eu.edenai.run/v3"
 ```
 
 ## Storage Configuration

@@ -45,19 +45,14 @@ impl Openrouter {
             log::warn!("Custom API_BASE detected, disabling plugin support");
         }
 
-        let embedding_endpoint = format!("{}/v1/embeddings", api_base.trim_end_matches('/'));
-        let chat_completion_endpoint =
-            format!("{}/v1/chat/completions", api_base.trim_end_matches('/'));
-        let videos_endpoint = format!("{}/v1/videos", api_base.trim_end_matches('/'));
-        let video_models_endpoint = format!("{}/v1/videos/models", api_base.trim_end_matches('/'));
+        let api_root = api_root(api_base);
+        let embedding_endpoint = format!("{api_root}/embeddings");
+        let chat_completion_endpoint = format!("{api_root}/chat/completions");
+        let videos_endpoint = format!("{api_root}/videos");
+        let video_models_endpoint = format!("{api_root}/videos/models");
         let models_endpoint = match is_custom_api {
-            true => format!("{}/v1/models", api_base.trim_end_matches('/')),
-            false => {
-                format!(
-                    "{}/v1/models?output_modalities=text,image",
-                    api_base.trim_end_matches('/')
-                )
-            }
+            true => format!("{api_root}/models"),
+            false => format!("{api_root}/models?output_modalities=text,image"),
         };
 
         log::info!(
@@ -81,7 +76,7 @@ impl Openrouter {
         );
         let image_gen = ImageGenClient::new(
             api_key.clone(),
-            ImageGenEndpoint::from_base_url(api_base, is_custom_api),
+            ImageGenEndpoint::from_api_root(&api_root, is_custom_api),
             http_client.clone(),
         );
         let video_gen = VideoGenClient::new(
@@ -290,4 +285,82 @@ impl Openrouter {
 pub struct Embedding {
     pub price: f64,
     pub response: Vec<Vec<f32>>,
+}
+
+/// Resolves the API root from the configured base URL.
+///
+/// A base that already contains a version segment in its path (for example
+/// `https://api.eu.edenai.run/v3` or `https://api.openai.com/v1`) is used
+/// as-is. Otherwise `/v1` is appended, preserving the default OpenRouter
+/// layout (`https://openrouter.ai/api`) and bare-origin providers
+/// (`https://api.openai.com`).
+fn api_root(api_base: &str) -> String {
+    let base = api_base.trim_end_matches('/');
+    let path = reqwest::Url::parse(base)
+        .map(|url| url.path().to_owned())
+        .unwrap_or_else(|_| base.to_owned());
+
+    if path.split('/').any(is_version_segment) {
+        base.to_owned()
+    } else {
+        format!("{base}/v1")
+    }
+}
+
+/// Returns `true` if `segment` looks like an API version (`v1`, `v3`,
+/// `v1beta`, ...).
+fn is_version_segment(segment: &str) -> bool {
+    let Some(rest) = segment
+        .strip_prefix('v')
+        .or_else(|| segment.strip_prefix('V'))
+    else {
+        return false;
+    };
+    let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
+
+    digits > 0
+        && rest[digits..]
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_'))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::api_root;
+
+    #[test]
+    fn keeps_versioned_base_paths() {
+        assert_eq!(
+            api_root("https://api.eu.edenai.run/v3"),
+            "https://api.eu.edenai.run/v3"
+        );
+        assert_eq!(
+            api_root("https://api.openai.com/v1/"),
+            "https://api.openai.com/v1"
+        );
+        assert_eq!(
+            api_root("https://api.groq.com/openai/v1"),
+            "https://api.groq.com/openai/v1"
+        );
+        assert_eq!(
+            api_root("https://generativelanguage.googleapis.com/v1beta/openai"),
+            "https://generativelanguage.googleapis.com/v1beta/openai"
+        );
+    }
+
+    #[test]
+    fn appends_v1_when_base_has_no_version() {
+        assert_eq!(
+            api_root("https://openrouter.ai/api"),
+            "https://openrouter.ai/api/v1"
+        );
+        assert_eq!(
+            api_root("https://api.openai.com"),
+            "https://api.openai.com/v1"
+        );
+        assert_eq!(
+            api_root("http://localhost:11434"),
+            "http://localhost:11434/v1"
+        );
+    }
 }

@@ -39,6 +39,15 @@ export API_KEY="your-key"
 export API_BASE="https://your-provider.com/v1"
 ```
 
+`API_BASE` may include the provider's full versioned path. When the path
+contains an API version (such as `/v1`, `/v3`, or `/v1beta`), llumen uses it
+as-is; otherwise it appends `/v1`. For example, Eden AI's EU endpoint:
+
+```bash
+export API_KEY="your-edenai-key"
+export API_BASE="https://api.eu.edenai.run/v3"
+```
+
 **Tested Compatible services:**
 - Gemini(official OpenAI-compatible proxy)
 - Groq
