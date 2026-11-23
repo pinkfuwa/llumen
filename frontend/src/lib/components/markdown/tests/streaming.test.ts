@@ -19,6 +19,7 @@ describe('streaming Markdown', () => {
 		'[link](https://example.com) and ![image](https://example.com/a.png)\n',
 		'Inline $x + y$ and \\(z\\).\n\n$$\nx^2\n$$\n',
 		'| Name | Value |\n| --- | --- |\n| first | **42** |\n',
+		'| a | b | c |\n|---|---|---|\n | d | e | f |',
 		'Unfinished **bold and an unfinished `code'
 	])('preserves the AST across every split in %j', (source) => {
 		const expected = parseSync(source);
