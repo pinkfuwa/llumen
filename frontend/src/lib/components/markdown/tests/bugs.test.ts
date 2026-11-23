@@ -270,15 +270,15 @@ describe('regression: escaped latex brackets', () => {
 });
 
 describe('regression: empty table cells', () => {
-	it('handles leading empty cell (consecutive pipes)', () => {
-		const markdown = '|a|b|\n|---|----|\n||x|\n';
+	it.each(['', ' '])('handles a leading empty cell with row indentation %j', (indent) => {
+		const markdown = `|a|b|\n|---|----|\n${indent}||x|\n`;
 		const nodes = parseSync(markdown);
 		expect(nodes).toHaveLength(1);
 		expect(nodes[0].type).toBe(AstNodeType.Table);
 
 		const table = nodes[0] as TableNode;
 		const dataRow = table.children[1] as TableRowNode;
-		expect(dataRow.children).toHaveLength(2);
+		expect(dataRow.children?.map((cell) => flattenText(cell.children))).toEqual(['', 'x']);
 	});
 
 	it('handles middle empty cell', () => {
@@ -294,6 +294,21 @@ describe('regression: empty table cells', () => {
 });
 
 describe('regression: table cell boundaries', () => {
+	it.each([' ', '   ', '\t'])('ignores %j before the opening pipe of a body row', (indent) => {
+		const markdown = `| a | b | c |\n|---|---|---|\n${indent}| d | e | f |`;
+		const nodes = parseSync(markdown);
+		expect(nodes).toHaveLength(1);
+		expect(nodes[0].type).toBe(AstNodeType.Table);
+
+		const table = nodes[0] as TableNode;
+		expect(
+			table.children.map((row) => row.children?.map((cell) => flattenText(cell.children).trim()))
+		).toEqual([
+			['a', 'b', 'c'],
+			['d', 'e', 'f']
+		]);
+	});
+
 	it('does not merge table cells when a lone $ appears in a cell', () => {
 		const markdown =
 			'| A | B | C | D |\n' +

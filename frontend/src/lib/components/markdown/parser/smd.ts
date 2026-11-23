@@ -574,6 +574,9 @@ export function parser_write(p: Parser, chunk: string, _recursive = false): void
 					}
 				} else {
 					switch (p.pending) {
+						case '':
+							if (char === ' ' || char === '\t') continue;
+							break;
 						case '|':
 							add_token(p, TABLE_ROW);
 							p.pending = '';
